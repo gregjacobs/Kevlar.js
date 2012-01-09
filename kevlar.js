@@ -1681,6 +1681,17 @@ Kevlar.Field = Kevlar.extend( Object, {
 	 */
 	getName : function() {
 		return this.name;
+	},
+	
+	
+	/**
+	 * Determines if the Field should be persisted.
+	 * 
+	 * @method isPersisted
+	 * @return {Boolean}
+	 */
+	isPersisted : function() {
+		return this.persist;
 	}
 	
 } );
@@ -2389,7 +2400,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		// Remove properties from the dataToPersist that relate to the fields that have persist: false.
 		var fields = model.getFields();
 		for( var fieldName in fields ) {
-			if( fields.hasOwnProperty( fieldName ) && fields[ fieldName ].persist === false ) {
+			if( fields.hasOwnProperty( fieldName ) && fields[ fieldName ].isPersisted() === false ) {
 				delete dataToPersist[ fieldName ];
 				delete changedData[ fieldName ];   // used to determine if we need to persist the data at all (next). This will be the same object in the case that the proxy supports incremental updates, but no harm in doing this.
 			}
@@ -2423,8 +2434,8 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 			
 			url      : this.buildUrl( model.getId() ),
 			type     : 'PUT',
-			contentType: "application/json",
 			data     : JSON.stringify( dataToPersist ),
+			contentType : 'application/json',
 			
 			success  : options.success  || Kevlar.emptyFn,
 			error    : options.failure  || Kevlar.emptyFn,

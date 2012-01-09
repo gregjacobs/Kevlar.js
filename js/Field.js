@@ -135,6 +135,17 @@ Kevlar.Field = Kevlar.extend( Object, {
 	 */
 	getName : function() {
 		return this.name;
+	},
+	
+	
+	/**
+	 * Determines if the Field should be persisted.
+	 * 
+	 * @method isPersisted
+	 * @return {Boolean}
+	 */
+	isPersisted : function() {
+		return this.persist;
 	}
 	
 } );
