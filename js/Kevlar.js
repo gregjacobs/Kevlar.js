@@ -118,27 +118,21 @@ Kevlar.prototype = {
 	
 	
 	/**
-	 * <p>Extends one class to create a subclass of it based on a passed literal (`overrides`), and optionally any mixin 
-	 * classes that are desired.</p>
+	 * Extends one class to create a subclass of it based on a passed literal (`overrides`), and optionally any mixin 
+	 * classes that are desired.
 	 * 
 	 * This method adds a few methods to the class that it creates:
-	 * <div class="mdetail-params">
-	 *   <ul>
-	 *     <li><b>override</b>
-	 *       <div class="sub-desc">Method that can be used to override members of the class with a passed object literal.</div>
-	 *     </li>
-	 *     <li><b>extend</b>
-	 *       <div class="sub-desc">Method that can be used to extend the class, without calling Kevlar.extend(). Accepts the 2nd and 3rd arguments to this method (Kevlar.extend).</div>
-	 *     </li>
-	 *     <li><b>hasMixin</b>
-	 *       <div class="sub-desc">
-	 *         Method that can be used to find out if the class (or any of its superclasses) implement a given mixin. Accepts one argument: the class (constructor function) of the mixin. 
-	 *         Note that it is preferable to check if a given object is an instance of another class or has a mixin by using the {@link Kevlar#isInstanceOf} method. This hasMixin() method will just
-	 *         determine if the class has a given mixin, and not if it is an instance of a superclass, or even an instance of itself.
-	 *       </div>
-	 *     </li>
-	 *   </ul>
-	 * </div>
+	 * 
+	 * - override : Method that can be used to override members of the class with a passed object literal. 
+	 *   Same as {@link #override}, without the first argument.
+	 * - extend : Method that can be used to directly extend the class. Same as this method, except without
+	 *   the first argument.
+	 * - hasMixin : Method that can be used to find out if the class (or any of its superclasses) implement a given mixin. 
+	 *   Accepts one argument: the class (constructor function) of the mixin. Note that it is preferable to check if a given 
+	 *   object is an instance of another class or has a mixin by using the {@link #isInstanceOf} method. This hasMixin() 
+	 *   method will just determine if the class has a given mixin, and not if it is an instance of a superclass, or even an 
+	 *   instance of itself.
+	 * 
 	 * 
 	 * For example, to create a subclass of Kevlar.util.Observable, which will provide Observable events for the class:
 	 *     MyComponent = Kevlar.extend( Kevlar.util.Observable, {
@@ -199,6 +193,7 @@ Kevlar.prototype = {
 	 *         
 	 *     } );
 	 *
+	 * @method extend
 	 * @param {Function} superclass The constructor function of the class being extended.
 	 * @param {Array} mixins (optional) Any mixin classes (constructor functions) that should be mixed into the new subclass
 	 *   after it is extended from the superclass.  Mixin properties/methods will <em>not</em> overwrite class methods, and

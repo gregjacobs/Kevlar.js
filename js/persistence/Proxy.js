@@ -104,7 +104,7 @@ Kevlar.apply( Kevlar.persistence.Proxy, {
 	 * 
 	 * @method create
 	 * @param {Object} config The configuration object for the Proxy. Config objects should have the property `type`, 
-	 *   which determines which type of {@link @link Kevlar.persistence.Proxy} will be instantiated. If the object does not
+	 *   which determines which type of {@link Kevlar.persistence.Proxy} will be instantiated. If the object does not
 	 *   have a `type` property, an error will be thrown. Note that already-instantiated {@link Kevlar.persistence.Proxy Proxies} 
 	 *   will simply be returned unchanged. 
 	 * @return {Kevlar.persistence.Proxy} The instantiated Proxy.
