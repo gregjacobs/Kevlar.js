@@ -192,6 +192,8 @@ Kevlar.prototype = {
 	 *         }
 	 *         
 	 *     } );
+	 * 
+	 * Note that calling superclass methods can be done with either the [Class].superclass or [Class].__super__ property.
 	 *
 	 * @method extend
 	 * @param {Function} superclass The constructor function of the class being extended.
@@ -234,7 +236,7 @@ Kevlar.prototype = {
 			F.prototype = superclassPrototype;
 			subclassPrototype = subclass.prototype = new F();  // set up prototype chain
 			subclassPrototype.constructor = subclass;          // fix constructor property
-			subclass.superclass = superclassPrototype;
+			subclass.superclass = subclass.__super__ = superclassPrototype;
 			
 			// If the superclass is Object, set its constructor property to itself
 			if( superclassPrototype.constructor == objectConstructor ) {

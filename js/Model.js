@@ -67,15 +67,6 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * to determine which data is modified... 
 	 */
 	
-	/**
-	 * @private
-	 * @property {Boolean} initialized
-	 * Set to true after the Model's initialization (instantiation) process. This flag is tested against, and is used to prevent 
-	 * the firing of events while the Model is still initializing. Events should only be fired after the initialization process,
-	 * including the setting of the initial data, is complete.
-	 */
-	initialized : false,
-	
 	
 	
 	constructor : function( data ) {		
@@ -136,8 +127,35 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		this.set( data );
 		this.commit();  // because we are initializing, the data is not dirty
-		this.initialized = true;  // to enable the firing of events, now that the Model is fully initialized with its initial data set
+		
+		// Call hook method for subclasses
+		this.initialize( data );
 	},
+	
+	
+	/**
+	 * Hook methods for subclasses to initialize themselves. This method should be overridden in subclasses to 
+	 * provide any model-specific initialization.
+	 * 
+	 * Note that it is good practice to always call the superclass `initialize` method from within yours (even if
+	 * your class simply extends Kevlar.Model, which has no `initialize` implementation). This is to future proof it
+	 * from being moved under another superclass, or if there is ever an implementation made in this class.
+	 * 
+	 * Ex:
+	 *     MyModel = Kevlar.Model.extend( {
+	 *         initialize : function() {
+	 *             MyModel.superclass.initialize.apply( this, arguments );   // or could be MyModel.__super__.initialize.apply( this, arguments );
+	 *             
+	 *             // my initialization logic goes here
+	 *         }
+	 *     }
+	 * 
+	 * @protected
+	 * @method initialize
+	 * @param {Object} data The initial data provided to the Kevlar.Model constructor.
+	 */
+	initialize : Kevlar.emptyFn,
+	
 	
 	
 	/**
@@ -308,11 +326,8 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			this.data[ fieldName ] = value;
 			this.dirty = true;
 			
-			// Only fire the events if the Model has been fully initialized (i.e. this isn't a call to set() from the constructor).
-			if( this.initialized ) {
-				this.fireEvent( 'change:' + fieldName, this, value );
-				this.fireEvent( 'change', this, fieldName, value );
-			}
+			this.fireEvent( 'change:' + fieldName, this, value );
+			this.fireEvent( 'change', this, fieldName, value );
 		}
 	},
 	

@@ -410,6 +410,31 @@ Ext.test.Session.addSuite( {
 						
 						Y.Assert.areSame( "field2's data", model.get( 'field2' ), "The 'default' specified on the Field should *not* have been applied, since it has a value." );
 					}
+				},
+				
+				{
+					/*
+					 * Test that initialize() is called
+					 */
+					name : "Test that initialize() is called",
+					
+					"The initialize() method should be called for subclass initialization, with the initial data provided" : function() {
+						var initializeCalled = false;
+						
+						var providedData = { test: 'value' };
+						var initializeData;
+						
+						var MyModel = Kevlar.Model.extend( {
+							initialize : function( data ) {
+								initializeCalled = true;
+								initializeData = data;
+							}
+						} );
+						
+						var model = new MyModel( providedData );
+						Y.Assert.isTrue( initializeCalled, "The initialize() method should have been called" );
+						Y.Assert.areSame( providedData, initializeData, "The initialize() method should have been passed the initial model data" ); 
+					}
 				}
 			]
 		},
