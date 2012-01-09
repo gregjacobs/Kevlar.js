@@ -13,42 +13,46 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 			name: 'Test update()',
 			
 			setUp : function() {
-				var ajaxFn = this.ajaxFn = function( options ) {
-					options.success();
-				};
-				
-				this.testProxy = new Kevlar.persistence.RestProxy( {
+				this.MockModel = Kevlar.Model.extend( {
+					addFields : [ 'id', 'field1', 'field2' ]
+				} );
+			},
+			
+			
+			"update() should NOT actually call the ajax method when no fields have been changed" : function() {
+				var ajaxCallCount = 0;
+				var ajaxFn = function() { ajaxCallCount++; };
+				 
+				var MockProxy = Kevlar.persistence.RestProxy.extend( {
 					ajax : ajaxFn
 				} );
+				var proxy = new MockProxy();
 				
-				this.TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [ 'field1', 'field2', 'field3' ],
-					proxy : this.testProxy
-				} );
-			},
-			
-			
-			
-			"save() should NOT call its proxy's update() method when no fields have been changed" : function() {
-				var updateCallCount = 0;
-				var MockProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
-					update : function( data, options ) {
-						updateCallCount++;
-					},
-					supportsIncrementalUpdates : function() { return true; }
-				} );
-				
-				var MyModel = this.TestModel.extend( {
-					proxy : new MockProxy()
-				} );
-				
-				var model = new MyModel();
+				var model = new this.MockModel();
 				
 				// Note: do not change any fields before calling save()
-				model.save();
+				proxy.update( model );
 				
-				Y.Assert.areSame( 0, updateCallCount, "The proxy's update() method should not have not been called, since there are no changes" );
+				Y.Assert.areSame( 0, ajaxCallCount, "The proxy's ajax() method should not have not been called, since there are no changes" );
 			},
+			
+			"update() should in fact call the ajax method when fields have been changed" : function() {
+				var ajaxCallCount = 0;
+				var ajaxFn = function() { ajaxCallCount++; };
+				 
+				var MockProxy = Kevlar.persistence.RestProxy.extend( {
+					ajax : ajaxFn
+				} );
+				var proxy = new MockProxy();
+				
+				var model = new this.MockModel( { id : 1 } );
+				
+				// Change a field
+				model.set( 'field1', 'value1' );
+				proxy.update( model );
+				
+				Y.Assert.areSame( 1, ajaxCallCount, "The proxy's ajax() method should have been called, since there are changes to persist" );
+			}/*,
 			
 			
 			"The 'success' callback provided to save() should be called if no fields have been changed, and the proxy's update() method does not need to be called" : function() {
@@ -228,7 +232,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				
 				Y.Assert.areSame( 0, updateCallCount, "The proxy's update() method should not have not been called, since there are no changes to persisted fields" );
 			},
-			
+			*/
 			
 			
 			// NOTE: This test is commented for now, as the behavior is not yet implemented in the Model
@@ -261,7 +265,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				Y.Assert.areSame( 1, updateCallCount, "The proxy's update() method should have been called, since a field with a convert that IS persisted was updated by the non-persisted field" );
 			},*/
 			
-			
+			/*
 			
 			// ---------------------------------
 			
@@ -348,6 +352,54 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				
 				Y.Assert.areEqual( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after field2 has been changed" );
 				Y.ObjectAssert.ownsKeys( [ 'field2' ], dataToPersist, "The dataToPersist should have 'field2'" );
+			}*/
+		},
+		
+		
+		{
+			/*
+			 * Test buildUrl()
+			 */
+			name: 'Test buildUrl()',
+			
+			
+			"buildUrl() should return the configured url if the 'appendId' config is false" : function() {
+				var proxy = new Kevlar.persistence.RestProxy( {
+					url : '/testUrl',
+					appendId : false
+				} );
+				
+				Y.Assert.areSame( '/testUrl', proxy.buildUrl(), "buildUrl() should have simply returned the url" );
+				Y.Assert.areSame( '/testUrl', proxy.buildUrl( 42 ), "buildUrl() should have simply still returned the url, even with providing an `id` argument" );
+			},
+			
+			
+			"buildUrl() should return the configured url if the 'appendId' config is true, but no id is provided" : function() {
+				var proxy = new Kevlar.persistence.RestProxy( {
+					url : '/testUrl',
+					appendId : true
+				} );
+				
+				Y.Assert.areSame( '/testUrl', proxy.buildUrl(), "buildUrl() should have simply returned the url" );
+			},
+			
+			
+			"buildUrl() should return the configured url with the model's id, if the 'appendId' config is true, and an id is provided" : function() {
+				// Try with no trailing slash on the url
+				var proxy1 = new Kevlar.persistence.RestProxy( {
+					url : '/testUrl',  // note: no trailing slash
+					appendId : true
+				} );
+				
+				Y.Assert.areSame( '/testUrl/42', proxy1.buildUrl( 42 ), "buildUrl() should have returned the url with the id appended" );
+				
+				// Try with a trailing slash on the url
+				var proxy2 = new Kevlar.persistence.RestProxy( {
+					url : '/testUrl/',  // note: trailing slash exists
+					appendId : true
+				} );
+				
+				Y.Assert.areSame( '/testUrl/42', proxy2.buildUrl( 42 ), "buildUrl() should have returned the url with the id appended" );
 			}
 		}
 	]

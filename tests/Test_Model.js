@@ -1097,13 +1097,12 @@ Ext.test.Session.addSuite( {
 			"Model attributes that are updated (via set()) while a persistence request is in progress should not be marked as committed when the persistence request completes" : function() {
 				var test = this;
 				var MockProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
-					update : function( data, options ) {
+					update : function( model, options ) {
 						// update method just calls 'success' callback in 50ms
 						window.setTimeout( function() {
 							options.success.call( options.scope || window );
 						}, 50 );
-					},
-					supportsIncrementalUpdates : function() { return true; }
+					}
 				} );
 				
 				var MyModel = this.TestModel.extend( {
@@ -1116,7 +1115,7 @@ Ext.test.Session.addSuite( {
 				model.set( 'field1', "origValue1" );
 				model.set( 'field2', "origValue2" );
 				
-				// Begin persistence operation
+				// Begin persistence operation, defining a callback for when it is complete
 				model.save( {
 					success : function() {
 						test.resume( function() {
@@ -1144,17 +1143,15 @@ Ext.test.Session.addSuite( {
 			
 			"Model attributes that have been persisted should not be persisted again if they haven't changed since the last persist" : function() {
 				var dataToPersist;
-				var MockProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
-					update : function( data, options ) {
-						dataToPersist = data;
+				var MockProxy = Kevlar.persistence.Proxy.extend( {
+					update : function( model, options ) {
+						dataToPersist = model.getChanges();
 						options.success.call( options.scope );
-					},
-					supportsIncrementalUpdates : function() { return true; }
+					}
 				} );
 				var MyModel = this.TestModel.extend( {
 					proxy : new MockProxy()
 				} );
-				
 				var model = new MyModel();
 				
 				

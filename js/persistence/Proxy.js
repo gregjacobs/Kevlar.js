@@ -42,7 +42,7 @@ Kevlar.persistence.Proxy = Kevlar.extend( Kevlar.util.Observable, {
 	 * 
 	 * @abstract
 	 * @method update
-	 * @param {Object} data The data, provided in an Object, to persist to the server.
+	 * @param {Kevlar.Model} model The model to persist to the server. 
 	 */
 	update : Kevlar.abstractFn,
 	

@@ -1454,7 +1454,7 @@ Kevlar.persistence.Proxy = Kevlar.extend( Kevlar.util.Observable, {
 	 * 
 	 * @abstract
 	 * @method update
-	 * @param {Object} data The data, provided in an Object, to persist to the server.
+	 * @param {Kevlar.Model} model The model to persist to the server. 
 	 */
 	update : Kevlar.abstractFn,
 	
@@ -2286,9 +2286,36 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 * 
 	 * @method read
 	 * @param {Kevlar.Model} The Model instance to read from the server.
+	 * @param {Object} [options] An object which may contain the following properties:
+	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
+	 * @param {Function} [options.success] Function to call if the delete is successful.
+	 * @param {Function} [options.failure] Function to call if the delete fails.
+	 * @param {Function} [options.complete] Function to call regardless of if the delete is successful or fails.
+	 * @param {Object} [options.scope=window] The object to call the `success`, `failure`, and `complete` callbacks in.
 	 */
-	read : function() {
-		throw new Error( "read() not yet implemented" );
+	read : function( model, options ) {
+		options = options || {};
+		
+		var successCallback = function( data ) {
+			model.set( data );
+			
+			if( typeof options.success === 'function' ) {
+				options.success.call( options.scope || window );
+			}
+		};
+		
+		this.ajax( {
+			async    : ( typeof options.async === 'undefined' ) ? true : options.async,  // async defaults to true.
+			
+			url      : this.buildUrl( model.getId() ),
+			type     : 'GET',
+			dataType : 'json',
+			
+			success  : successCallback,
+			error    : options.failure  || Kevlar.emptyFn,
+			complete : options.complete || Kevlar.emptyFn,
+			context  : options.scope    || window
+		} );
 	},
 	
 	
@@ -2349,14 +2376,15 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 			dataToPersist = dataWrap;
 		}
 		
+		
 		// Finally, persist to the server
 		this.ajax( {
-			async: ( typeof options.async === 'undefined' ) ? true : options.async,  // async defaults to true.
+			async    : ( typeof options.async === 'undefined' ) ? true : options.async,  // async defaults to true.
 			
-			url : this.url,
-			type : 'PUT',
+			url      : this.buildUrl( model.getId() ),
+			type     : 'PUT',
 			contentType: "application/json",
-			data : JSON.stringify( dataToPersist ),
+			data     : JSON.stringify( dataToPersist ),
 			
 			success  : options.success  || Kevlar.emptyFn,
 			error    : options.failure  || Kevlar.emptyFn,
@@ -2367,13 +2395,60 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	
 	
 	/**
-	 * Destroys (deletes) the Model on the server. This method is not named "delete" as "delete" is a JavaScript reserved word.
+	 * Destroys (deletes) the Model on the server.
+	 * 
+	 * Note that this method is not named "delete" as "delete" is a JavaScript reserved word.
 	 * 
 	 * @method destroy
 	 * @param {Kevlar.Model} The Model instance to delete on the server.
+	 * @param {Object} [options] An object which may contain the following properties:
+	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
+	 * @param {Function} [options.success] Function to call if the delete is successful.
+	 * @param {Function} [options.failure] Function to call if the delete fails.
+	 * @param {Function} [options.complete] Function to call regardless of if the delete is successful or fails.
+	 * @param {Object} [options.scope=window] The object to call the `success`, `failure`, and `complete` callbacks in.
 	 */
-	destroy : function() {
-		throw new Error( "destroy() not yet implemented" );
+	destroy : function( model, options ) {
+		options = options || {};
+		
+		this.ajax( {
+			async    : ( typeof options.async === 'undefined' ) ? true : options.async,  // async defaults to true.
+			
+			url      : this.buildUrl( model.getId() ),
+			type     : 'DELETE',
+			
+			success  : options.success  || Kevlar.emptyFn,
+			error    : options.failure  || Kevlar.emptyFn,
+			complete : options.complete || Kevlar.emptyFn,
+			context  : options.scope    || window
+		} );
+	},
+	
+	
+	// -------------------
+	
+	
+	/**
+	 * Builds the URL to use to do CRUD operations.
+	 * 
+	 * @private
+	 * @method buildUrl
+	 * @param {String} [id] The ID of the Model.
+	 * @return {String} The url to use.
+	 */
+	buildUrl : function( id ) {
+		var url = this.url;
+		    
+		// And now, use the model's ID to set the url.
+		if( this.appendId && id ) {
+			if( !url.match( /\/$/ ) ) {
+				url += '/';
+			}
+			
+			url += id;
+		}
+		
+		return url;
 	}
 	
 } );
