@@ -13,8 +13,12 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 			name: 'Test update()',
 			
 			setUp : function() {
+				var ajaxFn = this.ajaxFn = function( options ) {
+					options.success();
+				};
+				
 				this.testProxy = new Kevlar.persistence.RestProxy( {
-					
+					ajax : ajaxFn
 				} );
 				
 				this.TestModel = Kevlar.extend( Kevlar.Model, {
@@ -93,7 +97,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				model.set( 'field1', 'newfield1value' );
 				model.save();
 				
-				Y.Assert.areEqual( 5, Kevlar.Object.objLength( dataToPersist ), "The dataToPersist should only have exactly 5 keys, one for each of the fields" );
+				Y.Assert.areEqual( 5, Kevlar.util.Object.objLength( dataToPersist ), "The dataToPersist should only have exactly 5 keys, one for each of the fields" );
 				Y.ObjectAssert.ownsKeys( [ 'field1','field2','field3','field4','field5' ], dataToPersist );
 			},
 			
@@ -119,7 +123,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				model.set( 'field1', 'newfield1value' );
 				model.save();
 				
-				Y.Assert.areEqual( 1, Kevlar.Object.objLength( dataToPersist ), "The dataToPersist should only have one key, the one that was changed" );
+				Y.Assert.areEqual( 1, Kevlar.util.Object.objLength( dataToPersist ), "The dataToPersist should only have one key, the one that was changed" );
 				Y.ObjectAssert.ownsKeys( [ 'field1' ], dataToPersist, "The dataToPersist should have 'field1'" );
 			},
 			
@@ -155,7 +159,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				model.set( 'field1', 'newfield1value' );
 				model.save();
 				
-				Y.Assert.areEqual( 3, Kevlar.Object.objLength( dataToPersist ), "The dataToPersist should only have 3 keys, the fields that are persisted (i.e. that don't have persist:false)" );
+				Y.Assert.areEqual( 3, Kevlar.util.Object.objLength( dataToPersist ), "The dataToPersist should only have 3 keys, the fields that are persisted (i.e. that don't have persist:false)" );
 				Y.ObjectAssert.ownsKeys( [ 'field1','field3','field4' ], dataToPersist, "The dataToPersist should only have persisted fields" );
 			},
 			
@@ -190,7 +194,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				model.set( 'field5', 'newfield5value' );
 				model.save();
 				
-				Y.Assert.areEqual( 2, Kevlar.Object.objLength( dataToPersist ), "The dataToPersist should only have 2 keys, the fields that are persisted (i.e. that don't have persist:false), out of the 4 that were modified" );
+				Y.Assert.areEqual( 2, Kevlar.util.Object.objLength( dataToPersist ), "The dataToPersist should only have 2 keys, the fields that are persisted (i.e. that don't have persist:false), out of the 4 that were modified" );
 				Y.ObjectAssert.ownsKeys( [ 'field3','field4' ], dataToPersist, "The dataToPersist should only have persisted fields" );
 			},
 			
@@ -334,7 +338,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				model.set( 'field1', 'newfield1value' );
 				model.save();
 				
-				Y.Assert.areEqual( 1, Kevlar.Object.objLength( dataToPersist ), "The dataToPersist should only have one key after field1 has been changed" );
+				Y.Assert.areEqual( 1, Kevlar.util.Object.objLength( dataToPersist ), "The dataToPersist should only have one key after field1 has been changed" );
 				Y.ObjectAssert.ownsKeys( [ 'field1' ], dataToPersist, "The dataToPersist should have 'field1'" );
 				
 				
@@ -342,7 +346,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				model.set( 'field2', 'newfield2value' );
 				model.save();
 				
-				Y.Assert.areEqual( 1, Kevlar.Object.objLength( dataToPersist ), "The dataToPersist should only have one key after field2 has been changed" );
+				Y.Assert.areEqual( 1, Kevlar.util.Object.objLength( dataToPersist ), "The dataToPersist should only have one key after field2 has been changed" );
 				Y.ObjectAssert.ownsKeys( [ 'field2' ], dataToPersist, "The dataToPersist should have 'field2'" );
 			}
 		}

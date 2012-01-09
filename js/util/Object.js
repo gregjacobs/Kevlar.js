@@ -1,11 +1,11 @@
 /**
- * @class Kevlar.Object
+ * @class Kevlar.util.Object
  * @singleton
  * 
  * Utility class for methods relating to Object functionality.
  */
 /*global Kevlar */
-Kevlar.Object = {
+Kevlar.util.Object = {
 	
 	/**
 	 * Clones an object.  Will only clone regular objects and arrays, and not objects created from a constructor
@@ -33,7 +33,7 @@ Kevlar.Object = {
 		// copy properties owned by the object (do not copy prototype properties)
 		for( var p in obj ) {
 			if( obj.hasOwnProperty( p ) ) {
-				c[p] = deep ? Kevlar.Object.clone( obj[p], true ) : obj[p];  // note: no 'this' reference (as in this.clone()), for friendly out of scope calls
+				c[p] = deep ? Kevlar.util.Object.clone( obj[p], true ) : obj[p];  // note: no 'this' reference (as in this.clone()), for friendly out of scope calls
 			}
 		}
 		
@@ -65,7 +65,7 @@ Kevlar.Object = {
 			if( a === null && a !== b ) { return false; }
 			
 			// Make sure there are the same number of keys in each object
-			var objLength = Kevlar.Object.objLength;  // no 'this' reference for friendly out of scope calls
+			var objLength = Kevlar.util.Object.objLength;  // no 'this' reference for friendly out of scope calls
 			if( objLength( a ) !== objLength( b ) ) { return false; }
 			
 			for (var p in a) {
@@ -76,7 +76,7 @@ Kevlar.Object = {
 						if (typeof(b[p]) != 'undefined') { return false; }
 						break;
 					case 'object':
-						if( a[p]!==null && b[p]!==null && ( a[p].constructor.toString() !== b[p].constructor.toString() || ( deep ? !Kevlar.Object.isEqual(a[p], b[p] ) : false ) ) ) {  // NOTE: full call to Kevlar.Object.isEqual (instead of this.isEqual) to allow for friendly out-of-scope calls 
+						if( a[p]!==null && b[p]!==null && ( a[p].constructor.toString() !== b[p].constructor.toString() || ( deep ? !Kevlar.util.Object.isEqual(a[p], b[p] ) : false ) ) ) {  // NOTE: full call to Kevlar.util.Object.isEqual (instead of this.isEqual) to allow for friendly out-of-scope calls 
 							return false;
 						}
 						break;

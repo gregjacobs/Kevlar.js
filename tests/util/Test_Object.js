@@ -1,7 +1,7 @@
 /*global jQuery, Ext, Y, Kevlar */
 Ext.test.Session.addSuite( {
 	
-	name : 'Kevlar.Object',
+	name : 'Kevlar.util.Object',
 	
 	items : [
 	
@@ -13,45 +13,45 @@ Ext.test.Session.addSuite( {
 			
 			"clone() should return primitive types as-is" : function() {
 				// Tests with primitive types
-				Y.Assert.areSame( undefined, Kevlar.Object.clone( undefined ), "clone() not returning undefined when provided undefined." );
-				Y.Assert.areSame( null, Kevlar.Object.clone( null ), "clone() not returning null when provided null." );
-				Y.Assert.areSame( true, Kevlar.Object.clone( true ), "clone() not returning true when provided true." );
-				Y.Assert.areSame( false, Kevlar.Object.clone( false ), "clone() not returning false when provided false." );
-				Y.Assert.areSame( 0, Kevlar.Object.clone( 0 ), "clone() not returning 0 when provided 0." );
-				Y.Assert.areSame( 1, Kevlar.Object.clone( 1 ), "clone() not returning 1 when provided 1." );
-				Y.Assert.areSame( "", Kevlar.Object.clone( "" ), "clone() not returning empty string when provided an empty string." );
-				Y.Assert.areSame( "hi", Kevlar.Object.clone( "hi" ), "clone() not returning string 'hi' when provided string 'hi'." );
+				Y.Assert.areSame( undefined, Kevlar.util.Object.clone( undefined ), "clone() not returning undefined when provided undefined." );
+				Y.Assert.areSame( null, Kevlar.util.Object.clone( null ), "clone() not returning null when provided null." );
+				Y.Assert.areSame( true, Kevlar.util.Object.clone( true ), "clone() not returning true when provided true." );
+				Y.Assert.areSame( false, Kevlar.util.Object.clone( false ), "clone() not returning false when provided false." );
+				Y.Assert.areSame( 0, Kevlar.util.Object.clone( 0 ), "clone() not returning 0 when provided 0." );
+				Y.Assert.areSame( 1, Kevlar.util.Object.clone( 1 ), "clone() not returning 1 when provided 1." );
+				Y.Assert.areSame( "", Kevlar.util.Object.clone( "" ), "clone() not returning empty string when provided an empty string." );
+				Y.Assert.areSame( "hi", Kevlar.util.Object.clone( "hi" ), "clone() not returning string 'hi' when provided string 'hi'." );
 			},
 			
 			"clone() should copy an array of primitives" : function() {
 				var simpleArr = [ 1, 2, 3, 4, 5 ];
-				Y.Assert.areNotSame( simpleArr, Kevlar.Object.clone( simpleArr ), "clone() returning same reference to array." );
-				Y.Assert.isTrue( Kevlar.Object.isEqual( [ 1, 2, 3, 4, 5 ], Kevlar.Object.clone( simpleArr ) ), "clone() not properly copying a simple array." );
+				Y.Assert.areNotSame( simpleArr, Kevlar.util.Object.clone( simpleArr ), "clone() returning same reference to array." );
+				Y.Assert.isTrue( Kevlar.util.Object.isEqual( [ 1, 2, 3, 4, 5 ], Kevlar.util.Object.clone( simpleArr ) ), "clone() not properly copying a simple array." );
 			},
 			
 			"clone() should deep copy an array of mixed primitives and objects" : function() {
 				var complexArr = [ { a: { inner: 1 }, b: 2 }, 1, "asdf", [ 1, 2, { a: 1 } ] ];
-				Y.Assert.areNotSame( complexArr, Kevlar.Object.clone( complexArr ), "clone() returning same reference to complex array." );
-				Y.Assert.isTrue( Kevlar.Object.isEqual( [ { a: { inner: 1 }, b: 2 }, 1, "asdf", [ 1, 2, { a: 1 } ] ], Kevlar.Object.clone( complexArr ) ), "clone() not properly deep copying a complex array." );
-				Y.Assert.areNotSame( complexArr[ 0 ], Kevlar.Object.clone( complexArr )[ 0 ], "clone() not properly deep copying a complex array. first element has same reference for original and copy." ); 
-				Y.Assert.areNotSame( complexArr[ 0 ].a, Kevlar.Object.clone( complexArr )[ 0 ].a, "clone() not properly deep copying a complex array. first element, 'a' object, has same reference for original and copy." ); 
-				Y.Assert.areSame( complexArr[ 0 ].a, Kevlar.Object.clone( complexArr, /*deep*/ false )[ 0 ].a, "clone() not properly shallow copying a complex array. first element, 'a' object, does not have same reference for original and copy." ); 
+				Y.Assert.areNotSame( complexArr, Kevlar.util.Object.clone( complexArr ), "clone() returning same reference to complex array." );
+				Y.Assert.isTrue( Kevlar.util.Object.isEqual( [ { a: { inner: 1 }, b: 2 }, 1, "asdf", [ 1, 2, { a: 1 } ] ], Kevlar.util.Object.clone( complexArr ) ), "clone() not properly deep copying a complex array." );
+				Y.Assert.areNotSame( complexArr[ 0 ], Kevlar.util.Object.clone( complexArr )[ 0 ], "clone() not properly deep copying a complex array. first element has same reference for original and copy." ); 
+				Y.Assert.areNotSame( complexArr[ 0 ].a, Kevlar.util.Object.clone( complexArr )[ 0 ].a, "clone() not properly deep copying a complex array. first element, 'a' object, has same reference for original and copy." ); 
+				Y.Assert.areSame( complexArr[ 0 ].a, Kevlar.util.Object.clone( complexArr, /*deep*/ false )[ 0 ].a, "clone() not properly shallow copying a complex array. first element, 'a' object, does not have same reference for original and copy." ); 
 			},
 			
 			
 			"clone() should copy a simple object of primitives" : function() {
 				var simpleObj = { a: 1, b: 2 };
-				Y.Assert.areNotSame( simpleObj, Kevlar.Object.clone( simpleObj ), "clone() returning same reference to simple object." );
-				Y.Assert.isTrue( Kevlar.Object.isEqual( { a: 1, b: 2 }, Kevlar.Object.clone( simpleObj ) ), "clone() not properly copying a simple object." );
+				Y.Assert.areNotSame( simpleObj, Kevlar.util.Object.clone( simpleObj ), "clone() returning same reference to simple object." );
+				Y.Assert.isTrue( Kevlar.util.Object.isEqual( { a: 1, b: 2 }, Kevlar.util.Object.clone( simpleObj ) ), "clone() not properly copying a simple object." );
 			},
 			
 			"clone() should deep copy an object of primitives, nested arrays, and nested objects" : function() {
 				var complexObj = { a: 1, b: { a: 1, b: [1,2,3], c: { a: null, b: undefined, c: true, d: false, e: "ohai" } }, c: [1,[1,2]] };
-				Y.Assert.areNotSame( complexObj, Kevlar.Object.clone( complexObj ), "clone() returning same reference to complex object." );
-				Y.Assert.isTrue( Kevlar.Object.isEqual( { a: 1, b: { a: 1, b: [1,2,3], c: { a: null, b: undefined, c: true, d: false, e: "ohai" } }, c: [1,[1,2]] }, Kevlar.Object.clone( complexObj ) ), "clone() not properly deep copying a complex object." );
-				Y.Assert.areNotSame( complexObj.b, Kevlar.Object.clone( complexObj ).b, "clone() not properly deep copying a complex object. property 'b' has same reference for original and copy." );
-				Y.Assert.areNotSame( complexObj.b.c, Kevlar.Object.clone( complexObj ).b.c, "clone() not properly deep copying a complex object. property 'b.c' has same reference for original and copy. Nested object inside nested object not getting copied." );
-				Y.Assert.areSame( complexObj.b.c, Kevlar.Object.clone( complexObj, /*deep*/ false ).b.c, "clone() with 'deep' set to false (shallow copy mode) is still deep copying a complex object. property 'b.c' does not have same reference for original and copy." );
+				Y.Assert.areNotSame( complexObj, Kevlar.util.Object.clone( complexObj ), "clone() returning same reference to complex object." );
+				Y.Assert.isTrue( Kevlar.util.Object.isEqual( { a: 1, b: { a: 1, b: [1,2,3], c: { a: null, b: undefined, c: true, d: false, e: "ohai" } }, c: [1,[1,2]] }, Kevlar.util.Object.clone( complexObj ) ), "clone() not properly deep copying a complex object." );
+				Y.Assert.areNotSame( complexObj.b, Kevlar.util.Object.clone( complexObj ).b, "clone() not properly deep copying a complex object. property 'b' has same reference for original and copy." );
+				Y.Assert.areNotSame( complexObj.b.c, Kevlar.util.Object.clone( complexObj ).b.c, "clone() not properly deep copying a complex object. property 'b.c' has same reference for original and copy. Nested object inside nested object not getting copied." );
+				Y.Assert.areSame( complexObj.b.c, Kevlar.util.Object.clone( complexObj, /*deep*/ false ).b.c, "clone() with 'deep' set to false (shallow copy mode) is still deep copying a complex object. property 'b.c' does not have same reference for original and copy." );
 			},
 			
 			
@@ -62,7 +62,7 @@ Ext.test.Session.addSuite( {
 				MyClass.prototype.prototypeVar = 2;
 				
 				var myInstance = new MyClass();
-				var copiedInstance = Kevlar.Object.clone( myInstance );
+				var copiedInstance = Kevlar.util.Object.clone( myInstance );
 				
 				// First check that the owned property was copied
 				Y.Assert.isTrue( copiedInstance.hasOwnProperty( 'ownVar' ), "clone() did not copy the owned property 'ownVar'" );
@@ -84,7 +84,7 @@ Ext.test.Session.addSuite( {
 			
 			"isEqual() should work with all datatype comparisons (primitive and array/object)" : function() {
 				// Quick reference
-				var isEqual = Kevlar.Object.isEqual;
+				var isEqual = Kevlar.util.Object.isEqual;
 				
 				Y.Assert.isTrue( isEqual( undefined, undefined ), "Error: undefined !== undefined" );
 				Y.Assert.isFalse( isEqual( undefined, null ), "Error: undefined === null"  );
@@ -143,7 +143,7 @@ Ext.test.Session.addSuite( {
 			
 			"isEqual() should work with deep object comparisons" : function() {
 				// Quick reference
-				var isEqual = Kevlar.Object.isEqual;
+				var isEqual = Kevlar.util.Object.isEqual;
 				
 				var a = {a: 'text', b:[0,1]};
 				var b = {a: 'text', b:[0,1]};
@@ -188,7 +188,7 @@ Ext.test.Session.addSuite( {
 			
 			"isEqual() should work with deep array comparisons" : function() {
 				// Quick reference
-				var isEqual = Kevlar.Object.isEqual;
+				var isEqual = Kevlar.util.Object.isEqual;
 				
 				var a = [];
 				var b = [];
@@ -245,7 +245,7 @@ Ext.test.Session.addSuite( {
 			
 			"isEqual() should be able to shallow compare, with the 'deep' flag set to false, in case objects refer to each other" : function() {
 				// Quick reference
-				var isEqual = Kevlar.Object.isEqual;
+				var isEqual = Kevlar.util.Object.isEqual;
 				
 				// Have objects that refer to one another, to make sure the comparison doesn't go deep.
 				// Will get stack overflow error if they do.
@@ -258,7 +258,7 @@ Ext.test.Session.addSuite( {
 				var b = [ obj1, obj2 ];
 				var returnVal;
 				try {
-					returnVal = Kevlar.Object.isEqual( a, b, /*deep*/ false );
+					returnVal = Kevlar.util.Object.isEqual( a, b, /*deep*/ false );
 				} catch( e ) {
 					Y.Assert.fail( "Error w/ shallow array comparison and deep flag set to false. Comparison must be going deep, as this error would come from call stack size being reached." );
 				}
@@ -276,7 +276,7 @@ Ext.test.Session.addSuite( {
 			
 			"objLength() should return 0 for an empty object" : function() {
 				var obj = {};
-				Y.Assert.areSame( 0, Kevlar.Object.objLength( obj ) );
+				Y.Assert.areSame( 0, Kevlar.util.Object.objLength( obj ) );
 			},
 			
 			"objLength() should return 0 for an empty object, even if the object has prototype properties" : function() {
@@ -284,7 +284,7 @@ Ext.test.Session.addSuite( {
 				MyClass.prototype.prop = "prototype property";
 				
 				var myInstance = new MyClass();
-				Y.Assert.areSame( 0, Kevlar.Object.objLength( myInstance ) );
+				Y.Assert.areSame( 0, Kevlar.util.Object.objLength( myInstance ) );
 			},
 			
 			"objLength() should return the number of owned properties in the object" : function() {
@@ -292,7 +292,7 @@ Ext.test.Session.addSuite( {
 					prop1 : "1",
 					prop2 : "2"
 				};
-				Y.Assert.areSame( 2, Kevlar.Object.objLength( obj ) );
+				Y.Assert.areSame( 2, Kevlar.util.Object.objLength( obj ) );
 			},
 			
 			"objLength() should return the number of owned properties in the object, even if they are undefined or falsy" : function() {
@@ -303,7 +303,7 @@ Ext.test.Session.addSuite( {
 					prop4 : 0,
 					prop5 : ""
 				};
-				Y.Assert.areSame( 5, Kevlar.Object.objLength( obj ) );
+				Y.Assert.areSame( 5, Kevlar.util.Object.objLength( obj ) );
 			}
 		},
 		
@@ -316,7 +316,7 @@ Ext.test.Session.addSuite( {
 			
 			"isEmpty() should return true for an empty object" : function() {
 				var obj = {};
-				Y.Assert.isTrue( Kevlar.Object.isEmpty( obj ) );
+				Y.Assert.isTrue( Kevlar.util.Object.isEmpty( obj ) );
 			},
 			
 			"isEmpty() should return true for an empty object, even if the object has prototype properties" : function() {
@@ -324,7 +324,7 @@ Ext.test.Session.addSuite( {
 				MyClass.prototype.prop = "prototype property";
 				
 				var myInstance = new MyClass();
-				Y.Assert.isTrue( Kevlar.Object.isEmpty( myInstance ) );
+				Y.Assert.isTrue( Kevlar.util.Object.isEmpty( myInstance ) );
 			},
 			
 			"isEmpty() should return false if the object owns properties" : function() {
@@ -332,7 +332,7 @@ Ext.test.Session.addSuite( {
 					prop1 : "1",
 					prop2 : "2"
 				};
-				Y.Assert.isFalse( Kevlar.Object.isEmpty( obj ) );
+				Y.Assert.isFalse( Kevlar.util.Object.isEmpty( obj ) );
 			},
 			
 			"isEmpty() should return false if the object owns properties, even if the properties are undefined or falsy" : function() {
@@ -343,7 +343,7 @@ Ext.test.Session.addSuite( {
 					prop4 : 0,
 					prop5 : ""
 				};
-				Y.Assert.isFalse( Kevlar.Object.isEmpty( obj ) );
+				Y.Assert.isFalse( Kevlar.util.Object.isEmpty( obj ) );
 			}
 		}
 	]

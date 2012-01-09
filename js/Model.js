@@ -396,7 +396,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.Field Field} values.
 	 */
 	toJSON : function() {
-		return Kevlar.Object.clone( this.data );
+		return Kevlar.util.Object.clone( this.data );
 	},
 	
 	
@@ -473,7 +473,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		// and then data is manually modified, but this is also the correct time to run the commit() operation, as we still want to see the changes if the request fails. 
 		// So, if a persistence request fails, we should have all of the data still marked as dirty, both the data that was to be persisted, and any new data that was set 
 		// while the persistence operation was being attempted.
-		var persistedData = Kevlar.Object.clone( this.data );
+		var persistedData = Kevlar.util.Object.clone( this.data );
 		
 		var successCallback = function() {
 			// The request to persist the data was successful, commit the Model
@@ -483,7 +483,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			// If so, those fields should be marked as modified, with the snapshot data used as the "originals". See the note above where persistedData was set. 
 			var currentData = this.toJSON();
 			for( var fieldName in persistedData ) {
-				if( persistedData.hasOwnProperty( fieldName ) && !Kevlar.Object.isEqual( persistedData[ fieldName ], currentData[ fieldName ] ) ) {
+				if( persistedData.hasOwnProperty( fieldName ) && !Kevlar.util.Object.isEqual( persistedData[ fieldName ], currentData[ fieldName ] ) ) {
 					this.modifiedData[ fieldName ] = persistedData[ fieldName ];   // set the last persisted value on to the "modifiedData" object. Note: "modifiedData" holds *original* values, so that the "data" object can hold the latest values. It is how we know a field is modified as well.
 					this.dirty = true;
 				}

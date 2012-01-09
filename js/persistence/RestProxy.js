@@ -121,7 +121,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		
 		// Short Circuit: If there is no changed data in any of the fields that are to be persisted, there is no need to run a request. Run the 
 		// success callback and return out.
-		if( Kevlar.Object.isEmpty( changedData, /* filterPrototype */ true ) ) {
+		if( Kevlar.util.Object.isEmpty( changedData, /* filterPrototype */ true ) ) {
 			if( typeof options.success === 'function' ) {
 				options.success.call( options.scope || window );
 			}

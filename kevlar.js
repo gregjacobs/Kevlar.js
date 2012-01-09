@@ -2120,7 +2120,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.Field Field} values.
 	 */
 	toJSON : function() {
-		return Kevlar.Object.clone( this.data );
+		return Kevlar.util.Object.clone( this.data );
 	},
 	
 	
@@ -2197,7 +2197,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		// and then data is manually modified, but this is also the correct time to run the commit() operation, as we still want to see the changes if the request fails. 
 		// So, if a persistence request fails, we should have all of the data still marked as dirty, both the data that was to be persisted, and any new data that was set 
 		// while the persistence operation was being attempted.
-		var persistedData = Kevlar.Object.clone( this.data );
+		var persistedData = Kevlar.util.Object.clone( this.data );
 		
 		var successCallback = function() {
 			// The request to persist the data was successful, commit the Model
@@ -2207,7 +2207,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			// If so, those fields should be marked as modified, with the snapshot data used as the "originals". See the note above where persistedData was set. 
 			var currentData = this.toJSON();
 			for( var fieldName in persistedData ) {
-				if( persistedData.hasOwnProperty( fieldName ) && !Kevlar.Object.isEqual( persistedData[ fieldName ], currentData[ fieldName ] ) ) {
+				if( persistedData.hasOwnProperty( fieldName ) && !Kevlar.util.Object.isEqual( persistedData[ fieldName ], currentData[ fieldName ] ) ) {
 					this.modifiedData[ fieldName ] = persistedData[ fieldName ];   // set the last persisted value on to the "modifiedData" object. Note: "modifiedData" holds *original* values, so that the "data" object can hold the latest values. It is how we know a field is modified as well.
 					this.dirty = true;
 				}
@@ -2246,13 +2246,13 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 } );
 
 /**
- * @class Kevlar.Object
+ * @class Kevlar.util.Object
  * @singleton
  * 
  * Utility class for methods relating to Object functionality.
  */
 /*global Kevlar */
-Kevlar.Object = {
+Kevlar.util.Object = {
 	
 	/**
 	 * Clones an object.  Will only clone regular objects and arrays, and not objects created from a constructor
@@ -2280,7 +2280,7 @@ Kevlar.Object = {
 		// copy properties owned by the object (do not copy prototype properties)
 		for( var p in obj ) {
 			if( obj.hasOwnProperty( p ) ) {
-				c[p] = deep ? Kevlar.Object.clone( obj[p], true ) : obj[p];  // note: no 'this' reference (as in this.clone()), for friendly out of scope calls
+				c[p] = deep ? Kevlar.util.Object.clone( obj[p], true ) : obj[p];  // note: no 'this' reference (as in this.clone()), for friendly out of scope calls
 			}
 		}
 		
@@ -2312,7 +2312,7 @@ Kevlar.Object = {
 			if( a === null && a !== b ) { return false; }
 			
 			// Make sure there are the same number of keys in each object
-			var objLength = Kevlar.Object.objLength;  // no 'this' reference for friendly out of scope calls
+			var objLength = Kevlar.util.Object.objLength;  // no 'this' reference for friendly out of scope calls
 			if( objLength( a ) !== objLength( b ) ) { return false; }
 			
 			for (var p in a) {
@@ -2323,7 +2323,7 @@ Kevlar.Object = {
 						if (typeof(b[p]) != 'undefined') { return false; }
 						break;
 					case 'object':
-						if( a[p]!==null && b[p]!==null && ( a[p].constructor.toString() !== b[p].constructor.toString() || ( deep ? !Kevlar.Object.isEqual(a[p], b[p] ) : false ) ) ) {  // NOTE: full call to Kevlar.Object.isEqual (instead of this.isEqual) to allow for friendly out-of-scope calls 
+						if( a[p]!==null && b[p]!==null && ( a[p].constructor.toString() !== b[p].constructor.toString() || ( deep ? !Kevlar.util.Object.isEqual(a[p], b[p] ) : false ) ) ) {  // NOTE: full call to Kevlar.util.Object.isEqual (instead of this.isEqual) to allow for friendly out-of-scope calls 
 							return false;
 						}
 						break;
@@ -2503,7 +2503,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		
 		// Short Circuit: If there is no changed data in any of the fields that are to be persisted, there is no need to run a request. Run the 
 		// success callback and return out.
-		if( Kevlar.Object.isEmpty( changedData, /* filterPrototype */ true ) ) {
+		if( Kevlar.util.Object.isEmpty( changedData, /* filterPrototype */ true ) ) {
 			if( typeof options.success === 'function' ) {
 				options.success.call( options.scope || window );
 			}
