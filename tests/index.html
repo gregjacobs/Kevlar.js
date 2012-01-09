@@ -81,7 +81,7 @@
 					Ext.test.Runner.addListener( {
 						'fail' : function( runner, data ) {
 							// global var
-							testsFailed.push( "'" + data.testName + "' : failed. " + data.error.toString() );
+							testsFailed.push( "'" + data.testName + "' : failed.\n" + data.error.toString() );
 						},
 						
 						'complete' : function( runner, data ) {
