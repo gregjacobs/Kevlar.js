@@ -85,7 +85,7 @@ Ext.test.Session.addSuite( {
 				var instance = new models[ models.length - 1 ](),  // the last Model class provided to the method. It is assumed that all previous arguments are its superclasses
 				    instanceFields = instance.fields;
 				
-				var fieldCount = Kevlar.util.Object.objLength( instanceFields, /* filter prototype */ true );
+				var fieldCount = Kevlar.util.Object.length( instanceFields );
 				Y.Assert.areSame( expectedFieldCount, fieldCount, "There should be the same number of resulting fields in the 'instanceFields' hash as the original 'fields' arrays of the Model classes." );
 				
 				// Check that all of the fields defined by each Model's prototype exist in the final 'fields' hash
@@ -838,7 +838,7 @@ Ext.test.Session.addSuite( {
 				model.set( 'field1', "new value" );
 				
 				var changes = model.getChanges();
-				Y.Assert.areSame( 1, Kevlar.util.Object.objLength( changes ), "The changes hash retrieved should have exactly 1 property" );
+				Y.Assert.areSame( 1, Kevlar.util.Object.length( changes ), "The changes hash retrieved should have exactly 1 property" );
 				Y.Assert.areSame( "new value", changes.field1, "The change to field1 should have been 'new value'." );
 			},
 			
@@ -848,7 +848,7 @@ Ext.test.Session.addSuite( {
 				model.set( 'field2', "new value 2" );
 				
 				var changes = model.getChanges();
-				Y.Assert.areSame( 2, Kevlar.util.Object.objLength( changes ), "The changes hash retrieved should have exactly 2 properties" );
+				Y.Assert.areSame( 2, Kevlar.util.Object.length( changes ), "The changes hash retrieved should have exactly 2 properties" );
 				Y.Assert.areSame( "new value 1", changes.field1, "The change to field1 should have been 'new value 1'." );
 				Y.Assert.areSame( "new value 2", changes.field2, "The change to field2 should have been 'new value 2'." );
 			}
@@ -921,7 +921,7 @@ Ext.test.Session.addSuite( {
 				model.commit();
 				
 				var changes = model.getChanges();
-				Y.Assert.areSame( 0, Kevlar.util.Object.objLength( changes ), "The changes hash retrieved should have exactly 0 properties" );
+				Y.Assert.areSame( 0, Kevlar.util.Object.length( changes ), "The changes hash retrieved should have exactly 0 properties" );
 				
 				Y.Assert.isFalse( model.isDirty(), "The model should no longer be marked as 'dirty'" );
 			},
@@ -1162,7 +1162,7 @@ Ext.test.Session.addSuite( {
 				model.set( 'field1', 'newfield1value' );
 				model.save();
 				
-				Y.Assert.areEqual( 1, Kevlar.util.Object.objLength( dataToPersist ), "The dataToPersist should only have one key after field1 has been changed" );
+				Y.Assert.areEqual( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after field1 has been changed" );
 				Y.ObjectAssert.ownsKeys( [ 'field1' ], dataToPersist, "The dataToPersist should have 'field1'" );
 				
 				
@@ -1170,7 +1170,7 @@ Ext.test.Session.addSuite( {
 				model.set( 'field2', 'newfield2value' );
 				model.save();
 				
-				Y.Assert.areEqual( 1, Kevlar.util.Object.objLength( dataToPersist ), "The dataToPersist should only have one key after field2 has been changed" );
+				Y.Assert.areEqual( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after field2 has been changed" );
 				Y.ObjectAssert.ownsKeys( [ 'field2' ], dataToPersist, "The dataToPersist should have 'field2'" );
 			}
 		}

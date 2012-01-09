@@ -65,7 +65,7 @@ Kevlar.util.Object = {
 			if( a === null && a !== b ) { return false; }
 			
 			// Make sure there are the same number of keys in each object
-			var objLength = Kevlar.util.Object.objLength;  // no 'this' reference for friendly out of scope calls
+			var objLength = Kevlar.util.Object.length;  // no 'this' reference for friendly out of scope calls
 			if( objLength( a ) !== objLength( b ) ) { return false; }
 			
 			for (var p in a) {
@@ -95,14 +95,14 @@ Kevlar.util.Object = {
 	
 	
 	/**
-	 * Returns the number of properties that are in a given object. Does not include
+	 * Returns the number of properties that belong to a given object. Does not include
 	 * the number of properties on the object's prototype.
 	 * 
-	 * @method objLength
+	 * @method length
 	 * @param {Object} obj
 	 * @return {Number}
 	 */
-	objLength: function( obj ) {
+	length: function( obj ) {
 		var result = 0;
 		for( var item in obj ) {
 			if( obj.hasOwnProperty( item ) ) {

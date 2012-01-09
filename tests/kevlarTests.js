@@ -1023,7 +1023,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				model.set( 'field1', 'newfield1value' );
 				model.save();
 				
-				Y.Assert.areEqual( 5, Kevlar.util.Object.objLength( dataToPersist ), "The dataToPersist should only have exactly 5 keys, one for each of the fields" );
+				Y.Assert.areEqual( 5, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have exactly 5 keys, one for each of the fields" );
 				Y.ObjectAssert.ownsKeys( [ 'field1','field2','field3','field4','field5' ], dataToPersist );
 			},
 			
@@ -1049,7 +1049,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				model.set( 'field1', 'newfield1value' );
 				model.save();
 				
-				Y.Assert.areEqual( 1, Kevlar.util.Object.objLength( dataToPersist ), "The dataToPersist should only have one key, the one that was changed" );
+				Y.Assert.areEqual( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key, the one that was changed" );
 				Y.ObjectAssert.ownsKeys( [ 'field1' ], dataToPersist, "The dataToPersist should have 'field1'" );
 			},
 			
@@ -1085,7 +1085,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				model.set( 'field1', 'newfield1value' );
 				model.save();
 				
-				Y.Assert.areEqual( 3, Kevlar.util.Object.objLength( dataToPersist ), "The dataToPersist should only have 3 keys, the fields that are persisted (i.e. that don't have persist:false)" );
+				Y.Assert.areEqual( 3, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have 3 keys, the fields that are persisted (i.e. that don't have persist:false)" );
 				Y.ObjectAssert.ownsKeys( [ 'field1','field3','field4' ], dataToPersist, "The dataToPersist should only have persisted fields" );
 			},
 			
@@ -1120,7 +1120,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				model.set( 'field5', 'newfield5value' );
 				model.save();
 				
-				Y.Assert.areEqual( 2, Kevlar.util.Object.objLength( dataToPersist ), "The dataToPersist should only have 2 keys, the fields that are persisted (i.e. that don't have persist:false), out of the 4 that were modified" );
+				Y.Assert.areEqual( 2, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have 2 keys, the fields that are persisted (i.e. that don't have persist:false), out of the 4 that were modified" );
 				Y.ObjectAssert.ownsKeys( [ 'field3','field4' ], dataToPersist, "The dataToPersist should only have persisted fields" );
 			},
 			
@@ -1264,7 +1264,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				model.set( 'field1', 'newfield1value' );
 				model.save();
 				
-				Y.Assert.areEqual( 1, Kevlar.util.Object.objLength( dataToPersist ), "The dataToPersist should only have one key after field1 has been changed" );
+				Y.Assert.areEqual( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after field1 has been changed" );
 				Y.ObjectAssert.ownsKeys( [ 'field1' ], dataToPersist, "The dataToPersist should have 'field1'" );
 				
 				
@@ -1272,7 +1272,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				model.set( 'field2', 'newfield2value' );
 				model.save();
 				
-				Y.Assert.areEqual( 1, Kevlar.util.Object.objLength( dataToPersist ), "The dataToPersist should only have one key after field2 has been changed" );
+				Y.Assert.areEqual( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after field2 has been changed" );
 				Y.ObjectAssert.ownsKeys( [ 'field2' ], dataToPersist, "The dataToPersist should have 'field2'" );
 			}
 		}
@@ -2465,7 +2465,7 @@ Ext.test.Session.addSuite( {
 				var instance = new models[ models.length - 1 ](),  // the last Model class provided to the method. It is assumed that all previous arguments are its superclasses
 				    instanceFields = instance.fields;
 				
-				var fieldCount = Kevlar.util.Object.objLength( instanceFields, /* filter prototype */ true );
+				var fieldCount = Kevlar.util.Object.length( instanceFields );
 				Y.Assert.areSame( expectedFieldCount, fieldCount, "There should be the same number of resulting fields in the 'instanceFields' hash as the original 'fields' arrays of the Model classes." );
 				
 				// Check that all of the fields defined by each Model's prototype exist in the final 'fields' hash
@@ -3218,7 +3218,7 @@ Ext.test.Session.addSuite( {
 				model.set( 'field1', "new value" );
 				
 				var changes = model.getChanges();
-				Y.Assert.areSame( 1, Kevlar.util.Object.objLength( changes ), "The changes hash retrieved should have exactly 1 property" );
+				Y.Assert.areSame( 1, Kevlar.util.Object.length( changes ), "The changes hash retrieved should have exactly 1 property" );
 				Y.Assert.areSame( "new value", changes.field1, "The change to field1 should have been 'new value'." );
 			},
 			
@@ -3228,7 +3228,7 @@ Ext.test.Session.addSuite( {
 				model.set( 'field2', "new value 2" );
 				
 				var changes = model.getChanges();
-				Y.Assert.areSame( 2, Kevlar.util.Object.objLength( changes ), "The changes hash retrieved should have exactly 2 properties" );
+				Y.Assert.areSame( 2, Kevlar.util.Object.length( changes ), "The changes hash retrieved should have exactly 2 properties" );
 				Y.Assert.areSame( "new value 1", changes.field1, "The change to field1 should have been 'new value 1'." );
 				Y.Assert.areSame( "new value 2", changes.field2, "The change to field2 should have been 'new value 2'." );
 			}
@@ -3301,7 +3301,7 @@ Ext.test.Session.addSuite( {
 				model.commit();
 				
 				var changes = model.getChanges();
-				Y.Assert.areSame( 0, Kevlar.util.Object.objLength( changes ), "The changes hash retrieved should have exactly 0 properties" );
+				Y.Assert.areSame( 0, Kevlar.util.Object.length( changes ), "The changes hash retrieved should have exactly 0 properties" );
 				
 				Y.Assert.isFalse( model.isDirty(), "The model should no longer be marked as 'dirty'" );
 			},
@@ -3542,7 +3542,7 @@ Ext.test.Session.addSuite( {
 				model.set( 'field1', 'newfield1value' );
 				model.save();
 				
-				Y.Assert.areEqual( 1, Kevlar.util.Object.objLength( dataToPersist ), "The dataToPersist should only have one key after field1 has been changed" );
+				Y.Assert.areEqual( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after field1 has been changed" );
 				Y.ObjectAssert.ownsKeys( [ 'field1' ], dataToPersist, "The dataToPersist should have 'field1'" );
 				
 				
@@ -3550,7 +3550,7 @@ Ext.test.Session.addSuite( {
 				model.set( 'field2', 'newfield2value' );
 				model.save();
 				
-				Y.Assert.areEqual( 1, Kevlar.util.Object.objLength( dataToPersist ), "The dataToPersist should only have one key after field2 has been changed" );
+				Y.Assert.areEqual( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after field2 has been changed" );
 				Y.ObjectAssert.ownsKeys( [ 'field2' ], dataToPersist, "The dataToPersist should have 'field2'" );
 			}
 		}
@@ -3890,7 +3890,7 @@ Ext.test.Session.addSuite( {
 			
 			"objLength() should return 0 for an empty object" : function() {
 				var obj = {};
-				Y.Assert.areSame( 0, Kevlar.util.Object.objLength( obj ) );
+				Y.Assert.areSame( 0, Kevlar.util.Object.length( obj ) );
 			},
 			
 			"objLength() should return 0 for an empty object, even if the object has prototype properties" : function() {
@@ -3898,7 +3898,7 @@ Ext.test.Session.addSuite( {
 				MyClass.prototype.prop = "prototype property";
 				
 				var myInstance = new MyClass();
-				Y.Assert.areSame( 0, Kevlar.util.Object.objLength( myInstance ) );
+				Y.Assert.areSame( 0, Kevlar.util.Object.length( myInstance ) );
 			},
 			
 			"objLength() should return the number of owned properties in the object" : function() {
@@ -3906,7 +3906,7 @@ Ext.test.Session.addSuite( {
 					prop1 : "1",
 					prop2 : "2"
 				};
-				Y.Assert.areSame( 2, Kevlar.util.Object.objLength( obj ) );
+				Y.Assert.areSame( 2, Kevlar.util.Object.length( obj ) );
 			},
 			
 			"objLength() should return the number of owned properties in the object, even if they are undefined or falsy" : function() {
@@ -3917,7 +3917,7 @@ Ext.test.Session.addSuite( {
 					prop4 : 0,
 					prop5 : ""
 				};
-				Y.Assert.areSame( 5, Kevlar.util.Object.objLength( obj ) );
+				Y.Assert.areSame( 5, Kevlar.util.Object.length( obj ) );
 			}
 		},
 		

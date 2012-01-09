@@ -276,7 +276,7 @@ Ext.test.Session.addSuite( {
 			
 			"objLength() should return 0 for an empty object" : function() {
 				var obj = {};
-				Y.Assert.areSame( 0, Kevlar.util.Object.objLength( obj ) );
+				Y.Assert.areSame( 0, Kevlar.util.Object.length( obj ) );
 			},
 			
 			"objLength() should return 0 for an empty object, even if the object has prototype properties" : function() {
@@ -284,7 +284,7 @@ Ext.test.Session.addSuite( {
 				MyClass.prototype.prop = "prototype property";
 				
 				var myInstance = new MyClass();
-				Y.Assert.areSame( 0, Kevlar.util.Object.objLength( myInstance ) );
+				Y.Assert.areSame( 0, Kevlar.util.Object.length( myInstance ) );
 			},
 			
 			"objLength() should return the number of owned properties in the object" : function() {
@@ -292,7 +292,7 @@ Ext.test.Session.addSuite( {
 					prop1 : "1",
 					prop2 : "2"
 				};
-				Y.Assert.areSame( 2, Kevlar.util.Object.objLength( obj ) );
+				Y.Assert.areSame( 2, Kevlar.util.Object.length( obj ) );
 			},
 			
 			"objLength() should return the number of owned properties in the object, even if they are undefined or falsy" : function() {
@@ -303,7 +303,7 @@ Ext.test.Session.addSuite( {
 					prop4 : 0,
 					prop5 : ""
 				};
-				Y.Assert.areSame( 5, Kevlar.util.Object.objLength( obj ) );
+				Y.Assert.areSame( 5, Kevlar.util.Object.length( obj ) );
 			}
 		},
 		
