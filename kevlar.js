@@ -1170,6 +1170,12 @@ OBSERVABLE.bind = OBSERVABLE.addListener;
  * @method unbind
  */
 OBSERVABLE.unbind = OBSERVABLE.removeListener;
+/**
+ * Alias of {@link #fireEvent}
+ * 
+ * @method trigger
+ */
+OBSERVABLE.trigger = OBSERVABLE.fireEvent;
 
 /**
  * Removes <b>all</b> added captures from the Observable.
