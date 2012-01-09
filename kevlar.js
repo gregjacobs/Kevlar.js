@@ -2135,6 +2135,38 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
+	 * Loads the Model data from the server, using the configured {@link #proxy}.
+	 * 
+	 * @method load
+	 * @param {Object} [options] An object which may contain the following properties:
+	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
+	 * @param {Function} [options.success] Function to call if the save is successful.
+	 * @param {Function} [options.failure] Function to call if the save fails.
+	 * @param {Function} [options.complete] Function to call when the operation is complete, regardless of a success or fail state.
+	 * @param {Object} [options.scope=window] The object to call the `success`, `failure`, and `complete` callbacks in.
+	 */
+	load : function( options ) {
+		options = options || {};
+		
+		// No proxy, cannot load. Throw an error
+		if( !this.proxy ) {
+			throw new Error( "Kevlar.Model::load() error: Cannot load. No proxy." );
+		}
+		
+		var proxyOptions = {
+			async    : ( typeof options.async === 'undefined' ) ? true : options.async,   // defaults to true
+			success  : options.success  || Kevlar.emptyFn,
+			failure  : options.failure  || Kevlar.emptyFn,
+			complete : options.complete || Kevlar.emptyFn,
+			scope    : options.scope    || window
+		};
+		
+		// Make a request to update the data on the server
+		this.proxy.read( this, proxyOptions );
+	},
+	
+	
+	/**
 	 * Persists the Model data to the backend, using the configured {@link #proxy}. If the request to persist the Model's data is successful,
 	 * the Model's data will be {@link #commit committed}.
 	 * 
@@ -2207,6 +2239,14 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	}
 	
 } );
+
+
+/**
+ * Alias of {@link #load}. See {@link #load} for description and arguments.
+ * 
+ * @method fetch
+ */
+Kevlar.Model.prototype.fetch = Kevlar.Model.prototype.load;
 
 /**
  * @class Kevlar.persistence.RestProxy

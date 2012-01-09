@@ -1032,6 +1032,64 @@ Ext.test.Session.addSuite( {
 		
 		{
 			/*
+			 * Test load()
+			 */
+			name: 'Test load()',
+			
+			setUp : function() {
+				this.TestModel = Kevlar.extend( Kevlar.Model, {
+					addFields: [
+						{ name: 'field1' },
+						{ name: 'field2', defaultValue: "field2's default" },
+						{ name: 'field3', defaultValue: function() { return "field3's default"; } },
+						{ name: 'field4', convert : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
+						{ name: 'field5', convert : function( value, model ) { return value + " " + model.get( 'field2' ); } }
+					]
+				} );
+			},
+		
+			
+			// Special instructions
+			_should : {
+				error : {
+					"load() should throw an error if there is no configured proxy" : "Kevlar.Model::load() error: Cannot load. No proxy."
+				}
+			},
+			
+			
+			"load() should throw an error if there is no configured proxy" : function() {
+				var model = new this.TestModel( {
+					// note: no configured proxy
+				} );
+				model.load();
+				Y.Assert.fail( "load() should have thrown an error with no configured proxy" );
+			},
+			
+			
+			"load() should delegate to its proxy's read() method to retrieve the data" : function() {
+				var readCallCount = 0;
+				var MockProxy = Kevlar.persistence.Proxy.extend( {
+					read : function( model, options ) {
+						readCallCount++;
+					}
+				} );
+				
+				var MyModel = this.TestModel.extend( {
+					proxy : new MockProxy()
+				} );
+				
+				var model = new MyModel();
+				
+				// Run the load() method to delegate 
+				model.load();
+				
+				Y.Assert.areSame( 1, readCallCount, "The proxy's read() method should have been called exactly once" );
+			}
+		},
+		
+		
+		{
+			/*
 			 * Test save()
 			 */
 			name: 'Test save()',
@@ -1069,7 +1127,7 @@ Ext.test.Session.addSuite( {
 			"save() should delegate to its proxy's update() method to persist changes" : function() {
 				var updateCallCount = 0;
 				var MockProxy = Kevlar.persistence.Proxy.extend( {
-					update : function( data, options ) {
+					update : function( model, options ) {
 						updateCallCount++;
 					}
 				} );

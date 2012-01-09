@@ -1,4 +1,4 @@
-/*global window, Ext, Y, Kevlar */
+/*global window, Ext, Y, JsMockito, Kevlar */
 Ext.test.Session.addSuite( 'Kevlar.persistence', {
                                                  
 	name: 'Kevlar.persistence.RestProxy',
@@ -6,6 +6,36 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 	
 	items : [
 	
+		{
+			/*
+			 * Test load()
+			 */
+
+			name: 'Test load',
+			
+			"load() should populate the model data upon a successful ajax request" : function() {
+				var testData = { field1: 'value1', field2: 'value2' };
+				var ajaxFn = function( options ) { 
+					options.success( testData );
+				};
+				var TestProxy = Kevlar.persistence.RestProxy.extend( {
+					ajax : ajaxFn
+				} );
+				var proxy = new TestProxy();
+				
+				var mockModel = JsMockito.mock( Kevlar.Model );
+				proxy.read( mockModel );
+				
+				try {
+					JsMockito.verify( mockModel ).set( testData );
+				} catch( e ) {
+					Y.Assert.fail( "The model should have had its data set to the testData" );
+				}
+			}
+		},
+		
+		
+		
 		{
 			/*
 			 * Test update()
@@ -22,11 +52,11 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 			"update() should NOT actually call the ajax method when no fields have been changed" : function() {
 				var ajaxCallCount = 0;
 				var ajaxFn = function() { ajaxCallCount++; };
-				 
-				var MockProxy = Kevlar.persistence.RestProxy.extend( {
+				
+				var TestProxy = Kevlar.persistence.RestProxy.extend( {
 					ajax : ajaxFn
 				} );
-				var proxy = new MockProxy();
+				var proxy = new TestProxy();
 				
 				var model = new this.MockModel();
 				
@@ -40,10 +70,10 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				var ajaxCallCount = 0;
 				var ajaxFn = function() { ajaxCallCount++; };
 				 
-				var MockProxy = Kevlar.persistence.RestProxy.extend( {
+				var TestProxy = Kevlar.persistence.RestProxy.extend( {
 					ajax : ajaxFn
 				} );
-				var proxy = new MockProxy();
+				var proxy = new TestProxy();
 				
 				var model = new this.MockModel( { id : 1 } );
 				
@@ -56,12 +86,12 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 			
 			
 			"The 'success' callback provided to save() should be called if no fields have been changed, and the proxy's update() method does not need to be called" : function() {
-				var MockProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
+				var TestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 					supportsIncrementalUpdates : function() { return true; }
 				} );
 				
 				var MyModel = this.TestModel.extend( {
-					proxy : new MockProxy()
+					proxy : new TestProxy()
 				} );
 				
 				var model = new MyModel();
@@ -83,14 +113,14 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 			
 			"save() should provide the full set of data if the proxy does not support incremental updates" : function() {
 				var dataToPersist;
-				var MockProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
+				var TestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 					update : function( data, options ) {
 						dataToPersist = data;
 					},
 					supportsIncrementalUpdates : function() { return false; }
 				} );
 				var MyModel = this.TestModel.extend( {
-					proxy : new MockProxy()
+					proxy : new TestProxy()
 				} );
 				
 				var model = new MyModel();
@@ -109,14 +139,14 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 			
 			"save() should provide only the changed data if the proxy does in fact support incremental updates" : function() {
 				var dataToPersist;
-				var MockProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
+				var TestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 					update : function( data, options ) {
 						dataToPersist = data;
 					},
 					supportsIncrementalUpdates : function() { return true; }
 				} );
 				var MyModel = this.TestModel.extend( {
-					proxy : new MockProxy()
+					proxy : new TestProxy()
 				} );
 				
 				var model = new MyModel();
@@ -139,7 +169,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 			
 			"save() should provide only 'persist' fields out of all of its data to the proxy's update() method when the proxy does not support incremental updates" : function() {
 				var dataToPersist;
-				var MockProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
+				var TestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 					update : function( data, options ) {
 						dataToPersist = data;
 					},
@@ -154,7 +184,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 						{ name: 'field4', convert : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
 						{ name: 'field5', convert : function( value, model ) { return value + " " + model.get( 'field2' ); }, persist: false }   // not persisted
 					],
-					proxy : new MockProxy()
+					proxy : new TestProxy()
 				} );
 				var model = new TestModel();
 				
@@ -171,7 +201,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 			
 			"save() should provide only 'persist' fields of the changed fields to the proxy's update() method when the proxy supports incremental updates" : function() {
 				var dataToPersist;
-				var MockProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
+				var TestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 					update : function( data, options ) {
 						dataToPersist = data;
 					},
@@ -186,7 +216,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 						{ name: 'field4', convert : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
 						{ name: 'field5', convert : function( value, model ) { return value + " " + model.get( 'field2' ); }, persist: false }   // not persisted
 					],
-					proxy : new MockProxy()
+					proxy : new TestProxy()
 				} );
 				var model = new TestModel();
 				
@@ -206,7 +236,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 			
 			"save() should NOT call its proxy's update() method when only fields that are not to be persisted have been changed" : function() {
 				var updateCallCount = 0;
-				var MockProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
+				var TestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 					update : function( data, options ) {
 						updateCallCount++;
 					},
@@ -218,7 +248,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 						{ name: 'field1' },
 						{ name: 'field2', persist: false }
 					],
-					proxy : new MockProxy()
+					proxy : new TestProxy()
 				} );
 				
 				var model = new TestModel( {
@@ -239,7 +269,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 			/*
 			"save() should in fact call its proxy's update() method when a field that is not to be persisted has changed, but a convert field uses that field and is persisted" : function() {
 				var updateCallCount = 0;
-				var MockProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
+				var TestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 					update : function( data, options ) {
 						updateCallCount++;
 					},
@@ -251,7 +281,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 						{ name: 'field1', persist: false },
 						{ name: 'field2', convert : function( val, model ) { return model.get( 'field1' ); } }
 					],
-					proxy : new MockProxy()
+					proxy : new TestProxy()
 				} );
 				
 				var model = new TestModel( {
@@ -276,7 +306,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 			
 			"Model attributes that are updated (via set()) while a persistence request is in progress should not be marked as committed when the persistence request completes" : function() {
 				var test = this;
-				var MockProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
+				var TestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 					update : function( data, options ) {
 						// update method just calls 'success' callback in 50ms
 						window.setTimeout( function() {
@@ -287,7 +317,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				} );
 				
 				var MyModel = this.TestModel.extend( {
-					proxy : new MockProxy()
+					proxy : new TestProxy()
 				} );
 				
 				var model = new MyModel();
@@ -316,7 +346,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				model.set( 'field1', "newValue1" );
 				// note: not setting field2 here
 				
-				// Wait for the setTimeout in the MockProxy
+				// Wait for the setTimeout in the TestProxy
 				test.wait( 100 );
 			},
 			
@@ -324,7 +354,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 			
 			"Model attributes that have been persisted should not be persisted again if they haven't changed since the last persist" : function() {
 				var dataToPersist;
-				var MockProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
+				var TestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 					update : function( data, options ) {
 						dataToPersist = data;
 						options.success.call( options.scope );
@@ -332,7 +362,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 					supportsIncrementalUpdates : function() { return true; }
 				} );
 				var MyModel = this.TestModel.extend( {
-					proxy : new MockProxy()
+					proxy : new TestProxy()
 				} );
 				
 				var model = new MyModel();
