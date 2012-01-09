@@ -647,50 +647,6 @@ Ext.test.Session.addSuite( {
 			
 		
 		/*
-		 * Test Kevlar.copyTo()
-		 */
-		{
-			name : "Test copyTo()",
-				
-			test_copyTo: function(){
-				var from = {
-					x: 50,
-					y: 100,
-					width: 'auto',
-					height: 200
-				};
-				
-				var o1 = Kevlar.copyTo({}, from, 'x,y');
-				Y.ObjectAssert.hasKeys(o1, {
-					x: 50,
-					y: 100
-				}, 'Test simple copy with string');
-				
-				var o2 = Kevlar.copyTo({}, from, '');
-				Y.Assert.isUndefined(o2.x, 'Test with empty string as properties');
-				Y.Assert.isUndefined(o2.y, 'Test with empty string as properties');
-				Y.Assert.isUndefined(o2.width, 'Test with empty string as properties');
-				Y.Assert.isUndefined(o2.height, 'Test with empty string as properties');
-				
-				var o3 = {};
-				Kevlar.copyTo(o3, from, 'width');
-				Y.ObjectAssert.hasKeys(o3, {
-					width: 'auto'
-				}, 'Test copy ensuring that the original reference is changed');
-				
-				var o4 = Kevlar.copyTo({
-					x: 1
-				}, from, ['x', 'y']);
-				Y.ObjectAssert.hasKeys(o4, {
-					x: 50,
-					y: 100
-				}, 'Test with array as properties, also with an existing value in the destination object');
-			}
-		},
-			
-			
-		
-		/*
 		 * Test Kevlar.each()
 		 */
 		{
@@ -763,28 +719,6 @@ Ext.test.Session.addSuite( {
 				Y.Assert.areEqual(30, sum, 'Test scope argument #2');
 			}
 		},
-			
-			
-		
-		/*
-		 * Test Kevlar.escapeRe()
-		 */
-		{
-			name : "Test escapeRe()",
-			
-			
-			/*
-			 * Test Kevlar.escapeRe()
-			 */
-			test_escapeRe: function(){
-				Y.Assert.areEqual('\\-', Kevlar.escapeRe('-'), 'Test with single char');
-				Y.Assert.areEqual('\\*\\.', Kevlar.escapeRe('*.'), 'Test with multiple characters next to each other');
-				Y.Assert.areEqual('foo', Kevlar.escapeRe('foo'), 'Test with no escapeable chars');
-				Y.Assert.areEqual('\\{baz\\}', Kevlar.escapeRe('{baz}'), 'Test with mixed set');
-				Y.Assert.areEqual('\\-\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\/\\\\', Kevlar.escapeRe('-.*+?^${}()|[]/\\'), 'Test with every character');
-			}
-		},
-			
 			
 		
 		/*

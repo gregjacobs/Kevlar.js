@@ -19,26 +19,12 @@
  * @class Kevlar
  * @singleton
  * 
- * Main singleton class for the Kevlar library. 
+ * Main singleton class and utility functions for the Kevlar library. 
  */
 var Kevlar = function() {
-	
-	// Set up environment info
-	this.uA             = window.navigator.userAgent.toLowerCase();
-	this.browserVersion = parseFloat(this.uA.match(/.+(?:rv|it|ml|ra|ie)[\/: ]([\d.]+)/)[1]);
-	this.isSafari       = /webkit/.test( this.uA );
-	this.isOpera        = /opera/.test( this.uA );
-	this.isIE           = /msie/.test( this.uA ) && !( /opera/.test( this.uA ) );
-	this.isMoz          = /mozilla/.test( this.uA ) && !( /(compatible|webkit)/.test( this.uA ) );
-	this.isWebKit       = /applewebkit/.test( this.uA );
-	this.isGecko        = /gecko/.test( this.uA ) && ( /khtml/.test( this.uA ) === false );
-	this.isKHTML        = /khtml/.test( this.uA );
-	this.isMobileSafari = !!this.uA.match( /apple.*mobile.*safari/ );
-	
-	this.isMac          = /mac/.test( this.uA );
-	this.isWindows      = /win/.test( this.uA );
-	this.isLinux        = /linux/.test( this.uA );
-	this.isUnix         = /x11/.test( this.uA );
+	// Find out if we're on IE
+	var uA = window.navigator.userAgent.toLowerCase();
+	this.isIE = /msie/.test( uA ) && !( /opera/.test( uA ) );
 };
 
 
@@ -137,122 +123,86 @@ Kevlar.prototype = {
 	
 	
 	/**
-	 * Copies a set of named properties fom the source object to the destination object.
-	 * <p>example:<pre><code>
-ImageComponent = Kevlar.extend(ui.Component, {
-	initComponent: function() {
-		MyComponent.superclass.initComponent.apply(this, arguments);
-		this.initialBox = Kevlar.copyTo({}, this.initialConfig, 'x,y,width,height');
-	}
-});
-	 * </code></pre>
-	 * 
-	 * @method copyTo
-	 * @param {Object} dest The destination object.
-	 * @param {Object} source The source object.
-	 * @param {Array/String} names Either an Array of property names, or a comma-delimited list
-	 * of property names to copy.
-	 * @return {Object} The modified object.
-	*/
-	copyTo : function( dest, source, names ) {
-		if( typeof names == 'string' ) {
-			names = names.split(/[,;\s]/);
-		}
-		Kevlar.each( names, function( name ) {
-			if( source.hasOwnProperty( name ) ) {
-				dest[ name ] = source[ name ];
-			}
-		}, this );
-		return dest;
-	},
-	
-	
-	/**
 	 * <p>Extends one class to create a subclass of it based on a passed literal (`overrides`), and optionally any mixin 
 	 * classes that are desired.</p>
 	 * 
-	 * <p>
-	 *   This method adds a few methods to the class that it creates:
-	 *   <div class="mdetail-params">
-	 *     <ul>
-	 *       <li><b>override</b>
-	 *         <div class="sub-desc">Method that can be used to override members of the class with a passed object literal.</div>
-	 *       </li>
-	 *       <li><b>extend</b>
-	 *         <div class="sub-desc">Method that can be used to extend the class, without calling Kevlar.extend(). Accepts the 2nd and 3rd arguments to this method (Kevlar.extend).</div>
-	 *       </li>
-	 *       <li><b>hasMixin</b>
-	 *         <div class="sub-desc">
-	 *           Method that can be used to find out if the class (or any of its superclasses) implement a given mixin. Accepts one argument: the class (constructor function) of the mixin. 
-	 *           Note that it is preferable to check if a given object is an instance of another class or has a mixin by using the {@link Kevlar#isInstanceOf} method. This hasMixin() method will just
-	 *           determine if the class has a given mixin, and not if it is an instance of a superclass, or even an instance of itself.
-	 *         </div>
-	 *       </li>
-	 *     </ul>
-	 *   </div>
-	 * </p>
+	 * This method adds a few methods to the class that it creates:
+	 * <div class="mdetail-params">
+	 *   <ul>
+	 *     <li><b>override</b>
+	 *       <div class="sub-desc">Method that can be used to override members of the class with a passed object literal.</div>
+	 *     </li>
+	 *     <li><b>extend</b>
+	 *       <div class="sub-desc">Method that can be used to extend the class, without calling Kevlar.extend(). Accepts the 2nd and 3rd arguments to this method (Kevlar.extend).</div>
+	 *     </li>
+	 *     <li><b>hasMixin</b>
+	 *       <div class="sub-desc">
+	 *         Method that can be used to find out if the class (or any of its superclasses) implement a given mixin. Accepts one argument: the class (constructor function) of the mixin. 
+	 *         Note that it is preferable to check if a given object is an instance of another class or has a mixin by using the {@link Kevlar#isInstanceOf} method. This hasMixin() method will just
+	 *         determine if the class has a given mixin, and not if it is an instance of a superclass, or even an instance of itself.
+	 *       </div>
+	 *     </li>
+	 *   </ul>
+	 * </div>
 	 * 
 	 * For example, to create a subclass of Kevlar.util.Observable, which will provide Observable events for the class:
-	 * <pre><code>
-MyComponent = Kevlar.extend( Kevlar.util.Observable, {
-	
-	constructor : function( config ) {
-		// apply the properties of the config to the object
-		Kevlar.apply( this, config );
-		
-		// Call superclass constructor
-		MyComponent.superclass.constructor.call( this );
-		
-		// Your postprocessing here
-	},
-	
-	// extension of another method (assuming Observable had this method)
-	someMethod : function() {
-		// some preprocessing, if needed
-	
-		MyComponent.superclass.someMethod.apply( this, arguments );  // send all arguments to superclass method
-		
-		// some post processing, if needed
-	},
-
-	// a new method for this subclass (not an extended method)
-	yourMethod: function() {
-		// etc.
-	}
-} );
-</code></pre>
+	 *     MyComponent = Kevlar.extend( Kevlar.util.Observable, {
+	 *         
+	 *         constructor : function( config ) {
+	 *             // apply the properties of the config to the object
+	 *             Kevlar.apply( this, config );
+	 *             
+	 *             // Call superclass constructor
+	 *             MyComponent.superclass.constructor.call( this );
+	 *             
+	 *             // Your postprocessing here
+	 *         },
+	 *     
+	 *         // extension of another method (assuming Observable had this method)
+	 *         someMethod : function() {
+	 *             // some preprocessing, if needed
+	 *         
+	 *             MyComponent.superclass.someMethod.apply( this, arguments );  // send all arguments to superclass method
+	 *             
+	 *             // some post processing, if needed
+	 *         },
+	 *     
+	 *         // a new method for this subclass (not an extended method)
+	 *         yourMethod: function() {
+	 *             // etc.
+	 *         }
+	 *     } );
 	 *
 	 * This is an example of creating a class with a mixin called MyMixin:
-	 * <pre><code>
-MyComponent = Kevlar.extend( Kevlar.util.Observable, [ MyMixin ], {
-	
-	constructor : function( config ) {
-		// apply the properties of the config to the object
-		Kevlar.apply( this, config );
-		
-		// Call superclass constructor
-		MyComponent.superclass.constructor.call( this );
-		
-		// Call the mixin's constructor
-		MyMixin.constructor.call( this );
-		
-		// Your postprocessing here
-	},
-	
-	
-	// properties/methods of the mixin will be added automatically, if they don't exist already on the class
-	
-	
-	// method that overrides or extends a mixin's method
-	mixinMethod : function() {
-		// call the mixin's method, if desired
-		MyMixin.prototype.mixinMethod.call( this );
-		
-		// post processing
-	}
-	
-} );
-</code></pre>
+	 * 
+	 *     MyComponent = Kevlar.extend( Kevlar.util.Observable, [ MyMixin ], {
+	 *         
+	 *         constructor : function( config ) {
+	 *             // apply the properties of the config to the object
+	 *             Kevlar.apply( this, config );
+	 *             
+	 *             // Call superclass constructor
+	 *             MyComponent.superclass.constructor.call( this );
+	 *             
+	 *             // Call the mixin's constructor
+	 *             MyMixin.constructor.call( this );
+	 *             
+	 *             // Your postprocessing here
+	 *         },
+	 *         
+	 *         
+	 *         // properties/methods of the mixin will be added automatically, if they don't exist already on the class
+	 *         
+	 *         
+	 *         // method that overrides or extends a mixin's method
+	 *         mixinMethod : function() {
+	 *             // call the mixin's method, if desired
+	 *             MyMixin.prototype.mixinMethod.call( this );
+	 *             
+	 *             // post processing
+	 *         }
+	 *         
+	 *     } );
 	 *
 	 * @param {Function} superclass The constructor function of the class being extended.
 	 * @param {Array} mixins (optional) Any mixin classes (constructor functions) that should be mixed into the new subclass
@@ -427,16 +377,17 @@ MyComponent = Kevlar.extend( Kevlar.util.Observable, [ MyMixin ], {
 
 	/**
 	 * Adds a list of functions to the prototype of an existing class, overwriting any existing methods with the same name.
-	 * Usage:<pre><code>
-Kevlar.override(MyClass, {
-	newMethod1: function(){
-		// etc.
-	},
-	newMethod2: function(foo){
-		// etc.
-	}
-});
-</code></pre>
+	 * Usage:
+	 * 
+	 *     Kevlar.override( MyClass, {
+	 *         newMethod1 : function() {
+	 *             // etc.
+	 *         },
+	 *         newMethod2 : function( foo ) {
+	 *             // etc.
+	 *         }
+	 *     } );
+	 * 
 	 * @param {Object} origclass The class to override
 	 * @param {Object} overrides The list of functions to add to origClass.  This should be specified as an object literal
 	 * containing one or more methods.
@@ -457,12 +408,12 @@ Kevlar.override(MyClass, {
 	/**
 	 * Creates namespaces to be used for scoping variables and classes so that they are not global.
 	 * Specifying the last node of a namespace implicitly creates all other nodes. Usage:
-	 * <pre><code>
-Kevlar.namespace('Company', 'Company.data');
-Kevlar.namespace('Company.data'); // equivalent and preferable to above syntax
-Company.Widget = function() { ... }
-Company.data.CustomStore = function(config) { ... }
-</code></pre>
+	 * 
+	 *     Kevlar.namespace( 'Company', 'Company.data' );
+	 *     Kevlar.namespace( 'Company.data' ); // equivalent and preferable to above syntax
+	 *     Company.Widget = function() { ... }
+	 *     Company.data.CustomStore = function(config) { ... }
+	 * 
 	 * @param {String} namespace1
 	 * @param {String} namespace2
 	 * @param {String} etc...
@@ -698,20 +649,6 @@ Company.data.CustomStore = function(config) { ... }
 	 */
 	isEmpty : function( v, allowBlank ) {
 		return v === null || v === undefined || ((Kevlar.isArray( v ) && !v.length)) || (!allowBlank ? v === '' : false);
-	},
-	
-	
-	
-	// --------------------------------
-	
-
-	/**
-	 * Escapes the passed string for use in a regular expression.
-	 * @param {String} str
-	 * @return {String}
-	 */
-	escapeRe : function(s) {
-		return s.replace(/([\-.*+?\^$\{\}\(\)|\[\]\/\\])/g, "\\$1");
 	}
 	
 };
