@@ -1,0 +1,14 @@
+{
+	projectName: "Kevlar Tests",
+	licenseText: "Kevlar JS Library\nCopyright(c) 2011 Gregory Jacobs.\nMIT Licensed. http://www.opensource.org/licenses/mit-license.php",
+	pkgs: [
+		{
+			name: "Kevlar JS Tests",
+			filename: "kevlarTests.js",
+			includes: [
+				{ file: "Test_Kevlar.js" },
+				{ tree: "./" }
+			]
+		}
+	]
+}

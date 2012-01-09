@@ -1,0 +1,20 @@
+{
+	projectName: "Kevlar",
+	licenseText: "Kevlar JS Library\nCopyright(c) 2011 Gregory Jacobs.\nMIT Licensed. http://www.opensource.org/licenses/mit-license.php",
+	pkgs: [
+		{
+			name: "Kevlar JS",
+			filename: "kevlar.js",
+			includes: [
+				{ file: "js/Kevlar.js" },
+				{ file: "js/namespaces.js" },
+				
+				{ file: "js/util/Observable.js" },
+				
+				{ file: "js/persistence/Proxy.js" },
+				
+				{ tree: "js/" }
+			]
+		}
+	]
+}
