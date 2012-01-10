@@ -1657,6 +1657,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @cfg {Kevlar.persistence.Proxy} proxy
 	 * The proxy to use (if any) to persist the data to the server.
 	 */
+	proxy : null,
 	
 	/**
 	 * @cfg {String[]/Object[]} addFields
@@ -1736,7 +1737,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		// If this class has a proxy definition that is an object literal, instantiate it *onto the prototype*
 		// (so one Proxy instance can be shared for every model)
-		if( typeof this.proxy === 'object' && !( this.proxy instanceof Kevlar.persistence.Proxy ) ) {
+		if( this.proxy && typeof this.proxy === 'object' && !( this.proxy instanceof Kevlar.persistence.Proxy ) ) {
 			this.constructor.prototype.proxy = Kevlar.persistence.Proxy.create( this.proxy );
 		}
 		
@@ -2148,7 +2149,10 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Sets the {@link #proxy} to use to persist the Model's data.
+	 * Sets the {@link #proxy} to use to persist the Model's data. Note that this is set
+	 * to the *prototype* of the Model, for use with all instances of the Model. Because
+	 * of this, it is usually best to define the {@link #proxy} on the prototype of a Model
+	 * subclass.
 	 * 
 	 * @method setProxy
 	 * @param {Kevlar.persistence.Proxy} proxy
@@ -2156,6 +2160,18 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	setProxy : function( proxy ) {
 		// Proxy's get placed on the prototype, so they are shared between instances
 		this.constructor.prototype.proxy = proxy;
+	},
+	
+	
+	/**
+	 * Gets the {@link #proxy} that is currently configured for this Model. Note that
+	 * the same proxy instance is shared between all instances of the model.
+	 * 
+	 * @method getProxy
+	 * @return {Kevlar.persistence.Proxy} The proxy, or null if there is no proxy currently set.
+	 */
+	getProxy : function() {
+		return this.proxy;
 	},
 	
 	

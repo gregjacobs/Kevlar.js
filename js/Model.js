@@ -94,7 +94,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		// If this class has a proxy definition that is an object literal, instantiate it *onto the prototype*
 		// (so one Proxy instance can be shared for every model)
-		if( typeof this.proxy === 'object' && !( this.proxy instanceof Kevlar.persistence.Proxy ) ) {
+		if( this.proxy && typeof this.proxy === 'object' && !( this.proxy instanceof Kevlar.persistence.Proxy ) ) {
 			this.constructor.prototype.proxy = Kevlar.persistence.Proxy.create( this.proxy );
 		}
 		
