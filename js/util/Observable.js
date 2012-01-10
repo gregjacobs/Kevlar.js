@@ -261,6 +261,8 @@ myGridPanel.on({
             }
             ce.addListener(fn, scope, ISOBJECT(o) ? o : {});
         }
+        
+        return this;
     },
 
     /**
@@ -274,6 +276,8 @@ myGridPanel.on({
         if ( ISOBJECT( ce ) ) {
             ce.removeListener( fn, scope );
         }
+        
+        return this;
     },
 	
 
