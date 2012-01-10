@@ -1996,6 +1996,8 @@ Ext.test.Session.addSuite( {
 			},
 			
 			
+			// ------------------------
+			
 			
 			"for compatibility with Backbone's Collection, set() should set the id property to the Model object itself with the idField is changed" : function() {
 				var TestModel = Kevlar.Model.extend( {

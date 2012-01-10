@@ -125,7 +125,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		
 		// Create a "client id" to maintain compatibility with Backbone's Collection
-		this.cid = ++Kevlar.Model.currentCid;
+		this.cid = 'c' + (++Kevlar.Model.currentCid);
 		
 		// Default the data to an empty object
 		data = data || {};
