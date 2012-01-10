@@ -593,6 +593,45 @@ Ext.test.Session.addSuite( {
 			},
 			
 			
+			// ------------------------
+			
+			
+			"set() should not re-set a field to the same value from the initial value provided to the constructor" : function() {
+				var changeCount = 0;
+				
+				var TestModel = Kevlar.Model.extend( {
+					addFields: [ 'field1' ]
+				} );
+				
+				var model = new TestModel( { field1: 'value1' } );
+				model.addListener( 'change:field1', function() { changeCount++; } );
+				
+				// Set to the same value
+				model.set( 'field1', 'value1' );
+				Y.Assert.areSame( 0, changeCount, "The field should not have been registered as 'changed' when providing the same value" );
+			},
+			
+			
+			"set() should not re-set a field to the same value" : function() {
+				var changeCount = 0;
+				
+				var TestModel = Kevlar.Model.extend( {
+					addFields: [ 'field1' ]
+				} );
+				
+				var model = new TestModel();
+				model.addListener( 'change:field1', function() { changeCount++; } );
+				
+				// Set for the first time
+				model.set( 'field1', 'value1' );
+				Y.Assert.areSame( 1, changeCount, "Initially, the field should have been changed exactly once." );
+				
+				// Set the second time to the same value
+				model.set( 'field1', 'value1' );
+				Y.Assert.areSame( 1, changeCount, "The field should not have been registered as 'changed' the second time. Should still only have '1 change'." );
+			},
+			
+			
 			// ------------------------------
 			
 			
@@ -647,45 +686,6 @@ Ext.test.Session.addSuite( {
 				model.set( 'field2', "newfield2value" );
 				
 				Y.Assert.areSame( "newfield2value field1val", model.get( 'field2' ), "field2 should be the concatenation of its own value, a space, and field2" );
-			},
-			
-			
-			// ------------------------
-			
-			
-			"set() should not re-set a field to the same value from the initial value provided to the constructor" : function() {
-				var changeCount = 0;
-				
-				var TestModel = Kevlar.Model.extend( {
-					addFields: [ 'field1' ]
-				} );
-				
-				var model = new TestModel( { field1: 'value1' } );
-				model.addListener( 'change:field1', function() { changeCount++; } );
-				
-				// Set to the same value
-				model.set( 'field1', 'value1' );
-				Y.Assert.areSame( 0, changeCount, "The field should not have been registered as 'changed' when providing the same value" );
-			},
-			
-			
-			"set() should not re-set a field to the same value" : function() {
-				var changeCount = 0;
-				
-				var TestModel = Kevlar.Model.extend( {
-					addFields: [ 'field1' ]
-				} );
-				
-				var model = new TestModel();
-				model.addListener( 'change:field1', function() { changeCount++; } );
-				
-				// Set for the first time
-				model.set( 'field1', 'value1' );
-				Y.Assert.areSame( 1, changeCount, "Initially, the field should have been changed exactly once." );
-				
-				// Set the second time to the same value
-				model.set( 'field1', 'value1' );
-				Y.Assert.areSame( 1, changeCount, "The field should not have been registered as 'changed' the second time. Should still only have '1 change'." );
 			},
 			
 			
