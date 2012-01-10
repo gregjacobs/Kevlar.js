@@ -126,7 +126,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 					
 					setUp : function() {						
 						this.mockModel = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( this.mockModel ).toJSON().thenReturn( { field1: 'value1', field2: 'value2' } );
+						JsMockito.when( this.mockModel ).getData().thenReturn( { field1: 'value1', field2: 'value2' } );
 						JsMockito.when( this.mockModel ).getChanges().thenReturn( { field2: 'value2' } );  // 'field2' is the "change"
 						JsMockito.when( this.mockModel ).getFields().thenReturn( { 
 							field1: new Kevlar.Field( { name : 'field1' } ), 
@@ -181,7 +181,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 					
 					setUp : function() {
 						this.mockModel = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( this.mockModel ).toJSON().thenReturn( { field1: 'value1', field2: 'value2', field3: 'value3' } );
+						JsMockito.when( this.mockModel ).getData().thenReturn( { field1: 'value1', field2: 'value2', field3: 'value3' } );
 						JsMockito.when( this.mockModel ).getChanges().thenReturn( { field1: 'value1', field2: 'value2' } );  // both fields 1 and 2 are changes, field3 is not
 						JsMockito.when( this.mockModel ).getFields().thenReturn( { 
 							field1: new Kevlar.Field( { name : 'field1', persist: true } ),
@@ -2270,9 +2270,9 @@ Ext.test.Session.addSuite( {
 		
 		{
 			/*
-			 * Test toJSON()
+			 * Test getData()
 			 */
-			name: 'Test toJSON()',
+			name: 'Test getData()',
 	
 	
 			setUp : function() {
@@ -2288,20 +2288,20 @@ Ext.test.Session.addSuite( {
 			},
 			
 			
-			"toJSON() should return a deep copy of the data, so that the returned object may be modified without messing up the Model" : function() {
+			"getData() should return a deep copy of the data, so that the returned object may be modified without messing up the Model" : function() {
 				var testModel = new this.TestModel( {
 					field1: "field1data",
 					field2: { nested: "nestedfield2data" }
 				} );
 				
 				// Retrieve all the data, and modify a field
-				var allData = testModel.toJSON();
+				var allData = testModel.getData();
 				allData.field1 = "newfield1data";
 				allData.field2.nested = "newnestedfield2data";
 				
 				// Make sure that the original field data in the Model was not modified
-				Y.Assert.areSame( "field1data", testModel.get( 'field1' ), "field1 in the testModel should not have been modified. toJSON() not returning a copy of the data?" );
-				Y.Assert.areSame( "nestedfield2data", testModel.get( 'field2' ).nested, "field2 in the testModel should not have been modified. toJSON() not returning a copy of the data?" );
+				Y.Assert.areSame( "field1data", testModel.get( 'field1' ), "field1 in the testModel should not have been modified. getData() not returning a copy of the data?" );
+				Y.Assert.areSame( "nestedfield2data", testModel.get( 'field2' ).nested, "field2 in the testModel should not have been modified. getData() not returning a copy of the data?" );
 			}
 			
 		},

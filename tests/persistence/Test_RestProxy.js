@@ -121,7 +121,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 					
 					setUp : function() {						
 						this.mockModel = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( this.mockModel ).toJSON().thenReturn( { field1: 'value1', field2: 'value2' } );
+						JsMockito.when( this.mockModel ).getData().thenReturn( { field1: 'value1', field2: 'value2' } );
 						JsMockito.when( this.mockModel ).getChanges().thenReturn( { field2: 'value2' } );  // 'field2' is the "change"
 						JsMockito.when( this.mockModel ).getFields().thenReturn( { 
 							field1: new Kevlar.Field( { name : 'field1' } ), 
@@ -176,7 +176,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 					
 					setUp : function() {
 						this.mockModel = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( this.mockModel ).toJSON().thenReturn( { field1: 'value1', field2: 'value2', field3: 'value3' } );
+						JsMockito.when( this.mockModel ).getData().thenReturn( { field1: 'value1', field2: 'value2', field3: 'value3' } );
 						JsMockito.when( this.mockModel ).getChanges().thenReturn( { field1: 'value1', field2: 'value2' } );  // both fields 1 and 2 are changes, field3 is not
 						JsMockito.when( this.mockModel ).getFields().thenReturn( { 
 							field1: new Kevlar.Field( { name : 'field1', persist: true } ),

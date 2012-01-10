@@ -923,6 +923,8 @@ myGridPanel.on({
             }
             ce.addListener(fn, scope, ISOBJECT(o) ? o : {});
         }
+        
+        return this;
     },
 
     /**
@@ -936,6 +938,8 @@ myGridPanel.on({
         if ( ISOBJECT( ce ) ) {
             ce.removeListener( fn, scope );
         }
+        
+        return this;
     },
 	
 
@@ -2071,10 +2075,10 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * Retrieves the values for all of the fields in the Model. Note: returns a copy of the data so that the object
 	 * retrieved from this method may be modified.
 	 * 
-	 * @methods toJSON
+	 * @methods getData
 	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.Field Field} values.
 	 */
-	toJSON : function() {
+	getData : function() {
 		return Kevlar.util.Object.clone( this.data );
 	},
 	
@@ -2192,7 +2196,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			
 			// Loop over the persisted snapshot data, and see if any Model attributes were updated while the persistence request was taking place.
 			// If so, those fields should be marked as modified, with the snapshot data used as the "originals". See the note above where persistedData was set. 
-			var currentData = this.toJSON();
+			var currentData = this.getData();
 			for( var fieldName in persistedData ) {
 				if( persistedData.hasOwnProperty( fieldName ) && !Kevlar.util.Object.isEqual( persistedData[ fieldName ], currentData[ fieldName ] ) ) {
 					this.modifiedData[ fieldName ] = persistedData[ fieldName ];   // set the last persisted value on to the "modifiedData" object. Note: "modifiedData" holds *original* values, so that the "data" object can hold the latest values. It is how we know a field is modified as well.
@@ -2378,7 +2382,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		options = options || {};
 		
 		var changedData = model.getChanges(),
-		    allData = model.toJSON();   // note: returns a copy of the data so that we can modify the object's properties
+		    allData = model.getData();   // note: returns a copy of the data so that we can modify the object's properties
 		
 		// Set the data to persist, based on if the proxy is set to do incremental updates or not
 		var dataToPersist;

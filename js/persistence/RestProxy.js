@@ -126,7 +126,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		options = options || {};
 		
 		var changedData = model.getChanges(),
-		    allData = model.toJSON();   // note: returns a copy of the data so that we can modify the object's properties
+		    allData = model.getData();   // note: returns a copy of the data so that we can modify the object's properties
 		
 		// Set the data to persist, based on if the proxy is set to do incremental updates or not
 		var dataToPersist;
