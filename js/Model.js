@@ -263,17 +263,17 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Retrieves the value for the field given by `key`.
+	 * Retrieves the value for the field given by `fieldName`.
 	 * 
 	 * @method get
 	 * @param {String} fieldName The name of the Field whose value to retieve.
-	 * @return {Mixed} The value of the field given by `key`, or undefined if the key was not found. 
+	 * @return {Mixed} The value of the field given by `fieldName`, or undefined if the value has never been set.  
 	 */
-	get : function( key ) {
-		if( !( key in this.data ) ) {
-			throw new Error( "Kevlar.Model::get() error: provided key '" + key + "' was not found in the Model." );
+	get : function( fieldName ) {
+		if( !( fieldName in this.fields ) ) {
+			throw new Error( "Kevlar.Model::get() error: provided field '" + fieldName + "' was not found in the Model." );
 		}
-		return this.data[ key ];
+		return this.data[ fieldName ];
 	},
 	
 	
@@ -330,30 +330,33 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 				throw new Error( "Kevlar.Model.set(): A field with the fieldName '" + fieldName + "' was not found." );
 			}
 			
-			// Get the current value of the field
-			var currentValue = this.data[ fieldName ];
-			
 			// If the field has a 'convert' function defined, call it to convert the data
 			if( typeof field.convert === 'function' ) {
 				value = field.convert.call( field.scope || window, value, this );  // provided the value, and the Model instance
 			}
 			
-			// Store the field's *current* value (not the new value) into the "modifiedData" fields hash.
-			// This should only happen the first time the field is set, so that the field can be rolled back even if there are multiple
-			// set() calls to change it.
-			if( !( fieldName in this.modifiedData ) ) {
-				this.modifiedData[ fieldName ] = currentValue;
-			}
-			this.data[ fieldName ] = value;
-			this.dirty = true;
+			// Get the current value of the field
+			var currentValue = this.data[ fieldName ];
 			
-			// If the field is the "idField", set the `id` property on the model for compatibility with Backbone's Collection
-			if( fieldName === this.idField ) {
-				this.id = value;
+			// Only change if there is no current value for the field, or if new value is different from the current
+			if( !( fieldName in this.data ) || !Kevlar.util.Object.isEqual( currentValue, value ) ) {
+				// Store the field's *current* value (not the new value) into the "modifiedData" fields hash.
+				// This should only happen the first time the field is set, so that the field can be rolled back even if there are multiple
+				// set() calls to change it.
+				if( !( fieldName in this.modifiedData ) ) {
+					this.modifiedData[ fieldName ] = currentValue;
+				}
+				this.data[ fieldName ] = value;
+				this.dirty = true;
+				
+				// If the field is the "idField", set the `id` property on the model for compatibility with Backbone's Collection
+				if( fieldName === this.idField ) {
+					this.id = value;
+				}
+				
+				this.fireEvent( 'change:' + fieldName, this, value );
+				this.fireEvent( 'change', this, fieldName, value );
 			}
-			
-			this.fireEvent( 'change:' + fieldName, this, value );
-			this.fireEvent( 'change', this, fieldName, value );
 		}
 	},
 	

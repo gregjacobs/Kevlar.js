@@ -1910,6 +1910,45 @@ Ext.test.Session.addSuite( {
 			// ------------------------
 			
 			
+			"set() should not re-set a field to the same value from the initial value provided to the constructor" : function() {
+				var changeCount = 0;
+				
+				var TestModel = Kevlar.Model.extend( {
+					addFields: [ 'field1' ]
+				} );
+				
+				var model = new TestModel( { field1: 'value1' } );
+				model.addListener( 'change:field1', function() { changeCount++; } );
+				
+				// Set to the same value
+				model.set( 'field1', 'value1' );
+				Y.Assert.areSame( 0, changeCount, "The field should not have been registered as 'changed' when providing the same value" );
+			},
+			
+			
+			"set() should not re-set a field to the same value" : function() {
+				var changeCount = 0;
+				
+				var TestModel = Kevlar.Model.extend( {
+					addFields: [ 'field1' ]
+				} );
+				
+				var model = new TestModel();
+				model.addListener( 'change:field1', function() { changeCount++; } );
+				
+				// Set for the first time
+				model.set( 'field1', 'value1' );
+				Y.Assert.areSame( 1, changeCount, "Initially, the field should have been changed exactly once." );
+				
+				// Set the second time to the same value
+				model.set( 'field1', 'value1' );
+				Y.Assert.areSame( 1, changeCount, "The field should not have been registered as 'changed' the second time. Should still only have '1 change'." );
+			},
+			
+			
+			// ------------------------
+			
+			
 			"for compatibility with Backbone's Collection, set() should set the id property to the Model object itself with the idField is changed" : function() {
 				var TestModel = Kevlar.Model.extend( {
 					addFields: [
@@ -2775,6 +2814,32 @@ Ext.test.Session.addSuite( {
 				Y.Assert.isFalse( isEqual( "0", 0 ), "Error: '0' === 0" );
 				Y.Assert.isFalse( isEqual( 1, "1" ), "Error: 1 === '1'" );
 				Y.Assert.isFalse( isEqual( "1", 1 ), "Error: '1' === 1" );
+				
+				Y.Assert.isFalse( isEqual( {}, null ), "Error: {} === null" );
+				Y.Assert.isFalse( isEqual( {}, undefined ), "Error: {} === undefined" );
+				Y.Assert.isFalse( isEqual( {}, true ), "Error: {} === true" );
+				Y.Assert.isFalse( isEqual( {}, false ), "Error: {} === false" );
+				Y.Assert.isFalse( isEqual( {}, 0 ), "Error: {} === 0" );
+				Y.Assert.isFalse( isEqual( {}, 1 ), "Error: {} === 1" );
+				Y.Assert.isFalse( isEqual( {}, "" ), "Error: {} === ''" );
+				Y.Assert.isFalse( isEqual( {}, "test" ), "Error: {} === 'test'" );
+				Y.Assert.isTrue( isEqual( {}, {} ), "Error: {} !== {}" );
+				Y.Assert.isFalse( isEqual( {}, { a : 1 } ), "Error: {} === { a : 1 }" );
+				Y.Assert.isFalse( isEqual( {}, [] ), "Error: {} === []" );
+				Y.Assert.isFalse( isEqual( {}, [ 1,2,3 ] ), "Error: {} === [ 1,2,3 ]" );
+				
+				Y.Assert.isFalse( isEqual( [], null ), "Error: [] === null" );
+				Y.Assert.isFalse( isEqual( [], undefined ), "Error: [] === undefined" );
+				Y.Assert.isFalse( isEqual( [], true ), "Error: [] === true" );
+				Y.Assert.isFalse( isEqual( [], false ), "Error: [] === false" );
+				Y.Assert.isFalse( isEqual( [], 0 ), "Error: [] === 0" );
+				Y.Assert.isFalse( isEqual( [], 1 ), "Error: [] === 1" );
+				Y.Assert.isFalse( isEqual( [], "" ), "Error: [] === ''" );
+				Y.Assert.isFalse( isEqual( [], "test" ), "Error: [] === 'test'" );
+				Y.Assert.isFalse( isEqual( [], {} ), "Error: [] === {}" );
+				Y.Assert.isFalse( isEqual( [], { a : 1 } ), "Error: [] === { a : 1 }" );
+				Y.Assert.isTrue( isEqual( [], [] ), "Error: [] !== []" );
+				Y.Assert.isFalse( isEqual( [], [ 1,2,3 ] ), "Error: [] === [ 1,2,3 ]" );
 			},
 			
 			
