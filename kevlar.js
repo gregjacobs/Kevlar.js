@@ -2246,6 +2246,15 @@ Kevlar.Model.prototype.fetch = Kevlar.Model.prototype.load;
 
 
 /**
+ * Alias of {@link #getData}, which is currently just for compatibility with 
+ * Backbone's Collection. Do not use. Use {@link #getData} instead.
+ * 
+ * @method toJSON
+ */
+Kevlar.Model.prototype.toJSON = Kevlar.Model.prototype.getData;
+
+
+/**
  * Static property used to provide a "client id" to models. See {@link #cid}.
  * 
  * @static 
