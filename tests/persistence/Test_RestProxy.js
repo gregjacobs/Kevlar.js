@@ -90,9 +90,9 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 					},
 					
 					
-					"The 'success' and 'complete' callbacks provided to update() should be called if no fields have been changed, and the does not need to do its ajax request" : function() {
-						var ajaxCalls = 0;
-						var ajaxFn = function() { ajaxCalls++; };
+					"The 'success' and 'complete' callbacks provided to update() should be called if no fields have been changed, and it does not need to do its ajax request" : function() {
+						var ajaxCallCount = 0;
+						var ajaxFn = function() { ajaxCallCount++; };
 						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
 							ajax: ajaxFn
 						} );
@@ -109,6 +109,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 							complete : function() { completeCallCount++; }
 						} );
 						
+						Y.Assert.areSame( 0, ajaxCallCount, "The ajax method should not have been called" );
 						Y.Assert.areSame( 1, successCallCount, "The 'success' callback provided update() should have been called even though there are no changes and the proxy didn't need to persist anything" );
 						Y.Assert.areSame( 1, completeCallCount, "The 'complete' callback provided update() should have been called even though there are no changes and the proxy didn't need to persist anything" );
 					}

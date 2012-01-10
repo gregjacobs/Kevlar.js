@@ -95,9 +95,9 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 					},
 					
 					
-					"The 'success' and 'complete' callbacks provided to update() should be called if no fields have been changed, and the does not need to do its ajax request" : function() {
-						var ajaxCalls = 0;
-						var ajaxFn = function() { ajaxCalls++; };
+					"The 'success' and 'complete' callbacks provided to update() should be called if no fields have been changed, and it does not need to do its ajax request" : function() {
+						var ajaxCallCount = 0;
+						var ajaxFn = function() { ajaxCallCount++; };
 						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
 							ajax: ajaxFn
 						} );
@@ -114,6 +114,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 							complete : function() { completeCallCount++; }
 						} );
 						
+						Y.Assert.areSame( 0, ajaxCallCount, "The ajax method should not have been called" );
 						Y.Assert.areSame( 1, successCallCount, "The 'success' callback provided update() should have been called even though there are no changes and the proxy didn't need to persist anything" );
 						Y.Assert.areSame( 1, completeCallCount, "The 'complete' callback provided update() should have been called even though there are no changes and the proxy didn't need to persist anything" );
 					}
@@ -1255,7 +1256,7 @@ Ext.test.Session.addSuite( {
 	
 } );
 
-/*global window, Ext, Y, Kevlar */
+/*global window, Ext, Y, JsMockito, Kevlar */
 Ext.test.Session.addSuite( {
                                                  
 	name: 'Kevlar.Model',
@@ -2557,6 +2558,37 @@ Ext.test.Session.addSuite( {
 				
 				Y.Assert.areSame( 1, updateCallCount, "The proxy's update() method should have been called exactly once" );
 			},
+			
+			
+			// ---------------------------------
+			
+			
+			"save should call its 'success' and 'complete' callbacks if the proxy is successful" : function() {
+				var successCallCount = 0,
+				    completeCallCount = 0;
+				    
+				var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
+				mockProxy.update = function( model, options ) {
+					options.success.call( options.scope );
+					options.complete( options.scope );
+				};
+				
+				var Model = Kevlar.Model.extend( {
+					fields : [ 'field1' ],
+					proxy  : mockProxy
+				} );
+				var model = new Model();
+				
+				model.save( {
+					success  : function() { successCallCount++; },
+					complete : function() { completeCallCount++; },
+					scope    : this
+				} );
+				
+				Y.Assert.areSame( 1, successCallCount, "The 'success' function should have been called exactly once" );
+				Y.Assert.areSame( 1, completeCallCount, "The 'complete' function should have been called exactly once" );
+			},
+			
 			
 			
 			// ---------------------------------
