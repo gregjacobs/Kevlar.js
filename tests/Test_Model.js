@@ -864,6 +864,69 @@ Ext.test.Session.addSuite( {
 		
 		{
 			/*
+			 * Test getData()
+			 */
+			name: 'Test getData()',
+	
+	
+			setUp : function() {
+				this.TestModel = Kevlar.extend( Kevlar.Model, {
+					addFields: [
+						{ name: 'field1' },
+						{ name: 'field2', defaultValue: "field2's default" },
+						{ name: 'field3', defaultValue: function() { return "field3's default"; } },
+						{ name: 'field4', convert : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
+						{ name: 'field5', convert : function( value, model ) { return value + " " + model.get( 'field2' ); } }
+					]
+				} );
+			},
+			
+			
+			"getData() should return a deep copy of the data, so that the returned object may be modified without messing up the Model" : function() {
+				var testModel = new this.TestModel( {
+					field1: "field1data",
+					field2: { nested: "nestedfield2data" }
+				} );
+				
+				// Retrieve all the data, and modify a field
+				var allData = testModel.getData();
+				allData.field1 = "newfield1data";
+				allData.field2.nested = "newnestedfield2data";
+				
+				// Make sure that the original field data in the Model was not modified
+				Y.Assert.areSame( "field1data", testModel.get( 'field1' ), "field1 in the testModel should not have been modified. getData() not returning a copy of the data?" );
+				Y.Assert.areSame( "nestedfield2data", testModel.get( 'field2' ).nested, "field2 in the testModel should not have been modified. getData() not returning a copy of the data?" );
+			}
+		},
+		
+		
+		{
+			/*
+			 * Test getPersistedData()
+			 */
+			name : 'Test getPersistedData()',
+			
+			"getPersistedData() should only retrieve the data for the persisted fields (i.e. fields with persist: true)" : function() {
+				var Model = Kevlar.Model.extend( {
+					addFields : [
+						{ name : 'field1', persist: true },
+						{ name : 'field2', persist: false },
+						{ name : 'field3', persist: true },
+						{ name : 'field4', persist: false }
+					]
+				} );
+				
+				var model = new Model();
+				
+				var persistedData = model.getPersistedData();
+				Y.Assert.areSame( 2, Kevlar.util.Object.length( persistedData ), "The persisted data should only have 2 properties left" );
+				Y.ObjectAssert.ownsKeys( [ 'field1', 'field3' ], persistedData, "The persisted data should have 'field1' and 'field3'" );
+			}
+		},
+		
+		
+		{
+			/*
 			 * Test getChanges()
 			 */
 			name: 'Test getChanges()',
@@ -906,40 +969,28 @@ Ext.test.Session.addSuite( {
 		
 		{
 			/*
-			 * Test getData()
+			 * Test getPersistedChanges()
 			 */
-			name: 'Test getData()',
-	
-	
-			setUp : function() {
-				this.TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [
-						{ name: 'field1' },
-						{ name: 'field2', defaultValue: "field2's default" },
-						{ name: 'field3', defaultValue: function() { return "field3's default"; } },
-						{ name: 'field4', convert : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
-						{ name: 'field5', convert : function( value, model ) { return value + " " + model.get( 'field2' ); } }
+			name : 'Test getPersistedChanges()',
+			
+			"getPersistedChanges() should only retrieve the data for the persisted fields (i.e. fields with persist: true) that have been changed" : function() {
+				var Model = Kevlar.Model.extend( {
+					addFields : [
+						{ name : 'field1', persist: true },
+						{ name : 'field2', persist: false },
+						{ name : 'field3', persist: true },
+						{ name : 'field4', persist: false }
 					]
 				} );
-			},
-			
-			
-			"getData() should return a deep copy of the data, so that the returned object may be modified without messing up the Model" : function() {
-				var testModel = new this.TestModel( {
-					field1: "field1data",
-					field2: { nested: "nestedfield2data" }
-				} );
 				
-				// Retrieve all the data, and modify a field
-				var allData = testModel.getData();
-				allData.field1 = "newfield1data";
-				allData.field2.nested = "newnestedfield2data";
+				var model = new Model();
+				model.set( 'field1', 'value1' );
+				model.set( 'field2', 'value2' );
 				
-				// Make sure that the original field data in the Model was not modified
-				Y.Assert.areSame( "field1data", testModel.get( 'field1' ), "field1 in the testModel should not have been modified. getData() not returning a copy of the data?" );
-				Y.Assert.areSame( "nestedfield2data", testModel.get( 'field2' ).nested, "field2 in the testModel should not have been modified. getData() not returning a copy of the data?" );
+				var persistedChanges = model.getPersistedChanges();
+				Y.Assert.areSame( 1, Kevlar.util.Object.length( persistedChanges ), "The persisted changes should only have 1 property" );
+				Y.ObjectAssert.ownsKeys( [ 'field1' ], persistedChanges, "The persisted changes should only have 'field1'" );
 			}
-			
 		},
 		
 		
@@ -1266,7 +1317,7 @@ Ext.test.Session.addSuite( {
 				model.set( 'field1', 'newfield1value' );
 				model.save();
 				
-				Y.Assert.areEqual( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after field1 has been changed" );
+				Y.Assert.areSame( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after field1 has been changed" );
 				Y.ObjectAssert.ownsKeys( [ 'field1' ], dataToPersist, "The dataToPersist should have 'field1'" );
 				
 				
@@ -1274,8 +1325,34 @@ Ext.test.Session.addSuite( {
 				model.set( 'field2', 'newfield2value' );
 				model.save();
 				
-				Y.Assert.areEqual( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after field2 has been changed" );
+				Y.Assert.areSame( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after field2 has been changed" );
 				Y.ObjectAssert.ownsKeys( [ 'field2' ], dataToPersist, "The dataToPersist should have 'field2'" );
+			}
+		},
+		
+		
+		{
+			/*
+			 * Test filterNonPersisted()
+			 */
+			name : "Test filterNonPersisted()",
+			
+			
+			"filterNonPersisted() should remove properties from the data object that relate to fields that are not persisted" : function() {
+				var Model = Kevlar.Model.extend( {
+					addFields : [
+						{ name : 'field1', persist: true },
+						{ name : 'field2', persist: false },
+						{ name : 'field3', persist: true },
+						{ name : 'field4', persist: false }
+					]
+				} );
+				
+				var model = new Model();
+				var filteredData = model.filterNonPersisted( { field1: 'value1', field2: 'value2', field3: 'value3', field4: 'value4' } );
+				
+				Y.Assert.areSame( 2, Kevlar.util.Object.length( filteredData ), "The filtered data should only have 2 properties left" );
+				Y.ObjectAssert.ownsKeys( [ 'field1', 'field3' ], filteredData, "The filtered data should have 'field1' and 'field3'" );
 			}
 		}
 		

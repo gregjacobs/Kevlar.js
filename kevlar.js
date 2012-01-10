@@ -2051,27 +2051,6 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Retrieves all {@link Kevlar.Field Field} values held by the Model whose values have been changed since the last
-	 * {@link #commit} or {@link #rollback}.
-	 * 
-	 * @method getChanges
-	 * @return {Object} A hash of the fields that have been changed since the last {@link #commit} or {@link #rollback}.
-	 *   The hash's property names are the field names, and the hash's values are the new values.
-	 */
-	getChanges : function() {
-		var modifiedData = this.modifiedData,
-		    changes = {};
-			
-		for( var fieldName in modifiedData ) {
-			if( modifiedData.hasOwnProperty( fieldName ) ) {
-				changes[ fieldName ] = this.get( fieldName );
-			}
-		}		
-		return changes;
-	},
-	
-	
-	/**
 	 * Retrieves the values for all of the fields in the Model. Note: returns a copy of the data so that the object
 	 * retrieved from this method may be modified.
 	 * 
@@ -2080,6 +2059,56 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 */
 	getData : function() {
 		return Kevlar.util.Object.clone( this.data );
+	},
+	
+	
+	/**
+	 * Retrieves the values for all of the fields in the Model *that are persisted* (i.e. have the {@link Kevlar.Field#persist} config 
+	 * set to true, which is the default). Note: returns a copy of the data so that the object retrieved from this method may be modified.
+	 * 
+	 * @methods getPersistedData
+	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.Field Field} values.
+	 */
+	getPersistedData : function() {
+		return this.filterNonPersisted( this.getData() );
+	},
+	
+	
+	/**
+	 * Retrieves the values for all of the {@link Kevlar.Field fields} in the Model whose values have been changed since
+	 * the last {@link #commit} or {@link #rollback}. 
+	 * 
+	 * Note: returns a copy of the data so that the object retrieved from this method may be modified.
+	 * 
+	 * @method getChanges
+	 * @return {Object} A hash of the fields that have been changed since the last {@link #commit} or {@link #rollback}.
+	 *   The hash's property names are the field names, and the hash's values are the new values.
+	 */
+	getChanges : function() {
+		var modifiedData = Kevlar.util.Object.clone( this.modifiedData ),
+		    changes = {};
+			
+		for( var fieldName in modifiedData ) {
+			if( modifiedData.hasOwnProperty( fieldName ) ) {
+				changes[ fieldName ] = this.get( fieldName );
+			}
+		}
+		return changes;
+	},
+	
+	
+	/**
+	 * Retrieves the values for all of the {@link Kevlar.Field fields} in the Model *that are persisted* (i.e. have the {@link Kevlar.Field#persist}
+	 * config set to true, which is the default), whose values have been changed since the last {@link #commit} or {@link #rollback}.
+	 * 
+	 * Note: returns a copy of the data so that the object retrieved from this method may be modified.
+	 * 
+	 * @methods getPersistedChanges
+	 * @return {Object} A hash of the fields that have been changed since the last {@link #commit} or {@link #rollback}, and are persisted.
+	 *   The hash's property names are the field names, and the hash's values are the new values.
+	 */
+	getPersistedChanges : function() {
+		return this.filterNonPersisted( this.getChanges() );
 	},
 	
 	
@@ -2164,7 +2193,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	/**
 	 * Persists the Model data to the backend, using the configured {@link #proxy}. If the request to persist the Model's data is successful,
-	 * the Model's data will be {@link #commit committed}.
+	 * the Model's data will be {@link #commit committed} upon completion.
 	 * 
 	 * @method save
 	 * @param {Object} [options] An object which may contain the following properties:
@@ -2232,7 +2261,33 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		// Make a request to update the data on the server
 		this.proxy.update( this, proxyOptions );
+	},
+	
+	
+	// ----------------------------
+	
+	// Utility Methods
+	
+	/**
+	 * Filters out non-persisted fields from the given data object. Note that this method modifies the
+	 * provided object, but returns it as well for use in an expression.
+	 * 
+	 * @private
+	 * @method filterNonPersisted
+	 * @param {Object} data A hash of the data, where non-persisted fields should be filtered out.
+	 * @return {Object} The data, with non-persisted fields removed.
+	 */
+	filterNonPersisted : function( data ) {
+		// Remove properties from the data that relate to the fields that have persist: false.
+		var fields = this.getFields();
+		for( var fieldName in fields ) {
+			if( fields.hasOwnProperty( fieldName ) && fields[ fieldName ].isPersisted() === false ) {
+				delete data[ fieldName ];
+			}
+		}
+		return data;
 	}
+	
 	
 } );
 
@@ -2390,29 +2445,10 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	update : function( model, options ) {
 		options = options || {};
 		
-		var changedData = model.getChanges(),
-		    allData = model.getData();   // note: returns a copy of the data so that we can modify the object's properties
+		var changedData = model.getPersistedChanges();
 		
-		// Set the data to persist, based on if the proxy is set to do incremental updates or not
-		var dataToPersist;
-		if( this.incremental ) {
-			dataToPersist = changedData;  // supports incremental updates, we can just send it the changes
-		} else {
-			dataToPersist = allData;      // does not support incremental updates, provide all data
-		}
-		
-		// Remove properties from the dataToPersist that relate to the fields that have persist: false.
-		var fields = model.getFields();
-		for( var fieldName in fields ) {
-			if( fields.hasOwnProperty( fieldName ) && fields[ fieldName ].isPersisted() === false ) {
-				delete dataToPersist[ fieldName ];
-				delete changedData[ fieldName ];   // used to determine if we need to persist the data at all (next). This will be the same object in the case that the proxy supports incremental updates, but no harm in doing this.
-			}
-		}
-		
-		
-		// Short Circuit: If there is no changed data in any of the fields that are to be persisted, there is no need to run a request. Run the 
-		// success callback and return out.
+		// Short Circuit: If there is no changed data in any of the fields that are to be persisted, there is no need to make a 
+		// request. Run the success callback and return out.
 		if( Kevlar.util.Object.isEmpty( changedData, /* filterPrototype */ true ) ) {
 			if( typeof options.success === 'function' ) {
 				options.success.call( options.scope || window );
@@ -2421,6 +2457,15 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 				options.complete.call( options.scope || window );
 			}
 			return;
+		}
+		
+		
+		// Set the data to persist, based on if the proxy is set to do incremental updates or not
+		var dataToPersist;
+		if( this.incremental ) {
+			dataToPersist = changedData;               // uses incremental updates, we can just send it the changes
+		} else {
+			dataToPersist = model.getPersistedData();  // non-incremental updates, provide all persisted data
 		}
 		
 		

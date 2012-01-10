@@ -121,12 +121,8 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 					
 					setUp : function() {						
 						this.mockModel = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( this.mockModel ).getData().thenReturn( { field1: 'value1', field2: 'value2' } );
-						JsMockito.when( this.mockModel ).getChanges().thenReturn( { field2: 'value2' } );  // 'field2' is the "change"
-						JsMockito.when( this.mockModel ).getFields().thenReturn( { 
-							field1: new Kevlar.Field( { name : 'field1' } ), 
-							field2: new Kevlar.Field( { name : 'field2' } )
-						} );
+						JsMockito.when( this.mockModel ).getPersistedData().thenReturn( { field1: 'value1', field2: 'value2' } );
+						JsMockito.when( this.mockModel ).getPersistedChanges().thenReturn( { field2: 'value2' } );  // 'field2' is the "change"
 					},
 					
 					
@@ -140,7 +136,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 							incremental: false
 						} );
 						var proxy = new TestProxy();
-												
+						
 						proxy.update( this.mockModel );
 						
 						Y.Assert.areEqual( 2, Kevlar.util.Object.length( dataPersisted ), "The dataPersisted have exactly 2 keys, one for each of the fields in the model" );
@@ -167,109 +163,6 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 						Y.ObjectAssert.ownsKeys( [ 'field2' ], dataPersisted );
 						Y.Assert.areEqual( 'value2', dataPersisted.field2 );
 					}
-				},
-					
-				
-				{
-					name : "Test the 'persist' property of Fields",
-					
-					
-					setUp : function() {
-						this.mockModel = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( this.mockModel ).getData().thenReturn( { field1: 'value1', field2: 'value2', field3: 'value3' } );
-						JsMockito.when( this.mockModel ).getChanges().thenReturn( { field1: 'value1', field2: 'value2' } );  // both fields 1 and 2 are changes, field3 is not
-						JsMockito.when( this.mockModel ).getFields().thenReturn( { 
-							field1: new Kevlar.Field( { name : 'field1', persist: true } ),
-							field2: new Kevlar.Field( { name : 'field2', persist: false } ),
-							field3: new Kevlar.Field( { name : 'field3', persist: true } )
-						} );
-					},
-					
-					
-					"update() should only persist fields that are not marked as persist: false" : function() {
-						var dataPersisted;
-						var ajaxFn = function( options ) {
-							dataPersisted = JSON.parse( options.data );  // the data is fed as a JSON encoded string
-						};
-						var TestProxy = Kevlar.persistence.RestProxy.extend( {
-							ajax : ajaxFn,
-							incremental: false
-						} );
-						var proxy = new TestProxy();
-						
-						proxy.update( this.mockModel );
-						
-						Y.Assert.areEqual( 2, Kevlar.util.Object.length( dataPersisted ), "The dataPersisted should only have 2 keys, the fields that are persisted (i.e. that don't have persist:false)" );
-						Y.ObjectAssert.ownsKeys( [ 'field1','field3' ], dataPersisted, "The dataPersisted should only have the persisted fields" );
-					},
-					
-					
-					"update() should only persist fields that are both changed and are not marked as persist : false, when the proxy is set to do incremental updates" : function() {
-						var dataPersisted;
-						var ajaxFn = function( options ) {
-							dataPersisted = JSON.parse( options.data );  // the data is fed as a JSON encoded string
-						};
-						var TestProxy = Kevlar.persistence.RestProxy.extend( {
-							ajax : ajaxFn,
-							incremental: true
-						} );
-						var proxy = new TestProxy();
-						
-						proxy.update( this.mockModel );
-						
-						Y.Assert.areEqual( 1, Kevlar.util.Object.length( dataPersisted ), "The dataPersisted should only have 1 key, the field is both persisted *and* changed" );
-						Y.ObjectAssert.ownsKeys( [ 'field1' ], dataPersisted, "The dataPersisted should only have the persisted field that was changed" );
-					},
-										
-					
-					"update() should NOT call its ajax() method when only fields that are not to be persisted have been changed" : function() {
-						// Overwrite the mock, to only return field2 (the non-persisted field) as the changed field
-						JsMockito.when( this.mockModel ).getChanges().thenReturn( { field2: 'value2' } );
-						
-						var ajaxCallCount = 0;
-						var ajaxFn = function( options ) {
-							ajaxCallCount++;
-						};
-						var TestProxy = Kevlar.persistence.RestProxy.extend( {
-							ajax : ajaxFn,
-							incremental: true
-						} );
-						var proxy = new TestProxy();
-						
-						proxy.update( this.mockModel );
-						Y.Assert.areSame( 0, ajaxCallCount, "The proxy's ajax method should not have been called, since there was no data to persist. Only non-persisted fields had changes." );
-					}
-					
-					
-					// NOTE: This test is commented for now, as the behavior is not yet implemented in the Model
-					/*
-					"save() should in fact call its proxy's update() method when a field that is not to be persisted has changed, but a convert field uses that field and is persisted" : function() {
-						var updateCallCount = 0;
-						var TestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
-							update : function( data, options ) {
-								updateCallCount++;
-							},
-							supportsIncrementalUpdates : function() { return false; }
-						} );
-						
-						var TestModel = Kevlar.extend( Kevlar.Model, {
-							addFields: [
-								{ name: 'field1', persist: false },
-								{ name: 'field2', convert : function( val, model ) { return model.get( 'field1' ); } }
-							],
-							proxy : new TestProxy()
-						} );
-						
-						var model = new TestModel( {
-							field1: "field1value", field2: "field2value"
-						} );
-						
-						// Make a change to a non-persisted field
-						model.set( 'field1', "newfield1value" );
-						model.save();
-						
-						Y.Assert.areSame( 1, updateCallCount, "The proxy's update() method should have been called, since a field with a convert that IS persisted was updated by the non-persisted field" );
-					}*/
 				}
 			]
 		},

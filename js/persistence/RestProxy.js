@@ -125,29 +125,10 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	update : function( model, options ) {
 		options = options || {};
 		
-		var changedData = model.getChanges(),
-		    allData = model.getData();   // note: returns a copy of the data so that we can modify the object's properties
+		var changedData = model.getPersistedChanges();
 		
-		// Set the data to persist, based on if the proxy is set to do incremental updates or not
-		var dataToPersist;
-		if( this.incremental ) {
-			dataToPersist = changedData;  // supports incremental updates, we can just send it the changes
-		} else {
-			dataToPersist = allData;      // does not support incremental updates, provide all data
-		}
-		
-		// Remove properties from the dataToPersist that relate to the fields that have persist: false.
-		var fields = model.getFields();
-		for( var fieldName in fields ) {
-			if( fields.hasOwnProperty( fieldName ) && fields[ fieldName ].isPersisted() === false ) {
-				delete dataToPersist[ fieldName ];
-				delete changedData[ fieldName ];   // used to determine if we need to persist the data at all (next). This will be the same object in the case that the proxy supports incremental updates, but no harm in doing this.
-			}
-		}
-		
-		
-		// Short Circuit: If there is no changed data in any of the fields that are to be persisted, there is no need to run a request. Run the 
-		// success callback and return out.
+		// Short Circuit: If there is no changed data in any of the fields that are to be persisted, there is no need to make a 
+		// request. Run the success callback and return out.
 		if( Kevlar.util.Object.isEmpty( changedData, /* filterPrototype */ true ) ) {
 			if( typeof options.success === 'function' ) {
 				options.success.call( options.scope || window );
@@ -156,6 +137,15 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 				options.complete.call( options.scope || window );
 			}
 			return;
+		}
+		
+		
+		// Set the data to persist, based on if the proxy is set to do incremental updates or not
+		var dataToPersist;
+		if( this.incremental ) {
+			dataToPersist = changedData;               // uses incremental updates, we can just send it the changes
+		} else {
+			dataToPersist = model.getPersistedData();  // non-incremental updates, provide all persisted data
 		}
 		
 		

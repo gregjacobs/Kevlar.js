@@ -408,27 +408,6 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Retrieves all {@link Kevlar.Field Field} values held by the Model whose values have been changed since the last
-	 * {@link #commit} or {@link #rollback}.
-	 * 
-	 * @method getChanges
-	 * @return {Object} A hash of the fields that have been changed since the last {@link #commit} or {@link #rollback}.
-	 *   The hash's property names are the field names, and the hash's values are the new values.
-	 */
-	getChanges : function() {
-		var modifiedData = this.modifiedData,
-		    changes = {};
-			
-		for( var fieldName in modifiedData ) {
-			if( modifiedData.hasOwnProperty( fieldName ) ) {
-				changes[ fieldName ] = this.get( fieldName );
-			}
-		}		
-		return changes;
-	},
-	
-	
-	/**
 	 * Retrieves the values for all of the fields in the Model. Note: returns a copy of the data so that the object
 	 * retrieved from this method may be modified.
 	 * 
@@ -437,6 +416,56 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 */
 	getData : function() {
 		return Kevlar.util.Object.clone( this.data );
+	},
+	
+	
+	/**
+	 * Retrieves the values for all of the fields in the Model *that are persisted* (i.e. have the {@link Kevlar.Field#persist} config 
+	 * set to true, which is the default). Note: returns a copy of the data so that the object retrieved from this method may be modified.
+	 * 
+	 * @methods getPersistedData
+	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.Field Field} values.
+	 */
+	getPersistedData : function() {
+		return this.filterNonPersisted( this.getData() );
+	},
+	
+	
+	/**
+	 * Retrieves the values for all of the {@link Kevlar.Field fields} in the Model whose values have been changed since
+	 * the last {@link #commit} or {@link #rollback}. 
+	 * 
+	 * Note: returns a copy of the data so that the object retrieved from this method may be modified.
+	 * 
+	 * @method getChanges
+	 * @return {Object} A hash of the fields that have been changed since the last {@link #commit} or {@link #rollback}.
+	 *   The hash's property names are the field names, and the hash's values are the new values.
+	 */
+	getChanges : function() {
+		var modifiedData = Kevlar.util.Object.clone( this.modifiedData ),
+		    changes = {};
+			
+		for( var fieldName in modifiedData ) {
+			if( modifiedData.hasOwnProperty( fieldName ) ) {
+				changes[ fieldName ] = this.get( fieldName );
+			}
+		}
+		return changes;
+	},
+	
+	
+	/**
+	 * Retrieves the values for all of the {@link Kevlar.Field fields} in the Model *that are persisted* (i.e. have the {@link Kevlar.Field#persist}
+	 * config set to true, which is the default), whose values have been changed since the last {@link #commit} or {@link #rollback}.
+	 * 
+	 * Note: returns a copy of the data so that the object retrieved from this method may be modified.
+	 * 
+	 * @methods getPersistedChanges
+	 * @return {Object} A hash of the fields that have been changed since the last {@link #commit} or {@link #rollback}, and are persisted.
+	 *   The hash's property names are the field names, and the hash's values are the new values.
+	 */
+	getPersistedChanges : function() {
+		return this.filterNonPersisted( this.getChanges() );
 	},
 	
 	
@@ -521,7 +550,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	/**
 	 * Persists the Model data to the backend, using the configured {@link #proxy}. If the request to persist the Model's data is successful,
-	 * the Model's data will be {@link #commit committed}.
+	 * the Model's data will be {@link #commit committed} upon completion.
 	 * 
 	 * @method save
 	 * @param {Object} [options] An object which may contain the following properties:
@@ -589,7 +618,33 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		// Make a request to update the data on the server
 		this.proxy.update( this, proxyOptions );
+	},
+	
+	
+	// ----------------------------
+	
+	// Utility Methods
+	
+	/**
+	 * Filters out non-persisted fields from the given data object. Note that this method modifies the
+	 * provided object, but returns it as well for use in an expression.
+	 * 
+	 * @private
+	 * @method filterNonPersisted
+	 * @param {Object} data A hash of the data, where non-persisted fields should be filtered out.
+	 * @return {Object} The data, with non-persisted fields removed.
+	 */
+	filterNonPersisted : function( data ) {
+		// Remove properties from the data that relate to the fields that have persist: false.
+		var fields = this.getFields();
+		for( var fieldName in fields ) {
+			if( fields.hasOwnProperty( fieldName ) && fields[ fieldName ].isPersisted() === false ) {
+				delete data[ fieldName ];
+			}
+		}
+		return data;
 	}
+	
 	
 } );
 
