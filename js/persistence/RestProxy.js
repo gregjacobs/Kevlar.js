@@ -61,6 +61,18 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	
 	
 	/**
+	 * Accessor to set the {@link #rootProperty} after instantiation.
+	 * 
+	 * @method setRootProperty
+	 * @param {String} rootProperty The new {@link #rootProperty} value. This can be set to an empty string 
+	 *   to remove the {@link #rootProperty}.
+	 */
+	setRootProperty : function( rootProperty ) {
+		this.rootProperty = rootProperty;
+	},
+	
+	
+	/**
 	 * Creates a Model on the server.
 	 * 
 	 * @method create
