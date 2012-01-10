@@ -103,6 +103,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		
 		var successCallback = function( data ) {
 			model.set( data );
+			model.commit();
 			
 			if( typeof options.success === 'function' ) {
 				options.success.call( options.scope || window );
