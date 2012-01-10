@@ -138,6 +138,32 @@ Ext.test.Session.addSuite( {
 				Y.Assert.isFalse( isEqual( "0", 0 ), "Error: '0' === 0" );
 				Y.Assert.isFalse( isEqual( 1, "1" ), "Error: 1 === '1'" );
 				Y.Assert.isFalse( isEqual( "1", 1 ), "Error: '1' === 1" );
+				
+				Y.Assert.isFalse( isEqual( {}, null ), "Error: {} === null" );
+				Y.Assert.isFalse( isEqual( {}, undefined ), "Error: {} === undefined" );
+				Y.Assert.isFalse( isEqual( {}, true ), "Error: {} === true" );
+				Y.Assert.isFalse( isEqual( {}, false ), "Error: {} === false" );
+				Y.Assert.isFalse( isEqual( {}, 0 ), "Error: {} === 0" );
+				Y.Assert.isFalse( isEqual( {}, 1 ), "Error: {} === 1" );
+				Y.Assert.isFalse( isEqual( {}, "" ), "Error: {} === ''" );
+				Y.Assert.isFalse( isEqual( {}, "test" ), "Error: {} === 'test'" );
+				Y.Assert.isTrue( isEqual( {}, {} ), "Error: {} !== {}" );
+				Y.Assert.isFalse( isEqual( {}, { a : 1 } ), "Error: {} === { a : 1 }" );
+				Y.Assert.isFalse( isEqual( {}, [] ), "Error: {} === []" );
+				Y.Assert.isFalse( isEqual( {}, [ 1,2,3 ] ), "Error: {} === [ 1,2,3 ]" );
+				
+				Y.Assert.isFalse( isEqual( [], null ), "Error: [] === null" );
+				Y.Assert.isFalse( isEqual( [], undefined ), "Error: [] === undefined" );
+				Y.Assert.isFalse( isEqual( [], true ), "Error: [] === true" );
+				Y.Assert.isFalse( isEqual( [], false ), "Error: [] === false" );
+				Y.Assert.isFalse( isEqual( [], 0 ), "Error: [] === 0" );
+				Y.Assert.isFalse( isEqual( [], 1 ), "Error: [] === 1" );
+				Y.Assert.isFalse( isEqual( [], "" ), "Error: [] === ''" );
+				Y.Assert.isFalse( isEqual( [], "test" ), "Error: [] === 'test'" );
+				Y.Assert.isFalse( isEqual( [], {} ), "Error: [] === {}" );
+				Y.Assert.isFalse( isEqual( [], { a : 1 } ), "Error: [] === { a : 1 }" );
+				Y.Assert.isTrue( isEqual( [], [] ), "Error: [] !== []" );
+				Y.Assert.isFalse( isEqual( [], [ 1,2,3 ] ), "Error: [] === [ 1,2,3 ]" );
 			},
 			
 			

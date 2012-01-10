@@ -41,6 +41,8 @@ Kevlar.util.Object = {
 	},
 	
 	
+	
+	
 	/** 
 	 * Tests if `a` and `b` are equal.
 	 * 
@@ -62,7 +64,13 @@ Kevlar.util.Object = {
 			if( a !== b ) { return false; }
 			
 		} else {
-			if( a === null && a !== b ) { return false; }
+			// Double equals on a and b == null, but strict comparison on the actual comparison of the falsy's
+			if( a == null || b == null ) return a === b;
+			
+			// Arrays have to be handled separately... Otherwise {} could be considered the same as []
+			if( Kevlar.isArray( a ) !== Kevlar.isArray( b ) ) {
+				return false;
+			}
 			
 			// Make sure there are the same number of keys in each object
 			var objLength = Kevlar.util.Object.length;  // no 'this' reference for friendly out of scope calls
