@@ -102,6 +102,7 @@ Kevlar.apply( Kevlar.persistence.Proxy, {
 	 * a configuration object that has a `type` property. If an already-instantiated 
 	 * {@link Kevlar.persistence.Proxy Proxy} is provided, it will simply be returned unchanged.
 	 * 
+	 * @static
 	 * @method create
 	 * @param {Object} config The configuration object for the Proxy. Config objects should have the property `type`, 
 	 *   which determines which type of {@link Kevlar.persistence.Proxy} will be instantiated. If the object does not

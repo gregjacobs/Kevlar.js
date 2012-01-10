@@ -1993,6 +1993,28 @@ Ext.test.Session.addSuite( {
 				model.set( 'field2', "newfield2value" );
 				
 				Y.Assert.areSame( "newfield2value field1val", model.get( 'field2' ), "field2 should be the concatenation of its own value, a space, and field2" );
+			},
+			
+			
+			
+			"for compatibility with Backbone's Collection, set() should set the id property to the Model object itself with the idField is changed" : function() {
+				var TestModel = Kevlar.Model.extend( {
+					addFields: [
+						{ name: 'field1' },
+						{ name: 'field2', convert : function( value, model ) { return value + " " + model.get( 'field1' ); } }
+					],
+					idField: 'field1'
+				} );
+				
+				var model = new TestModel( {
+					field1 : "field1val",
+					field2 : "field2val"
+				} );
+				
+				Y.Assert.areSame( 'field1val', model.id, "The model's `id` property should have been set to field1's value, as that is the idField." );
+				
+				model.set( 'field1', 'newValue' );
+				Y.Assert.areSame( 'newValue', model.id, "The model's `id` property should have been set to field1's value after another set(), as that is the idField." );
 			}
 		},
 		

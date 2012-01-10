@@ -67,6 +67,24 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * to determine which data is modified... 
 	 */
 	
+	/**
+	 * @hide
+	 * @property {String} id (readonly)
+	 * The id for the Model. This property is set when the field specified by the {@link #idField} config
+	 * is {@link #set}. 
+	 * 
+	 * *** Note: This property is here solely to maintain compatibility with Backbone's Collection, and should
+	 * not be accessed or used, as it will most likely be removed in the future.
+	 */
+	
+	/**
+	 * @hide
+	 * @property {String} cid (readonly)
+	 * A "client id" for the Model. This is a uniquely generated identifier assigned to the Model.
+	 * 
+	 * *** Note: This property is here solely to maintain compatibility with Backbone's Collection, and should
+	 * not be accessed or used, as it will most likely be removed in the future.
+	 */
 	
 	
 	constructor : function( data ) {		
@@ -102,10 +120,12 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			'change'
 		);
 		
-		
 		// Initialize the 'fields' array, which gets turned into an object (hash)
 		this.initFields();
 		
+		
+		// Create a "client id" to maintain compatibility with Backbone's Collection
+		this.cid = ++Kevlar.Model.currentCid;
 		
 		// Default the data to an empty object
 		data = data || {};
@@ -268,7 +288,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * 
 	 * @method set
 	 * @param {String/Object} fieldName The field name for the Field to set, or an object (hash) of name/value pairs.
-	 * @param {Mixed} value (optional) The value to set to the field. Required if the `fieldName` argument is a string (i.e. not a hash). 
+	 * @param {Mixed} [value] The value to set to the field. Required if the `fieldName` argument is a string (i.e. not a hash). 
 	 */
 	set : function( fieldName, value ) {
 		var fields = this.fields,
@@ -325,6 +345,11 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			}
 			this.data[ fieldName ] = value;
 			this.dirty = true;
+			
+			// If the field is the "idField", set the `id` property on the model for compatibility with Backbone's Collection
+			if( fieldName === this.idField ) {
+				this.id = value;
+			}
 			
 			this.fireEvent( 'change:' + fieldName, this, value );
 			this.fireEvent( 'change', this, fieldName, value );
@@ -575,3 +600,13 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
  * @method fetch
  */
 Kevlar.Model.prototype.fetch = Kevlar.Model.prototype.load;
+
+
+/**
+ * Static property used to provide a "client id" to models. See {@link #cid}.
+ * 
+ * @static 
+ * @private
+ * @property currentCid
+ */
+Kevlar.Model.currentCid = 0;
