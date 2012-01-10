@@ -1785,8 +1785,8 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			}
 		}
 		
-		// Initialize the data 
-		this.data = {};  // re-initialize the instance property (formerly a config) to an empty hash. This will be populated by the call to set()
+		// Initialize the data properties
+		this.data = {};
 		this.modifiedData = {};
 		
 		this.set( data );
@@ -2439,6 +2439,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		
 		var successCallback = function( data ) {
 			model.set( data );
+			model.commit();
 			
 			if( typeof options.success === 'function' ) {
 				options.success.call( options.scope || window );

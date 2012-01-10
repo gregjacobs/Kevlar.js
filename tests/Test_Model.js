@@ -413,6 +413,24 @@ Ext.test.Session.addSuite( {
 				},
 				
 				{
+					/**
+					 * Test initial data
+					 */
+					name : "Test initial data",
+					
+					"Providing initial data to the constructor should not leave the model set as 'dirty' (i.e. it should have no 'changes')" : function() {
+						var Model = Kevlar.Model.extend( {
+							addFields : [ 'field1', 'field2' ]
+						} );
+						
+						var model = new Model( { field1: 'value1', field2: 'value2' } );
+						Y.Assert.isFalse( model.isDirty(), "The model should not be dirty upon initialization" );
+						Y.Assert.isTrue( Kevlar.util.Object.isEmpty( model.getChanges ), "There should not be any 'changes' upon initialization" );
+					}
+				},
+				
+				
+				{
 					/*
 					 * Test that initialize() is called
 					 */
