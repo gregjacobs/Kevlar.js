@@ -177,7 +177,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 			
 			"buildUrl() should return the configured url if the 'appendId' config is false" : function() {
 				var proxy = new Kevlar.persistence.RestProxy( {
-					url : '/testUrl',
+					urlRoot : '/testUrl',
 					appendId : false
 				} );
 				
@@ -188,7 +188,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 			
 			"buildUrl() should return the configured url if the 'appendId' config is true, but no id is provided" : function() {
 				var proxy = new Kevlar.persistence.RestProxy( {
-					url : '/testUrl',
+					urlRoot : '/testUrl',
 					appendId : true
 				} );
 				
@@ -199,7 +199,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 			"buildUrl() should return the configured url with the model's id, if the 'appendId' config is true, and an id is provided" : function() {
 				// Try with no trailing slash on the url
 				var proxy1 = new Kevlar.persistence.RestProxy( {
-					url : '/testUrl',  // note: no trailing slash
+					urlRoot : '/testUrl',  // note: no trailing slash
 					appendId : true
 				} );
 				
@@ -207,7 +207,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 				
 				// Try with a trailing slash on the url
 				var proxy2 = new Kevlar.persistence.RestProxy( {
-					url : '/testUrl/',  // note: trailing slash exists
+					urlRoot : '/testUrl/',  // note: trailing slash exists
 					appendId : true
 				} );
 				

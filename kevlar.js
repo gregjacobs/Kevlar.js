@@ -2331,10 +2331,13 @@ Kevlar.Model.currentCid = 0;
 Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	
 	/**
-	 * @cfg {String} url
-	 * The url to use in a RESTful manner to perform CRUD operations. Ex: "/tasks"
+	 * @cfg {String} urlRoot
+	 * The url to use in a RESTful manner to perform CRUD operations. Ex: `/tasks`.
+	 * 
+	 * The {@link Kevlar.Model#idField id} of the {@link Kevlar.Model} being read/updated/deleted
+	 * will automatically be appended to this url. Ex: `/tasks/12`
 	 */
-	url : "",
+	urlRoot : "",
 	
     /**
      * @cfg {Boolean} appendId
@@ -2378,6 +2381,18 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 */
 	ajax : jQuery.ajax,
 	
+	
+	
+	/**
+	 * Accessor to set the {@link #rootProperty} after instantiation.
+	 * 
+	 * @method setRootProperty
+	 * @param {String} rootProperty The new {@link #rootProperty} value. This can be set to an empty string 
+	 *   to remove the {@link #rootProperty}.
+	 */
+	setRootProperty : function( rootProperty ) {
+		this.rootProperty = rootProperty;
+	},
 	
 	
 	/**
@@ -2537,8 +2552,8 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 * @return {String} The url to use.
 	 */
 	buildUrl : function( id ) {
-		var url = this.url;
-		    
+		var url = this.urlRoot;
+		
 		// And now, use the model's ID to set the url.
 		if( this.appendId && id ) {
 			if( !url.match( /\/$/ ) ) {

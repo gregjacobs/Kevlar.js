@@ -11,10 +11,13 @@
 Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	
 	/**
-	 * @cfg {String} url
-	 * The url to use in a RESTful manner to perform CRUD operations. Ex: "/tasks"
+	 * @cfg {String} urlRoot
+	 * The url to use in a RESTful manner to perform CRUD operations. Ex: `/tasks`.
+	 * 
+	 * The {@link Kevlar.Model#idField id} of the {@link Kevlar.Model} being read/updated/deleted
+	 * will automatically be appended to this url. Ex: `/tasks/12`
 	 */
-	url : "",
+	urlRoot : "",
 	
     /**
      * @cfg {Boolean} appendId
@@ -229,8 +232,8 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 * @return {String} The url to use.
 	 */
 	buildUrl : function( id ) {
-		var url = this.url;
-		    
+		var url = this.urlRoot;
+		
 		// And now, use the model's ID to set the url.
 		if( this.appendId && id ) {
 			if( !url.match( /\/$/ ) ) {
