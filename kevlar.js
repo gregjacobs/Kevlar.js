@@ -2417,7 +2417,6 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
      */
     incremental : false,
 	
-	
 	/**
 	 * @cfg {String} rootProperty
 	 * If the server requires the data to be wrapped in a property of its own, use this config
@@ -2434,6 +2433,18 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 */
 	rootProperty : "",
 	
+	/**
+	 * @cfg {Object} actionMethods
+	 * A mapping of the HTTP method to use for each action. This may be overridden for custom
+	 * server implementations.
+	 */
+	actionMethods : {
+		create  : 'POST',
+		read    : 'GET',
+		update  : 'PUT',
+		destroy : 'DELETE'
+	},
+	
 	
 	/**
 	 * @private
@@ -2442,7 +2453,6 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 * but is changed for the unit tests.
 	 */
 	ajax : jQuery.ajax,
-	
 	
 	
 	/**
@@ -2495,8 +2505,8 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		this.ajax( {
 			async    : ( typeof options.async === 'undefined' ) ? true : options.async,  // async defaults to true.
 			
-			url      : this.buildUrl( model.getId() ),
-			type     : 'GET',
+			url      : this.buildUrl( model, 'read' ),
+			type     : this.getMethod( 'read' ),
 			dataType : 'json',
 			
 			success  : successCallback,
@@ -2561,8 +2571,8 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		this.ajax( {
 			async    : ( typeof options.async === 'undefined' ) ? true : options.async,  // async defaults to true.
 			
-			url      : this.buildUrl( model.getId() ),
-			type     : 'PUT',
+			url      : this.buildUrl( model, 'update' ),
+			type     : this.getMethod( 'update' ),
 			data     : JSON.stringify( dataToPersist ),
 			contentType : 'application/json',
 			
@@ -2594,8 +2604,8 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		this.ajax( {
 			async    : ( typeof options.async === 'undefined' ) ? true : options.async,  // async defaults to true.
 			
-			url      : this.buildUrl( model.getId() ),
-			type     : 'DELETE',
+			url      : this.buildUrl( model, 'destroy' ),
+			type     : this.getMethod( 'destroy' ),
 			
 			success  : options.success  || Kevlar.emptyFn,
 			error    : options.error    || Kevlar.emptyFn,
@@ -2611,24 +2621,40 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	/**
 	 * Builds the URL to use to do CRUD operations.
 	 * 
-	 * @private
+	 * @protected
 	 * @method buildUrl
-	 * @param {String} [id] The ID of the Model.
+	 * @param {Kevlar.Model} model The model that a url is being built for.
+	 * @param {String} [action] The action being taken. This will be one of: 'create', 'read', 'update', or 'destroy'.
+	 *   At this time, this parameter is not used by the buildUrl method, but can be used by subclasses of RestProxy.
 	 * @return {String} The url to use.
 	 */
-	buildUrl : function( id ) {
+	buildUrl : function( model, action ) {
 		var url = this.urlRoot;
 		
 		// And now, use the model's ID to set the url.
-		if( this.appendId && id ) {
+		if( this.appendId ) {
 			if( !url.match( /\/$/ ) ) {
 				url += '/';
 			}
 			
-			url += encodeURIComponent( id );
+			url += encodeURIComponent( model.getId() );
 		}
 		
 		return url;
+	},
+	
+	
+	/**
+	 * Retrieves the HTTP method that should be used for a given action. This is, by default, done via 
+	 * a lookup to the {@link #actionMethods} config object.
+	 * 
+	 * @protected
+	 * @method getMethod
+	 * @param {String} action The action that is being taken. Should be 'create', 'read', 'update', or 'destroy'.
+	 * @return {String} The HTTP method that should be used.
+	 */
+	getMethod : function( action ) {
+		return this.actionMethods[ action ];
 	}
 	
 } );
