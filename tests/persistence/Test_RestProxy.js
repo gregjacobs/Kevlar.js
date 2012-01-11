@@ -230,6 +230,66 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 		
 		{
 			/*
+			 * Test destroy()
+			 */
+			name : 'Test destroy',
+			
+			"The 'success' and 'complete' callbacks provided to destroy() should be called if the ajax request is successful" : function() {
+				var ajaxFn = function( options ) { 
+					options.success();
+					options.complete();
+				};
+				var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
+					ajax: ajaxFn
+				} );
+				
+				var model = JsMockito.mock( Kevlar.Model );
+				JsMockito.when( model ).getPersistedChanges().thenReturn( { field1: 'value1' } );
+				
+				var proxy = new TestProxy();
+				
+				var successCallCount = 0,
+				    completeCallCount = 0;
+				proxy.destroy( model, {
+					success  : function() { successCallCount++; },
+					complete : function() { completeCallCount++; }
+				} );
+				
+				Y.Assert.areSame( 1, successCallCount, "The 'success' callback provided destroy() should have been called" );
+				Y.Assert.areSame( 1, completeCallCount, "The 'complete' callback provided destroy() should have been called" );
+			},
+			
+			
+			"The 'error' and 'complete' callbacks provided to destroy() should be called if the ajax request fails" : function() {
+				var ajaxFn = function( options ) { 
+					options.error();
+					options.complete();
+				};
+				var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
+					ajax: ajaxFn
+				} );
+				
+				var model = JsMockito.mock( Kevlar.Model );
+				JsMockito.when( model ).getPersistedChanges().thenReturn( { field1: 'value1' } );
+				
+				var proxy = new TestProxy();
+				
+				var errorCallCount = 0,
+				    completeCallCount = 0;
+				
+				proxy.destroy( model, {
+					error    : function() { errorCallCount++; },
+					complete : function() { completeCallCount++; }
+				} );
+				
+				Y.Assert.areSame( 1, errorCallCount, "The 'error' callback provided destroy() should have been called" );
+				Y.Assert.areSame( 1, completeCallCount, "The 'complete' callback provided destroy() should have been called" );
+			}
+		},
+		
+		
+		{
+			/*
 			 * Test buildUrl()
 			 */
 			name: 'Test buildUrl()',

@@ -2292,6 +2292,40 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	},
 	
 	
+	/**
+	 * Destroys the Model on the backend, using the configured {@link #proxy}.
+	 * 
+	 * @method destroy
+	 * @param {Object} [options] An object which may contain the following properties:
+	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
+	 * @param {Function} [options.success] Function to call if the destroy is successful.
+	 * @param {Function} [options.error] Function to call if the destroy fails.
+	 * @param {Function} [options.complete] Function to call when the operation is complete, regardless of a success or fail state.
+	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in. This may also
+	 *   be provided as `context` if you prefer.
+	 */
+	destroy : function( options ) {
+		options = options || {};
+		var scope = options.scope || options.context || window;
+		
+		// No proxy, cannot destroy. Throw an error
+		if( !this.proxy ) {
+			throw new Error( "Kevlar.Model::destroy() error: Cannot destroy. No proxy." );
+		}
+		
+		var proxyOptions = {
+			async    : ( typeof options.async === 'undefined' ) ? true : options.async,   // defaults to true
+			success  : options.success  || Kevlar.emptyFn,
+			error    : options.error    || Kevlar.emptyFn,
+			complete : options.complete || Kevlar.emptyFn,
+			scope    : scope
+		};
+		
+		// Make a request to destroy the data on the server
+		this.proxy.destroy( this, proxyOptions );
+	},	
+	
+	
 	// ----------------------------
 	
 	// Utility Methods
