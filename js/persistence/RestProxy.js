@@ -136,10 +136,12 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 * @param {Function} [options.success] Function to call if the update is successful.
 	 * @param {Function} [options.error] Function to call if the update fails.
 	 * @param {Function} [options.complete] Function to call regardless of if the update is successful or fails.
-	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in.
+	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in. 
+	 *   This may also be provided as `context` if you prefer.
 	 */
 	update : function( model, options ) {
 		options = options || {};
+		var scope = options.scope || options.context || window;
 		
 		var changedData = model.getPersistedChanges();
 		
@@ -147,10 +149,10 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		// request. Run the success callback and return out.
 		if( Kevlar.util.Object.isEmpty( changedData ) ) {
 			if( typeof options.success === 'function' ) {
-				options.success.call( options.scope || window );
+				options.success.call( scope );
 			}
 			if( typeof options.complete === 'function' ) {
-				options.complete.call( options.scope || window );
+				options.complete.call( scope );
 			}
 			return;
 		}
@@ -185,7 +187,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 			success  : options.success  || Kevlar.emptyFn,
 			error    : options.error    || Kevlar.emptyFn,
 			complete : options.complete || Kevlar.emptyFn,
-			context  : options.scope    || window
+			context  : scope
 		} );
 	},
 	
