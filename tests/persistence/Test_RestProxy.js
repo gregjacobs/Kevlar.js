@@ -63,13 +63,14 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 						} );
 						var proxy = new TestProxy();
 						
-						var model = new this.MockModel();
+						var model = JsMockito.mock( Kevlar.Model );
+						JsMockito.when( model ).getPersistedChanges().thenReturn( {} );
 						
-						// Note: do not change any fields before calling save()
 						proxy.update( model );
 						
 						Y.Assert.areSame( 0, ajaxCallCount, "The proxy's ajax() method should not have not been called, since there are no changes" );
 					},
+					
 					
 					"update() should in fact call the ajax method when fields have been changed" : function() {
 						var ajaxCallCount = 0;
@@ -80,14 +81,16 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 						} );
 						var proxy = new TestProxy();
 						
-						var model = new this.MockModel( { id : 1 } );
+						var model = JsMockito.mock( Kevlar.Model );
+						JsMockito.when( model ).getPersistedChanges().thenReturn( { field1: 'value1' } );
 						
-						// Change a field
-						model.set( 'field1', 'value1' );
 						proxy.update( model );
 						
 						Y.Assert.areSame( 1, ajaxCallCount, "The proxy's ajax() method should have been called, since there are changes to persist" );
 					},
+					
+					
+					// -----------------------------
 					
 					
 					"The 'success' and 'complete' callbacks provided to update() should be called if no fields have been changed, and it does not need to do its ajax request" : function() {
@@ -98,7 +101,7 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 						} );
 						
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges().thenReturn( {} );
+						JsMockito.when( model ).getPersistedChanges().thenReturn( {} );
 						
 						var proxy = new TestProxy();
 						
@@ -112,12 +115,68 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 						Y.Assert.areSame( 0, ajaxCallCount, "The ajax method should not have been called" );
 						Y.Assert.areSame( 1, successCallCount, "The 'success' callback provided update() should have been called even though there are no changes and the proxy didn't need to persist anything" );
 						Y.Assert.areSame( 1, completeCallCount, "The 'complete' callback provided update() should have been called even though there are no changes and the proxy didn't need to persist anything" );
+					},
+					
+					
+					"The 'success' and 'complete' callbacks provided to update() should be called if the ajax request is successful" : function() {
+						var ajaxFn = function( options ) { 
+							options.success();
+							options.complete();
+						};
+						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
+							ajax: ajaxFn
+						} );
+						
+						var model = JsMockito.mock( Kevlar.Model );
+						JsMockito.when( model ).getPersistedChanges().thenReturn( { field1: 'value1' } );
+						
+						var proxy = new TestProxy();
+						
+						var successCallCount = 0,
+						    completeCallCount = 0;
+						proxy.update( model, {
+							success  : function() { successCallCount++; },
+							complete : function() { completeCallCount++; }
+						} );
+						
+						Y.Assert.areSame( 1, successCallCount, "The 'success' callback provided update() should have been called" );
+						Y.Assert.areSame( 1, completeCallCount, "The 'complete' callback provided update() should have been called" );
+					},
+					
+					
+					"The 'error' and 'complete' callbacks provided to update() should be called if the ajax request fails" : function() {
+						var ajaxFn = function( options ) { 
+							options.error();
+							options.complete();
+						};
+						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
+							ajax: ajaxFn
+						} );
+						
+						var model = JsMockito.mock( Kevlar.Model );
+						JsMockito.when( model ).getPersistedChanges().thenReturn( { field1: 'value1' } );
+						
+						var proxy = new TestProxy();
+						
+						var errorCallCount = 0,
+						    completeCallCount = 0;
+						
+						proxy.update( model, {
+							error    : function() { errorCallCount++; },
+							complete : function() { completeCallCount++; }
+						} );
+						
+						Y.Assert.areSame( 1, errorCallCount, "The 'error' callback provided update() should have been called" );
+						Y.Assert.areSame( 1, completeCallCount, "The 'complete' callback provided update() should have been called" );
 					}
 				},
 				
 				
 				
 				{
+					/*
+					 * Test incremental updates
+					 */
 					name : "Test incremental updates",
 					
 					setUp : function() {						

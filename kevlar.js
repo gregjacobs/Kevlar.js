@@ -2218,9 +2218,9 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @param {Object} [options] An object which may contain the following properties:
 	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
 	 * @param {Function} [options.success] Function to call if the save is successful.
-	 * @param {Function} [options.failure] Function to call if the save fails.
+	 * @param {Function} [options.error] Function to call if the save fails.
 	 * @param {Function} [options.complete] Function to call when the operation is complete, regardless of a success or fail state.
-	 * @param {Object} [options.scope=window] The object to call the `success`, `failure`, and `complete` callbacks in.
+	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in.
 	 */
 	save : function( options ) {
 		options = options || {};
@@ -2258,9 +2258,9 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			}
 		};
 		
-		var failureCallback = function() {
-			if( typeof options.failure === 'function' ) {
-				options.failure.call( options.scope || window );
+		var errorCallback = function() {
+			if( typeof options.error === 'function' ) {
+				options.error.call( options.scope || window );
 			}
 		};
 		
@@ -2273,7 +2273,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		var proxyOptions = {
 			async    : ( typeof options.async === 'undefined' ) ? true : options.async,   // defaults to true
 			success  : successCallback,
-			failure  : failureCallback,
+			error    : errorCallback,
 			complete : completeCallback,
 			scope    : this
 		};
@@ -2433,9 +2433,9 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 * @param {Object} [options] An object which may contain the following properties:
 	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
 	 * @param {Function} [options.success] Function to call if the delete is successful.
-	 * @param {Function} [options.failure] Function to call if the delete fails.
+	 * @param {Function} [options.error] Function to call if the delete fails.
 	 * @param {Function} [options.complete] Function to call regardless of if the delete is successful or fails.
-	 * @param {Object} [options.scope=window] The object to call the `success`, `failure`, and `complete` callbacks in.
+	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in.
 	 */
 	read : function( model, options ) {
 		options = options || {};
@@ -2457,7 +2457,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 			dataType : 'json',
 			
 			success  : successCallback,
-			error    : options.failure  || Kevlar.emptyFn,
+			error    : options.error    || Kevlar.emptyFn,
 			complete : options.complete || Kevlar.emptyFn,
 			context  : options.scope    || window
 		} );
@@ -2473,9 +2473,9 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 * @param {Object} [options] An object which may contain the following properties:
 	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
 	 * @param {Function} [options.success] Function to call if the update is successful.
-	 * @param {Function} [options.failure] Function to call if the update fails.
+	 * @param {Function} [options.error] Function to call if the update fails.
 	 * @param {Function} [options.complete] Function to call regardless of if the update is successful or fails.
-	 * @param {Object} [options.scope=window] The object to call the `success`, `failure`, and `complete` callbacks in.
+	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in.
 	 */
 	update : function( model, options ) {
 		options = options || {};
@@ -2484,7 +2484,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		
 		// Short Circuit: If there is no changed data in any of the fields that are to be persisted, there is no need to make a 
 		// request. Run the success callback and return out.
-		if( Kevlar.util.Object.isEmpty( changedData, /* filterPrototype */ true ) ) {
+		if( Kevlar.util.Object.isEmpty( changedData ) ) {
 			if( typeof options.success === 'function' ) {
 				options.success.call( options.scope || window );
 			}
@@ -2522,7 +2522,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 			contentType : 'application/json',
 			
 			success  : options.success  || Kevlar.emptyFn,
-			error    : options.failure  || Kevlar.emptyFn,
+			error    : options.error    || Kevlar.emptyFn,
 			complete : options.complete || Kevlar.emptyFn,
 			context  : options.scope    || window
 		} );
@@ -2539,9 +2539,9 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 * @param {Object} [options] An object which may contain the following properties:
 	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
 	 * @param {Function} [options.success] Function to call if the delete is successful.
-	 * @param {Function} [options.failure] Function to call if the delete fails.
+	 * @param {Function} [options.error] Function to call if the delete fails.
 	 * @param {Function} [options.complete] Function to call regardless of if the delete is successful or fails.
-	 * @param {Object} [options.scope=window] The object to call the `success`, `failure`, and `complete` callbacks in.
+	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in.
 	 */
 	destroy : function( model, options ) {
 		options = options || {};
@@ -2553,7 +2553,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 			type     : 'DELETE',
 			
 			success  : options.success  || Kevlar.emptyFn,
-			error    : options.failure  || Kevlar.emptyFn,
+			error    : options.error    || Kevlar.emptyFn,
 			complete : options.complete || Kevlar.emptyFn,
 			context  : options.scope    || window
 		} );

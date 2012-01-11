@@ -1332,6 +1332,33 @@ Ext.test.Session.addSuite( {
 			},
 			
 			
+			"save should call its 'error' and 'complete' callbacks if the proxy encounters an error" : function() {
+				var errorCallCount = 0,
+				    completeCallCount = 0;
+				    
+				var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
+				mockProxy.update = function( model, options ) {
+					options.error.call( options.scope );
+					options.complete( options.scope );
+				};
+				
+				var Model = Kevlar.Model.extend( {
+					fields : [ 'field1' ],
+					proxy  : mockProxy
+				} );
+				var model = new Model();
+				
+				model.save( {
+					error    : function() { errorCallCount++; },
+					complete : function() { completeCallCount++; },
+					scope    : this
+				} );
+				
+				Y.Assert.areSame( 1, errorCallCount, "The 'error' function should have been called exactly once" );
+				Y.Assert.areSame( 1, completeCallCount, "The 'complete' function should have been called exactly once" );
+			},
+			
+			
 			
 			// ---------------------------------
 			
