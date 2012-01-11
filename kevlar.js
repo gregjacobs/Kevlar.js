@@ -2225,7 +2225,6 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 */
 	save : function( options ) {
 		options = options || {};
-		
 		var scope = options.scope || options.context || window;
 		
 		// No proxy, cannot save. Throw an error
@@ -2585,7 +2584,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 				url += '/';
 			}
 			
-			url += id;
+			url += encodeURIComponent( id );
 		}
 		
 		return url;

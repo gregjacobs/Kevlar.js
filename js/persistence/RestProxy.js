@@ -243,7 +243,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 				url += '/';
 			}
 			
-			url += id;
+			url += encodeURIComponent( id );
 		}
 		
 		return url;
