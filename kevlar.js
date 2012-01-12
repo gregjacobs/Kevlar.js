@@ -1905,6 +1905,10 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @return {Mixed} The ID for the Model.
 	 */
 	getId : function() {
+		// Provide a friendlier error message than what get() provides if the idField is not a Field of the Model
+		if( !( this.idField in this.fields ) ) {
+			throw new Error( "Error: The `idField` (currently set to a field named '" + this.idField + "') was not found in the Model. Please set the `idField` config as the name of the id field in the Model." );
+		}
 		return this.get( this.idField );
 	},
 
@@ -1921,7 +1925,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 */
 	get : function( fieldName ) {
 		if( !( fieldName in this.fields ) ) {
-			throw new Error( "Kevlar.Model::get() error: provided field '" + fieldName + "' was not found in the Model." );
+			throw new Error( "Kevlar.Model::get() error: field '" + fieldName + "' was not found in the Model." );
 		}
 		return this.data[ fieldName ];
 	},
