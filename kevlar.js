@@ -838,6 +838,11 @@ KevlarUTIL.Observable.prototype = {
 			}
 		}
 		
+		// Fire an "all" event for compatibility with Backbone. Will probably be removed in the future
+		if( eventName !== 'all' ) {
+			this.fireEvent.apply( this, [ 'all' ].concat( args ) );
+		}
+		
 		return ret;
 	},
 
@@ -2517,6 +2522,17 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 */
 	create : function( model, options ) {
 		options = options || {};
+				
+		// Set the data to persist, based on if the proxy is set to do incremental updates or not
+		var dataToPersist = model.getPersistedData();
+				
+		// Handle needing a different "root" wrapper object for the data
+		if( this.rootProperty ) {
+			var dataWrap = {};
+			dataWrap[ this.rootProperty ] = dataToPersist;
+			dataToPersist = dataWrap;
+		}
+		
 		
 		var successCallback = function( data ) {
 			if( data ) {
@@ -2535,8 +2551,10 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 			url      : this.buildUrl( model, 'create' ),
 			type     : this.getMethod( 'create' ),
 			dataType : 'json',
+			data     : JSON.stringify( dataToPersist ),
+			contentType : 'application/json',
 			
-			success  : successCallback,
+			success  : successCallback,  // note: currently called in the scope of options.scope
 			error    : options.error    || Kevlar.emptyFn,
 			complete : options.complete || Kevlar.emptyFn,
 			context  : options.scope    || window
@@ -2642,6 +2660,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 			
 			url      : this.buildUrl( model, 'update' ),
 			type     : this.getMethod( 'update' ),
+			dataType : 'json',
 			data     : JSON.stringify( dataToPersist ),
 			contentType : 'application/json',
 			
