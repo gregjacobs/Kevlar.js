@@ -1768,7 +1768,15 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			 * @param {String} fieldName The field name for the Field that was changed.
 			 * @param {Mixed} value The new value.
 			 */
-			'change'
+			'change',
+			
+			/**
+			 * Fires when the Model has been destroyed (via {@link #method-destroy}).
+			 * 
+			 * @event destroy
+			 * @param {Kevlar.Model} model This Model instance.
+			 */
+			'destroy'
 		);
 		
 		// Initialize the 'fields' array, which gets turned into an object (hash)
@@ -1907,7 +1915,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	getId : function() {
 		// Provide a friendlier error message than what get() provides if the idField is not a Field of the Model
 		if( !( this.idField in this.fields ) ) {
-			throw new Error( "Error: The `idField` (currently set to a field named '" + this.idField + "') was not found in the Model. Please set the `idField` config as the name of the id field in the Model." );
+			throw new Error( "Error: The `idField` (currently set to a field named '" + this.idField + "') was not found on the Model. Please set the `idField` config to the name of the id field in the Model. The model can't be saved or destroyed without it." );
 		}
 		return this.get( this.idField );
 	},
@@ -2321,12 +2329,30 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			throw new Error( "Kevlar.Model::destroy() error: Cannot destroy. No proxy." );
 		}
 		
+		var successCallback = function() {
+			this.fireEvent( 'destroy', this );
+			
+			if( typeof options.success === 'function' ) {
+				options.success.call( scope );
+			}
+		};
+		var errorCallback = function() {
+			if( typeof options.error === 'function' ) {
+				options.error.call( scope );
+			}
+		};
+		var completeCallback = function() {
+			if( typeof options.complete === 'function' ) {
+				options.complete.call( scope );
+			}
+		};
+		
 		var proxyOptions = {
 			async    : ( typeof options.async === 'undefined' ) ? true : options.async,   // defaults to true
-			success  : options.success  || Kevlar.emptyFn,
-			error    : options.error    || Kevlar.emptyFn,
-			complete : options.complete || Kevlar.emptyFn,
-			scope    : scope
+			success  : successCallback,
+			error    : errorCallback,
+			complete : completeCallback,
+			scope    : this
 		};
 		
 		// Make a request to destroy the data on the server

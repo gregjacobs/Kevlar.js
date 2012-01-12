@@ -1503,109 +1503,145 @@ Ext.test.Session.addSuite( {
 			]
 		},
 		
+		
 		{
 			/*
 			 * Test destroy()
 			 */
 			name: 'Test destroy()',
+			ttype : 'testsuite',
 			
-			// Special instructions
-			_should : {
-				error : {
-					"destroy() should throw an error if there is no configured proxy" : "Kevlar.Model::destroy() error: Cannot destroy. No proxy."
+			items : [
+				{
+					name : "General destroy() tests",
+					
+					// Special instructions
+					_should : {
+						error : {
+							"destroy() should throw an error if there is no configured proxy" : "Kevlar.Model::destroy() error: Cannot destroy. No proxy."
+						}
+					},
+					
+					
+					"destroy() should throw an error if there is no configured proxy" : function() {
+						var Model = Kevlar.Model.extend( {
+							addFields : [ 'field1', 'field2' ]
+							// note: no proxy
+						} );
+						
+						var model = new Model();
+						model.destroy();
+						Y.Assert.fail( "destroy() should have thrown an error with no configured proxy" );
+					},
+					
+					
+					"destroy() should delegate to its proxy's destroy() method to persist the destruction of the model" : function() {
+						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );				
+						var Model = Kevlar.Model.extend( {
+							proxy : mockProxy
+						} );
+						
+						var model = new Model();
+						
+						// Run the destroy() method to delegate 
+						model.destroy();
+						
+						try {
+							JsMockito.verify( mockProxy, JsMockito.Verifiers.once() ).destroy();
+						} catch( e ) {
+							Y.Assert.fail( "The model should have delegated to the destroy method exactly once." );
+						}
+					},
+					
+					
+					"upon successful destruction of the Model, the Model should fire its 'destroy' event" : function() {
+						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
+						mockProxy.destroy = function( model, options ) {
+							options.success.call( options.scope );
+						};
+						
+						var Model = Kevlar.Model.extend( {
+							proxy : mockProxy
+						} );
+						
+						var model = new Model();
+						
+						var destroyEventFired = false;
+						model.addListener( 'destroy', function() {
+							destroyEventFired = true;
+						} );
+						
+						// Run the destroy() method to delegate 
+						model.destroy();
+						Y.Assert.isTrue( destroyEventFired, "Should have fired its destroy event" );
+					}
+				},
+			
+			
+				{
+					name : "destroy() callbacks tests",
+					
+					setUp : function() {
+						this.mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
+						this.mockProxy.destroy = function( model, options ) {
+							if( options.success )  { options.success.call( options.scope ); }
+							if( options.error )    { options.error.call( options.scope ); }
+							if( options.complete ) { options.complete( options.scope ); }
+						};
+					},
+					
+			
+					"destroy() should call its 'success' and 'complete' callbacks if the proxy is successful" : function() {
+						var successCallCount = 0,
+						    completeCallCount = 0;
+						
+						var Model = Kevlar.Model.extend( {
+							fields : [ 'field1' ],
+							proxy  : this.mockProxy
+						} );
+						var model = new Model();
+						
+						model.destroy( {
+							success  : function() { successCallCount++; },
+							complete : function() { completeCallCount++; },
+							scope    : this
+						} );
+						
+						Y.Assert.areSame( 1, successCallCount, "The 'success' function should have been called exactly once" );
+						Y.Assert.areSame( 1, completeCallCount, "The 'complete' function should have been called exactly once" );
+					},
+					
+					
+					"destroy() should call its 'error' and 'complete' callbacks if the proxy encounters an error" : function() {
+						var errorCallCount = 0,
+						    completeCallCount = 0;
+						    
+						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
+						mockProxy.destroy = function( model, options ) {
+							options.error.call( options.scope );
+							options.complete( options.scope );
+						};
+						
+						var Model = Kevlar.Model.extend( {
+							fields : [ 'field1' ],
+							proxy  : this.mockProxy
+						} );
+						var model = new Model();
+						
+						model.destroy( {
+							error    : function() { errorCallCount++; },
+							complete : function() { completeCallCount++; },
+							scope    : this
+						} );
+						
+						Y.Assert.areSame( 1, errorCallCount, "The 'error' function should have been called exactly once" );
+						Y.Assert.areSame( 1, completeCallCount, "The 'complete' function should have been called exactly once" );
+					}
 				}
-			},
-			
-			
-			"destroy() should throw an error if there is no configured proxy" : function() {
-				var Model = Kevlar.Model.extend( {
-					addFields : [ 'field1', 'field2' ]
-					// note: no proxy
-				} );
-				
-				var model = new Model();
-				model.destroy();
-				Y.Assert.fail( "destroy() should have thrown an error with no configured proxy" );
-			},
-			
-			
-			"destroy() should delegate to its proxy's destroy() method to persist the destruction of the model" : function() {
-				var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );				
-				var Model = Kevlar.Model.extend( {
-					proxy : mockProxy
-				} );
-				
-				var model = new Model();
-				
-				// Run the destroy() method to delegate 
-				model.destroy();
-				
-				try {
-					JsMockito.verify( mockProxy, JsMockito.Verifiers.once() ).destroy();
-				} catch( e ) {
-					Y.Assert.fail( "The model should have delegated to the destroy method exactly once." );
-				}
-			},
-			
-			
-			// ---------------------------------
-			
-			
-			"destroy() should call its 'success' and 'complete' callbacks if the proxy is successful" : function() {
-				var successCallCount = 0,
-				    completeCallCount = 0;
-				    
-				var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
-				mockProxy.destroy = function( model, options ) {
-					options.success.call( options.scope );
-					options.complete( options.scope );
-				};
-				
-				var Model = Kevlar.Model.extend( {
-					fields : [ 'field1' ],
-					proxy  : mockProxy
-				} );
-				var model = new Model();
-				
-				model.destroy( {
-					success  : function() { successCallCount++; },
-					complete : function() { completeCallCount++; },
-					scope    : this
-				} );
-				
-				Y.Assert.areSame( 1, successCallCount, "The 'success' function should have been called exactly once" );
-				Y.Assert.areSame( 1, completeCallCount, "The 'complete' function should have been called exactly once" );
-			},
-			
-			
-			"destroy() should call its 'error' and 'complete' callbacks if the proxy encounters an error" : function() {
-				var errorCallCount = 0,
-				    completeCallCount = 0;
-				    
-				var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
-				mockProxy.destroy = function( model, options ) {
-					options.error.call( options.scope );
-					options.complete( options.scope );
-				};
-				
-				var Model = Kevlar.Model.extend( {
-					fields : [ 'field1' ],
-					proxy  : mockProxy
-				} );
-				var model = new Model();
-				
-				model.destroy( {
-					error    : function() { errorCallCount++; },
-					complete : function() { completeCallCount++; },
-					scope    : this
-				} );
-				
-				Y.Assert.areSame( 1, errorCallCount, "The 'error' function should have been called exactly once" );
-				Y.Assert.areSame( 1, completeCallCount, "The 'complete' function should have been called exactly once" );
-			}
+			]
 		},
 		
-		
+			
 		
 		// ---------------------
 		
