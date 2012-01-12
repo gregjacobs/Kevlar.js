@@ -8,6 +8,82 @@ Ext.test.Session.addSuite( 'Kevlar.persistence', {
 	
 		{
 			/*
+			 * Test create()
+			 */
+			name: "Test create",
+			ttype: 'testsuite',
+			
+			items : [
+				{
+					name: 'General create() tests',
+					
+					"create() should populate the model with any response data upon a successful ajax request" : function() {
+						var testData = { field1: 'value1', field2: 'value2' };
+						var TestProxy = Kevlar.persistence.RestProxy.extend( {
+							ajax : function( options ) { 
+								options.success( testData );
+							}
+						} );
+						var proxy = new TestProxy();
+						
+						var mockModel = JsMockito.mock( Kevlar.Model );
+						proxy.create( mockModel );
+						
+						try {
+							JsMockito.verify( mockModel ).set( testData );
+						} catch( e ) {
+							Y.Assert.fail( "The model should have had its data set to the testData" );
+						}
+					}
+				},
+				
+				{
+					name : "create()'s HTTP method tests",
+					
+					
+					"By default, the ajax function should be called with the HTTP method 'POST'" : function() {
+						var model = JsMockito.mock( Kevlar.Model );
+						JsMockito.when( model ).getPersistedChanges().thenReturn( { field1: 'value1' } );
+						
+						var httpMethod = "";
+						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
+							ajax: function( options ) {
+								httpMethod = options.type;
+							}
+						} );
+						var proxy = new TestProxy();
+						
+						proxy.create( model );
+						Y.Assert.areSame( 'POST', httpMethod );
+					},
+					
+					
+					"The HTTP method should be overridable via the actionMethods config" : function() {
+						var model = JsMockito.mock( Kevlar.Model );
+						JsMockito.when( model ).getPersistedChanges().thenReturn( { field1: 'value1' } );
+						
+						var httpMethod = "";
+						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
+							ajax: function( options ) {
+								httpMethod = options.type;
+							},
+							
+							actionMethods : {
+								create : 'PUT'  // override
+							}
+						} );
+						var proxy = new TestProxy();
+						
+						proxy.create( model );
+						Y.Assert.areSame( 'PUT', httpMethod );
+					}
+				}
+			]
+		},
+					
+	
+		{
+			/*
 			 * Test read()
 			 */
 			name: "Test read",

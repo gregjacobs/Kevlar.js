@@ -1687,7 +1687,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @cfg {String} idField
 	 * The field that should be used as the ID for the Model. 
 	 */
-	idField : "id",
+	idField : 'id',
 	
 	
 	/**
@@ -2287,8 +2287,12 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			scope    : this
 		};
 		
-		// Make a request to update the data on the server
-		this.proxy.update( this, proxyOptions );
+		// Make a request to create or update the data on the server
+		if( typeof this.getId() === 'undefined' ) {
+			this.proxy.create( this, proxyOptions );
+		} else {
+			this.proxy.update( this, proxyOptions );
+		}
 	},
 	
 	
@@ -2404,7 +2408,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
     /**
      * @cfg {Boolean} appendId
      * True to automatically append the ID of the Model to the {@link #url} when
-     * performing requests. 
+     * performing 'read', 'update', and 'delete' actions. 
      */
     appendId: true,
     
@@ -2445,7 +2449,6 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		destroy : 'DELETE'
 	},
 	
-	
 	/**
 	 * @private
 	 * @property {Function} ajax
@@ -2453,6 +2456,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 * but is changed for the unit tests.
 	 */
 	ajax : jQuery.ajax,
+	
 	
 	
 	/**
@@ -2468,18 +2472,50 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	
 	
 	/**
-	 * Creates a Model on the server.
+	 * Creates the Model on the server. Any response data that is provided from the request is
+	 * then {@link Kevlar.Model#set} to the Model.
 	 * 
 	 * @method create
 	 * @param {Kevlar.Model} The Model instance to create on the server.
+	 * @param {Object} [options] An object which may contain the following properties:
+	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
+	 * @param {Function} [options.success] Function to call if the delete is successful.
+	 * @param {Function} [options.error] Function to call if the delete fails.
+	 * @param {Function} [options.complete] Function to call regardless of if the delete is successful or fails.
+	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in.
+	 * @return {jqXHR} The jQuery XMLHttpRequest superset object for the request.
 	 */
-	create : function() {
-		throw new Error( "create() not yet implemented" );
+	create : function( model, options ) {
+		options = options || {};
+		
+		var successCallback = function( data ) {
+			if( data ) {
+				model.set( data );
+				model.commit();
+			}
+			
+			if( typeof options.success === 'function' ) {
+				options.success.call( options.scope || window );
+			}
+		};
+		
+		return this.ajax( {
+			async    : ( typeof options.async === 'undefined' ) ? true : options.async,  // async defaults to true.
+			
+			url      : this.buildUrl( model, 'create' ),
+			type     : this.getMethod( 'create' ),
+			dataType : 'json',
+			
+			success  : successCallback,
+			error    : options.error    || Kevlar.emptyFn,
+			complete : options.complete || Kevlar.emptyFn,
+			context  : options.scope    || window
+		} );
 	},
 	
 	
 	/**
-	 * Reads a Model from the server.
+	 * Reads the Model from the server.
 	 * 
 	 * @method read
 	 * @param {Kevlar.Model} The Model instance to read from the server.
@@ -2489,6 +2525,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 * @param {Function} [options.error] Function to call if the delete fails.
 	 * @param {Function} [options.complete] Function to call regardless of if the delete is successful or fails.
 	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in.
+	 * @return {jqXHR} The jQuery XMLHttpRequest superset object for the request.
 	 */
 	read : function( model, options ) {
 		options = options || {};
@@ -2502,7 +2539,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 			}
 		};
 		
-		this.ajax( {
+		return this.ajax( {
 			async    : ( typeof options.async === 'undefined' ) ? true : options.async,  // async defaults to true.
 			
 			url      : this.buildUrl( model, 'read' ),
@@ -2530,6 +2567,8 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 * @param {Function} [options.complete] Function to call regardless of if the update is successful or fails.
 	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in. 
 	 *   This may also be provided as `context` if you prefer.
+	 * @return {jqXHR} The jQuery XMLHttpRequest superset object for the request, *or `null` if no request is made
+	 *   because the model contained no changes*.
 	 */
 	update : function( model, options ) {
 		options = options || {};
@@ -2546,7 +2585,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 			if( typeof options.complete === 'function' ) {
 				options.complete.call( scope );
 			}
-			return;
+			return null;
 		}
 		
 		
@@ -2568,7 +2607,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		
 		
 		// Finally, persist to the server
-		this.ajax( {
+		return this.ajax( {
 			async    : ( typeof options.async === 'undefined' ) ? true : options.async,  // async defaults to true.
 			
 			url      : this.buildUrl( model, 'update' ),
@@ -2597,11 +2636,12 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 * @param {Function} [options.error] Function to call if the delete fails.
 	 * @param {Function} [options.complete] Function to call regardless of if the delete is successful or fails.
 	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in.
+	 * @return {jqXHR} The jQuery XMLHttpRequest superset object for the request.
 	 */
 	destroy : function( model, options ) {
 		options = options || {};
 		
-		this.ajax( {
+		return this.ajax( {
 			async    : ( typeof options.async === 'undefined' ) ? true : options.async,  // async defaults to true.
 			
 			url      : this.buildUrl( model, 'destroy' ),

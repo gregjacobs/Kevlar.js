@@ -37,7 +37,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @cfg {String} idField
 	 * The field that should be used as the ID for the Model. 
 	 */
-	idField : "id",
+	idField : 'id',
 	
 	
 	/**
@@ -637,8 +637,12 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			scope    : this
 		};
 		
-		// Make a request to update the data on the server
-		this.proxy.update( this, proxyOptions );
+		// Make a request to create or update the data on the server
+		if( typeof this.getId() === 'undefined' ) {
+			this.proxy.create( this, proxyOptions );
+		} else {
+			this.proxy.update( this, proxyOptions );
+		}
 	},
 	
 	

@@ -1250,199 +1250,257 @@ Ext.test.Session.addSuite( {
 			 * Test save()
 			 */
 			name: 'Test save()',
+			ttype: 'testsuite',
 			
-			setUp : function() {
-				this.TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [
-						{ name: 'field1' },
-						{ name: 'field2', defaultValue: "field2's default" },
-						{ name: 'field3', defaultValue: function() { return "field3's default"; } },
-						{ name: 'field4', convert : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
-						{ name: 'field5', convert : function( value, model ) { return value + " " + model.get( 'field2' ); } }
-					]
-				} );
-			},
-			
-			
-			// Special instructions
-			_should : {
-				error : {
-					"save() should throw an error if there is no configured proxy" : "Kevlar.Model::save() error: Cannot save. No proxy."
-				}
-			},
-			
-			
-			"save() should throw an error if there is no configured proxy" : function() {
-				var model = new this.TestModel( {
-					// note: no configured proxy
-				} );
-				model.save();
-				Y.Assert.fail( "save() should have thrown an error with no configured proxy" );
-			},
-			
-			
-			"save() should delegate to its proxy's update() method to persist changes" : function() {
-				var updateCallCount = 0;
-				var MockProxy = Kevlar.persistence.Proxy.extend( {
-					update : function( model, options ) {
-						updateCallCount++;
-					}
-				} );
-				
-				var MyModel = this.TestModel.extend( {
-					proxy : new MockProxy()
-				} );
-				
-				var model = new MyModel();
-				
-				// Run the save() method to delegate 
-				model.save();
-				
-				Y.Assert.areSame( 1, updateCallCount, "The proxy's update() method should have been called exactly once" );
-			},
-			
-			
-			// ---------------------------------
-			
-			
-			"save should call its 'success' and 'complete' callbacks if the proxy is successful" : function() {
-				var successCallCount = 0,
-				    completeCallCount = 0;
-				    
-				var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
-				mockProxy.update = function( model, options ) {
-					options.success.call( options.scope );
-					options.complete( options.scope );
-				};
-				
-				var Model = Kevlar.Model.extend( {
-					fields : [ 'field1' ],
-					proxy  : mockProxy
-				} );
-				var model = new Model();
-				
-				model.save( {
-					success  : function() { successCallCount++; },
-					complete : function() { completeCallCount++; },
-					scope    : this
-				} );
-				
-				Y.Assert.areSame( 1, successCallCount, "The 'success' function should have been called exactly once" );
-				Y.Assert.areSame( 1, completeCallCount, "The 'complete' function should have been called exactly once" );
-			},
-			
-			
-			"save should call its 'error' and 'complete' callbacks if the proxy encounters an error" : function() {
-				var errorCallCount = 0,
-				    completeCallCount = 0;
-				    
-				var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
-				mockProxy.update = function( model, options ) {
-					options.error.call( options.scope );
-					options.complete( options.scope );
-				};
-				
-				var Model = Kevlar.Model.extend( {
-					fields : [ 'field1' ],
-					proxy  : mockProxy
-				} );
-				var model = new Model();
-				
-				model.save( {
-					error    : function() { errorCallCount++; },
-					complete : function() { completeCallCount++; },
-					scope    : this
-				} );
-				
-				Y.Assert.areSame( 1, errorCallCount, "The 'error' function should have been called exactly once" );
-				Y.Assert.areSame( 1, completeCallCount, "The 'complete' function should have been called exactly once" );
-			},
-			
-			
-			
-			// ---------------------------------
-			
-			// TODO: Test that if a model attribute is modified twice after a persistence operation is started, it should be able to be reverted to its original value
-			
-			
-			// Test that model attributes that are updated during a persistence request do not get marked as committed
-			
-			"Model attributes that are updated (via set()) while a persistence request is in progress should not be marked as committed when the persistence request completes" : function() {
-				var test = this;
-				var MockProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
-					update : function( model, options ) {
-						// update method just calls 'success' callback in 50ms
-						window.setTimeout( function() {
-							options.success.call( options.scope || window );
-						}, 50 );
-					}
-				} );
-				
-				var MyModel = this.TestModel.extend( {
-					proxy : new MockProxy()
-				} );
-				
-				var model = new MyModel();
-				
-				// Initial set
-				model.set( 'field1', "origValue1" );
-				model.set( 'field2', "origValue2" );
-				
-				// Begin persistence operation, defining a callback for when it is complete
-				model.save( {
-					success : function() {
-						test.resume( function() {
-							Y.Assert.isTrue( model.isDirty(), "The model should still be dirty after the persistence operation. field1 was set after the persistence operation began." );
-							
-							Y.Assert.isTrue( model.isModified( 'field1' ), "field1 should be marked as modified (dirty). It was updated (set) after the persistence operation began." );
-							Y.Assert.isFalse( model.isModified( 'field2' ), "field2 should not be marked as modified. It was not updated after the persistence operation began." );
-							
-							Y.Assert.areSame( "newValue1", model.get( 'field1' ), "a get() operation on field1 should return the new value." );
-							Y.Assert.areSame( "origValue2", model.get( 'field2' ), "a get() operation on field2 should return the persisted value. It was not updated since the persistence operation began." );
+			items : [
+				{
+					name : "General save() tests",
+					
+					// Special instructions
+					_should : {
+						error : {
+							"save() should throw an error if there is no configured proxy" : "Kevlar.Model::save() error: Cannot save. No proxy."
+						}
+					},
+					
+					
+					"save() should throw an error if there is no configured proxy" : function() {
+						var Model = Kevlar.Model.extend( {
+							// note: no proxy
 						} );
+						var model = new Model();
+						model.save();
+						Y.Assert.fail( "save() should have thrown an error with no configured proxy" );
+					},
+					
+					
+					"save() should delegate to its proxy's create() method to persist changes when the Model does not have an id set" : function() {
+						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
+						
+						var Model = Kevlar.Model.extend( {
+							addFields : [ 'id' ],
+							idField : 'id',
+							
+							proxy : mockProxy
+						} );
+						
+						var model = new Model();  // note: no 'id' set
+						
+						// Run the save() method to delegate 
+						model.save();
+						
+						try {
+							JsMockito.verify( mockProxy ).create();
+						} catch( message ) {
+							Y.Assert.fail( "The proxy's update() method should have been called exactly once. " + message );
+						}
+					},
+					
+					
+					"save() should delegate to its proxy's update() method to persist changes, when the Model has an id" : function() {
+						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
+						
+						var Model = Kevlar.Model.extend( {
+							addFields : [ 'id' ],
+							idField : 'id',
+							
+							proxy : mockProxy
+						} );
+						
+						var model = new Model( { id: 1 } );
+						
+						// Run the save() method to delegate 
+						model.save();
+						
+						try {
+							JsMockito.verify( mockProxy, JsMockito.Verifiers.once() ).update();
+						} catch( message ) {
+							Y.Assert.fail( "The proxy's update() method should have been called exactly once. " + message );
+						}
 					}
-				} );
+				},
+					
 				
-				
-				// Now set the field while the async persistence operation is in progress. Test will resume when the timeout completes
-				model.set( 'field1', "newValue1" );
-				// note: not setting field2 here
-				
-				// Wait for the setTimeout in the MockProxy
-				test.wait( 100 );
-			},
-			
-			
-			
-			"Model attributes that have been persisted should not be persisted again if they haven't changed since the last persist" : function() {
-				var dataToPersist;
-				var MockProxy = Kevlar.persistence.Proxy.extend( {
-					update : function( model, options ) {
-						dataToPersist = model.getChanges();
-						options.success.call( options.scope );
+				{
+					name : "save() callbacks tests",
+					
+					setUp : function() {
+						this.mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
+						
+						// Note: setting both create() and update() methods here
+						this.mockProxy.create = this.mockProxy.update = function( model, options ) {
+							if( options.success ) { options.success.call( options.scope || window ); }
+							if( options.error ) { options.error.call( options.scope || window ); }
+							if( options.complete ) { options.complete( options.scope || window ); }
+						};
+						
+						this.Model = Kevlar.Model.extend( {
+							addFields : [ 'id', 'field1' ],
+							proxy  : this.mockProxy
+						} );
+					},
+					
+					
+					"save should call its 'success' and 'complete' callbacks if the proxy successfully creates" : function() {
+						var successCallCount = 0,
+						    completeCallCount = 0;
+						    
+						var model = new this.Model();
+						model.save( {
+							success  : function() { successCallCount++; },
+							complete : function() { completeCallCount++; },
+							scope    : this
+						} );
+						
+						Y.Assert.areSame( 1, successCallCount, "The 'success' function should have been called exactly once" );
+						Y.Assert.areSame( 1, completeCallCount, "The 'complete' function should have been called exactly once" );
+					},
+					
+					
+					"save should call its 'error' and 'complete' callbacks if the proxy encounters an error while creating" : function() {
+						var errorCallCount = 0,
+						    completeCallCount = 0;
+						
+						var model = new this.Model();
+						model.save( {
+							error    : function() { errorCallCount++; },
+							complete : function() { completeCallCount++; },
+							scope    : this
+						} );
+						
+						Y.Assert.areSame( 1, errorCallCount, "The 'error' function should have been called exactly once" );
+						Y.Assert.areSame( 1, completeCallCount, "The 'complete' function should have been called exactly once" );
+					},
+					
+					
+					"save should call its 'success' and 'complete' callbacks if the proxy successfully updates" : function() {
+						var successCallCount = 0,
+						    completeCallCount = 0;
+						    
+						var model = new this.Model( { id: 1 } );
+						model.save( {
+							success  : function() { successCallCount++; },
+							complete : function() { completeCallCount++; },
+							scope    : this
+						} );
+						
+						Y.Assert.areSame( 1, successCallCount, "The 'success' function should have been called exactly once" );
+						Y.Assert.areSame( 1, completeCallCount, "The 'complete' function should have been called exactly once" );
+					},
+					
+					
+					"save should call its 'error' and 'complete' callbacks if the proxy encounters an error while updating" : function() {
+						var errorCallCount = 0,
+						    completeCallCount = 0;
+						
+						var model = new this.Model( { id: 1 } );
+						model.save( {
+							error    : function() { errorCallCount++; },
+							complete : function() { completeCallCount++; },
+							scope    : this
+						} );
+						
+						Y.Assert.areSame( 1, errorCallCount, "The 'error' function should have been called exactly once" );
+						Y.Assert.areSame( 1, completeCallCount, "The 'complete' function should have been called exactly once" );
 					}
-				} );
-				var MyModel = this.TestModel.extend( {
-					proxy : new MockProxy()
-				} );
-				var model = new MyModel();
-				
-				
-				// Change field1 first (so that it has changes), then save
-				model.set( 'field1', 'newfield1value' );
-				model.save();
-				
-				Y.Assert.areSame( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after field1 has been changed" );
-				Y.ObjectAssert.ownsKeys( [ 'field1' ], dataToPersist, "The dataToPersist should have 'field1'" );
-				
-				
-				// Now change field2. The dataToPersist should not include field1, since it has been persisted
-				model.set( 'field2', 'newfield2value' );
-				model.save();
-				
-				Y.Assert.areSame( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after field2 has been changed" );
-				Y.ObjectAssert.ownsKeys( [ 'field2' ], dataToPersist, "The dataToPersist should have 'field2'" );
-			}
+				},
+					
+					
+				{
+					name : "Test concurrent persistence and model updates",
+					
+					setUp : function() {
+						this.Model = Kevlar.Model.extend( {
+							addFields : [ 'id', 'field1', 'field2' ],
+							proxy  : this.mockProxy
+						} );
+					},
+					
+					// ---------------------------------
+					
+					// TODO: Test that if a model attribute is modified twice after a persistence operation is started, it should be able to be reverted to its original value
+					
+					
+					// Test that model attributes that are updated during a persistence request do not get marked as committed
+					
+					"Model attributes that are updated (via set()) while a persistence request is in progress should not be marked as committed when the persistence request completes" : function() {
+						var test = this;
+						var MockProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
+							update : function( model, options ) {
+								// update method just calls 'success' callback in 50ms
+								window.setTimeout( function() {
+									options.success.call( options.scope || window );
+								}, 50 );
+							}
+						} );
+						
+						var MyModel = this.Model.extend( {
+							proxy : new MockProxy()
+						} );
+						
+						var model = new MyModel( { id: 1 } );
+						
+						// Initial set
+						model.set( 'field1', "origValue1" );
+						model.set( 'field2', "origValue2" );
+						
+						// Begin persistence operation, defining a callback for when it is complete
+						model.save( {
+							success : function() {
+								test.resume( function() {
+									Y.Assert.isTrue( model.isDirty(), "The model should still be dirty after the persistence operation. field1 was set after the persistence operation began." );
+									
+									Y.Assert.isTrue( model.isModified( 'field1' ), "field1 should be marked as modified (dirty). It was updated (set) after the persistence operation began." );
+									Y.Assert.isFalse( model.isModified( 'field2' ), "field2 should not be marked as modified. It was not updated after the persistence operation began." );
+									
+									Y.Assert.areSame( "newValue1", model.get( 'field1' ), "a get() operation on field1 should return the new value." );
+									Y.Assert.areSame( "origValue2", model.get( 'field2' ), "a get() operation on field2 should return the persisted value. It was not updated since the persistence operation began." );
+								} );
+							}
+						} );
+						
+						
+						// Now set the field while the async persistence operation is in progress. Test will resume when the timeout completes
+						model.set( 'field1', "newValue1" );
+						// note: not setting field2 here
+						
+						// Wait for the setTimeout in the MockProxy
+						test.wait( 100 );
+					},
+					
+					
+					
+					"Model attributes that have been persisted should not be persisted again if they haven't changed since the last persist" : function() {
+						var dataToPersist;
+						var MockProxy = Kevlar.persistence.Proxy.extend( {
+							update : function( model, options ) {
+								dataToPersist = model.getChanges();
+								options.success.call( options.scope );
+							}
+						} );
+						var MyModel = this.Model.extend( {
+							proxy : new MockProxy()
+						} );
+						var model = new MyModel( { id: 1 } );
+						
+						
+						// Change field1 first (so that it has changes), then save
+						model.set( 'field1', 'newfield1value' );
+						model.save();
+						
+						Y.Assert.areSame( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after field1 has been changed" );
+						Y.ObjectAssert.ownsKeys( [ 'field1' ], dataToPersist, "The dataToPersist should have 'field1'" );
+						
+						
+						// Now change field2. The dataToPersist should not include field1, since it has been persisted
+						model.set( 'field2', 'newfield2value' );
+						model.save();
+						
+						Y.Assert.areSame( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after field2 has been changed" );
+						Y.ObjectAssert.ownsKeys( [ 'field2' ], dataToPersist, "The dataToPersist should have 'field2'" );
+					}
+				}
+			]
 		},
 		
 		{
