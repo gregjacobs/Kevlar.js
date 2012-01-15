@@ -6,7 +6,8 @@
 			name: "Kevlar JS Tests",
 			filename: "kevlarTests.js",
 			includes: [
-				{ tree: "./" }
+				{ tree: "unit/" },
+				{ tree: "integration/" }
 			]
 		}
 	]

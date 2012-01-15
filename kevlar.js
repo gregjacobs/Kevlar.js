@@ -1521,21 +1521,12 @@ Kevlar.Field = Kevlar.extend( Object, {
 	name : "",
 	
 	/**
-	 * @cfg {String} type
-	 * Currently unused, but specifies the type of the Field. In the future, this may be implemented to do type checking
-	 * on field data.
+	 * @cfg {Function} type
+	 * Specifies the type of the Field, in which a conversion of the raw data will be performed. 
+	 * Currently, this config accepts a constructor function for the type. If a {@link Kevlar.Model}
+	 * subclass is provided, any raw data object will be fed to the constructor function.
 	 * 
-	 * This may be one of the following values:
-	 * <ul>
-	 *   <li>auto (default, no type checking is done)</li>
-	 *   <li>int</li>
-	 *   <li>float</li>
-	 *   <li>string</li>
-	 *   <li>boolean</li>
-	 *   <li>date</li>
-	 *   <li>object</li>
-	 *   <li>array</li>
-	 * </ul>
+	 * In the future, this may be implemented for other custom types.
 	 */
 	
 	/**
