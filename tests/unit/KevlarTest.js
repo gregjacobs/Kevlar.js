@@ -1,4 +1,5 @@
 /*global jQuery, Ext, Y, Kevlar */
+/*jslint evil:true */
 Ext.test.Session.addSuite( {
 	
 	name: 'Kevlar',
