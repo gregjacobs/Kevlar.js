@@ -1,6 +1,7 @@
-/*global window, Ext, Y, JsMockito, Kevlar */
-Ext.test.Session.addSuite( {
-                                                 
+/*global window, Ext, Y, JsMockito, tests, Kevlar */
+tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
+    
+	parentSuite: tests.unit,
 	name: 'Kevlar.Model',
 	
 	

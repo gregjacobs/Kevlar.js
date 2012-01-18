@@ -1,6 +1,7 @@
-/*global Ext, Y, Kevlar */
+/*global Ext, Y, Kevlar, tests */
 Ext.test.Session.addTest( {
 	
+	parentSuite: tests.unit,
 	name: 'Kevlar.Field',
 	
 	

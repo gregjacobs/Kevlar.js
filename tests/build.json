@@ -6,7 +6,12 @@
 			name: "Kevlar JS Tests",
 			filename: "kevlarTests.js",
 			includes: [
-				{ file: "unit/KevlarTest.js" }
+				{ file: "unit/packageSuites.js" },
+				{ file: "unit/KevlarTest.js" },
+				{ tree: "unit/" },
+				
+				{ file: "integration/packageSuites.js" },
+				{ tree: "integration/" }
 			]
 		}
 	]

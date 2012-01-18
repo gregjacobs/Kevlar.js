@@ -1,6 +1,7 @@
-/*global jQuery, Ext, Y, Kevlar */
-Ext.test.Session.addSuite( {
+/*global jQuery, Ext, Y, Kevlar, tests */
+tests.unit.util.Object = new Ext.test.TestSuite( {
 	
+	parentSuite : tests.unit.util,
 	name : 'Kevlar.util.Object',
 	
 	items : [

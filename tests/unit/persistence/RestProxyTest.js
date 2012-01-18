@@ -1,6 +1,7 @@
-/*global window, jQuery, Ext, Y, JsMockito, Kevlar */
-Ext.test.Session.addSuite( 'Kevlar.persistence', {
-                                                 
+/*global window, jQuery, Ext, Y, JsMockito, Kevlar, tests */
+tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
+	
+	parentSuite : tests.unit.persistence,
 	name: 'Kevlar.persistence.RestProxy',
 	
 	

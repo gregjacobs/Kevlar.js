@@ -1,6 +1,7 @@
-/*global Ext, Y, Kevlar */
-Ext.test.Session.addSuite( 'Kevlar.util', {
+/*global Ext, Y, Kevlar, tests */
+tests.unit.util.Observable = new Ext.test.TestSuite( {
 	
+	parentSuite : tests.unit.util,
 	name: 'Kevlar.util.Observable',
 	
 	

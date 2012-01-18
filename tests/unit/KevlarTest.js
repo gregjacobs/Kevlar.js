@@ -1,7 +1,8 @@
-/*global jQuery, Ext, Y, Kevlar */
+/*global jQuery, Ext, Y, tests, Kevlar */
 /*jslint evil:true */
-Ext.test.Session.addSuite( {
+tests.unit.Kevlar = new Ext.test.TestSuite( {
 	
+	parentSuite: tests.unit,
 	name: 'Kevlar',
 	
 	
