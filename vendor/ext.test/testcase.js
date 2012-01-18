@@ -23,6 +23,8 @@ Ext.test.TestCase = Ext.extend( Y.Test.Case, {
 		this.testSession = this.testSession || Ext.test.Session;     
 		if(!this.parentSuite) {
 			this.testSession.registerCase( this );
+		} else {
+			this.parentSuite.add( this );
 		}
 	},
 	

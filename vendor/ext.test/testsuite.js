@@ -66,13 +66,19 @@ Ext.test.TestSuite = Ext.extend( Y.Test.Suite, {
 		    it.parentSuite = this;
 			
 		if ( !(item instanceof Ext.test.TestCase) && !(item instanceof Ext.test.TestSuite)) {
+			// NOTE: By providing the parentSuite config to the constructor, these will
+			// automatically be added to the testSuite. Don't need to call superclass method here.
 			if (it.ttype == 'testsuite' || it.ttype == 'suite') {
 				it = new Ext.test.TestSuite( item );
 			} else {
 				it = new Ext.test.TestCase( item );
 			}
+			
+		} else {
+			Ext.test.TestSuite.superclass.add.call( this, it );
 		}
-		Ext.test.TestSuite.superclass.add.call( this, it );
+		
+		return this;
 	},
 	
 	
