@@ -1,9 +1,8 @@
 /*
-Copyright (c) 2010, Yahoo! Inc. All rights reserved.
-Code licensed under the BSD License:
-http://developer.yahoo.com/yui/license.html
-version: 3.2.0
-build: 2676
+YUI 3.4.1 (build 4118)
+Copyright 2011 Yahoo! Inc. All rights reserved.
+Licensed under the BSD License.
+http://yuilibrary.com/license/
 */
 YUI.add('test', function(Y) {
 
@@ -30,6 +29,10 @@ YUI.add('test', function(Y) {
          * Special rules for the test case. Possible subobjects
          * are fail, for tests that should fail, and error, for
          * tests that should throw an error.
+         *
+         * @property _should
+         * @type Object
+         * @protected
          */
         this._should = {};
         
@@ -42,6 +45,9 @@ YUI.add('test', function(Y) {
         if (!Y.Lang.isString(this.name)){
             /**
              * Name for the test case.
+             *
+             * @property name
+             * @type String
              */
             this.name = "testCase" + Y.guid();
         }
@@ -135,7 +141,7 @@ YUI.add('test', function(Y) {
     
     /**
      * A test suite that can contain a collection of TestCase and TestSuite objects.
-     * @param {String||Object} data The name of the test suite or an object containing
+     * @param {String|Object} data The name of the test suite or an object containing
      *      a name property as well as setUp and tearDown methods.
      * @namespace Test
      * @class Suite
@@ -152,6 +158,8 @@ YUI.add('test', function(Y) {
     
         /**
          * Array of test suites and
+         * @property items
+         * @type Array
          * @private
          */
         this.items = [];
@@ -174,7 +182,7 @@ YUI.add('test', function(Y) {
         
         /**
          * Adds a test suite or test case to the test suite.
-         * @param {Y.Test.Suite||Y.Test.Case} testObject The test suite or test case to add.
+         * @param {Test.Suite|Test.Case} testObject The test suite or test case to add.
          * @return {Void}
          * @method add
          */
@@ -521,8 +529,11 @@ YUI.add('test', function(Y) {
                         break;
                         
                     case this.COMPLETE_EVENT:
-                        message = "Testing completed at " + (new Date()).toString() + ".\nPassed:" + 
-                            event.results.passed + " Failed:" + event.results.failed + " Total:" + event.results.total;
+                        message = Y.substitute("Testing completed at " +
+                            (new Date()).toString() + ".\n" +
+                            "Passed:{passed} Failed:{failed} " +
+                            "Total:{total} ({ignored} ignored)",
+                            event.results);
                         messageType = "info";
                         break;
                         
@@ -547,8 +558,11 @@ YUI.add('test', function(Y) {
                         break;
                         
                     case this.TEST_SUITE_COMPLETE_EVENT:
-                        message = "Test suite \"" + event.testSuite.name + "\" completed.\nPassed:" + 
-                            event.results.passed + " Failed:" + event.results.failed + " Total:" + event.results.total;
+                        message = Y.substitute("Test suite \"" +
+                            event.testSuite.name + "\" completed" + ".\n" +
+                            "Passed:{passed} Failed:{failed} " +
+                            "Total:{total} ({ignored} ignored)",
+                            event.results);
                         messageType = "info";
                         break;
                         
@@ -558,8 +572,11 @@ YUI.add('test', function(Y) {
                         break;
                         
                     case this.TEST_CASE_COMPLETE_EVENT:
-                        message = "Test case \"" + event.testCase.name + "\" completed.\nPassed:" + 
-                            event.results.passed + " Failed:" + event.results.failed + " Total:" + event.results.total;
+                        message = Y.substitute("Test case \"" +
+                            event.testCase.name + "\" completed.\n" +
+                            "Passed:{passed} Failed:{failed} " +
+                            "Total:{total} ({ignored} ignored)",
+                            event.results);
                         messageType = "info";
                         break;
                     default:
@@ -580,7 +597,7 @@ YUI.add('test', function(Y) {
             /**
              * Adds a test case to the test tree as a child of the specified node.
              * @param {TestNode} parentNode The node to add the test case to as a child.
-             * @param {Y.Test.Case} testCase The test case to add.
+             * @param {Test.Case} testCase The test case to add.
              * @return {Void}
              * @static
              * @private
@@ -605,7 +622,7 @@ YUI.add('test', function(Y) {
             /**
              * Adds a test suite to the test tree as a child of the specified node.
              * @param {TestNode} parentNode The node to add the test suite to as a child.
-             * @param {Y.Test.Suite} testSuite The test suite to add.
+             * @param {Test.Suite} testSuite The test suite to add.
              * @return {Void}
              * @static
              * @private
@@ -731,7 +748,7 @@ YUI.add('test', function(Y) {
             
             /**
              * Runs a test case or test suite, returning the results.
-             * @param {Y.Test.Case|Y.Test.Suite} testObject The test case or test suite to run.
+             * @param {Test.Case|Test.Suite} testObject The test case or test suite to run.
              * @return {Object} Results of the execution with properties passed, failed, and total.
              * @private
              * @method _run
@@ -971,7 +988,7 @@ YUI.add('test', function(Y) {
              * @return {Void}
              * @static
              * @private
-             * @name _runTest
+             * @method _runTest
              */
             _runTest : function (node) {
             
@@ -1164,7 +1181,11 @@ YUI.add('test', function(Y) {
              * @static
              */
             resume : function (segment) {
-                this._resumeTest(segment || function(){});
+                if (Y.Test.Runner._waiting){
+                    this._resumeTest(segment || function(){});
+                } else {
+                    throw new Error("resume() called without wait().");
+                }
             },
         
             /**
@@ -1202,7 +1223,10 @@ YUI.add('test', function(Y) {
         return new TestRunner();
         
     })();
-  
+    /**
+     * @module test
+     */
+
     /**
      * The Assert object provides functions to test JavaScript values against
      * known and expected results. Whenever a comparison (assertion) fails,
@@ -1608,9 +1632,10 @@ YUI.add('test', function(Y) {
     /**
      * Asserts that a given condition is true. If not, then a Y.Assert.Error object is thrown
      * and the test fails.
-     * @method Y.assert
+     * @method assert
      * @param {Boolean} condition The condition to test.
      * @param {String} message The message to display if the assertion fails.
+     * @for YUI
      * @static
      */
     Y.assert = function(condition, message){
@@ -1622,8 +1647,9 @@ YUI.add('test', function(Y) {
 
     /**
      * Forces an assertion error to occur. Shortcut for Y.Assert.fail().
-     * @method Y.fail
+     * @method fail
      * @param {String} message (Optional) The message to display with the failure.
+     * @for YUI
      * @static
      */
     Y.fail = Y.Assert.fail;   
@@ -1638,8 +1664,7 @@ YUI.add('test', function(Y) {
      * from which more specific assertion errors can be derived.
      *
      * @param {String} message The message to display when the error occurs.
-     * @namespace Assert
-     * @class Error
+     * @class Assert.Error
      * @constructor
      */ 
     Y.Assert.Error = function (message){
@@ -1703,9 +1728,8 @@ YUI.add('test', function(Y) {
      * @param {String} message The message to display when the error occurs.
      * @param {Object} expected The expected value.
      * @param {Object} actual The actual value that caused the assertion to fail.
-     * @namespace Assert 
      * @extends Assert.Error
-     * @class ComparisonFailure
+     * @class Assert.ComparisonFailure
      * @constructor
      */ 
     Y.Assert.ComparisonFailure = function (message, expected, actual){
@@ -1760,9 +1784,8 @@ YUI.add('test', function(Y) {
      *
      * @param {String} message The message to display when the error occurs.
      * @param {Object} unexpected The unexpected value.
-     * @namespace Assert
      * @extends Assert.Error
-     * @class UnexpectedValue
+     * @class Assert.UnexpectedValue
      * @constructor
      */ 
     Y.Assert.UnexpectedValue = function (message, unexpected){
@@ -1806,9 +1829,8 @@ YUI.add('test', function(Y) {
      * a test was expected to fail but did not.
      *
      * @param {String} message The message to display when the error occurs.
-     * @namespace Assert
      * @extends Assert.Error
-     * @class ShouldFail
+     * @class Assert.ShouldFail
      * @constructor
      */  
     Y.Assert.ShouldFail = function (message){
@@ -1833,9 +1855,8 @@ YUI.add('test', function(Y) {
      * a test is expected to throw an error but doesn't.
      *
      * @param {String} message The message to display when the error occurs.
-     * @namespace Assert
      * @extends Assert.Error
-     * @class ShouldError
+     * @class Assert.ShouldError
      * @constructor
      */  
     Y.Assert.ShouldError = function (message){
@@ -1862,9 +1883,8 @@ YUI.add('test', function(Y) {
      *
      * @param {Error} cause The unexpected error that caused this error to be 
      *                      thrown.
-     * @namespace Assert
      * @extends Assert.Error
-     * @class UnexpectedError
+     * @class Assert.UnexpectedError
      * @constructor
      */  
     Y.Assert.UnexpectedError = function (cause){
@@ -1898,7 +1918,10 @@ YUI.add('test', function(Y) {
     //inherit methods
     Y.extend(Y.Assert.UnexpectedError, Y.Assert.Error);
     
-   
+    /**
+     * @module test
+     */
+
     /**
      * The ArrayAssert object provides functions to test JavaScript array objects
      * for a variety of cases.
@@ -2219,6 +2242,9 @@ YUI.add('test', function(Y) {
         }
         
     };
+    /**
+     * @module test
+     */
 
     /**
      * The ObjectAssert object provides functions to test JavaScript objects
@@ -2324,14 +2350,15 @@ YUI.add('test', function(Y) {
 
         }     
     };
+    /**
+     * @module test
+     */
 
-    
     /**
      * The DateAssert object provides functions to test JavaScript Date objects
      * for a variety of cases.
      *
      * @class DateAssert
-     * @namespace
      * @static
      */
      
@@ -2639,14 +2666,15 @@ YUI.add('test', function(Y) {
         return "1.." + results.total + "\n" + serializeToTAP(results);
     };
         
-
+    /**
+     * @module test
+     */
 
     Y.namespace("Coverage.Format");
 
     /**
      * Contains specific formatting options for coverage information.
-     * @namespace Coverage
-     * @class Format
+     * @class Coverage.Format
      * @static
      */
     
@@ -2795,13 +2823,10 @@ YUI.add('test', function(Y) {
                 this._form.style.top = 0;
                 document.body.appendChild(this._form);
             
-                //IE won't let you assign a name using the DOM, must do it the hacky way
-                if (Y.UA.ie){
-                    this._iframe = document.createElement("<iframe name=\"yuiTestTarget\" />");
-                } else {
-                    this._iframe = document.createElement("iframe");
-                    this._iframe.name = "yuiTestTarget";
-                }
+                // IE won't let you assign a name using the DOM, must do it the hacky way
+                var iframeContainer = document.createElement("div");
+                iframeContainer.innerHTML = "<iframe name=\"yuiTestTarget\"></iframe>";
+                this._iframe = iframeContainer.firstChild;
     
                 this._iframe.src = "javascript:false";
                 this._iframe.style.visibility = "hidden";
@@ -2849,6 +2874,10 @@ YUI.add('test', function(Y) {
     
     };
     /**
+     * @module test
+     */
+
+    /**
      * Creates a new mock object.
      * @class Mock
      * @constructor
@@ -2858,12 +2887,12 @@ YUI.add('test', function(Y) {
      *      works correctly.
      */
     Y.Mock = function(template){
-    
+
         //use blank object is nothing is passed in
         template = template || {};
-        
+
         var mock = null;
-        
+
         //try to create mock that keeps prototype chain intact
         try {
             mock = Y.Object(template);
@@ -2871,7 +2900,7 @@ YUI.add('test', function(Y) {
             mock = {};
             Y.log("Couldn't create mock with prototype.", "warn", "Mock");
         }
-        
+
         //create new versions of the methods so that they don't actually do anything
         Y.Object.each(template, function(name){
             if (Y.Lang.isFunction(template[name])){
@@ -2880,11 +2909,11 @@ YUI.add('test', function(Y) {
                 };
             }
         });
-        
+
         //return it
-        return mock;    
+        return mock;
     };
-        
+
     /**
      * Assigns an expectation to a mock object. This is used to create
      * methods and properties on the mock object that are monitored for
@@ -2897,7 +2926,7 @@ YUI.add('test', function(Y) {
      * @return {void}
      * @method expect
      * @static
-     */ 
+     */
     Y.Mock.expect = function(mock /*:Object*/, expectation /*:Object*/){
 
         //make sure there's a place to store the expectations
@@ -2913,22 +2942,22 @@ YUI.add('test', function(Y) {
                 callCount = Y.Lang.isNumber(expectation.callCount) ? expectation.callCount : 1,
                 error = expectation.error,
                 run = expectation.run || function(){};
-                
+
             //save expectations
             mock.__expectations[name] = expectation;
             expectation.callCount = callCount;
             expectation.actualCallCount = 0;
-                
+
             //process arguments
             Y.Array.each(args, function(arg, i, array){
                 if (!(array[i] instanceof Y.Mock.Value)){
                     array[i] = Y.Mock.Value(Y.Assert.areSame, [arg], "Argument " + i + " of " + name + "() is incorrect.");
                 }
             });
-        
+
             //if the method is expected to be called
             if (callCount > 0){
-                mock[name] = function(){   
+                mock[name] = function(){
                     try {
                         expectation.actualCallCount++;
                         Y.Assert.areEqual(args.length, arguments.length, "Method " + name + "() passed incorrect number of arguments.");
@@ -2938,11 +2967,11 @@ YUI.add('test', function(Y) {
                             //} else {
                             //    Y.Assert.fail("Argument " + i + " (" + arguments[i] + ") was not expected to be used.");
                             //}
-                            
-                        }                
-    
+
+                        }
+
                         run.apply(this, arguments);
-                        
+
                         if (error){
                             throw error;
                         }
@@ -2950,11 +2979,11 @@ YUI.add('test', function(Y) {
                         //route through TestRunner for proper handling
                         Y.Test.Runner._handleError(ex);
                     }
-                    
+
                     return result;
                 };
             } else {
-            
+
                 //method should fail if called when not expected
                 mock[name] = function(){
                     try {
@@ -2962,7 +2991,7 @@ YUI.add('test', function(Y) {
                     } catch (ex){
                         //route through TestRunner for proper handling
                         Y.Test.Runner._handleError(ex);
-                    }                    
+                    }
                 };
             }
         } else if (expectation.property){
@@ -2978,14 +3007,14 @@ YUI.add('test', function(Y) {
      * @return {void}
      * @method verify
      * @static
-     */ 
-    Y.Mock.verify = function(mock /*:Object*/){    
+     */
+    Y.Mock.verify = function(mock /*:Object*/){
         try {
             Y.Object.each(mock.__expectations, function(expectation){
                 if (expectation.method) {
                     Y.Assert.areEqual(expectation.callCount, expectation.actualCallCount, "Method " + expectation.method + "() wasn't called the expected number of times.");
                 } else if (expectation.property){
-                    Y.Assert.areEqual(expectation.value, mock[expectation.property], "Property " + expectation.property + " wasn't set to the correct value."); 
+                    Y.Assert.areEqual(expectation.value, mock[expectation.property], "Property " + expectation.property + " wasn't set to the correct value.");
                 }
             });
         } catch (ex){
@@ -2996,6 +3025,7 @@ YUI.add('test', function(Y) {
 
     /**
      * Defines a custom mock validator for a particular argument.
+     * @class Mock.Value
      * @param {Function} method The method to run on the argument. This should
      *      throw an assertion error if the value is invalid.
      * @param {Array} originalArgs The first few arguments to pass in
@@ -3004,12 +3034,11 @@ YUI.add('test', function(Y) {
      * @param {String} message The message to display if validation fails. If
      *      not specified, the default assertion error message is displayed.
      * @return {void}
-     * @namespace Mock
      * @constructor Value
      * @static
-     */ 
+     */
     Y.Mock.Value = function(method, originalArgs, message){
-        if (this instanceof Y.Mock.Value){
+        if (Y.instanceOf(this, Y.Mock.Value)){
             this.verify = function(value){
                 var args = [].concat(originalArgs || []);
                 args.push(value);
@@ -3020,59 +3049,53 @@ YUI.add('test', function(Y) {
             return new Y.Mock.Value(method, originalArgs, message);
         }
     };
-    
+
     /**
      * Mock argument validator that accepts any value as valid.
-     * @namespace Mock.Value
      * @property Any
      * @type Function
      * @static
-     */ 
+     */
     Y.Mock.Value.Any        = Y.Mock.Value(function(){});
 
     /**
      * Mock argument validator that accepts only Boolean values as valid.
-     * @namespace Mock.Value
      * @property Boolean
      * @type Function
      * @static
-     */ 
+     */
     Y.Mock.Value.Boolean    = Y.Mock.Value(Y.Assert.isBoolean);
 
     /**
      * Mock argument validator that accepts only numeric values as valid.
-     * @namespace Mock.Value
      * @property Number
      * @type Function
      * @static
-     */ 
+     */
     Y.Mock.Value.Number     = Y.Mock.Value(Y.Assert.isNumber);
 
     /**
      * Mock argument validator that accepts only String values as valid.
-     * @namespace Mock.Value
      * @property String
      * @type Function
      * @static
-     */ 
+     */
     Y.Mock.Value.String     = Y.Mock.Value(Y.Assert.isString);
 
     /**
      * Mock argument validator that accepts only non-null objects values as valid.
-     * @namespace Mock.Value
      * @property Object
      * @type Function
      * @static
-     */ 
+     */
     Y.Mock.Value.Object     = Y.Mock.Value(Y.Assert.isObject);
-    
+
     /**
      * Mock argument validator that accepts onlyfunctions as valid.
-     * @namespace Mock.Value
      * @property Function
      * @type Function
      * @static
-     */ 
+     */
     Y.Mock.Value.Function   = Y.Mock.Value(Y.Assert.isFunction);
 /*Stub for future compatibility*/
 if (typeof YUITest == "undefined" || !YUITest) {
@@ -3084,4 +3107,4 @@ if (typeof YUITest == "undefined" || !YUITest) {
 }
 
 
-}, '3.2.0' ,{requires:['substitute','event-base','json-stringify']});
+}, '3.4.1' ,{requires:['event-simulate','event-custom','substitute','json-stringify']});

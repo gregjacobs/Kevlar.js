@@ -105,6 +105,7 @@ Ext.test.Runner = Ext.extend( Ext.util.Observable, {
 	// YUI TestRunner events
 	monitorYUITestRunner: function() {
 			var r = Y.Test.Runner;
+			r.disableLogging();
 			var fn = this.onTestRunnerEvent;
 			r.subscribe("begin", fn, this, true);
 			r.subscribe("complete", fn, this, true);
