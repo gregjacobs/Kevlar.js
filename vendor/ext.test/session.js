@@ -54,9 +54,9 @@ Ext.test.Session = Ext.extend( Ext.util.Observable, {
 		if( typeof name === 'string' ) {
 			parentSuite = this.getSuite( name );
 		} else {
-			// 'name' argument left out, assume name=testSuite, and we are adding it to the master suite
-			parentSuite = this.masterSuite;
+			// 'name' argument left out, assume name=testSuite
 			testSuite = name;
+			parentSuite = testSuite.parentSuite || this.masterSuite;
 		}
 		
 		if( !(testSuite instanceof Ext.test.TestSuite) ) {
@@ -78,15 +78,15 @@ Ext.test.Session = Ext.extend( Ext.util.Observable, {
 	 * @param {Ext.test.TestCase/Object} testCase The TestCase, or anonymous object that defines the TestCase.
 	 */
 	addTest: function( name, testCase ) {
-		var testSuite;
+		var parentSuite;
 		if( typeof name === 'string' ) {
-			testSuite = this.getSuite( name );
+			parentSuite = this.getSuite( name );
 		} else {
-			// 'name' argument left out, assume name=testCase, and we are adding it to the master suite
-			testSuite = this.masterSuite;
+			// 'name' argument left out, assume name=testCase
 			testCase = name;
+			parentSuite = testCase.parentSuite || this.masterSuite;
 		}
-		testSuite.add( testCase );
+		parentSuite.add( testCase );
 	},
 	
 	

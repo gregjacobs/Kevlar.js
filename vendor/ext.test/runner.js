@@ -6,6 +6,7 @@
  * @version 1.3
  * @date	June 4, 2010
  */
+/*global Ext, Y */
 Ext.test.Runner = Ext.extend( Ext.util.Observable, {
   /**
 	 * @cfg {Ext.test.Session} testSession (defaults to Ext.test.session) The 
@@ -15,6 +16,7 @@ Ext.test.Runner = Ext.extend( Ext.util.Observable, {
 	testSession: Ext.test.Session,
 	constructor: function() {
 		Ext.test.Runner.superclass.constructor.apply(this, arguments);
+		
 		this.addEvents(
 			/**
 			 * @event beforebegin
@@ -98,6 +100,8 @@ Ext.test.Runner = Ext.extend( Ext.util.Observable, {
 		);
 		this.monitorYUITestRunner();
 	},
+	
+	
 	// YUI TestRunner events
 	monitorYUITestRunner: function() {
 			var r = Y.Test.Runner;
@@ -113,6 +117,7 @@ Ext.test.Runner = Ext.extend( Ext.util.Observable, {
 			r.subscribe("testsuitecomplete", fn, this, true);
 			this.runner = r;
 	},
+	
 	// handle YUI TestRunner events
 	onTestRunnerEvent: function(e) {
 			var type = e.type;
@@ -122,6 +127,7 @@ Ext.test.Runner = Ext.extend( Ext.util.Observable, {
 			}
 			this.fireEvent(type, this, e);
 	},
+	
 	/**
 	 * Runs registered testCases and testSuites.
 	 */
@@ -131,12 +137,14 @@ Ext.test.Runner = Ext.extend( Ext.util.Observable, {
 			this.runner.add(master_suite);
 			this.runner.run(true);
 	},
+	
 	/**
 	 * Removes all test objects. 
 	 */
 	clear: function(){
 		this.runner.clear();
 	},
+	
 	/**
 	 * Unsubscribe runner events and purge all listeners in Ext.test.Runner. 
 	 */

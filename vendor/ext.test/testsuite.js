@@ -6,6 +6,7 @@
  * @version 1.3
  * @date	June 4, 2010
  */
+/*global Ext, Y */
 Ext.test.TestSuite = Ext.extend( Y.Test.Suite, {
 																
 	/**
@@ -23,12 +24,14 @@ Ext.test.TestSuite = Ext.extend( Y.Test.Suite, {
 	defaults: {},
 	disableRegister: false,
 	constructor: function( config ) {
-		Ext.apply( this, config );
 		Ext.test.TestSuite.superclass.constructor.apply(this, arguments);
 		
 		if ( !this.parentSuite && !this.disableRegister ) {
 			Ext.test.Session.registerSuite( this );
+		} else if( this.parentSuite ) {
+			this.parentSuite.add( this );
 		}
+		
 		this.initItems();
 	},
 	
@@ -60,13 +63,13 @@ Ext.test.TestSuite = Ext.extend( Y.Test.Suite, {
 	 */
 	add: function( item ) {
 		var it = item;
-				it.parentSuite = this;
+		    it.parentSuite = this;
 			
 		if ( !(item instanceof Ext.test.TestCase) && !(item instanceof Ext.test.TestSuite)) {
-			if (it.ttype == 'testsuite') {
+			if (it.ttype == 'testsuite' || it.ttype == 'suite') {
 				it = new Ext.test.TestSuite( item );
 			} else {
-				it = new Y.Test.Case( item );
+				it = new Ext.test.TestCase( item );
 			}
 		}
 		Ext.test.TestSuite.superclass.add.call( this, it );

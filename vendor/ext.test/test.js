@@ -6,8 +6,9 @@
  * @param {Ext.test.TestCase} testCase The TestCase that this test belongs to.
  * @param {Function} fn The test's function.
  */
+/*global Ext */
 Ext.test.Test = function( name, testCase, fn ) {
 	this.name = name;
 	this.testCase = testCase;
 	this.fn = fn;
-}
+};

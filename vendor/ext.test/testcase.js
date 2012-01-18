@@ -6,6 +6,7 @@
  * @version 1.3
  * @date	June 4, 2010
  */
+/*global Ext, Y */
 Ext.test.TestCase = Ext.extend( Y.Test.Case, {
 	/**
 	 * @cfg {String} name (defaults to undefined) The TestCase name.
@@ -16,7 +17,7 @@ Ext.test.TestCase = Ext.extend( Y.Test.Case, {
 	 * default instanciated Ext.test.Session where the Ext.test.TestCase register.
 	 */
 	constructor: function(config) {
-		Ext.apply(this, config);
+		//Ext.apply(this, config);
 		Ext.test.TestCase.superclass.constructor.apply(this, arguments);
 		
 		this.testSession = this.testSession || Ext.test.Session;     

@@ -7,6 +7,7 @@
  * @version 1.3
  * @date	June 4, 2010
  */
+/*global Ext */
 Ext.test.view.ColumnTree = Ext.extend(Ext.tree.TreePanel, {
 	
 	// This ColumnTree's configs
@@ -132,12 +133,12 @@ Ext.test.view.ColumnTree = Ext.extend(Ext.tree.TreePanel, {
 					this.addCaseNode(t);
 				} else {
 					// Individual tests
-					var caseNode = this.getCaseNode( t.testCase.name );
+					var caseNode = this.getCaseNode( t.testCase );
 					this.addTestNode(t,caseNode);
 				}
 				
 			} else {
-				var sn = this.getSuiteNode(t.parentSuite.name);
+				var sn = this.getSuiteNode(t.parentSuite);
 				if (t instanceof Ext.test.TestCase){
 					this.addCaseNode(t,sn);
 				} else {
@@ -179,6 +180,7 @@ Ext.test.view.ColumnTree = Ext.extend(Ext.tree.TreePanel, {
 	createSuiteNode: function(ts, expanded) {
 		return new Ext.tree.TreeNode( {
 			name: ts.name,
+			testSuite: ts,
 			uiProvider: Ext.test.view.uiProvider,
 			type: 'testSuite',
 			expanded: expanded,
@@ -199,7 +201,7 @@ Ext.test.view.ColumnTree = Ext.extend(Ext.tree.TreePanel, {
 	 */
 	addSuiteNode: function(ts, pnode, expanded) {
 		pnode = pnode || this.root;
-		var oldn = this.getSuiteNode(ts.name);
+		var oldn = this.getSuiteNode(ts);
 		if (oldn) {
 			oldn.remove(true);
 		}
@@ -216,6 +218,7 @@ Ext.test.view.ColumnTree = Ext.extend(Ext.tree.TreePanel, {
 	createCaseNode: function( tc ) {
 		return new Ext.tree.TreeNode( {
 			name: tc.name,
+			testCase: tc,
 			uiProvider: Ext.test.view.uiProvider,
 			type: 'testCase',
 			state: '',
@@ -248,6 +251,7 @@ Ext.test.view.ColumnTree = Ext.extend(Ext.tree.TreePanel, {
 	createTestNode: function( t ) {
 		return new Ext.tree.TreeNode( {
 			name: t.name,
+			test: t,
 			uiProvider: Ext.test.view.uiProvider,
 			type: 'test',
 			state: '',
@@ -277,39 +281,55 @@ Ext.test.view.ColumnTree = Ext.extend(Ext.tree.TreePanel, {
 	
 	/**
 	 * Gets a TestSuite node by its name.
-	 * @param {String} name The name of the TestSuite
+	 * @param {Ext.test.TestSuite} testSuite The TestSuite
 	 * @return {Ext.tree.TreeNode} The Ext.tree.TreeNode, or undefined
 	 */
-	getSuiteNode: function( name ) {
-		var n,
-		attr;
-		this.root.cascade( function(node) {
-			attr = node.attributes;
-			if (attr['type'] == 'testSuite' && attr['name'] == name) {
-				n = node;
-				return false;
-			}
-		}, this );
-		return n;
+	getSuiteNode: function( testSuite ) {
+		// NOTE: Optimization causes an error... for whatever reason
+		//if( testSuite.__treeNode ) {
+		//	return testSuite.__treeNode;
+			
+		//} else {
+			var n;
+			this.root.cascade( function(node) {
+				if( node.attributes.testSuite === testSuite ) {
+					n = node;
+					return false;
+				}
+			}, this );
+			
+			// Store the node on the TestSuite object itself, so we don't have to do the cascade
+			// again for other events
+		//	testSuite.__treeNode = n;
+			return n;
+		//}
 	},
 	
 	
 	/**
 	 * Gets an Ext.test.TestCase node by its name.
-	 * @param {String} name The name of the Ext.test.TestCase
+	 * @param {Ext.test.TestCase} testCase The TestCase
 	 * @return {Ext.tree.TreeNode} The node, or undefined.
 	 */
-	getCaseNode: function(name) {
-		var n,
-		attr;
-		this.root.cascade( function(node) {
-			attr = node.attributes;
-			if( attr['type'] == 'testCase' && attr['name'] == name ) {
-				n = node;
-				return false;
-			}
-		}, this );
-		return n;
+	getCaseNode: function( testCase ) {
+		// NOTE: Optimization causes an error... for whatever reason
+		//if( testCase.__treeNode ) {
+		//	return testCase.__treeNode;
+			
+		//} else {
+			var n;
+			this.root.cascade( function(node) {
+				if( node.attributes.testCase === testCase ) {
+					n = node;
+					return false;
+				}
+			}, this );
+			
+			// Store the node on the TestCase object itself, so we don't have to do the cascade
+			// again for other events
+		//	testCase.__treeNode = n;
+			return n;
+		//}
 	},
 	
 	
@@ -320,17 +340,40 @@ Ext.test.view.ColumnTree = Ext.extend(Ext.tree.TreePanel, {
 	 * @return {Ext.tree.TreeNode} The node, or undefined.
 	 */
 	getTestNode: function(caseNode, name) {
-		var n, attr;
+		/*if( !caseNode.__tests ) {
+			caseNode.__tests = {};
+		}
+		
+		if( caseNode.__tests[ name ] ) {
+			return caseNode.__tests[ name ];
+			
+		} else {
+			var n;
+			caseNode.cascade( function( node ) {
+				var attr = node.attributes;
+				if( attr.type == 'test' && attr.name === name ) {
+					n = node;
+					return false;
+				}
+			}, this );
+			
+			// Store the node on the caseNode object itself, so we don't have to do the cascade
+			// again for other events
+			caseNode.__tests[ name ] = n;
+			return n;
+		}*/
+		
+		var n;
 		caseNode.cascade( function( node ) {
-			attr = node.attributes;
-			if( attr['type'] == 'test' && attr['name'] == name ) {
+			var attr = node.attributes;
+			if( attr.type == 'test' && attr.name === name ) {
 				n = node;
 				return false;
 			}
 		}, this );
-		
 		return n;
 	},
+	
 	
 	// private handle test runner events
 	onTestRunnerEvent: function(runner, event) {
@@ -338,7 +381,7 @@ Ext.test.view.ColumnTree = Ext.extend(Ext.tree.TreePanel, {
 
 		switch( event.type ) {
 			case "fail":
-				caseNode = this.getCaseNode(event.testCase.name);
+				caseNode = this.getCaseNode(event.testCase);
 				caseNode.attributes['state'] = this.failText;
 				caseNode.ui.setIconElClass('testcase-failed');
 				caseNode.attributes['errors'] = event.error.getMessage();
@@ -353,7 +396,7 @@ Ext.test.view.ColumnTree = Ext.extend(Ext.tree.TreePanel, {
 				break;
 				
 			case "pass":
-				caseNode = this.getCaseNode(event.testCase.name);				
+				caseNode = this.getCaseNode(event.testCase);				
 				node = this.getTestNode( caseNode, event.testName );
 				node.attributes['state'] = this.passText;
 				node.ui.setIconElClass('testcase-passed');
@@ -361,7 +404,7 @@ Ext.test.view.ColumnTree = Ext.extend(Ext.tree.TreePanel, {
 				break;
 				
 			case "ignore":
-				caseNode = this.getCaseNode(event.testCase.name);				
+				caseNode = this.getCaseNode(event.testCase);				
 				node = this.getTestNode( caseNode, event.testName );
 				node.attributes['state'] = this.ignoreText;
 				//node.ui.setIconElClass('testcase-passed');
@@ -369,13 +412,13 @@ Ext.test.view.ColumnTree = Ext.extend(Ext.tree.TreePanel, {
 				break;
 				
 			case "testcasebegin":
-				node = this.getCaseNode(event.testCase.name);
+				node = this.getCaseNode(event.testCase);
 				node.attributes['state'] = 'Running...';
 					node.ui.setIconElClass('testcase-running');
 				node.ui.refresh();
 				break;
 			case "testcasecomplete":
-				node = this.getCaseNode(event.testCase.name);
+				node = this.getCaseNode(event.testCase);
 				res = event.results;
 				if (res.failed === 0) {
 					node.attributes['state'] = this.passText;
@@ -387,12 +430,12 @@ Ext.test.view.ColumnTree = Ext.extend(Ext.tree.TreePanel, {
 				node.ui.refresh();
 				break;
 			case "testsuitebegin":
-				node = this.getSuiteNode(event.testSuite.name);
+				node = this.getSuiteNode(event.testSuite);
 				node.ui.setIconElClass('testsuite-running');
 				node.ui.refresh();
 				break;
 			case "testsuitecomplete":
-				node = this.getSuiteNode(event.testSuite.name);
+				node = this.getSuiteNode(event.testSuite);
 				res = event.results;
 				if (res.failed === 0) {
 						node.attributes['state'] = this.passText;
