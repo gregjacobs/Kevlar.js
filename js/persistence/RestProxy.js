@@ -103,7 +103,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		options = options || {};
 				
 		// Set the data to persist, based on if the proxy is set to do incremental updates or not
-		var dataToPersist = model.getPersistedData();
+		var dataToPersist = model.getData( { persistedOnly: true } );
 				
 		// Handle needing a different "root" wrapper object for the data
 		if( this.rootProperty ) {
@@ -201,7 +201,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		options = options || {};
 		var scope = options.scope || options.context || window;
 		
-		var changedData = model.getPersistedChanges();
+		var changedData = model.getChanges( { persistedOnly: true } );
 		
 		// Short Circuit: If there is no changed data in any of the fields that are to be persisted, there is no need to make a 
 		// request. Run the success callback and return out.
@@ -221,7 +221,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		if( this.incremental ) {
 			dataToPersist = changedData;               // uses incremental updates, we can just send it the changes
 		} else {
-			dataToPersist = model.getPersistedData();  // non-incremental updates, provide all persisted data
+			dataToPersist = model.getData( { persistedOnly: true } );  // non-incremental updates, provide all persisted data
 		}
 		
 		

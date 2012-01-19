@@ -2,11 +2,16 @@
  * @class Kevlar.Field
  * @extends Object
  * 
- * Field definition object for {@link Kevlar.Model Models}. The Field itself does not store data, but instead simply
- * defines the behaviors of a {@link Kevlar.Model Model's} fields.  A {@link Kevlar.Model Model} is made up of Fields. 
+ * Field definition object for a {@link Kevlar.Model Model}. The Field itself does not store data, but instead simply
+ * defines the behaviors of a {@link Kevlar.Model Model's} fields. A {@link Kevlar.Model Model} is made up of Fields. 
+ * 
+ * Note: You will most likely not instantiate Field objects directly. This is used by {@link Kevlar.Model} with its
+ * {@link Kevlar.Model#addFields addFields} config. Anonymous config objects provided to {@link Kevlar.Model#addFields addFields}
+ * will be passed to the Field constructor.
  * 
  * @constructor
- * @param {Object/String} config The field object's config, which is its definition. Can also be its field name provided directly as a string.
+ * @param {Object/String} config An object (hashmap) of the Field object's configuration options, which is its definition. 
+ *   Can also be its Field {@link #name} provided directly as a string.
  */
 /*global Kevlar */
 Kevlar.Field = Kevlar.extend( Object, {
@@ -29,40 +34,71 @@ Kevlar.Field = Kevlar.extend( Object, {
 	/**
 	 * @cfg {Mixed/Function} defaultValue
 	 * The default value for the Field, if it has no value of its own. This can also be specified as the config 'default', 
-	 * but must be wrapped in quotes as `default` is a reserved word in JavaScript.<br><br>
+	 * but must be wrapped in quotes as `default` is a reserved word in JavaScript.
 	 *
 	 * If the defaultValue is a function, the function will be executed, and its return value used as the defaultValue.
 	 */
 	
 	/**
-	 * @cfg {Function} convert
-	 * A function that can be used when the Field is created to convert its value. This function is passed two arguments:
-	 * <div class="mdetail-params">
-	 *   <ul>
-	 *     <li>
-	 *       <b>value</b> : Mixed
-	 *       <div class="sub-desc">
-	 *         The provided data value to the field. If the field had no initial data value, its {@link #defaultValue} will be provided. 
-	 *         If it has no data, and no {@link #defaultValue}, it will be undefined.
-	 *       </div>
-	 *     </li>
-	 *     <li>
-	 *       <b>model</b> : Kevlar.Model
-	 *       <div class="sub-desc">The Model instance that this Field belongs to.</div>
-	 *     </li>
-	 *   </ul>
-	 * </div>
+	 * @cfg {Function} set
+	 * A function that can be used to convert the value provided to the field, to a new value which will be stored
+	 * on the {@link Kevlar.Model Model}. This function is passed two arguments:
 	 * 
-	 * This function should return the value that the Field should hold. Ex:
-	 * <pre><code>convert : function( value, model ) { return model.get( 'someOtherField' ) * value; }</code></pre>
+	 * @cfg {Mixed} set.value The provided data value to the field. If the field has no initial data value, its {@link #defaultValue}
+	 *   will be provided to this argument upon instantiation of the {@link Kevlar.Model Model}.
+	 * @cfg {Kevlar.Model} set.model The Model instance that this Field belongs to.
 	 * 
-	 * Note that this function is called in the order of the field definitions, and doesn't resolve dependencies on the 'convert' of
-	 * other fields, so keep this in mind.
+	 * The function should then do any processing that is necessary, and return the value that the Field should hold. For example,
+	 * this `set` function will convert a string value to a {@link Date} object. Otherwise, it will return the value unchanged:
+	 *     
+	 *     set : function( value, model ) {
+	 *         if( typeof value === 'string' ) {
+	 *             value = new Date( value );
+	 *         }
+	 *         return value;
+	 *     }
+	 * 
+	 * The {@link Kevlar.Model Model} instance is passed to this function as well, in case other Fields need to be queried, or need
+	 * to be {@link Kevlar.Model#set set} by the `set` function. However, in the case of querying other Fields for their value, be 
+	 * careful in that they may not be set to the expected value when the `set` function executes. For creating computed Fields that 
+	 * rely on other Fields' values, use a {@link #get} function instead.
+	 * 
+	 * Notes:
+	 * 
+	 * - Both a `set` and a {@link #get} function can be used in conjunction.
+	 * - The `set` function is called upon instantiation of the {@link Kevlar.Model Model}, if the Model is passed an initial value
+	 *   for the Field, or if the Field has a {@link #defaultValue}.
+	 */
+	
+	/**
+	 * @cfg {Function} get
+	 * A function that can be used to change the value that is returned when the Model's {@link Kevlar.Model#get get} method is called
+	 * on the Field. This is useful to create "computed" fields, which may be created based on other Fields' values.  The function is 
+	 * passed two arguments, and should return the computed value:
+	 * 
+	 * @cfg {Mixed} get.value The value that the Field currently has stored in the {@link Kevlar.Model Model}.
+	 * @cfg {Kevlar.Model} get.model The Model instance that this Field belongs to.
+	 * 
+	 * For example, if we had a {@link Kevlar.Model Model} with `firstName` and `lastName` Fields, and we wanted to create a `fullName` 
+	 * Field, this could be done as such:
+	 * 
+	 *     {
+	 *         name : 'fullName',
+	 *         get : function( value, model ) {  // in this example, the Field has no value of its own, so we ignore the first arg
+	 *             return model.get( 'firstName' ) + " " + model.get( 'lastName' );
+	 *         }
+	 *     }
+	 * 
+	 * Note: if the intention is to convert a provided value which needs to be stored on the {@link Kevlar.Model Model} in a different way,
+	 * use a {@link #set} function instead. 
+	 * 
+	 * However, also note that both a {@link #set} and a `get` function can be used in conjunction.
 	 */
 	
 	/**
 	 * @cfg {Object} scope
-	 * The scope to call the {@link #convert} function in. 
+	 * The scope to call the {@link #set}, {@link #get}, and {@link #raw} functions in. Defaults to the {@link Kevlar.Model Model}
+	 * instance. 
 	 */
 	
 	/**

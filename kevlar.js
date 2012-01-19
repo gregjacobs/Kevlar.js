@@ -1505,11 +1505,16 @@ Kevlar.apply( Kevlar.persistence.Proxy, {
  * @class Kevlar.Field
  * @extends Object
  * 
- * Field definition object for {@link Kevlar.Model Models}. The Field itself does not store data, but instead simply
- * defines the behaviors of a {@link Kevlar.Model Model's} fields.  A {@link Kevlar.Model Model} is made up of Fields. 
+ * Field definition object for a {@link Kevlar.Model Model}. The Field itself does not store data, but instead simply
+ * defines the behaviors of a {@link Kevlar.Model Model's} fields. A {@link Kevlar.Model Model} is made up of Fields. 
+ * 
+ * Note: You will most likely not instantiate Field objects directly. This is used by {@link Kevlar.Model} with its
+ * {@link Kevlar.Model#addFields addFields} config. Anonymous config objects provided to {@link Kevlar.Model#addFields addFields}
+ * will be passed to the Field constructor.
  * 
  * @constructor
- * @param {Object/String} config The field object's config, which is its definition. Can also be its field name provided directly as a string.
+ * @param {Object/String} config An object (hashmap) of the Field object's configuration options, which is its definition. 
+ *   Can also be its Field {@link #name} provided directly as a string.
  */
 /*global Kevlar */
 Kevlar.Field = Kevlar.extend( Object, {
@@ -1532,40 +1537,71 @@ Kevlar.Field = Kevlar.extend( Object, {
 	/**
 	 * @cfg {Mixed/Function} defaultValue
 	 * The default value for the Field, if it has no value of its own. This can also be specified as the config 'default', 
-	 * but must be wrapped in quotes as `default` is a reserved word in JavaScript.<br><br>
+	 * but must be wrapped in quotes as `default` is a reserved word in JavaScript.
 	 *
 	 * If the defaultValue is a function, the function will be executed, and its return value used as the defaultValue.
 	 */
 	
 	/**
-	 * @cfg {Function} convert
-	 * A function that can be used when the Field is created to convert its value. This function is passed two arguments:
-	 * <div class="mdetail-params">
-	 *   <ul>
-	 *     <li>
-	 *       <b>value</b> : Mixed
-	 *       <div class="sub-desc">
-	 *         The provided data value to the field. If the field had no initial data value, its {@link #defaultValue} will be provided. 
-	 *         If it has no data, and no {@link #defaultValue}, it will be undefined.
-	 *       </div>
-	 *     </li>
-	 *     <li>
-	 *       <b>model</b> : Kevlar.Model
-	 *       <div class="sub-desc">The Model instance that this Field belongs to.</div>
-	 *     </li>
-	 *   </ul>
-	 * </div>
+	 * @cfg {Function} set
+	 * A function that can be used to convert the value provided to the field, to a new value which will be stored
+	 * on the {@link Kevlar.Model Model}. This function is passed two arguments:
 	 * 
-	 * This function should return the value that the Field should hold. Ex:
-	 * <pre><code>convert : function( value, model ) { return model.get( 'someOtherField' ) * value; }</code></pre>
+	 * @cfg {Mixed} set.value The provided data value to the field. If the field has no initial data value, its {@link #defaultValue}
+	 *   will be provided to this argument upon instantiation of the {@link Kevlar.Model Model}.
+	 * @cfg {Kevlar.Model} set.model The Model instance that this Field belongs to.
 	 * 
-	 * Note that this function is called in the order of the field definitions, and doesn't resolve dependencies on the 'convert' of
-	 * other fields, so keep this in mind.
+	 * The function should then do any processing that is necessary, and return the value that the Field should hold. For example,
+	 * this `set` function will convert a string value to a {@link Date} object. Otherwise, it will return the value unchanged:
+	 *     
+	 *     set : function( value, model ) {
+	 *         if( typeof value === 'string' ) {
+	 *             value = new Date( value );
+	 *         }
+	 *         return value;
+	 *     }
+	 * 
+	 * The {@link Kevlar.Model Model} instance is passed to this function as well, in case other Fields need to be queried, or need
+	 * to be {@link Kevlar.Model#set set} by the `set` function. However, in the case of querying other Fields for their value, be 
+	 * careful in that they may not be set to the expected value when the `set` function executes. For creating computed Fields that 
+	 * rely on other Fields' values, use a {@link #get} function instead.
+	 * 
+	 * Notes:
+	 * 
+	 * - Both a `set` and a {@link #get} function can be used in conjunction.
+	 * - The `set` function is called upon instantiation of the {@link Kevlar.Model Model}, if the Model is passed an initial value
+	 *   for the Field, or if the Field has a {@link #defaultValue}.
+	 */
+	
+	/**
+	 * @cfg {Function} get
+	 * A function that can be used to change the value that is returned when the Model's {@link Kevlar.Model#get get} method is called
+	 * on the Field. This is useful to create "computed" fields, which may be created based on other Fields' values.  The function is 
+	 * passed two arguments, and should return the computed value:
+	 * 
+	 * @cfg {Mixed} get.value The value that the Field currently has stored in the {@link Kevlar.Model Model}.
+	 * @cfg {Kevlar.Model} get.model The Model instance that this Field belongs to.
+	 * 
+	 * For example, if we had a {@link Kevlar.Model Model} with `firstName` and `lastName` Fields, and we wanted to create a `fullName` 
+	 * Field, this could be done as such:
+	 * 
+	 *     {
+	 *         name : 'fullName',
+	 *         get : function( value, model ) {  // in this example, the Field has no value of its own, so we ignore the first arg
+	 *             return model.get( 'firstName' ) + " " + model.get( 'lastName' );
+	 *         }
+	 *     }
+	 * 
+	 * Note: if the intention is to convert a provided value which needs to be stored on the {@link Kevlar.Model Model} in a different way,
+	 * use a {@link #set} function instead. 
+	 * 
+	 * However, also note that both a {@link #set} and a `get` function can be used in conjunction.
 	 */
 	
 	/**
 	 * @cfg {Object} scope
-	 * The scope to call the {@link #convert} function in. 
+	 * The scope to call the {@link #set}, {@link #get}, and {@link #raw} functions in. Defaults to the {@link Kevlar.Model Model}
+	 * instance. 
 	 */
 	
 	/**
@@ -1648,12 +1684,17 @@ Kevlar.Field = Kevlar.extend( Object, {
  * @class Kevlar.Model
  * @extends Kevlar.util.Observable
  * 
- * Data storage and persistence facility for Quark data. 
+ * Generalized data storage class, which has a number of data-related features, including the ability to persist the data to a backend server.
+ * Basically, a Model represents some object of data that your application uses. For example, in an online store, one might define two Models: 
+ * one for Users, and the other for Products. These would be `User` and `Product` models, respectively. Each of these Models would in turn,
+ * have the {@link Kevlar.Field Fields} (data values) that each Model is made up of. Ex: A User model may have: `userId`, `firstName`, and 
+ * `lastName` Fields.
  * 
  * @constructor
- * @param {Object} data Any initial data for the attributes, specified in an object (hash map).
+ * @param {Object} [data] Any initial data for the {@link #addFields fields}, specified in an object (hash map). See {@link #setData}.
  */
 /*global window, Kevlar */
+/*jslint forin:true */
 Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	/**
@@ -1665,14 +1706,16 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	/**
 	 * @cfg {String[]/Object[]} addFields
 	 * Array of {@link Kevlar.Field Field} declarations. These are objects with any number of properties, but they
-	 * must have the property 'name'. See {@link Kevlar.Field} for more information. They will become instantiated
-	 * {@link Kevlar.Field} objects upon instantiation.<br><br>
+	 * must have the property 'name'. See the configuration options of {@link Kevlar.Field} for more information. Anonymous
+	 * config objects will become instantiated {@link Kevlar.Field} objects. An item in the array may also simply be a 
+	 * string, which will specify the name of the {@link Kevlar.Field Field}, with no other {@link Kevlar.Field Field} 
+	 * configuration options.
 	 * 
 	 * Fields defined on the prototype of a Model (like below), and its subclasses, are concatenated together come
 	 * instantiation time. This means that the Kevlar.Model base class can define the 'id' field, and then subclasses
 	 * can define their own fields to append to it.  So if a subclass defined the fields `[ 'name', 'phone' ]`, then the
 	 * final concatenated array of fields for the subclass would be `[ 'id', 'name', 'phone' ]`. This works for however many
-	 * levels of subclasses there are.<br><br>
+	 * levels of subclasses there are.
 	 * 
 	 * This array will become an object (hash) come instantiation time, with the keys as the field names, and the values as
 	 * the instantiated {@link Kevlar.Field} objects that represent them.
@@ -1685,6 +1728,13 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 */
 	idField : 'id',
 	
+	
+	/**
+	 * @private
+	 * @property {Object} fields
+	 * A hash of the combined Fields, which have been put together from the current Model subclass, and all of
+	 * its superclasses. This is created by the {@link #initFields} method upon instantiation.
+	 */
 	
 	/**
 	 * @private
@@ -1749,7 +1799,9 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			/**
 			 * Fires when a {@link Kevlar.Field} in the Model has changed its value. This is a 
 			 * convenience event to respond to just a single field's change. Ex: if you want to
-			 * just respond to the `title` field's change, you could subscribe to `change:title`. 
+			 * just respond to the `title` field's change, you could subscribe to `change:title`. Ex:
+			 * 
+			 *     model.addListener( 'change:myField', function( model, newValue ) { ... } );
 			 * 
 			 * @event change:[fieldName]
 			 * @param {Kevlar.Model} model This Model instance.
@@ -1785,26 +1837,27 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		// Default the data to an empty object
 		data = data || {};
 		
-		// Set the default values for fields that don't have a value.
-		// Note: This has the side effect of putting the 'undefined' value into the 'data' hash for field data that wasn't
-		// provided, and doesn't have a default. This allows 'convert' fields that weren't specified with a value to get their
-		// initial value when the call to this.set() is made later in this method.
-		var fields = this.fields;  // this.fields is now a hash of the Field objects, keyed by their name
+		// Set the default values for fields that don't have an initial value.
+		var fields = this.fields,  // this.fields is a hash of the Field objects, keyed by their name
+		    fieldDefaultValue;
 		for( var name in fields ) {
-			if( data[ name ] === undefined ) {
-				data[ name ] = fields[ name ].defaultValue;
+			if( data[ name ] === undefined && ( fieldDefaultValue = fields[ name ].defaultValue ) !== undefined ) {
+				data[ name ] = fieldDefaultValue;
 			}
 		}
 		
-		// Initialize the data properties
+		// Initialize the underlying data object, which stores all field values
 		this.data = {};
+		
+		// Initialize the data hash for storing field names of modified data, and their original values (see property description)
 		this.modifiedData = {};
 		
+		// Set the initial data / defaults, if we have any
 		this.set( data );
-		this.commit();  // because we are initializing, the data is not dirty
+		this.commit();  // and because we are initializing, the data is not dirty
 		
 		// Call hook method for subclasses
-		this.initialize( data );
+		this.initialize();
 	},
 	
 	
@@ -1817,6 +1870,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * from being moved under another superclass, or if there is ever an implementation made in this class.
 	 * 
 	 * Ex:
+	 * 
 	 *     MyModel = Kevlar.Model.extend( {
 	 *         initialize : function() {
 	 *             MyModel.superclass.initialize.apply( this, arguments );   // or could be MyModel.__super__.initialize.apply( this, arguments );
@@ -1827,7 +1881,6 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * 
 	 * @protected
 	 * @method initialize
-	 * @param {Object} data The initial data provided to the Kevlar.Model constructor.
 	 */
 	initialize : Kevlar.emptyFn,
 	
@@ -1921,80 +1974,62 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Retrieves the value for the field given by `fieldName`.
-	 * 
-	 * @method get
-	 * @param {String} fieldName The name of the Field whose value to retieve.
-	 * @return {Mixed} The value of the field given by `fieldName`, or undefined if the value has never been set.  
-	 */
-	get : function( fieldName ) {
-		if( !( fieldName in this.fields ) ) {
-			throw new Error( "Kevlar.Model::get() error: field '" + fieldName + "' was not found in the Model." );
-		}
-		return this.data[ fieldName ];
-	},
-	
-	
-	/**
 	 * Sets the value for a {@link Kevlar.Field Field} given its `name`, and a `value`. For example, a call could be made as this:
-	 * <pre><code>model.set( 'field1', 'value1' );</code></pre>
+	 * 
+	 *     model.set( 'field1', 'value1' );
 	 * 
 	 * As an alternative form, multiple valuse can be set at once by passing an Object into the first argument of this method. Ex:
-	 * <pre><code>model.set( { key1: 'value1', key2: 'value2' } );</code></pre>
+	 * 
+	 *     model.set( { key1: 'value1', key2: 'value2' } );
+	 * 
 	 * Note that in this form, the method will ignore any property in the object (hash) that don't have associated Fields.<br><br>
 	 * 
-	 * When fields are set, their {@link Kevlar.Field#convert} method is run, if they have one defined.
+	 * When fields are set, their {@link Kevlar.Field#set} method is run, if they have one defined.
 	 * 
 	 * @method set
 	 * @param {String/Object} fieldName The field name for the Field to set, or an object (hash) of name/value pairs.
 	 * @param {Mixed} [value] The value to set to the field. Required if the `fieldName` argument is a string (i.e. not a hash). 
 	 */
 	set : function( fieldName, value ) {
-		var fields = this.fields,
-		    fieldsWithConverts = [];
-		
 		if( typeof fieldName === 'object' ) {
 			// Hash provided 
-			var values = fieldName;  // for clarity, and so we can reuse the fieldName variable
-			
-			for( fieldName in values ) {
-				// filter out prototype properties of the provided object (hash), and make sure there is an associated field for the property
-				// (i.e. ignore any properties that don't have an associated Field).
-				if( values.hasOwnProperty( fieldName ) && ( fieldName in fields ) ) {
-					
-					// Fields with converts have to be deferred for their set() call until all fields without converts
-					// have been processed, to guarantee that they have access to all non-converted data first.
-					if( typeof fields[ fieldName ].convert === 'function' ) {
-						fieldsWithConverts.push( fieldName );  // push it onto the array, to be handled later
-					} else {
-						this.set( fieldName, values[ fieldName ] );
-					}
-					
+			var values = fieldName;  // for clarity
+			for( var fldName in values ) {  // a new variable, 'fldName' instead of 'fieldName', so that JSLint stops whining about "Bad for in variable 'fieldName'" (for whatever reason it does that...)
+				if( values.hasOwnProperty( fldName ) ) {
+					this.set( fldName, values[ fldName ] );
 				}
-			}
-			
-			// After all fields without a 'convert' function have been set, we can now set the ones with a 'convert' function.
-			// This is done so that fields with a convert function have access to the data for fields without a 'convert' function
-			// before their 'convert' function is run.
-			for( var i = 0, len = fieldsWithConverts.length; i < len; i++ ) {
-				fieldName = fieldsWithConverts[ i ];
-				this.set( fieldName, values[ fieldName ] );
 			}
 			
 		} else {
 			// fieldName and value provided
-			var field = fields[ fieldName ];
+			var field = this.fields[ fieldName ];
 			if( !field ) {
 				throw new Error( "Kevlar.Model.set(): A field with the fieldName '" + fieldName + "' was not found." );
 			}
 			
-			// If the field has a 'convert' function defined, call it to convert the data
-			if( typeof field.convert === 'function' ) {
-				value = field.convert.call( field.scope || window, value, this );  // provided the value, and the Model instance
-			}
-			
 			// Get the current value of the field
 			var currentValue = this.data[ fieldName ];
+			
+			// If the field has a 'set' function defined, call it to convert the data
+			if( typeof field.set === 'function' ) {
+				value = field.set.call( field.scope || this, value, this );  // provided the value, and the Model instance
+				
+				// Temporary workaround to get the 'change' event to fire on a Field whose set() function does not
+				// return a new value to set to the underlying data. This will be resolved once dependencies are 
+				// automatically resolved in the Field's get() function
+				if( value === undefined ) {
+					// This is to make the following block below think that there is already data in for the field, and
+					// that it has the same value. If we don't have this, the change event will fire twice, the
+					// the model will be set as 'dirty', and the old value will be put into the `modifiedData` hash.
+					if( !( fieldName in this.data ) ) {
+						this.data[ fieldName ] = undefined;
+					}
+					
+					// Now manually fire the events
+					this.fireEvent( 'change:' + fieldName, this, value );
+					this.fireEvent( 'change', this, fieldName, value );
+				}
+			}
 			
 			// Only change if there is no current value for the field, or if new value is different from the current
 			if( !( fieldName in this.data ) || !Kevlar.util.Object.isEqual( currentValue, value ) ) {
@@ -2016,6 +2051,32 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 				this.fireEvent( 'change', this, fieldName, value );
 			}
 		}
+	},
+	
+	
+	/**
+	 * Retrieves the value for the field given by `fieldName`. If the {@link Kevlar.Field Field} has a
+	 * {@link Kevlar.Field#get get} function defined, that function will be called, and its return value
+	 * will be used as the return of this method.
+	 * 
+	 * @method get
+	 * @param {String} fieldName The name of the Field whose value to retieve.
+	 * @return {Mixed} The value of the field given by `fieldName`, or undefined if the value has never been set.  
+	 */
+	get : function( fieldName ) {
+		if( !( fieldName in this.fields ) ) {
+			throw new Error( "Kevlar.Model::get() error: field '" + fieldName + "' was not found in the Model." );
+		}
+		
+		var value = this.data[ fieldName ],
+		    field = this.fields[ fieldName ];
+		    
+		// If there is a `get` function on the Field, run it now to convert the value before it is returned.
+		if( typeof field.get === 'function' ) {
+			value = field.get.call( field.scope || this, value, this );  // provided the value, and the Model instance
+		}
+		
+		return value;
 	},
 	
 	
@@ -2074,22 +2135,24 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * retrieved from this method may be modified.
 	 * 
 	 * @methods getData
+	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This may include:
+	 * @param {Boolean} [options.persistedOnly] True to have the method only return data for the persisted Fields (i.e.,
+	 *   Fields with the {@link Kevlar.Field#persist persist} config set to true, which is the default).
 	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.Field Field} values.
 	 */
-	getData : function() {
-		return Kevlar.util.Object.clone( this.data );
-	},
-	
-	
-	/**
-	 * Retrieves the values for all of the fields in the Model *that are persisted* (i.e. have the {@link Kevlar.Field#persist} config 
-	 * set to true, which is the default). Note: returns a copy of the data so that the object retrieved from this method may be modified.
-	 * 
-	 * @methods getPersistedData
-	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.Field Field} values.
-	 */
-	getPersistedData : function() {
-		return this.filterNonPersisted( this.getData() );
+	getData : function( options ) {
+		options = options || {};
+		
+		var fields = this.fields,
+		    persistedOnly = !!options.persistedOnly,
+		    data = {};
+		    
+		for( var fieldName in this.fields ) {
+			if( !persistedOnly || fields[ fieldName ].isPersisted() === true ) {
+				data[ fieldName ] = this.get( fieldName );
+			}
+		}
+		return Kevlar.util.Object.clone( data );
 	},
 	
 	
@@ -2100,34 +2163,26 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * Note: returns a copy of the data so that the object retrieved from this method may be modified.
 	 * 
 	 * @method getChanges
+	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This may include:
+	 * @param {Boolean} [options.persistedOnly] True to have the method only return data for the persisted Fields (i.e.,
+	 *   Fields with the {@link Kevlar.Field#persist persist} config set to true, which is the default).
 	 * @return {Object} A hash of the fields that have been changed since the last {@link #commit} or {@link #rollback}.
 	 *   The hash's property names are the field names, and the hash's values are the new values.
 	 */
-	getChanges : function() {
+	getChanges : function( options ) {
+		options = options || {};
+		
 		var modifiedData = Kevlar.util.Object.clone( this.modifiedData ),
+		    fields = this.fields,
+		    persistedOnly = !!options.persistedOnly,
 		    changes = {};
-			
+		
 		for( var fieldName in modifiedData ) {
-			if( modifiedData.hasOwnProperty( fieldName ) ) {
+			if( !persistedOnly || fields[ fieldName ].isPersisted() === true ) {
 				changes[ fieldName ] = this.get( fieldName );
 			}
 		}
 		return changes;
-	},
-	
-	
-	/**
-	 * Retrieves the values for all of the {@link Kevlar.Field fields} in the Model *that are persisted* (i.e. have the {@link Kevlar.Field#persist}
-	 * config set to true, which is the default), whose values have been changed since the last {@link #commit} or {@link #rollback}.
-	 * 
-	 * Note: returns a copy of the data so that the object retrieved from this method may be modified.
-	 * 
-	 * @methods getPersistedChanges
-	 * @return {Object} A hash of the fields that have been changed since the last {@link #commit} or {@link #rollback}, and are persisted.
-	 *   The hash's property names are the field names, and the hash's values are the new values.
-	 */
-	getPersistedChanges : function() {
-		return this.filterNonPersisted( this.getChanges() );
 	},
 	
 	
@@ -2353,31 +2408,6 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		// Make a request to destroy the data on the server
 		this.proxy.destroy( this, proxyOptions );
-	},	
-	
-	
-	// ----------------------------
-	
-	// Utility Methods
-	
-	/**
-	 * Filters out non-persisted fields from the given data object. Note that this method modifies the
-	 * provided object, but returns it as well for use in an expression.
-	 * 
-	 * @private
-	 * @method filterNonPersisted
-	 * @param {Object} data A hash of the data, where non-persisted fields should be filtered out.
-	 * @return {Object} The data, with non-persisted fields removed.
-	 */
-	filterNonPersisted : function( data ) {
-		// Remove properties from the data that relate to the fields that have persist: false.
-		var fields = this.getFields();
-		for( var fieldName in fields ) {
-			if( fields.hasOwnProperty( fieldName ) && fields[ fieldName ].isPersisted() === false ) {
-				delete data[ fieldName ];
-			}
-		}
-		return data;
 	}
 	
 	
@@ -2515,7 +2545,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		options = options || {};
 				
 		// Set the data to persist, based on if the proxy is set to do incremental updates or not
-		var dataToPersist = model.getPersistedData();
+		var dataToPersist = model.getData( { persistedOnly: true } );
 				
 		// Handle needing a different "root" wrapper object for the data
 		if( this.rootProperty ) {
@@ -2613,7 +2643,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		options = options || {};
 		var scope = options.scope || options.context || window;
 		
-		var changedData = model.getPersistedChanges();
+		var changedData = model.getChanges( { persistedOnly: true } );
 		
 		// Short Circuit: If there is no changed data in any of the fields that are to be persisted, there is no need to make a 
 		// request. Run the success callback and return out.
@@ -2633,7 +2663,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		if( this.incremental ) {
 			dataToPersist = changedData;               // uses incremental updates, we can just send it the changes
 		} else {
-			dataToPersist = model.getPersistedData();  // non-incremental updates, provide all persisted data
+			dataToPersist = model.getData( { persistedOnly: true } );  // non-incremental updates, provide all persisted data
 		}
 		
 		
