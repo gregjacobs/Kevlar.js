@@ -332,7 +332,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			if( typeof field.set === 'function' ) {
 				value = field.set.call( field.scope || this, value, this );  // provided the value, and the Model instance
 				
-				// Temporary workaround to get the 'change' event to fire on a Field whose set() function does not
+				// *** Temporary workaround to get the 'change' event to fire on a Field whose set() function does not
 				// return a new value to set to the underlying data. This will be resolved once dependencies are 
 				// automatically resolved in the Field's get() function
 				if( value === undefined ) {
@@ -342,6 +342,9 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 					if( !( fieldName in this.data ) ) {
 						this.data[ fieldName ] = undefined;
 					}
+					
+					// Fire the events with the value of the Field after it has been processed by any Field-specific `get()` function.
+					value = this.get( fieldName );
 					
 					// Now manually fire the events
 					this.fireEvent( 'change:' + fieldName, this, value );
@@ -359,6 +362,11 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 				}
 				this.data[ fieldName ] = value;
 				this.dirty = true;
+				
+				
+				// Now that we have set the new raw value to the internal `data` hash, we want to fire the events with the value
+				// of the Field after it has been processed by any Field-specific `get()` function.
+				value = this.get( fieldName );
 				
 				// If the field is the "idField", set the `id` property on the model for compatibility with Backbone's Collection
 				if( fieldName === this.idField ) {

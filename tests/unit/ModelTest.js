@@ -671,7 +671,7 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 			// ------------------------------
 			
 			
-			// Test set() with Field set() functions			
+			// Test set() with Field-specific set() functions			
 			
 			"set() should run the Field's set() method on a field that has initial data of its own" : function() {
 				var TestModel = Kevlar.extend( Kevlar.Model, {
@@ -818,6 +818,71 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 				Y.Assert.areSame( 2, field2ChangeEventCount, "The field2 change event count should now be 2, since a set has been performed on it" );
 				Y.Assert.isUndefined( field2ChangeEventValue, "The field2 change event value should still be undefined, as its set() function does not return anything" );				
 			},
+			
+			
+			"When a field with only a `get()` function is set, the 'change' events should be fired with the value from the get function, not the raw value" : function() {
+				var TestModel = Kevlar.extend( Kevlar.Model, {
+					addFields: [
+						{
+							name : 'myField',
+							get : function( value, model ) { return value + 10; } // add 10, to make sure we're using the getter
+						}
+					]
+				} );
+				
+				var model = new TestModel(),
+				    changeEventValue,
+				    fieldSpecificChangeEventValue;
+				
+				model.on( {
+					'change' : function( model, fieldName, newValue ) {
+						changeEventValue = newValue;
+					},
+					'change:myField' : function( model, newValue ) {
+						fieldSpecificChangeEventValue = newValue;
+					}
+				} );
+				
+				model.set( 'myField', 42 );  // the `get()` function on the Field will add 10 to this value when the field is retrieved
+				
+				Y.Assert.areSame( 52, changeEventValue, "The value provided with the change event should have come from myField's `get()` function" );
+				Y.Assert.areSame( 52, fieldSpecificChangeEventValue, "The value provided with the field-specific change event should have come from myField's `get()` function" );
+			},
+			
+			
+			"When a field with both a `set()` function, and `get()` function of its own is set, the 'change' events should be fired with the value from the `get()` function, not the raw value" : function() {
+				var TestModel = Kevlar.extend( Kevlar.Model, {
+					addFields: [ 
+						'baseField',
+						{
+							// Computed Field with both a set() function and a get() function, which simply uses 'baseField' for its value
+							// (which in practice, would probably be composed of two or more fields, and possible does calculations as well)
+							name : 'computedField',
+							set : function( value, model ) { model.set( 'baseField', value ); },
+							get : function( value, model ) { return model.get( 'baseField' ) + 10; }   // add 10, to make sure we're using the getter
+						}
+					]
+				} );
+				
+				var model = new TestModel(),
+				    changeEventValue,
+				    fieldSpecificChangeEventValue;
+				
+				model.on( {
+					'change' : function( model, fieldName, newValue ) {
+						changeEventValue = newValue;
+					},
+					'change:computedField' : function( model, newValue ) {
+						fieldSpecificChangeEventValue = newValue;
+					}
+				} );
+				
+				model.set( 'computedField', 42 );  // the `get()` function will add 10 to this value when the field is retrieved
+								
+				Y.Assert.areSame( 52, changeEventValue, "The value provided with the change event should have come from the computedField's `get()` function" );
+				Y.Assert.areSame( 52, fieldSpecificChangeEventValue, "The value provided with the field-specific change event should have come from the computedField's `get()` function" );
+			},
+			
 			
 			
 			// ------------------------
