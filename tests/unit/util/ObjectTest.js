@@ -165,6 +165,22 @@ tests.unit.util.Object = new Ext.test.TestSuite( {
 				Y.Assert.isFalse( isEqual( [], { a : 1 } ), "Error: [] === { a : 1 }" );
 				Y.Assert.isTrue( isEqual( [], [] ), "Error: [] !== []" );
 				Y.Assert.isFalse( isEqual( [], [ 1,2,3 ] ), "Error: [] === [ 1,2,3 ]" );
+				
+				var date = new Date( 2012, 1, 1, 10, 10, 10, 10 );
+				Y.Assert.isFalse( isEqual( date, null ), "Error: date === null" );
+				Y.Assert.isFalse( isEqual( date, undefined ), "Error: date === undefined" );
+				Y.Assert.isFalse( isEqual( date, true ), "Error: date === true" );
+				Y.Assert.isFalse( isEqual( date, false ), "Error: date === false" );
+				Y.Assert.isFalse( isEqual( date, 0 ), "Error: date === 0" );
+				Y.Assert.isFalse( isEqual( date, 1 ), "Error: date === 1" );
+				Y.Assert.isFalse( isEqual( date, "" ), "Error: date === ''" );
+				Y.Assert.isFalse( isEqual( date, "test" ), "Error: date === 'test'" );
+				Y.Assert.isFalse( isEqual( date, {} ), "Error: date === {}" );
+				Y.Assert.isFalse( isEqual( date, { a : 1 } ), "Error: date === { a : 1 }" );
+				Y.Assert.isFalse( isEqual( date, [] ), "Error: date === []" );
+				Y.Assert.isFalse( isEqual( date, [ 1,2,3 ] ), "Error: date === [ 1,2,3 ]" );
+				Y.Assert.isFalse( isEqual( date, new Date( 2000, 1, 1, 1, 1, 1, 1 ) ), "Error: date === a date with a different date/time" );
+				Y.Assert.isTrue( isEqual( date, new Date( 2012, 1, 1, 10, 10, 10, 10 ) ), "Error: date !== a date with a the same date/time" );
 			},
 			
 			

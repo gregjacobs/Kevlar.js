@@ -2922,12 +2922,33 @@ Kevlar.util.Object = {
 			
 		} else {
 			// Double equals on a and b == null, but strict comparison on the actual comparison of the falsy's
-			if( a == null || b == null ) return a === b;
+			if( a == null || b == null ) { return a === b; }
 			
 			// Arrays have to be handled separately... Otherwise {} could be considered the same as []
 			if( Kevlar.isArray( a ) !== Kevlar.isArray( b ) ) {
 				return false;
 			}
+			
+			var className = Object.prototype.toString.call( a );
+			if( className != Object.prototype.toString.call( b ) ) { return false; }
+			switch( className ) {
+				case '[object String]' :
+					return a === String( b );
+					
+				case '[object Number]' :
+					return a !== +a ? b !== +b : (a === 0 ? 1 / a === 1 / b : a === +b);
+					
+				case '[object Date]' : 
+				case '[object Boolean]' :
+					return +a === +b;
+					
+				case '[object RegExp]' :
+					return a.source === b.source &&
+					       a.global === b.global &&
+					       a.multiline === b.multiline &&
+					       a.ignoreCase === b.ignoreCase;
+			}
+			
 			
 			// Make sure there are the same number of keys in each object
 			var objLength = Kevlar.util.Object.length;  // no 'this' reference for friendly out of scope calls
