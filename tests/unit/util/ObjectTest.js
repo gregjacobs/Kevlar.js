@@ -31,6 +31,18 @@ tests.unit.util.Object = new Ext.test.TestSuite( {
 				Y.Assert.areNotSame( date, dateCopy, "The copy should not be a reference to the original object" );
 				Y.Assert.isTrue( Kevlar.util.Object.isEqual( date, dateCopy ), "The copy should have the same date value" );
 			},
+			
+			"clone() should copy a Date object that is nested within another object" : function() {
+				var date = new Date( 2012, 1, 1, 1, 1, 1, 1 );
+				var obj = { a: date };
+				var objCopy = Kevlar.util.Object.clone( obj );
+				
+				Y.Assert.areNotSame( obj, objCopy, "The copy of the object should not be a reference to the input object" );
+				Y.Assert.areNotSame( date, objCopy.a, "The date in the 'a' property should be a copy, not a reference to the same object" );
+				
+				Y.Assert.isTrue( Kevlar.util.Object.isEqual( obj, objCopy ), "clone() should have copied the object" );
+				Y.Assert.isTrue( Kevlar.util.Object.isEqual( date, objCopy.a ), "clone() should have copied the Date object" );
+			},
 						
 			"clone() should copy an array of primitives" : function() {
 				var simpleArr = [ 1, 2, 3, 4, 5 ];
@@ -55,12 +67,16 @@ tests.unit.util.Object = new Ext.test.TestSuite( {
 			},
 			
 			"clone() should deep copy an object of primitives, nested arrays, and nested objects" : function() {
-				var complexObj = { a: 1, b: { a: 1, b: [1,2,3], c: { a: null, b: undefined, c: true, d: false, e: "ohai" } }, c: [1,[1,2]] };
+				var date = new Date( 2011, 1, 1 );
+				var complexObj = { a: 1, b: { a: 1, b: [1,2,3], c: { a: null, b: undefined, c: true, d: false, e: "ohai" } }, c: [1,[1,2]], d: date };
+				
 				Y.Assert.areNotSame( complexObj, Kevlar.util.Object.clone( complexObj ), "clone() returning same reference to complex object." );
-				Y.Assert.isTrue( Kevlar.util.Object.isEqual( { a: 1, b: { a: 1, b: [1,2,3], c: { a: null, b: undefined, c: true, d: false, e: "ohai" } }, c: [1,[1,2]] }, Kevlar.util.Object.clone( complexObj ) ), "clone() not properly deep copying a complex object." );
+				
+				Y.Assert.isTrue( Kevlar.util.Object.isEqual( { a: 1, b: { a: 1, b: [1,2,3], c: { a: null, b: undefined, c: true, d: false, e: "ohai" } }, c: [1,[1,2]], d: date }, Kevlar.util.Object.clone( complexObj ) ), "clone() not properly deep copying a complex object." );
 				Y.Assert.areNotSame( complexObj.b, Kevlar.util.Object.clone( complexObj ).b, "clone() not properly deep copying a complex object. property 'b' has same reference for original and copy." );
 				Y.Assert.areNotSame( complexObj.b.c, Kevlar.util.Object.clone( complexObj ).b.c, "clone() not properly deep copying a complex object. property 'b.c' has same reference for original and copy. Nested object inside nested object not getting copied." );
 				Y.Assert.areSame( complexObj.b.c, Kevlar.util.Object.clone( complexObj, /*deep*/ false ).b.c, "clone() with 'deep' set to false (shallow copy mode) is still deep copying a complex object. property 'b.c' does not have same reference for original and copy." );
+				Y.Assert.areNotSame( date, Kevlar.util.Object.clone( complexObj ).d, "The Date object in complexObj.d should have been a copy of the Date object, not a reference to the same object" );
 			},
 			
 			
