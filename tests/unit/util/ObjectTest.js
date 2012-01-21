@@ -24,6 +24,14 @@ tests.unit.util.Object = new Ext.test.TestSuite( {
 				Y.Assert.areSame( "hi", Kevlar.util.Object.clone( "hi" ), "clone() not returning string 'hi' when provided string 'hi'." );
 			},
 			
+			"clone() should copy a Date object" : function() {
+				var date = new Date( 2012, 1, 1, 1, 1, 1, 1 );
+				var dateCopy = Kevlar.util.Object.clone( date );
+				
+				Y.Assert.areNotSame( date, dateCopy, "The copy should not be a reference to the original object" );
+				Y.Assert.isTrue( Kevlar.util.Object.isEqual( date, dateCopy ), "The copy should have the same date value" );
+			},
+						
 			"clone() should copy an array of primitives" : function() {
 				var simpleArr = [ 1, 2, 3, 4, 5 ];
 				Y.Assert.areNotSame( simpleArr, Kevlar.util.Object.clone( simpleArr ), "clone() returning same reference to array." );

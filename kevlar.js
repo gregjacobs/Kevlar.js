@@ -2879,13 +2879,18 @@ Kevlar.util.Object = {
 			deep = true;
 		}
 		
-		var c;
 		// Non objects aren't passed by reference, so just send it back.
 		if( typeof obj !== 'object' || obj === null ) {
 			return obj;
 		}
 		
-		c = new obj.constructor(); 
+		// If the type is one of the built in classes that has a copy constructor, use that
+		switch( obj.constructor ) {
+			case Date : case RegExp : case String : case Number : case Boolean :
+				return new obj.constructor( obj );
+		}
+		
+		var c = new obj.constructor(); 
 		
 		// copy properties owned by the object (do not copy prototype properties)
 		for( var p in obj ) {
