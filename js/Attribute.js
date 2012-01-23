@@ -8,10 +8,6 @@
  * Note: You will most likely not instantiate Attribute objects directly. This is used by {@link Kevlar.Model} with its
  * {@link Kevlar.Model#addAttributes addAttributes} config. Anonymous config objects provided to {@link Kevlar.Model#addAttributes addAttributes}
  * will be passed to the Attribute constructor.
- * 
- * @constructor
- * @param {Object/String} config An object (hashmap) of the Attribute object's configuration options, which is its definition. 
- *   Can also be its Attribute {@link #name} provided directly as a string.
  */
 /*global Kevlar */
 Kevlar.Attribute = Kevlar.extend( Object, {
@@ -49,7 +45,9 @@ Kevlar.Attribute = Kevlar.extend( Object, {
 	 * @cfg {Kevlar.Model} set.model The Model instance that this Attribute belongs to.
 	 * 
 	 * The function should then do any processing that is necessary, and return the value that the Attribute should hold. For example,
-	 * this `set` function will convert a string value to a {@link Date} object. Otherwise, it will return the value unchanged:
+	 * this `set` function will convert a string value to a 
+	 * <a href="https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Date" target="_blank">Date</a>
+	 * object. Otherwise, it will return the value unchanged:
 	 *     
 	 *     set : function( value, model ) {
 	 *         if( typeof value === 'string' ) {
@@ -109,6 +107,14 @@ Kevlar.Attribute = Kevlar.extend( Object, {
 	persist : true,
 	
 	
+	/**
+	 * Creates a new Attribute instance. Note: You will normally not be using this constructor function, as this class
+	 * is only used internally by {@link Kevlar.Model}.
+	 * 
+	 * @constructor 
+	 * @param {Object/String} config An object (hashmap) of the Attribute object's configuration options, which is its definition. 
+	 *   Can also be its Attribute {@link #name} provided directly as a string.
+	 */
 	constructor : function( config ) {
 		// If the argument wasn't an object, it must be its attribute name
 		if( typeof config !== 'object' ) {

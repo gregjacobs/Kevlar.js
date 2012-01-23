@@ -1373,7 +1373,6 @@ KevlarUTIL.Event.prototype = {
  * 
  * Proxy is the base class for subclasses that perform CRUD (Create, Read, Update, and Delete) operations on the server.
  * 
- * @constructor
  * @param {Object} config The configuration options for this class, specified in an object (hash).
  */
 /*global Kevlar */
@@ -1511,10 +1510,6 @@ Kevlar.apply( Kevlar.persistence.Proxy, {
  * Note: You will most likely not instantiate Attribute objects directly. This is used by {@link Kevlar.Model} with its
  * {@link Kevlar.Model#addAttributes addAttributes} config. Anonymous config objects provided to {@link Kevlar.Model#addAttributes addAttributes}
  * will be passed to the Attribute constructor.
- * 
- * @constructor
- * @param {Object/String} config An object (hashmap) of the Attribute object's configuration options, which is its definition. 
- *   Can also be its Attribute {@link #name} provided directly as a string.
  */
 /*global Kevlar */
 Kevlar.Attribute = Kevlar.extend( Object, {
@@ -1552,7 +1547,9 @@ Kevlar.Attribute = Kevlar.extend( Object, {
 	 * @cfg {Kevlar.Model} set.model The Model instance that this Attribute belongs to.
 	 * 
 	 * The function should then do any processing that is necessary, and return the value that the Attribute should hold. For example,
-	 * this `set` function will convert a string value to a {@link Date} object. Otherwise, it will return the value unchanged:
+	 * this `set` function will convert a string value to a 
+	 * <a href="https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Date" target="_blank">Date</a>
+	 * object. Otherwise, it will return the value unchanged:
 	 *     
 	 *     set : function( value, model ) {
 	 *         if( typeof value === 'string' ) {
@@ -1612,6 +1609,14 @@ Kevlar.Attribute = Kevlar.extend( Object, {
 	persist : true,
 	
 	
+	/**
+	 * Creates a new Attribute instance. Note: You will normally not be using this constructor function, as this class
+	 * is only used internally by {@link Kevlar.Model}.
+	 * 
+	 * @constructor 
+	 * @param {Object/String} config An object (hashmap) of the Attribute object's configuration options, which is its definition. 
+	 *   Can also be its Attribute {@link #name} provided directly as a string.
+	 */
 	constructor : function( config ) {
 		// If the argument wasn't an object, it must be its attribute name
 		if( typeof config !== 'object' ) {
@@ -1689,9 +1694,6 @@ Kevlar.Attribute = Kevlar.extend( Object, {
  * one for Users, and the other for Products. These would be `User` and `Product` models, respectively. Each of these Models would in turn,
  * have the {@link Kevlar.Attribute Attributes} (data values) that each Model is made up of. Ex: A User model may have: `userId`, `firstName`, and 
  * `lastName` Attributes.
- * 
- * @constructor
- * @param {Object} [data] Any initial data for the {@link #addAttributes attributes}, specified in an object (hash map). See {@link #setData}.
  */
 /*global window, Kevlar */
 /*jslint forin:true */
@@ -1784,6 +1786,12 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 */
 	
 	
+	/**
+	 * Creates a new Model instance.
+	 * 
+	 * @constructor 
+	 * @param {Object} [data] Any initial data for the {@link #addAttributes attributes}, specified in an object (hash map). See {@link #set}.
+	 */
 	constructor : function( data ) {		
 		// Call superclass constructor
 		Kevlar.Model.superclass.constructor.call( this );
@@ -2454,7 +2462,7 @@ Kevlar.Model.currentCid = 0;
  * 
  * RestProxy is responsible for performing CRUD operations in a RESTful manner for a given Model on the server.
  * 
- * @constructor
+ * @constructor Creates a new RestProxy instance.
  * @param {Object} config The configuration options for this class, specified in an object (hash).
  */
 /*global window, jQuery, Kevlar */
@@ -2471,7 +2479,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	
     /**
      * @cfg {Boolean} appendId
-     * True to automatically append the ID of the Model to the {@link #url} when
+     * True to automatically append the ID of the Model to the {@link #urlRoot} when
      * performing 'read', 'update', and 'delete' actions. 
      */
     appendId: true,
@@ -2783,31 +2791,35 @@ Kevlar.persistence.Proxy.register( 'rest', Kevlar.persistence.RestProxy );
 /**
  * @class Kevlar.util.DelayedTask
  *
- * <p> The DelayedTask class provides a convenient way to "buffer" the execution of a method,
+ * The DelayedTask class provides a convenient way to "buffer" the execution of a method,
  * performing setTimeout where a new timeout cancels the old timeout. When called, the
- * task will wait the specified time period before executing. If durng that time period,
+ * task will wait the specified time period before executing. If during that time period,
  * the task is called again, the original call will be cancelled. This continues so that
- * the function is only called a single time for each iteration.</p>
- * <p>This method is especially useful for things like detecting whether a user has finished
+ * the function is only called a single time for each iteration.
+ * 
+ * This method is especially useful for things like detecting whether a user has finished
  * typing in a text field. An example would be performing validation on a keypress. You can
  * use this class to buffer the keypress events for a certain number of milliseconds, and
- * perform only if they stop for that amount of time.  Usage:</p><pre><code>
-var task = new Kevlar.util.DelayedTask(function(){
-	alert(Kevlar.getDom('myInputField').value.length);
-});
-// Wait 500ms before calling our function. If the user presses another key 
-// during that 500ms, it will be cancelled and we'll wait another 500ms.
-Kevlar.get('myInputField').on('keypress', function(){
-	task.{@link #delay}(500); 
-});
- * </code></pre> 
- * <p>Note that we are using a DelayedTask here to illustrate a point. The configuration
+ * perform only if they stop for that amount of time.  Usage:
+ * 
+ *     var task = new Kevlar.util.DelayedTask( function() {
+ *         alert( document.getElementById( 'myInputField' ).value.length );
+ *     } );
+ *     
+ *     // Wait 500ms before calling our function. If the user presses another key 
+ *     // during that 500ms, it will be cancelled and we'll wait another 500ms.
+ *     document.getElementById( 'myInputField' ).onkeypress = function() {
+ *         task.delay( 500 ); 
+ *     } );
+ *     
+ * Note that we are using a DelayedTask here to illustrate a point. The configuration
  * option `buffer` for {@link Kevlar.util.Observable#addListener addListener/on} will
- * also setup a delayed task for you to buffer events.</p> 
+ * also setup a delayed task for you to buffer events.
+ *  
  * @constructor The parameters to this constructor serve as defaults and are not required.
  * @param {Function} fn (optional) The default function to call.
- * @param {Object} scope (optional) The default scope (The <code><b>this</b></code> reference) in which the
- * function is called. If not specified, <code>this</code> will refer to the browser window.
+ * @param {Object} scope (optional) The default scope (The `this` reference) in which the
+ *   function is called. If not specified, `this` will refer to the browser window.
  * @param {Array} args (optional) The default Array of arguments.
  */
 /*global Kevlar */

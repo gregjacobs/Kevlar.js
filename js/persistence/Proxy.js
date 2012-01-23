@@ -5,7 +5,6 @@
  * 
  * Proxy is the base class for subclasses that perform CRUD (Create, Read, Update, and Delete) operations on the server.
  * 
- * @constructor
  * @param {Object} config The configuration options for this class, specified in an object (hash).
  */
 /*global Kevlar */

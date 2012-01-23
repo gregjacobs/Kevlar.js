@@ -7,9 +7,6 @@
  * one for Users, and the other for Products. These would be `User` and `Product` models, respectively. Each of these Models would in turn,
  * have the {@link Kevlar.Attribute Attributes} (data values) that each Model is made up of. Ex: A User model may have: `userId`, `firstName`, and 
  * `lastName` Attributes.
- * 
- * @constructor
- * @param {Object} [data] Any initial data for the {@link #addAttributes attributes}, specified in an object (hash map). See {@link #setData}.
  */
 /*global window, Kevlar */
 /*jslint forin:true */
@@ -102,6 +99,12 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 */
 	
 	
+	/**
+	 * Creates a new Model instance.
+	 * 
+	 * @constructor 
+	 * @param {Object} [data] Any initial data for the {@link #addAttributes attributes}, specified in an object (hash map). See {@link #set}.
+	 */
 	constructor : function( data ) {		
 		// Call superclass constructor
 		Kevlar.Model.superclass.constructor.call( this );

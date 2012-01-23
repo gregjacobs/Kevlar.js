@@ -4,7 +4,7 @@
  * 
  * RestProxy is responsible for performing CRUD operations in a RESTful manner for a given Model on the server.
  * 
- * @constructor
+ * @constructor Creates a new RestProxy instance.
  * @param {Object} config The configuration options for this class, specified in an object (hash).
  */
 /*global window, jQuery, Kevlar */
@@ -21,7 +21,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	
     /**
      * @cfg {Boolean} appendId
-     * True to automatically append the ID of the Model to the {@link #url} when
+     * True to automatically append the ID of the Model to the {@link #urlRoot} when
      * performing 'read', 'update', and 'delete' actions. 
      */
     appendId: true,
