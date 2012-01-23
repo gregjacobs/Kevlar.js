@@ -595,6 +595,39 @@ tests.unit.Kevlar = new Ext.test.TestSuite( {
 			},
 			
 			
+			// ------------------------------------
+			
+			// Test the this.callSuper() and this.applySuper() functions
+			
+			/* Not yet implemented...
+			
+			"extend() should create this.callSuper() and this.applySuper() methods for subclass constructor functions" : function() {
+				var A = Kevlar.extend( Object, {} );
+				
+				
+			},
+			
+			"extend() should create this.callSuper() and this.applySuper() methods for subclass constructor functions, even if the superclass is not defined using Kevlar.extend()" : function() {
+				var A = function(){};
+				
+			},
+			
+			"extend() should create this.callSuper() and this.applySuper() methods for subclass methods that have a corresponding superclass method" : function() {
+				
+			},
+			
+			"extend() should create this.callSuper() and this.applySuper() methods for subclass methods that have a corresponding superclass method, even if the superclass is not defined using Kevlar.extend()" : function() {
+				
+			},
+			
+			"extend() should NOT create this.callSuper() and this.applySuper() methods for subclass methods that do not have a corresponding superclass method" : function() {
+				
+			},
+			*/
+			
+			// ------------------------------------
+			
+			// Test Mixin Functionality 
 			
 			"extend() should be able to add in a single mixin class into another class" : function() {
 				var mixinFnExecuted = false; 
