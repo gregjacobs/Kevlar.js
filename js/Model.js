@@ -5,11 +5,11 @@
  * Generalized data storage class, which has a number of data-related features, including the ability to persist the data to a backend server.
  * Basically, a Model represents some object of data that your application uses. For example, in an online store, one might define two Models: 
  * one for Users, and the other for Products. These would be `User` and `Product` models, respectively. Each of these Models would in turn,
- * have the {@link Kevlar.Field Fields} (data values) that each Model is made up of. Ex: A User model may have: `userId`, `firstName`, and 
- * `lastName` Fields.
+ * have the {@link Kevlar.Attribute Attributes} (data values) that each Model is made up of. Ex: A User model may have: `userId`, `firstName`, and 
+ * `lastName` Attributes.
  * 
  * @constructor
- * @param {Object} [data] Any initial data for the {@link #addFields fields}, specified in an object (hash map). See {@link #setData}.
+ * @param {Object} [data] Any initial data for the {@link #addAttributes attributes}, specified in an object (hash map). See {@link #setData}.
  */
 /*global window, Kevlar */
 /*jslint forin:true */
@@ -22,43 +22,43 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	proxy : null,
 	
 	/**
-	 * @cfg {String[]/Object[]} addFields
-	 * Array of {@link Kevlar.Field Field} declarations. These are objects with any number of properties, but they
-	 * must have the property 'name'. See the configuration options of {@link Kevlar.Field} for more information. Anonymous
-	 * config objects will become instantiated {@link Kevlar.Field} objects. An item in the array may also simply be a 
-	 * string, which will specify the name of the {@link Kevlar.Field Field}, with no other {@link Kevlar.Field Field} 
+	 * @cfg {String[]/Object[]} addAttributes
+	 * Array of {@link Kevlar.Attribute Attribute} declarations. These are objects with any number of properties, but they
+	 * must have the property 'name'. See the configuration options of {@link Kevlar.Attribute} for more information. Anonymous
+	 * config objects will become instantiated {@link Kevlar.Attribute} objects. An item in the array may also simply be a 
+	 * string, which will specify the name of the {@link Kevlar.Attribute Attribute}, with no other {@link Kevlar.Attribute Attribute} 
 	 * configuration options.
 	 * 
-	 * Fields defined on the prototype of a Model (like below), and its subclasses, are concatenated together come
-	 * instantiation time. This means that the Kevlar.Model base class can define the 'id' field, and then subclasses
-	 * can define their own fields to append to it.  So if a subclass defined the fields `[ 'name', 'phone' ]`, then the
-	 * final concatenated array of fields for the subclass would be `[ 'id', 'name', 'phone' ]`. This works for however many
+	 * Attributes defined on the prototype of a Model (like below), and its subclasses, are concatenated together come
+	 * instantiation time. This means that the Kevlar.Model base class can define the 'id' attribute, and then subclasses
+	 * can define their own attributes to append to it.  So if a subclass defined the attributes `[ 'name', 'phone' ]`, then the
+	 * final concatenated array of attributes for the subclass would be `[ 'id', 'name', 'phone' ]`. This works for however many
 	 * levels of subclasses there are.
 	 * 
-	 * This array will become an object (hash) come instantiation time, with the keys as the field names, and the values as
-	 * the instantiated {@link Kevlar.Field} objects that represent them.
+	 * This array will become an object (hash) come instantiation time, with the keys as the attribute names, and the values as
+	 * the instantiated {@link Kevlar.Attribute} objects that represent them.
 	 */
-	addFields : [],
+	addAttributes : [],
 	
 	/**
-	 * @cfg {String} idField
-	 * The field that should be used as the ID for the Model. 
+	 * @cfg {String} idAttribute
+	 * The attribute that should be used as the ID for the Model. 
 	 */
-	idField : 'id',
+	idAttribute : 'id',
 	
 	
 	/**
 	 * @private
-	 * @property {Object} fields
-	 * A hash of the combined Fields, which have been put together from the current Model subclass, and all of
-	 * its superclasses. This is created by the {@link #initFields} method upon instantiation.
+	 * @property {Object} attributes
+	 * A hash of the combined Attributes, which have been put together from the current Model subclass, and all of
+	 * its superclasses. This is created by the {@link #initAttributes} method upon instantiation.
 	 */
 	
 	/**
 	 * @private
 	 * @property {Object} data
-	 * A hash that holds the current data for the {@link Kevlar.Field Fields}. The property names in this object match 
-	 * the field names.  This hash holds the current data as it is modified by {@link #set}.
+	 * A hash that holds the current data for the {@link Kevlar.Attribute Attributes}. The property names in this object match 
+	 * the attribute names.  This hash holds the current data as it is modified by {@link #set}.
 	 */
 	
 	/**
@@ -72,9 +72,9 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @private 
 	 * @property {Object} modifiedData
 	 * A hash that serves two functions:<br> 
-	 * 1) Properties are set to it when a field is modified. The property name is the field {@link Kevlar.Field#name}. 
-	 * This allows it to be used to determine which fields have been modified. 
-	 * 2) The <b>original</b> (non-committed) data of the field (before it was {@link #set}) is stored as the value of the 
+	 * 1) Properties are set to it when an attribute is modified. The property name is the attribute {@link Kevlar.Attribute#name}. 
+	 * This allows it to be used to determine which attributes have been modified. 
+	 * 2) The <b>original</b> (non-committed) data of the attribute (before it was {@link #set}) is stored as the value of the 
 	 * property. When rolling back changes (via {@link #rollback}), these values are copied back onto the {@link #data} object
 	 * to overwrite the data to be rolled back.
 	 * 
@@ -85,7 +85,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	/**
 	 * @hide
 	 * @property {String} id (readonly)
-	 * The id for the Model. This property is set when the field specified by the {@link #idField} config
+	 * The id for the Model. This property is set when the attribute specified by the {@link #idAttribute} config
 	 * is {@link #set}. 
 	 * 
 	 * *** Note: This property is here solely to maintain compatibility with Backbone's Collection, and should
@@ -115,23 +115,23 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		this.addEvents(
 			/**
-			 * Fires when a {@link Kevlar.Field} in the Model has changed its value. This is a 
-			 * convenience event to respond to just a single field's change. Ex: if you want to
-			 * just respond to the `title` field's change, you could subscribe to `change:title`. Ex:
+			 * Fires when a {@link Kevlar.Attribute} in the Model has changed its value. This is a 
+			 * convenience event to respond to just a single attribute's change. Ex: if you want to
+			 * just respond to the `title` attribute's change, you could subscribe to `change:title`. Ex:
 			 * 
-			 *     model.addListener( 'change:myField', function( model, newValue ) { ... } );
+			 *     model.addListener( 'change:myAttribute', function( model, newValue ) { ... } );
 			 * 
-			 * @event change:[fieldName]
+			 * @event change:[attributeName]
 			 * @param {Kevlar.Model} model This Model instance.
 			 * @param {Mixed} value The new value. 
 			 */
 			
 			/**
-			 * Fires when a {@link Kevlar.Field} in the Model has changed its value.
+			 * Fires when a {@link Kevlar.Attribute} in the Model has changed its value.
 			 * 
 			 * @event change
 			 * @param {Kevlar.Model} model This Model instance.
-			 * @param {String} fieldName The field name for the Field that was changed.
+			 * @param {String} attributeName The attribute name for the Attribute that was changed.
 			 * @param {Mixed} value The new value.
 			 */
 			'change',
@@ -145,8 +145,8 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			'destroy'
 		);
 		
-		// Initialize the 'fields' array, which gets turned into an object (hash)
-		this.initFields();
+		// Initialize the 'attributes' array, which gets turned into an object (hash)
+		this.initAttributes();
 		
 		
 		// Create a "client id" to maintain compatibility with Backbone's Collection
@@ -155,19 +155,19 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		// Default the data to an empty object
 		data = data || {};
 		
-		// Set the default values for fields that don't have an initial value.
-		var fields = this.fields,  // this.fields is a hash of the Field objects, keyed by their name
-		    fieldDefaultValue;
-		for( var name in fields ) {
-			if( data[ name ] === undefined && ( fieldDefaultValue = fields[ name ].defaultValue ) !== undefined ) {
-				data[ name ] = fieldDefaultValue;
+		// Set the default values for attributes that don't have an initial value.
+		var attributes = this.attributes,  // this.attributes is a hash of the Attribute objects, keyed by their name
+		    attributeDefaultValue;
+		for( var name in attributes ) {
+			if( data[ name ] === undefined && ( attributeDefaultValue = attributes[ name ].defaultValue ) !== undefined ) {
+				data[ name ] = attributeDefaultValue;
 			}
 		}
 		
-		// Initialize the underlying data object, which stores all field values
+		// Initialize the underlying data object, which stores all attribute values
 		this.data = {};
 		
-		// Initialize the data hash for storing field names of modified data, and their original values (see property description)
+		// Initialize the data hash for storing attribute names of modified data, and their original values (see property description)
 		this.modifiedData = {};
 		
 		// Set the initial data / defaults, if we have any
@@ -205,67 +205,67 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Initializes the Model's {@link #fields} by walking up the prototype change from the current Model subclass
-	 * up to this (the base) class, collecting their `addFields` arrays, and combining them into one single fields hash. 
-	 * See {@link fields} for more information.
+	 * Initializes the Model's {@link #attributes} by walking up the prototype change from the current Model subclass
+	 * up to this (the base) class, collecting their `addAttributes` arrays, and combining them into one single attributes hash. 
+	 * See {@link attributes} for more information.
 	 * 
 	 * @private
-	 * @method initFields
+	 * @method initAttributes
 	 */
-	initFields : function() {
-		this.fields = {};
+	initAttributes : function() {
+		this.attributes = {};
 		
-		// Define concatenated fields array from all subclasses
-		var fieldsObjects = [],
+		// Define concatenated attributes array from all subclasses
+		var attributesObjects = [],
 		    currentConstructor = this.constructor,
 		    currentProto = currentConstructor.prototype;
 		
-		// Walk up the prototype chain from the current object, collecting 'addFields' objects as we go along
+		// Walk up the prototype chain from the current object, collecting 'addAttributes' objects as we go along
 		do {
-			if( currentProto.hasOwnProperty( 'addFields' ) && Kevlar.isArray( currentProto.addFields ) ) {    // skip over any prototype that doesn't define 'addFields' itself
-				fieldsObjects = fieldsObjects.concat( currentProto.addFields );
+			if( currentProto.hasOwnProperty( 'addAttributes' ) && Kevlar.isArray( currentProto.addAttributes ) ) {    // skip over any prototype that doesn't define 'addAttributes' itself
+				attributesObjects = attributesObjects.concat( currentProto.addAttributes );
 			}
 		} while( ( currentConstructor = ( currentProto = currentConstructor.superclass ) && currentProto.constructor ) );
 		
-		// After we have the array of fields, go backwards through them, which allows fields from subclasses to override those in superclasses
-		for( var i = fieldsObjects.length; i--; ) {
-			var fieldObj = fieldsObjects[ i ];
+		// After we have the array of attributes, go backwards through them, which allows attributes from subclasses to override those in superclasses
+		for( var i = attributesObjects.length; i--; ) {
+			var attributeObj = attributesObjects[ i ];
 			
-			// Normalize to a Kevlar.Field configuration object if it is a string
-			if( typeof fieldObj === 'string' ) {
-				fieldObj = { name: fieldObj };
+			// Normalize to a Kevlar.Attribute configuration object if it is a string
+			if( typeof attributeObj === 'string' ) {
+				attributeObj = { name: attributeObj };
 			}
 			
-			var field = this.createField( fieldObj );
-			this.fields[ field.getName() ] = field;
+			var attribute = this.createAttribute( attributeObj );
+			this.attributes[ attribute.getName() ] = attribute;
 		}
 	},
 	
 	
 	/**
-	 * Factory method which by default creates a {@link Kevlar.Field}, but may be overridden by subclasses
-	 * to create different {@link Kevlar.Field} subclasses. 
+	 * Factory method which by default creates a {@link Kevlar.Attribute}, but may be overridden by subclasses
+	 * to create different {@link Kevlar.Attribute} subclasses. 
 	 * 
 	 * @protected
-	 * @method createField
-	 * @param {Object} fieldObj The field object provided on the prototype. If it was a string, it will have been
-	 *   normalized to the object `{ name: fieldName }`.
-	 * @return {Kevlar.Field}
+	 * @method createAttribute
+	 * @param {Object} attributeObj The attribute object provided on the prototype. If it was a string, it will have been
+	 *   normalized to the object `{ name: attributeName }`.
+	 * @return {Kevlar.Attribute}
 	 */
-	createField : function( fieldObj ) {
-		return new Kevlar.Field( fieldObj );
+	createAttribute : function( attributeObj ) {
+		return new Kevlar.Attribute( attributeObj );
 	},
 	
 	
 	/**
-	 * Retrieves the Field objects that are present for the Model, in an object (hashmap) where the keys
-	 * are the Field names, and the values are the {@link Kevlar.Field} objects themselves.
+	 * Retrieves the Attribute objects that are present for the Model, in an object (hashmap) where the keys
+	 * are the Attribute names, and the values are the {@link Kevlar.Attribute} objects themselves.
 	 * 
-	 * @method getFields
+	 * @method getAttributes
 	 * @return {Object} 
 	 */
-	getFields : function() {
-		return this.fields;
+	getAttributes : function() {
+		return this.attributes;
 	},
 	
 	
@@ -273,18 +273,18 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Retrieves the ID for the Model. This uses the configured {@link #idField} to retrieve
-	 * the correct ID field for the Model.
+	 * Retrieves the ID for the Model. This uses the configured {@link #idAttribute} to retrieve
+	 * the correct ID attribute for the Model.
 	 * 
 	 * @method getId
 	 * @return {Mixed} The ID for the Model.
 	 */
 	getId : function() {
-		// Provide a friendlier error message than what get() provides if the idField is not a Field of the Model
-		if( !( this.idField in this.fields ) ) {
-			throw new Error( "Error: The `idField` (currently set to a field named '" + this.idField + "') was not found on the Model. Please set the `idField` config to the name of the id field in the Model. The model can't be saved or destroyed without it." );
+		// Provide a friendlier error message than what get() provides if the idAttribute is not an Attribute of the Model
+		if( !( this.idAttribute in this.attributes ) ) {
+			throw new Error( "Error: The `idAttribute` (currently set to an attribute named '" + this.idAttribute + "') was not found on the Model. Please set the `idAttribute` config to the name of the id attribute in the Model. The model can't be saved or destroyed without it." );
 		}
-		return this.get( this.idField );
+		return this.get( this.idAttribute );
 	},
 
 	
@@ -292,114 +292,114 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Sets the value for a {@link Kevlar.Field Field} given its `name`, and a `value`. For example, a call could be made as this:
+	 * Sets the value for a {@link Kevlar.Attribute Attribute} given its `name`, and a `value`. For example, a call could be made as this:
 	 * 
-	 *     model.set( 'field1', 'value1' );
+	 *     model.set( 'attribute1', 'value1' );
 	 * 
 	 * As an alternative form, multiple valuse can be set at once by passing an Object into the first argument of this method. Ex:
 	 * 
 	 *     model.set( { key1: 'value1', key2: 'value2' } );
 	 * 
-	 * Note that in this form, the method will ignore any property in the object (hash) that don't have associated Fields.<br><br>
+	 * Note that in this form, the method will ignore any property in the object (hash) that don't have associated Attributes.<br><br>
 	 * 
-	 * When fields are set, their {@link Kevlar.Field#set} method is run, if they have one defined.
+	 * When attributes are set, their {@link Kevlar.Attribute#set} method is run, if they have one defined.
 	 * 
 	 * @method set
-	 * @param {String/Object} fieldName The field name for the Field to set, or an object (hash) of name/value pairs.
-	 * @param {Mixed} [value] The value to set to the field. Required if the `fieldName` argument is a string (i.e. not a hash). 
+	 * @param {String/Object} attributeName The attribute name for the Attribute to set, or an object (hash) of name/value pairs.
+	 * @param {Mixed} [value] The value to set to the attribute. Required if the `attributeName` argument is a string (i.e. not a hash). 
 	 */
-	set : function( fieldName, value ) {
-		if( typeof fieldName === 'object' ) {
+	set : function( attributeName, value ) {
+		if( typeof attributeName === 'object' ) {
 			// Hash provided 
-			var values = fieldName;  // for clarity
-			for( var fldName in values ) {  // a new variable, 'fldName' instead of 'fieldName', so that JSLint stops whining about "Bad for in variable 'fieldName'" (for whatever reason it does that...)
+			var values = attributeName;  // for clarity
+			for( var fldName in values ) {  // a new variable, 'fldName' instead of 'attributeName', so that JSLint stops whining about "Bad for in variable 'attributeName'" (for whatever reason it does that...)
 				if( values.hasOwnProperty( fldName ) ) {
 					this.set( fldName, values[ fldName ] );
 				}
 			}
 			
 		} else {
-			// fieldName and value provided
-			var field = this.fields[ fieldName ];
-			if( !field ) {
-				throw new Error( "Kevlar.Model.set(): A field with the fieldName '" + fieldName + "' was not found." );
+			// attributeName and value provided
+			var attribute = this.attributes[ attributeName ];
+			if( !attribute ) {
+				throw new Error( "Kevlar.Model.set(): A attribute with the attributeName '" + attributeName + "' was not found." );
 			}
 			
-			// Get the current value of the field
-			var currentValue = this.data[ fieldName ];
+			// Get the current value of the attribute
+			var currentValue = this.data[ attributeName ];
 			
-			// If the field has a 'set' function defined, call it to convert the data
-			if( typeof field.set === 'function' ) {
-				value = field.set.call( field.scope || this, value, this );  // provided the value, and the Model instance
+			// If the attribute has a 'set' function defined, call it to convert the data
+			if( typeof attribute.set === 'function' ) {
+				value = attribute.set.call( attribute.scope || this, value, this );  // provided the value, and the Model instance
 				
-				// *** Temporary workaround to get the 'change' event to fire on a Field whose set() function does not
+				// *** Temporary workaround to get the 'change' event to fire on an Attribute whose set() function does not
 				// return a new value to set to the underlying data. This will be resolved once dependencies are 
-				// automatically resolved in the Field's get() function
+				// automatically resolved in the Attribute's get() function
 				if( value === undefined ) {
-					// This is to make the following block below think that there is already data in for the field, and
+					// This is to make the following block below think that there is already data in for the attribute, and
 					// that it has the same value. If we don't have this, the change event will fire twice, the
 					// the model will be set as 'dirty', and the old value will be put into the `modifiedData` hash.
-					if( !( fieldName in this.data ) ) {
-						this.data[ fieldName ] = undefined;
+					if( !( attributeName in this.data ) ) {
+						this.data[ attributeName ] = undefined;
 					}
 					
-					// Fire the events with the value of the Field after it has been processed by any Field-specific `get()` function.
-					value = this.get( fieldName );
+					// Fire the events with the value of the Attribute after it has been processed by any Attribute-specific `get()` function.
+					value = this.get( attributeName );
 					
 					// Now manually fire the events
-					this.fireEvent( 'change:' + fieldName, this, value );
-					this.fireEvent( 'change', this, fieldName, value );
+					this.fireEvent( 'change:' + attributeName, this, value );
+					this.fireEvent( 'change', this, attributeName, value );
 				}
 			}
 			
-			// Only change if there is no current value for the field, or if new value is different from the current
-			if( !( fieldName in this.data ) || !Kevlar.util.Object.isEqual( currentValue, value ) ) {
-				// Store the field's *current* value (not the new value) into the "modifiedData" fields hash.
-				// This should only happen the first time the field is set, so that the field can be rolled back even if there are multiple
+			// Only change if there is no current value for the attribute, or if new value is different from the current
+			if( !( attributeName in this.data ) || !Kevlar.util.Object.isEqual( currentValue, value ) ) {
+				// Store the attribute's *current* value (not the new value) into the "modifiedData" attributes hash.
+				// This should only happen the first time the attribute is set, so that the attribute can be rolled back even if there are multiple
 				// set() calls to change it.
-				if( !( fieldName in this.modifiedData ) ) {
-					this.modifiedData[ fieldName ] = currentValue;
+				if( !( attributeName in this.modifiedData ) ) {
+					this.modifiedData[ attributeName ] = currentValue;
 				}
-				this.data[ fieldName ] = value;
+				this.data[ attributeName ] = value;
 				this.dirty = true;
 				
 				
 				// Now that we have set the new raw value to the internal `data` hash, we want to fire the events with the value
-				// of the Field after it has been processed by any Field-specific `get()` function.
-				value = this.get( fieldName );
+				// of the Attribute after it has been processed by any Attribute-specific `get()` function.
+				value = this.get( attributeName );
 				
-				// If the field is the "idField", set the `id` property on the model for compatibility with Backbone's Collection
-				if( fieldName === this.idField ) {
+				// If the attribute is the "idAttribute", set the `id` property on the model for compatibility with Backbone's Collection
+				if( attributeName === this.idAttribute ) {
 					this.id = value;
 				}
 				
-				this.fireEvent( 'change:' + fieldName, this, value );
-				this.fireEvent( 'change', this, fieldName, value );
+				this.fireEvent( 'change:' + attributeName, this, value );
+				this.fireEvent( 'change', this, attributeName, value );
 			}
 		}
 	},
 	
 	
 	/**
-	 * Retrieves the value for the field given by `fieldName`. If the {@link Kevlar.Field Field} has a
-	 * {@link Kevlar.Field#get get} function defined, that function will be called, and its return value
+	 * Retrieves the value for the attribute given by `attributeName`. If the {@link Kevlar.Attribute Attribute} has a
+	 * {@link Kevlar.Attribute#get get} function defined, that function will be called, and its return value
 	 * will be used as the return of this method.
 	 * 
 	 * @method get
-	 * @param {String} fieldName The name of the Field whose value to retieve.
-	 * @return {Mixed} The value of the field given by `fieldName`, or undefined if the value has never been set.  
+	 * @param {String} attributeName The name of the Attribute whose value to retieve.
+	 * @return {Mixed} The value of the attribute given by `attributeName`, or undefined if the value has never been set.  
 	 */
-	get : function( fieldName ) {
-		if( !( fieldName in this.fields ) ) {
-			throw new Error( "Kevlar.Model::get() error: field '" + fieldName + "' was not found in the Model." );
+	get : function( attributeName ) {
+		if( !( attributeName in this.attributes ) ) {
+			throw new Error( "Kevlar.Model::get() error: attribute '" + attributeName + "' was not found in the Model." );
 		}
 		
-		var value = this.data[ fieldName ],
-		    field = this.fields[ fieldName ];
+		var value = this.data[ attributeName ],
+		    attribute = this.attributes[ attributeName ];
 		    
-		// If there is a `get` function on the Field, run it now to convert the value before it is returned.
-		if( typeof field.get === 'function' ) {
-			value = field.get.call( field.scope || this, value, this );  // provided the value, and the Model instance
+		// If there is a `get` function on the Attribute, run it now to convert the value before it is returned.
+		if( typeof attribute.get === 'function' ) {
+			value = attribute.get.call( attribute.scope || this, value, this );  // provided the value, and the Model instance
 		}
 		
 		return value;
@@ -407,26 +407,26 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Returns the default value specified for a Field.
+	 * Returns the default value specified for an Attribute.
 	 * 
 	 * @method getDefault
-	 * @param {String} fieldName The field name to retrieve the default value for.
-	 * @return {Mixed} The default value for the field.
+	 * @param {String} attributeName The attribute name to retrieve the default value for.
+	 * @return {Mixed} The default value for the attribute.
 	 */
-	getDefault : function( fieldName ) {
-		return this.fields[ fieldName ].defaultValue;
+	getDefault : function( attributeName ) {
+		return this.attributes[ attributeName ].defaultValue;
 	},
 	
 	
 	/**
-	 * Determines if the Model has a given field (attribute).
+	 * Determines if the Model has a given attribute (attribute).
 	 * 
 	 * @method has
-	 * @param {String} fieldName The name of the field (attribute) name to test for.
-	 * @return {Boolean} True if the Model has the given field name.
+	 * @param {String} attributeName The name of the attribute (attribute) name to test for.
+	 * @return {Boolean} True if the Model has the given attribute name.
 	 */
-	has : function( fieldName ) {
-		return !!this.fields[ fieldName ];
+	has : function( attributeName ) {
+		return !!this.attributes[ attributeName ];
 	},
 	
 	
@@ -445,37 +445,37 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Determines if a given field has been modified since the last {@link #commit} or {@link #rollback}.
+	 * Determines if a given attribute has been modified since the last {@link #commit} or {@link #rollback}.
 	 * 
 	 * @method isModified
-	 * @param {String} fieldName
-	 * @return {Boolean} True if the field has been modified, false otherwise.
+	 * @param {String} attributeName
+	 * @return {Boolean} True if the attribute has been modified, false otherwise.
 	 */
-	isModified : function( fieldName ) {
-		return this.modifiedData.hasOwnProperty( fieldName );
+	isModified : function( attributeName ) {
+		return this.modifiedData.hasOwnProperty( attributeName );
 	},
 	
 	
 	/**
-	 * Retrieves the values for all of the fields in the Model. Note: returns a copy of the data so that the object
+	 * Retrieves the values for all of the attributes in the Model. Note: returns a copy of the data so that the object
 	 * retrieved from this method may be modified.
 	 * 
 	 * @methods getData
 	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This may include:
-	 * @param {Boolean} [options.persistedOnly] True to have the method only return data for the persisted Fields (i.e.,
-	 *   Fields with the {@link Kevlar.Field#persist persist} config set to true, which is the default).
-	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.Field Field} values.
+	 * @param {Boolean} [options.persistedOnly] True to have the method only return data for the persisted Attributes (i.e.,
+	 *   Attributes with the {@link Kevlar.Attribute#persist persist} config set to true, which is the default).
+	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.Attribute Attribute} values.
 	 */
 	getData : function( options ) {
 		options = options || {};
 		
-		var fields = this.fields,
+		var attributes = this.attributes,
 		    persistedOnly = !!options.persistedOnly,
 		    data = {};
 		    
-		for( var fieldName in this.fields ) {
-			if( !persistedOnly || fields[ fieldName ].isPersisted() === true ) {
-				data[ fieldName ] = this.get( fieldName );
+		for( var attributeName in this.attributes ) {
+			if( !persistedOnly || attributes[ attributeName ].isPersisted() === true ) {
+				data[ attributeName ] = this.get( attributeName );
 			}
 		}
 		return Kevlar.util.Object.clone( data );
@@ -483,29 +483,29 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Retrieves the values for all of the {@link Kevlar.Field fields} in the Model whose values have been changed since
+	 * Retrieves the values for all of the {@link Kevlar.Attribute attributes} in the Model whose values have been changed since
 	 * the last {@link #commit} or {@link #rollback}. 
 	 * 
 	 * Note: returns a copy of the data so that the object retrieved from this method may be modified.
 	 * 
 	 * @method getChanges
 	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This may include:
-	 * @param {Boolean} [options.persistedOnly] True to have the method only return data for the persisted Fields (i.e.,
-	 *   Fields with the {@link Kevlar.Field#persist persist} config set to true, which is the default).
-	 * @return {Object} A hash of the fields that have been changed since the last {@link #commit} or {@link #rollback}.
-	 *   The hash's property names are the field names, and the hash's values are the new values.
+	 * @param {Boolean} [options.persistedOnly] True to have the method only return data for the persisted Attributes (i.e.,
+	 *   Attributes with the {@link Kevlar.Attribute#persist persist} config set to true, which is the default).
+	 * @return {Object} A hash of the attributes that have been changed since the last {@link #commit} or {@link #rollback}.
+	 *   The hash's property names are the attribute names, and the hash's values are the new values.
 	 */
 	getChanges : function( options ) {
 		options = options || {};
 		
 		var modifiedData = Kevlar.util.Object.clone( this.modifiedData ),
-		    fields = this.fields,
+		    attributes = this.attributes,
 		    persistedOnly = !!options.persistedOnly,
 		    changes = {};
 		
-		for( var fieldName in modifiedData ) {
-			if( !persistedOnly || fields[ fieldName ].isPersisted() === true ) {
-				changes[ fieldName ] = this.get( fieldName );
+		for( var attributeName in modifiedData ) {
+			if( !persistedOnly || attributes[ attributeName ].isPersisted() === true ) {
+				changes[ attributeName ] = this.get( attributeName );
 			}
 		}
 		return changes;
@@ -513,7 +513,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Commits dirty fields' data. Data can no longer be reverted after a commit has been performed. Note: When developing with a {@link #proxy},
+	 * Commits dirty attributes' data. Data can no longer be reverted after a commit has been performed. Note: When developing with a {@link #proxy},
 	 * this method should normally not need to be called explicitly, as it will be called upon the successful persistence of the Model's data
 	 * to the server.
 	 * 
@@ -526,16 +526,16 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Rolls back the Model fields that have been changed since the last commit or rollback.
+	 * Rolls back the Model attributes that have been changed since the last commit or rollback.
 	 * 
 	 * @method rollback
 	 */
 	rollback : function() {
 		// Loop through the modifiedData hash, which holds the *original* values, and set them back to the data hash.
 		var modifiedData = this.modifiedData;
-		for( var fieldName in modifiedData ) {
-			if( modifiedData.hasOwnProperty( fieldName ) ) {
-				this.data[ fieldName ] = modifiedData[ fieldName ];
+		for( var attributeName in modifiedData ) {
+			if( modifiedData.hasOwnProperty( attributeName ) ) {
+				this.data[ attributeName ] = modifiedData[ attributeName ];
 			}
 		}
 		
@@ -630,7 +630,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		// Store a "snapshot" of the data that is being persisted. This is used to compare against the Model's current data at the time of when the persistence operation 
 		// completes. Anything that does not match this persisted snapshot data must have been updated while the persistence operation was in progress, and the Model must 
-		// be marked as dirty for those fields after its commit() runs. This is a bit roundabout that a commit() operation runs when the persistence operation is complete
+		// be marked as dirty for those attributes after its commit() runs. This is a bit roundabout that a commit() operation runs when the persistence operation is complete
 		// and then data is manually modified, but this is also the correct time to run the commit() operation, as we still want to see the changes if the request fails. 
 		// So, if a persistence request fails, we should have all of the data still marked as dirty, both the data that was to be persisted, and any new data that was set 
 		// while the persistence operation was being attempted.
@@ -641,11 +641,11 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			this.commit();
 			
 			// Loop over the persisted snapshot data, and see if any Model attributes were updated while the persistence request was taking place.
-			// If so, those fields should be marked as modified, with the snapshot data used as the "originals". See the note above where persistedData was set. 
+			// If so, those attributes should be marked as modified, with the snapshot data used as the "originals". See the note above where persistedData was set. 
 			var currentData = this.getData();
-			for( var fieldName in persistedData ) {
-				if( persistedData.hasOwnProperty( fieldName ) && !Kevlar.util.Object.isEqual( persistedData[ fieldName ], currentData[ fieldName ] ) ) {
-					this.modifiedData[ fieldName ] = persistedData[ fieldName ];   // set the last persisted value on to the "modifiedData" object. Note: "modifiedData" holds *original* values, so that the "data" object can hold the latest values. It is how we know a field is modified as well.
+			for( var attributeName in persistedData ) {
+				if( persistedData.hasOwnProperty( attributeName ) && !Kevlar.util.Object.isEqual( persistedData[ attributeName ], currentData[ attributeName ] ) ) {
+					this.modifiedData[ attributeName ] = persistedData[ attributeName ];   // set the last persisted value on to the "modifiedData" object. Note: "modifiedData" holds *original* values, so that the "data" object can hold the latest values. It is how we know an attribute is modified as well.
 					this.dirty = true;
 				}
 			}

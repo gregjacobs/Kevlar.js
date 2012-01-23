@@ -869,7 +869,7 @@ tests.unit.Kevlar = new Ext.test.TestSuite( {
 Ext.test.Session.addTest( {
 	
 	parentSuite: tests.unit,
-	name: 'Kevlar.Field',
+	name: 'Kevlar.Attribute',
 	
 	
 	setUp : function() {
@@ -882,13 +882,13 @@ Ext.test.Session.addTest( {
 	// --------------------------------
 	_should : {
 		error : {
-			"Instantiating a Field without a 'name' should throw an error" : "no 'name' property provided to Kevlar.Field constructor",
-			"Instantiating a Field with an undefined 'name' argument should throw an error" : "no 'name' property provided to Kevlar.Field constructor",
-			"Instantiating a Field with an undefined 'name' property should throw an error" : "no 'name' property provided to Kevlar.Field constructor",
-			"Instantiating a Field with a null 'name' argument should throw an error" : "no 'name' property provided to Kevlar.Field constructor",
-			"Instantiating a Field with a null 'name' property should throw an error" : "no 'name' property provided to Kevlar.Field constructor",
-			"Instantiating a Field with an empty 'name' argument should throw an error" : "no 'name' property provided to Kevlar.Field constructor",
-			"Instantiating a Field with an empty 'name' property should throw an error" : "no 'name' property provided to Kevlar.Field constructor"
+			"Instantiating an Attribute without a 'name' should throw an error" : "no 'name' property provided to Kevlar.Attribute constructor",
+			"Instantiating an Attribute with an undefined 'name' argument should throw an error" : "no 'name' property provided to Kevlar.Attribute constructor",
+			"Instantiating an Attribute with an undefined 'name' property should throw an error" : "no 'name' property provided to Kevlar.Attribute constructor",
+			"Instantiating an Attribute with a null 'name' argument should throw an error" : "no 'name' property provided to Kevlar.Attribute constructor",
+			"Instantiating an Attribute with a null 'name' property should throw an error" : "no 'name' property provided to Kevlar.Attribute constructor",
+			"Instantiating an Attribute with an empty 'name' argument should throw an error" : "no 'name' property provided to Kevlar.Attribute constructor",
+			"Instantiating an Attribute with an empty 'name' property should throw an error" : "no 'name' property provided to Kevlar.Attribute constructor"
 		}
 	},
 	
@@ -901,42 +901,42 @@ Ext.test.Session.addTest( {
 	
 	// Check that the name property was provided
 	
-	"Instantiating a Field without a 'name' should throw an error" : function() {
-		var field = new Kevlar.Field();
+	"Instantiating an Attribute without a 'name' should throw an error" : function() {
+		var attribute = new Kevlar.Attribute();
 	},
 	
 	
-	"Instantiating a Field with an undefined 'name' argument should throw an error" : function() {
-		var field = new Kevlar.Field( undefined );
+	"Instantiating an Attribute with an undefined 'name' argument should throw an error" : function() {
+		var attribute = new Kevlar.Attribute( undefined );
 	},
 	
 	
-	"Instantiating a Field with an undefined 'name' property should throw an error" : function() {
-		var field = new Kevlar.Field( {
+	"Instantiating an Attribute with an undefined 'name' property should throw an error" : function() {
+		var attribute = new Kevlar.Attribute( {
 			name : undefined
 		} );
 	},
 	
 	
-	"Instantiating a Field with a null 'name' argument should throw an error" : function() {
-		var field = new Kevlar.Field( null );
+	"Instantiating an Attribute with a null 'name' argument should throw an error" : function() {
+		var attribute = new Kevlar.Attribute( null );
 	},
 	
 	
-	"Instantiating a Field with a null 'name' property should throw an error" : function() {
-		var field = new Kevlar.Field( {
+	"Instantiating an Attribute with a null 'name' property should throw an error" : function() {
+		var attribute = new Kevlar.Attribute( {
 			name : null
 		} );
 	},
 	
 	
-	"Instantiating a Field with an empty 'name' argument should throw an error" : function() {
-		var field = new Kevlar.Field( "" );
+	"Instantiating an Attribute with an empty 'name' argument should throw an error" : function() {
+		var attribute = new Kevlar.Attribute( "" );
 	},
 	
 	
-	"Instantiating a Field with an empty 'name' property should throw an error" : function() {
-		var field = new Kevlar.Field( {
+	"Instantiating an Attribute with an empty 'name' property should throw an error" : function() {
+		var attribute = new Kevlar.Attribute( {
 			name : ""
 		} );
 	},
@@ -946,29 +946,29 @@ Ext.test.Session.addTest( {
 	// Check that the 'name' property can be retrieved by getName()
 	
 	"The name property should be retrievable by getName()" : function() {
-		var field1 = new Kevlar.Field( { name: 'testName' } );
-		Y.Assert.areSame( 'testName', field1.getName(), "getName() not properly retriving Field's name. Was looking for 'testName'." );
+		var attribute1 = new Kevlar.Attribute( { name: 'testName' } );
+		Y.Assert.areSame( 'testName', attribute1.getName(), "getName() not properly retriving Attribute's name. Was looking for 'testName'." );
 		
-		var field2 = new Kevlar.Field( { name: '_' } );
-		Y.Assert.areSame( '_', field2.getName(), "getName() not properly retriving Field's name. Was looking for '_'." );
+		var attribute2 = new Kevlar.Attribute( { name: '_' } );
+		Y.Assert.areSame( '_', attribute2.getName(), "getName() not properly retriving Attribute's name. Was looking for '_'." );
 		
-		var field3 = new Kevlar.Field( { name: "abc" } );
-		Y.Assert.areSame( "abc", field3.getName(), "getName() not properly retriving Field's name. Was looking for 'abc'." );
+		var attribute3 = new Kevlar.Attribute( { name: "abc" } );
+		Y.Assert.areSame( "abc", attribute3.getName(), "getName() not properly retriving Attribute's name. Was looking for 'abc'." );
 	},
 	
 	
 	// Make sure a number provided to the constructor as the 'name' is converted to a string datatype
 	
-	"Providing the field name as a number directly to the constructor argument should be converted to a string for the field's name" : function() {
-		var field = new Kevlar.Field( 0 );
-		Y.Assert.areSame( "0", field.getName(), "the field name should have been converted to a string" );
+	"Providing the attribute name as a number directly to the constructor argument should be converted to a string for the attribute's name" : function() {
+		var attribute = new Kevlar.Attribute( 0 );
+		Y.Assert.areSame( "0", attribute.getName(), "the attribute name should have been converted to a string" );
 	},
 	
-	"Providing the field name as a property on the config should be converted to a string for the field's name" : function() {
-		var field = new Kevlar.Field( {
+	"Providing the attribute name as a property on the config should be converted to a string for the attribute's name" : function() {
+		var attribute = new Kevlar.Attribute( {
 			name : 0
 		} );
-		Y.Assert.areSame( "0", field.getName(), "the field name should have been converted to a string" );
+		Y.Assert.areSame( "0", attribute.getName(), "the attribute name should have been converted to a string" );
 	},
 	
 	
@@ -978,48 +978,48 @@ Ext.test.Session.addTest( {
 	// Check that defaultValue is handled correctly
 	
 	"A default provided as the keyword 'default' should be accepted properly as defaultValue" : function() {
-		var field = new Kevlar.Field( {
-			name : "TestField",
+		var attribute = new Kevlar.Attribute( {
+			name : "TestAttribute",
 			'default' : 1
 		} );
 		
-		Y.Assert.areSame( 1, field.defaultValue );
+		Y.Assert.areSame( 1, attribute.defaultValue );
 	},
 	
 	
 	"A default provided as the keyword 'default' that is a function should be executed and set properly to defaultValue" : function() {
-		var field = new Kevlar.Field( {
-			name : "TestField",
+		var attribute = new Kevlar.Attribute( {
+			name : "TestAttribute",
 			'default' : function() { return 1; }
 		} );
 		
-		Y.Assert.areSame( 1, field.defaultValue );
+		Y.Assert.areSame( 1, attribute.defaultValue );
 	},
 	
 	
 	"A default provided as defaultValue should be accepted properly" : function() {
-		var field = new Kevlar.Field( {
-			name : "TestField",
+		var attribute = new Kevlar.Attribute( {
+			name : "TestAttribute",
 			defaultValue : 1
 		} );
 		
-		Y.Assert.areSame( 1, field.defaultValue );
+		Y.Assert.areSame( 1, attribute.defaultValue );
 	},
 	
 	
 	"A default provided as defaultValue that is a function should be executed and set properly to defaultValue" : function() {
-		var field = new Kevlar.Field( {
-			name : "TestField",
+		var attribute = new Kevlar.Attribute( {
+			name : "TestAttribute",
 			defaultValue : function() { return 1; }
 		} );
 		
-		Y.Assert.areSame( 1, field.defaultValue );
+		Y.Assert.areSame( 1, attribute.defaultValue );
 	},
 	
 	
 	"A defaultValue provided as an object should be recursed for functions, and those functions' return values should be used in the default" : function() {
-		var field = new Kevlar.Field( {
-			name : 'TestField',
+		var attribute = new Kevlar.Attribute( {
+			name : 'TestAttribute',
 			'default' : { 
 				a : "A",
 				b : {
@@ -1036,7 +1036,7 @@ Ext.test.Session.addTest( {
 				}
 			}
 		} );
-		var defaultData = field.defaultValue;
+		var defaultData = attribute.defaultValue;
 		Y.Assert.areSame( "A", defaultData.a, "The 'default' config provided as an object should have had the value 'A' for property 'a'." );
 		Y.Assert.areSame( "B1", defaultData.b.innerB1, "The 'default' config provided as an object should have been recursed for functions, and their return values used as the properties." );
 		Y.Assert.areSame( "C2", defaultData.c.innerC2, "The 'default' config provided as an object should have been recursed for functions, and their return values used as the properties." );
@@ -1055,19 +1055,19 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 	
 		{
 			/*
-			 * Test Fields Inheritance
+			 * Test Attributes Inheritance
 			 */
-			name: 'Test Fields Inheritance',
+			name: 'Test Attributes Inheritance',
 			
 	
 			setUp : function() {
 				this.TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [
-						{ name: 'field1' },
-						{ name: 'field2', defaultValue: "field2's default" },
-						{ name: 'field3', defaultValue: function() { return "field3's default"; } },
-						{ name: 'field4', set : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
-						{ name: 'field5', set : function( value, model ) { return value + " " + model.get( 'field2' ); } }
+					addAttributes: [
+						{ name: 'attribute1' },
+						{ name: 'attribute2', defaultValue: "attribute2's default" },
+						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
+						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -1075,8 +1075,8 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 			
 			
 			/*
-			 * Utility method to remove duplicates from an array. Used by {@link #assertFieldsHashCorrect} for its check for the number of
-			 * fields that should exist.  Uses a hash to remove duplicates.
+			 * Utility method to remove duplicates from an array. Used by {@link #assertAttributesHashCorrect} for its check for the number of
+			 * attributes that should exist.  Uses a hash to remove duplicates.
 			 * 
 			 * @method removeArrayDuplicates 
 			 * @param {Array} arr
@@ -1094,50 +1094,50 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 			
 			
 			/*
-			 * Given a Model (provided as the last arg), and its superclasses, asserts that the number of fields found on the prototypes of each Model
-			 * matches the number of keys in the final {@link Kevlar.Model#fields} hash, and that there is one key for each Field
-			 * found in the 'fields' prototype arrays.
+			 * Given a Model (provided as the last arg), and its superclasses, asserts that the number of attributes found on the prototypes of each Model
+			 * matches the number of keys in the final {@link Kevlar.Model#attributes} hash, and that there is one key for each Attribute
+			 * found in the 'attributes' prototype arrays.
 			 * 
 			 * Basically asserts that the final hash that the Kevlar.Model compiles from itself, and all of its superclasses, is correct.
 			 * 
-			 * @method assertFieldsHashCorrect
+			 * @method assertAttributesHashCorrect
 			 * @param {Kevlar.Model...} One or more Model classes, starting with the highest level Model (the "highest superclass" Model),
 			 *   going all the way down to the lowest subclass Model.  Ex of args: Model, SubClassModel, SubSubClassModel. In this example,
 			 *   the SubSubClassModel is the Model that will be tested.  
 			 */
-			assertFieldsHashCorrect : function( /* ... */ ) {
+			assertAttributesHashCorrect : function( /* ... */ ) {
 				var models = Kevlar.toArray( arguments ),
 				    i, len;
 				
-				// Get the full array of prototype fields (from the Model, SubClassModel, SubSubClassModel, etc), and the expected number of fields
-				var prototypeFields = [];
+				// Get the full array of prototype attributes (from the Model, SubClassModel, SubSubClassModel, etc), and the expected number of attributes
+				var prototypeAttributes = [];
 				for( i = 0, len = models.length; i < len; i++ ) {
 					var currentPrototype = models[ i ].prototype;
-					if( currentPrototype.hasOwnProperty( 'addFields' ) ) {
-						prototypeFields = prototypeFields.concat( models[ i ].prototype.addFields );
+					if( currentPrototype.hasOwnProperty( 'addAttributes' ) ) {
+						prototypeAttributes = prototypeAttributes.concat( models[ i ].prototype.addAttributes );
 					}
 				}
 				
-				// Convert the array to a duplicates-removed array of field names
-				var fieldNames = [];
-				for( i = 0, len = prototypeFields.length; i < len; i++ ) {
-					var fieldName = new Kevlar.Field( prototypeFields[ i ] ).getName();
-					fieldNames.push( fieldName );
+				// Convert the array to a duplicates-removed array of attribute names
+				var attributeNames = [];
+				for( i = 0, len = prototypeAttributes.length; i < len; i++ ) {
+					var attributeName = new Kevlar.Attribute( prototypeAttributes[ i ] ).getName();
+					attributeNames.push( attributeName );
 				}
-				fieldNames = this.removeArrayDuplicates( fieldNames );
-				var expectedFieldCount = fieldNames.length;
+				attributeNames = this.removeArrayDuplicates( attributeNames );
+				var expectedAttributeCount = attributeNames.length;
 				
 				
-				// Check the instance fields of the Model under test now
+				// Check the instance attributes of the Model under test now
 				var instance = new models[ models.length - 1 ](),  // the last Model class provided to the method. It is assumed that all previous arguments are its superclasses
-				    instanceFields = instance.fields;
+				    instanceAttributes = instance.attributes;
 				
-				var fieldCount = Kevlar.util.Object.length( instanceFields );
-				Y.Assert.areSame( expectedFieldCount, fieldCount, "There should be the same number of resulting fields in the 'instanceFields' hash as the original 'fields' arrays of the Model classes." );
+				var attributeCount = Kevlar.util.Object.length( instanceAttributes );
+				Y.Assert.areSame( expectedAttributeCount, attributeCount, "There should be the same number of resulting attributes in the 'instanceAttributes' hash as the original 'attributes' arrays of the Model classes." );
 				
-				// Check that all of the fields defined by each Model's prototype exist in the final 'fields' hash
-				for( i = 0, len = fieldNames.length; i < len; i++ ) {
-					Y.ObjectAssert.hasKey( fieldNames[ i ], instanceFields, "The Model (last arg to assertFieldsHashCorrect) should have defined the '" + fieldNames[ i ] + "' field in its final 'fields' hash" );
+				// Check that all of the attributes defined by each Model's prototype exist in the final 'attributes' hash
+				for( i = 0, len = attributeNames.length; i < len; i++ ) {
+					Y.ObjectAssert.hasKey( attributeNames[ i ], instanceAttributes, "The Model (last arg to assertAttributesHashCorrect) should have defined the '" + attributeNames[ i ] + "' attribute in its final 'attributes' hash" );
 				}
 			},
 			
@@ -1147,151 +1147,151 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 			// Tests
 			
 			
-			"The Kevlar.Model class itself (i.e. no superclass Model) should just have the fields defined on its prototype." : function() {
+			"The Kevlar.Model class itself (i.e. no superclass Model) should just have the attributes defined on its prototype." : function() {
 				var Model = Kevlar.Model;
 				
 				// Run the test code
-				this.assertFieldsHashCorrect( Model );
+				this.assertAttributesHashCorrect( Model );
 			},
 			
 			
-			"Fields should inherit from a Model subclass's superclass when the subclass defines no fields of its own" : function() {
+			"Attributes should inherit from a Model subclass's superclass when the subclass defines no attributes of its own" : function() {
 				var Model = Kevlar.Model;
 				var SubClassModel = Kevlar.extend( Model, {} );
 				
 				// Run the test code
-				this.assertFieldsHashCorrect( Model, SubClassModel );
+				this.assertAttributesHashCorrect( Model, SubClassModel );
 			},
 			
 			
-			"Fields should inherit from a Model subclass's superclass when the subclass does define fields of its own" : function() {
+			"Attributes should inherit from a Model subclass's superclass when the subclass does define attributes of its own" : function() {
 				// Reference the base class, and create a subclass
 				var Model = Kevlar.Model;
 				var SubClassModel = Kevlar.extend( Model, {
-					addFields : [ 'a', 'b' ]
+					addAttributes : [ 'a', 'b' ]
 				} );
 				
 				// Run the test code
-				this.assertFieldsHashCorrect( Model, SubClassModel );
+				this.assertAttributesHashCorrect( Model, SubClassModel );
 				
-				// As a sanity check for the assertFieldsHashCorrect test code, assert that at least the fields defined by subclasses are there 
-				// (not asserting anything against the base Kevlar.Model's fields array, as they are subject to change).
-				var instanceFields = (new SubClassModel()).fields;
-				Y.ObjectAssert.hasKey( 'a', instanceFields, "SubClassModel should have the 'a' field defined in its final 'fields' hash." );
-				Y.ObjectAssert.hasKey( 'b', instanceFields, "SubClassModel should have the 'b' field defined in its final 'fields' hash." );
+				// As a sanity check for the assertAttributesHashCorrect test code, assert that at least the attributes defined by subclasses are there 
+				// (not asserting anything against the base Kevlar.Model's attributes array, as they are subject to change).
+				var instanceAttributes = (new SubClassModel()).attributes;
+				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
 			},
 			
 			
-			"Fields should inherit from a Model subclass's superclass, and its superclass as well (i.e. more than one level up)" : function() {
+			"Attributes should inherit from a Model subclass's superclass, and its superclass as well (i.e. more than one level up)" : function() {
 				// Reference the base class, and create two subclasses
 				var Model = Kevlar.Model;
 				var SubClassModel = Kevlar.extend( Model, {
-					addFields : [ 'a', 'b' ]
+					addAttributes : [ 'a', 'b' ]
 				} );
 				var SubSubClassModel = Kevlar.extend( SubClassModel, {
-					addFields : [ 'c', 'd', 'e' ]
+					addAttributes : [ 'c', 'd', 'e' ]
 				} );
 				
 				// Run the test code
-				this.assertFieldsHashCorrect( Model, SubClassModel, SubSubClassModel );
+				this.assertAttributesHashCorrect( Model, SubClassModel, SubSubClassModel );
 				
-				// As a sanity check for the assertFieldsHashCorrect test code, assert that at least the fields defined by subclasses are there 
-				// (not asserting anything against the base Kevlar.Model's fields array, as they are subject to change).
-				var instanceFields = (new SubSubClassModel()).fields;
-				Y.ObjectAssert.hasKey( 'a', instanceFields, "SubSubClassModel should have the 'a' field defined in its final 'fields' hash." );
-				Y.ObjectAssert.hasKey( 'b', instanceFields, "SubSubClassModel should have the 'b' field defined in its final 'fields' hash." );
-				Y.ObjectAssert.hasKey( 'c', instanceFields, "SubSubClassModel should have the 'c' field defined in its final 'fields' hash." );
-				Y.ObjectAssert.hasKey( 'd', instanceFields, "SubSubClassModel should have the 'd' field defined in its final 'fields' hash." );
-				Y.ObjectAssert.hasKey( 'e', instanceFields, "SubSubClassModel should have the 'e' field defined in its final 'fields' hash." );
+				// As a sanity check for the assertAttributesHashCorrect test code, assert that at least the attributes defined by subclasses are there 
+				// (not asserting anything against the base Kevlar.Model's attributes array, as they are subject to change).
+				var instanceAttributes = (new SubSubClassModel()).attributes;
+				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'c', instanceAttributes, "SubSubClassModel should have the 'c' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'd', instanceAttributes, "SubSubClassModel should have the 'd' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'e', instanceAttributes, "SubSubClassModel should have the 'e' attribute defined in its final 'attributes' hash." );
 			},
 			
 			
-			"Fields should inherit from a Model subclass's superclass, and all of its superclasses (i.e. more than two levels up)" : function() {
+			"Attributes should inherit from a Model subclass's superclass, and all of its superclasses (i.e. more than two levels up)" : function() {
 				// Reference the base class, and create two subclasses
 				var Model = Kevlar.Model;
 				var SubClassModel = Kevlar.extend( Model, {
-					addFields : [ 'a', 'b' ]
+					addAttributes : [ 'a', 'b' ]
 				} );
 				var SubSubClassModel = Kevlar.extend( SubClassModel, {
-					addFields : [ 'c', 'd', 'e' ]
+					addAttributes : [ 'c', 'd', 'e' ]
 				} );
 				var SubSubSubClassModel = Kevlar.extend( SubSubClassModel, {
-					addFields : [ 'f' ]
+					addAttributes : [ 'f' ]
 				} );
 				
 				// Run the test code
-				this.assertFieldsHashCorrect( Model, SubClassModel, SubSubClassModel, SubSubSubClassModel );
+				this.assertAttributesHashCorrect( Model, SubClassModel, SubSubClassModel, SubSubSubClassModel );
 				
-				// As a sanity check for the assertFieldsHashCorrect test code, assert that at least the fields defined by subclasses are there 
-				// (not asserting anything against the base Kevlar.Model's fields array, as they are subject to change).
-				var instanceFields = (new SubSubSubClassModel()).fields;
-				Y.ObjectAssert.hasKey( 'a', instanceFields, "SubSubSubClassModel should have the 'a' field defined in its final 'fields' hash." );
-				Y.ObjectAssert.hasKey( 'b', instanceFields, "SubSubSubClassModel should have the 'b' field defined in its final 'fields' hash." );
-				Y.ObjectAssert.hasKey( 'c', instanceFields, "SubSubSubClassModel should have the 'c' field defined in its final 'fields' hash." );
-				Y.ObjectAssert.hasKey( 'd', instanceFields, "SubSubSubClassModel should have the 'd' field defined in its final 'fields' hash." );
-				Y.ObjectAssert.hasKey( 'e', instanceFields, "SubSubSubClassModel should have the 'e' field defined in its final 'fields' hash." );
-				Y.ObjectAssert.hasKey( 'f', instanceFields, "SubSubSubClassModel should have the 'f' field defined in its final 'fields' hash." );
+				// As a sanity check for the assertAttributesHashCorrect test code, assert that at least the attributes defined by subclasses are there 
+				// (not asserting anything against the base Kevlar.Model's attributes array, as they are subject to change).
+				var instanceAttributes = (new SubSubSubClassModel()).attributes;
+				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'c', instanceAttributes, "SubSubSubClassModel should have the 'c' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'd', instanceAttributes, "SubSubSubClassModel should have the 'd' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'e', instanceAttributes, "SubSubSubClassModel should have the 'e' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'f', instanceAttributes, "SubSubSubClassModel should have the 'f' attribute defined in its final 'attributes' hash." );
 			},
 			
 			
-			"Field definitions defined in a subclass should take precedence over field definitions in a superclass" : function() {
+			"Attribute definitions defined in a subclass should take precedence over attribute definitions in a superclass" : function() {
 				var Model = Kevlar.Model;
 				var SubClassModel = Kevlar.extend( Model, {
-					addFields : [ { name : 'a', defaultValue: 1 } ]
+					addAttributes : [ { name : 'a', defaultValue: 1 } ]
 				} );
 				var SubSubClassModel = Kevlar.extend( SubClassModel, {
-					addFields : [ { name : 'a', defaultValue: 2 }, 'b' ]
+					addAttributes : [ { name : 'a', defaultValue: 2 }, 'b' ]
 				} );
 				
 				// Run the test code
-				this.assertFieldsHashCorrect( Model, SubClassModel, SubSubClassModel );
+				this.assertAttributesHashCorrect( Model, SubClassModel, SubSubClassModel );
 				
-				// As a sanity check for the assertFieldsHashCorrect test code, assert that at least the fields defined by subclasses are there 
-				// (not asserting anything against the base Kevlar.Model's fields array, as they are subject to change).
-				var instanceFields = (new SubSubClassModel()).fields;
-				Y.ObjectAssert.hasKey( 'a', instanceFields, "SubSubSubClassModel should have the 'a' field defined in its final 'fields' hash." );
-				Y.ObjectAssert.hasKey( 'b', instanceFields, "SubSubSubClassModel should have the 'b' field defined in its final 'fields' hash." );
+				// As a sanity check for the assertAttributesHashCorrect test code, assert that at least the attributes defined by subclasses are there 
+				// (not asserting anything against the base Kevlar.Model's attributes array, as they are subject to change).
+				var instanceAttributes = (new SubSubClassModel()).attributes;
+				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
 				
-				// Check that the default value of the Field 'a' is 2, not 1 (as the Field in the subclass should have overridden its superclass Field)
-				Y.Assert.areSame( 2, instanceFields[ 'a' ].defaultValue, "The field in the subclass should have overridden its superclass" ); 
+				// Check that the default value of the Attribute 'a' is 2, not 1 (as the Attribute in the subclass should have overridden its superclass Attribute)
+				Y.Assert.areSame( 2, instanceAttributes[ 'a' ].defaultValue, "The attribute in the subclass should have overridden its superclass" ); 
 			},
 			
 			
-			"A subclass that doesn't define any fields should inherit all of them from its superclass(es)" : function() {
+			"A subclass that doesn't define any attributes should inherit all of them from its superclass(es)" : function() {
 				// Reference the base class, and create two subclasses
 				var Model = Kevlar.Model;
 				var SubClassModel = Kevlar.extend( Model, {
-					addFields : [ 'a', 'b' ]
+					addAttributes : [ 'a', 'b' ]
 				} );
 				var SubSubClassModel = Kevlar.extend( SubClassModel, {} );
 				
 				// Run the test code
-				this.assertFieldsHashCorrect( Model, SubClassModel, SubSubClassModel );
+				this.assertAttributesHashCorrect( Model, SubClassModel, SubSubClassModel );
 				
-				// As a sanity check for the assertFieldsHashCorrect test code, assert that at least the fields defined by subclasses are there 
-				// (not asserting anything against the base Kevlar.Model's fields array, as they are subject to change).
-				var instanceFields = (new SubSubClassModel()).fields;
-				Y.ObjectAssert.hasKey( 'a', instanceFields, "SubSubClassModel should have the 'a' field defined in its final 'fields' hash." );
-				Y.ObjectAssert.hasKey( 'b', instanceFields, "SubSubClassModel should have the 'b' field defined in its final 'fields' hash." );
+				// As a sanity check for the assertAttributesHashCorrect test code, assert that at least the attributes defined by subclasses are there 
+				// (not asserting anything against the base Kevlar.Model's attributes array, as they are subject to change).
+				var instanceAttributes = (new SubSubClassModel()).attributes;
+				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
 			},
 			
 			
-			"A superclass that doesn't define any fields should be skipped for fields, but the subclass should still inherit from superclasses above it" : function() {
+			"A superclass that doesn't define any attributes should be skipped for attributes, but the subclass should still inherit from superclasses above it" : function() {
 				// Reference the base class, and create two subclasses
 				var Model = Kevlar.Model;
-				var SubClassModel = Kevlar.extend( Model, {} );  // one that doesn't define any fields
+				var SubClassModel = Kevlar.extend( Model, {} );  // one that doesn't define any attributes
 				var SubSubClassModel = Kevlar.extend( SubClassModel, {
-					addFields : [ 'a', 'b' ]
+					addAttributes : [ 'a', 'b' ]
 				} );
 				
 				// Run the test code
-				this.assertFieldsHashCorrect( Model, SubClassModel, SubSubClassModel );
+				this.assertAttributesHashCorrect( Model, SubClassModel, SubSubClassModel );
 				
-				// As a sanity check for the assertFieldsHashCorrect test code, assert that at least the fields defined by subclasses are there 
-				// (not asserting anything against the base Kevlar.Model's fields array, as they are subject to change).
-				var instanceFields = (new SubSubClassModel()).fields;
-				Y.ObjectAssert.hasKey( 'a', instanceFields, "SubSubClassModel should have the 'a' field defined in its final 'fields' hash." );
-				Y.ObjectAssert.hasKey( 'b', instanceFields, "SubSubClassModel should have the 'b' field defined in its final 'fields' hash." );
+				// As a sanity check for the assertAttributesHashCorrect test code, assert that at least the attributes defined by subclasses are there 
+				// (not asserting anything against the base Kevlar.Model's attributes array, as they are subject to change).
+				var instanceAttributes = (new SubSubClassModel()).attributes;
+				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
 			}
 		},
 		
@@ -1324,7 +1324,7 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 					
 					"Attempting to instantiate a proxy with no 'type' attribute should throw an error" : function() {
 						var TestModel = Kevlar.extend( Kevlar.Model, {
-							addFields: [ 'field1' ],
+							addAttributes: [ 'attribute1' ],
 							proxy : {}
 						} );
 						
@@ -1333,7 +1333,7 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 					
 					"Attempting to instantiate a proxy with an invalid 'type' attribute should throw an error" : function() {
 						var TestModel = Kevlar.extend( Kevlar.Model, {
-							addFields: [ 'field1' ],
+							addAttributes: [ 'attribute1' ],
 							proxy : { 
 								type : 'nonExistentProxy'
 							}
@@ -1344,7 +1344,7 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 					
 					"Providing a valid config object should instantiate the Proxy *on class's the prototype*" : function() {
 						var TestModel = Kevlar.extend( Kevlar.Model, {
-							addFields: [ 'field1' ],
+							addAttributes: [ 'attribute1' ],
 							proxy : { 
 								type : 'rest'  // a valid proxy type
 							}
@@ -1356,14 +1356,14 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 					
 					"Providing a valid config object should instantiate the Proxy *on the correct subclass's prototype*, shadowing superclasses" : function() {
 						var TestModel = Kevlar.extend( Kevlar.Model, {
-							addFields: [ 'field1' ],
+							addAttributes: [ 'attribute1' ],
 							proxy : { 
 								type : 'nonExistentProxy'  // an invalid proxy type
 							}
 						} );
 						
 						var TestSubModel = Kevlar.extend( TestModel, {
-							addFields: [ 'field1' ],
+							addAttributes: [ 'attribute1' ],
 							proxy : { 
 								type : 'rest'  // a valid proxy type
 							}
@@ -1383,12 +1383,12 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 					
 					setUp : function() {
 						this.TestModel = Kevlar.extend( Kevlar.Model, {
-							addFields: [
-								{ name: 'field1' },
-								{ name: 'field2', defaultValue: "field2's default" },
-								{ name: 'field3', defaultValue: function() { return "field3's default"; } },
-								{ name: 'field4', set : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
-								{ name: 'field5', set : function( value, model ) { return value + " " + model.get( 'field2' ); } }
+							addAttributes: [
+								{ name: 'attribute1' },
+								{ name: 'attribute2', defaultValue: "attribute2's default" },
+								{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
+								{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
+								{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
 							]
 						} );
 					},
@@ -1398,7 +1398,7 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 					"The Model should not fire its 'change' event during the set of the initial data" : function() {
 						var changeEventFired = false;
 						var model = new this.TestModel( {
-							field1: "field1 value"
+							attribute1: "attribute1 value"
 						} );
 						
 						//model.addListener( 'change', function() { changeEventFired = true; } );
@@ -1406,13 +1406,13 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 					},
 					*/
 					
-					"The Model should fire its 'change' event when a field's data is set externally" : function() {
+					"The Model should fire its 'change' event when an attribute's data is set externally" : function() {
 						var changeEventFired = false;
 						var model = new this.TestModel();
 						model.addListener( 'change', function() { changeEventFired = true; } );
 						
 						// Set the value
-						model.set( 'field1', 'value1' );
+						model.set( 'attribute1', 'value1' );
 						Y.Assert.isTrue( changeEventFired, "The change event should have been fired during the set of the new data" );
 					}
 				},
@@ -1426,36 +1426,36 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 					
 					setUp : function() {
 						this.TestModel = Kevlar.extend( Kevlar.Model, {
-							addFields: [
-								{ name: 'field1' },
-								{ name: 'field2', defaultValue: "field2's default" },
-								{ name: 'field3', defaultValue: function() { return "field3's default"; } },
-								{ name: 'field4', set : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
-								{ name: 'field5', set : function( value, model ) { return value + " " + model.get( 'field2' ); } }
+							addAttributes: [
+								{ name: 'attribute1' },
+								{ name: 'attribute2', defaultValue: "attribute2's default" },
+								{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
+								{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
+								{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
 							]
 						} );
 					},
 			
-					// Test that default values are applied to field values
+					// Test that default values are applied to attribute values
 					
-					"A field with a defaultValue but no provided data should have its defaultValue when retrieved" : function() {
+					"A attribute with a defaultValue but no provided data should have its defaultValue when retrieved" : function() {
 						var model = new this.TestModel();  // no data provided
 						
-						Y.Assert.areSame( "field2's default", model.get( 'field2' ) );
+						Y.Assert.areSame( "attribute2's default", model.get( 'attribute2' ) );
 					},
 					
-					"A field with a defaultValue that is a function, but no provided data should have its defaultValue when retrieved" : function() {
+					"A attribute with a defaultValue that is a function, but no provided data should have its defaultValue when retrieved" : function() {
 						var model = new this.TestModel();  // no data provided
 						
-						Y.Assert.areSame( "field3's default", model.get( 'field3' ) );  // field3 has a defaultValue that is a function
+						Y.Assert.areSame( "attribute3's default", model.get( 'attribute3' ) );  // attribute3 has a defaultValue that is a function
 					},
 					
-					"A field with a defaultValue and also provided data should have its provided data when retrieved" : function() {
+					"A attribute with a defaultValue and also provided data should have its provided data when retrieved" : function() {
 						var model = new this.TestModel( {
-							field2 : "field2's data"
+							attribute2 : "attribute2's data"
 						} );
 						
-						Y.Assert.areSame( "field2's data", model.get( 'field2' ), "The 'default' specified on the Field should *not* have been applied, since it has a value." );
+						Y.Assert.areSame( "attribute2's data", model.get( 'attribute2' ), "The 'default' specified on the Attribute should *not* have been applied, since it has a value." );
 					}
 				},
 				
@@ -1467,10 +1467,10 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 					
 					"Providing initial data to the constructor should not leave the model set as 'dirty' (i.e. it should have no 'changes')" : function() {
 						var Model = Kevlar.Model.extend( {
-							addFields : [ 'field1', 'field2' ]
+							addAttributes : [ 'attribute1', 'attribute2' ]
 						} );
 						
-						var model = new Model( { field1: 'value1', field2: 'value2' } );
+						var model = new Model( { attribute1: 'value1', attribute2: 'value2' } );
 						Y.Assert.isFalse( model.isDirty(), "The model should not be dirty upon initialization" );
 						Y.Assert.isTrue( Kevlar.util.Object.isEmpty( model.getChanges ), "There should not be any 'changes' upon initialization" );
 					}
@@ -1488,7 +1488,7 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 						var initializeCalled = false;
 						
 						var MyModel = Kevlar.Model.extend( {
-							addFields : [ 
+							addAttributes : [ 
 								'test',
 								{ name: 'test2', defaultValue: 'defaultForTest2' }
 							],
@@ -1514,49 +1514,49 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 	
 			setUp : function() {
 				this.TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [
-						{ name: 'field1' },
-						{ name: 'field2', defaultValue: "field2's default" },
-						{ name: 'field3', defaultValue: function() { return "field3's default"; } },
-						{ name: 'field4', set : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
-						{ name: 'field5', get : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } }
+					addAttributes: [
+						{ name: 'attribute1' },
+						{ name: 'attribute2', defaultValue: "attribute2's default" },
+						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
+						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
+						{ name: 'attribute5', get : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } }
 					]
 				} );
 			},
 			
 			
-			"running get() on a field with no initial value and no default value should return undefined" : function() {
+			"running get() on an attribute with no initial value and no default value should return undefined" : function() {
 				var model = new this.TestModel();
-				Y.Assert.isUndefined( model.get( 'field1' ) );  // field1 has no default value
+				Y.Assert.isUndefined( model.get( 'attribute1' ) );  // attribute1 has no default value
 			},
 			
-			"running get() on a field with an initial value and no default value should return the initial value" : function() {
+			"running get() on an attribute with an initial value and no default value should return the initial value" : function() {
 				var model = new this.TestModel( {
-					field1 : "initial value"
+					attribute1 : "initial value"
 				} );
-				Y.Assert.areSame( "initial value", model.get( 'field1' ) );  // field1 has no default value
+				Y.Assert.areSame( "initial value", model.get( 'attribute1' ) );  // attribute1 has no default value
 			},
 			
-			"running get() on a field with no initial value but does have a default value should return the default value" : function() {
+			"running get() on an attribute with no initial value but does have a default value should return the default value" : function() {
 				var model = new this.TestModel();
-				Y.Assert.areSame( "field2's default", model.get( 'field2' ) );  // field2 has a default value
+				Y.Assert.areSame( "attribute2's default", model.get( 'attribute2' ) );  // attribute2 has a default value
 			},
 			
-			"running get() on a field with an initial value and a default value should return the initial value" : function() {
+			"running get() on an attribute with an initial value and a default value should return the initial value" : function() {
 				var model = new this.TestModel( {
-					field2 : "initial value"
+					attribute2 : "initial value"
 				} );
-				Y.Assert.areSame( "initial value", model.get( 'field2' ) );  // field2 has a default value
+				Y.Assert.areSame( "initial value", model.get( 'attribute2' ) );  // attribute2 has a default value
 			},
 			
-			"running get() on a field with no initial value but does have a default value which is a function should return the default value" : function() {
+			"running get() on an attribute with no initial value but does have a default value which is a function should return the default value" : function() {
 				var model = new this.TestModel();
-				Y.Assert.areSame( "field3's default", model.get( 'field3' ) );  // field3 has a defaultValue that is a function
+				Y.Assert.areSame( "attribute3's default", model.get( 'attribute3' ) );  // attribute3 has a defaultValue that is a function
 			},
 			
-			"running get() on a field with a `get` function defined should return the value that the `get` function returns" : function() {
-				var model = new this.TestModel( { field1: 'value1' } );
-				Y.Assert.areSame( "value1 field2's default", model.get( 'field5' ) );
+			"running get() on an attribute with a `get` function defined should return the value that the `get` function returns" : function() {
+				var model = new this.TestModel( { attribute1: 'value1' } );
+				Y.Assert.areSame( "value1 attribute2's default", model.get( 'attribute5' ) );
 			}
 		},
 				
@@ -1570,107 +1570,107 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 	
 			setUp : function() {
 				this.TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [
-						{ name: 'field1' },
-						{ name: 'field2', defaultValue: "field2's default" },
-						{ name: 'field3', defaultValue: function() { return "field3's default"; } },
-						{ name: 'field4', set : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
-						{ name: 'field5', set : function( value, model ) { return value + " " + model.get( 'field2' ); } }
+					addAttributes: [
+						{ name: 'attribute1' },
+						{ name: 'attribute2', defaultValue: "attribute2's default" },
+						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
+						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
 					]
 				} );
 			},
 				
 			
 			/*
-			 * Utility method to set the given field to all data types, including falsy values, and asserts that the operation was successful
-			 * (i.e. the field returns the same exact value it was set to).
+			 * Utility method to set the given attribute to all data types, including falsy values, and asserts that the operation was successful
+			 * (i.e. the attribute returns the same exact value it was set to).
 			 * 
-			 * @method assertFieldAcceptsAll
+			 * @method assertAttributeAcceptsAll
 			 * @param {Kevlar.Model} model
-			 * @param {String} fieldName
+			 * @param {String} attributeName
 			 */
-			assertFieldAcceptsAll : function( model, fieldName ) {
-				model.set( fieldName, undefined );
-				Y.Assert.isUndefined( model.get( fieldName ), fieldName + "'s value should have the value set by set() (undefined)." );
+			assertAttributeAcceptsAll : function( model, attributeName ) {
+				model.set( attributeName, undefined );
+				Y.Assert.isUndefined( model.get( attributeName ), attributeName + "'s value should have the value set by set() (undefined)." );
 				
-				model.set( fieldName, null );
-				Y.Assert.isNull( model.get( fieldName ), fieldName + "'s value should have the value set by set() (null)." );
+				model.set( attributeName, null );
+				Y.Assert.isNull( model.get( attributeName ), attributeName + "'s value should have the value set by set() (null)." );
 				
-				model.set( fieldName, true );
-				Y.Assert.isTrue( model.get( fieldName ), fieldName + "'s value should have the value set by set() (true)." );
+				model.set( attributeName, true );
+				Y.Assert.isTrue( model.get( attributeName ), attributeName + "'s value should have the value set by set() (true)." );
 				
-				model.set( fieldName, false );
-				Y.Assert.isFalse( model.get( fieldName ), fieldName + "'s value should have the value set by set() (false)." );
+				model.set( attributeName, false );
+				Y.Assert.isFalse( model.get( attributeName ), attributeName + "'s value should have the value set by set() (false)." );
 				
-				model.set( fieldName, 0 );
-				Y.Assert.areSame( 0, model.get( fieldName ), fieldName + "'s value should have the value set by set() (0)." );
+				model.set( attributeName, 0 );
+				Y.Assert.areSame( 0, model.get( attributeName ), attributeName + "'s value should have the value set by set() (0)." );
 				
-				model.set( fieldName, 1 );
-				Y.Assert.areSame( 1, model.get( fieldName ), fieldName + "'s value should have the value set by set() (1)." );
+				model.set( attributeName, 1 );
+				Y.Assert.areSame( 1, model.get( attributeName ), attributeName + "'s value should have the value set by set() (1)." );
 				
-				model.set( fieldName, "" );
-				Y.Assert.areSame( "", model.get( fieldName ), fieldName + "'s value should have the value set by set() ('')." );
+				model.set( attributeName, "" );
+				Y.Assert.areSame( "", model.get( attributeName ), attributeName + "'s value should have the value set by set() ('')." );
 				
-				model.set( fieldName, "Hello" );
-				Y.Assert.areSame( "Hello", model.get( fieldName ), fieldName + "'s value should have the value set by set() ('Hello')." );
+				model.set( attributeName, "Hello" );
+				Y.Assert.areSame( "Hello", model.get( attributeName ), attributeName + "'s value should have the value set by set() ('Hello')." );
 				
-				model.set( fieldName, {} );
-				Y.Assert.isObject( model.get( fieldName ), fieldName + "'s value should have the value set by set() (object)." );
+				model.set( attributeName, {} );
+				Y.Assert.isObject( model.get( attributeName ), attributeName + "'s value should have the value set by set() (object)." );
 				
-				model.set( fieldName, [] );
-				Y.Assert.isArray( model.get( fieldName ), fieldName + "'s value should have the value set by set() (array)." );
+				model.set( attributeName, [] );
+				Y.Assert.isArray( model.get( attributeName ), attributeName + "'s value should have the value set by set() (array)." );
 			},
 			
 			
 			"set() should accept all datatypes including falsy values" : function() {
 				var model = new this.TestModel();
 				
-				this.assertFieldAcceptsAll( model, 'field1' );
+				this.assertAttributeAcceptsAll( model, 'attribute1' );
 			},
 			
 			"set() should accept all datatypes, and still work even with a default value" : function() {
 				// Test with regular values, given a default value
 				var model = new this.TestModel();
 				
-				this.assertFieldAcceptsAll( model, 'field2' );  // field2 has a default value
+				this.assertAttributeAcceptsAll( model, 'attribute2' );  // attribute2 has a default value
 			},
 			
 			"set() should accept all datatypes, and still work even with a given value" : function() {
 				// Test with regular values, given a default value
 				var model = new this.TestModel( {
-					field2 : "initial value"
+					attribute2 : "initial value"
 				} );
 				
-				this.assertFieldAcceptsAll( model, 'field2' );  // field2 has a given value in this test ("initial value")
+				this.assertAttributeAcceptsAll( model, 'attribute2' );  // attribute2 has a given value in this test ("initial value")
 			},
 			
 			
 			// ------------------------
 			
 			
-			"After the successful set() of a field, the Model should be considered 'dirty'" : function() {
+			"After the successful set() of an attribute, the Model should be considered 'dirty'" : function() {
 				var TestModel = Kevlar.Model.extend( {
-					addFields: [ 'field1' ]
+					addAttributes: [ 'attribute1' ]
 				} );
 				var model = new TestModel();
 				
 				Y.Assert.isFalse( model.isDirty(), "Initially, the model should not be considered 'dirty'" );
 				
-				model.set( 'field1', 'value1' );
+				model.set( 'attribute1', 'value1' );
 				Y.Assert.isTrue( model.isDirty(), "After a set, the model should now be considered 'dirty'" );
 			},
 			
 			
-			"After a set() of a field to the same value from a clean state, the Model should NOT be considered 'dirty' (as the value didn't change)" : function() {
+			"After a set() of an attribute to the same value from a clean state, the Model should NOT be considered 'dirty' (as the value didn't change)" : function() {
 				var TestModel = Kevlar.Model.extend( {
-					addFields: [ 'field1' ]
+					addAttributes: [ 'attribute1' ]
 				} );
-				var model = new TestModel( { field1: 'value1' } );  // initial data, model not considered dirty
+				var model = new TestModel( { attribute1: 'value1' } );  // initial data, model not considered dirty
 				
 				Y.Assert.isFalse( model.isDirty(), "Initially, the model should not be considered 'dirty'" );
 				
 				// Set to the same value
-				model.set( 'field1', 'value1' );
+				model.set( 'attribute1', 'value1' );
 				Y.Assert.isFalse( model.isDirty(), "After a set to the *same value*, the model should not be considered 'dirty' (as the value didn't change)" );
 			},
 			
@@ -1678,79 +1678,79 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 			// ------------------------
 			
 			
-			"set() should not re-set a field to the same value from the initial value provided to the constructor" : function() {
+			"set() should not re-set an attribute to the same value from the initial value provided to the constructor" : function() {
 				var changeCount = 0;
 				
 				var TestModel = Kevlar.Model.extend( {
-					addFields: [ 'field1' ]
+					addAttributes: [ 'attribute1' ]
 				} );
 				
-				var model = new TestModel( { field1: 'value1' } );
-				model.addListener( 'change:field1', function() { changeCount++; } );
+				var model = new TestModel( { attribute1: 'value1' } );
+				model.addListener( 'change:attribute1', function() { changeCount++; } );
 				
 				// Set to the same value
-				model.set( 'field1', 'value1' );
-				Y.Assert.areSame( 0, changeCount, "The field should not have been registered as 'changed' when providing the same value" );
+				model.set( 'attribute1', 'value1' );
+				Y.Assert.areSame( 0, changeCount, "The attribute should not have been registered as 'changed' when providing the same value" );
 			},
 			
 			
-			"set() should not re-set a field to the same value" : function() {
+			"set() should not re-set an attribute to the same value" : function() {
 				var changeCount = 0;
 				
 				var TestModel = Kevlar.Model.extend( {
-					addFields: [ 'field1' ]
+					addAttributes: [ 'attribute1' ]
 				} );
 				
 				var model = new TestModel();
-				model.addListener( 'change:field1', function() { changeCount++; } );
+				model.addListener( 'change:attribute1', function() { changeCount++; } );
 				
 				// Set for the first time
-				model.set( 'field1', 'value1' );
-				Y.Assert.areSame( 1, changeCount, "Initially, the field should have been changed exactly once." );
+				model.set( 'attribute1', 'value1' );
+				Y.Assert.areSame( 1, changeCount, "Initially, the attribute should have been changed exactly once." );
 				
 				// Set the second time to the same value
-				model.set( 'field1', 'value1' );
-				Y.Assert.areSame( 1, changeCount, "The field should not have been registered as 'changed' the second time. Should still only have '1 change'." );
+				model.set( 'attribute1', 'value1' );
+				Y.Assert.areSame( 1, changeCount, "The attribute should not have been registered as 'changed' the second time. Should still only have '1 change'." );
 			},
 			
 			
 			// ------------------------------
 			
 			
-			// Test set() with Field-specific set() functions			
+			// Test set() with Attribute-specific set() functions			
 			
-			"set() should run the Field's set() method on a field that has initial data of its own" : function() {
+			"set() should run the Attribute's set() method on an attribute that has initial data of its own" : function() {
 				var TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [
-						{ name: 'field1' },
-						{ name: 'field2', set : function( value, model ) { return value + " " + model.get( 'field1' ); } }
+					addAttributes: [
+						{ name: 'attribute1' },
+						{ name: 'attribute2', set : function( value, model ) { return value + " " + model.get( 'attribute1' ); } }
 					]
 				} );
 				var model = new TestModel( {
-					field1 : "field1val",
-					field2 : "field2val"
+					attribute1 : "attribute1val",
+					attribute2 : "attribute2val"
 				} );
 				
-				Y.Assert.areSame( "field2val field1val", model.get( 'field2' ), "field2 should be the concatenation of its own value, a space, and field1" );
+				Y.Assert.areSame( "attribute2val attribute1val", model.get( 'attribute2' ), "attribute2 should be the concatenation of its own value, a space, and attribute1" );
 			},
 			
 			
-			"set() should convert a field with a 'set' function when it is set() again" : function() {
+			"set() should convert an attribute with a 'set' function when it is set() again" : function() {
 				var TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [
-						{ name: 'field1' },
-						{ name: 'field2', set : function( value, model ) { return value + " " + model.get( 'field1' ); } }
+					addAttributes: [
+						{ name: 'attribute1' },
+						{ name: 'attribute2', set : function( value, model ) { return value + " " + model.get( 'attribute1' ); } }
 					]
 				} );
 				var model = new TestModel( {
-					field1 : "field1val",
-					field2 : "field2val"
+					attribute1 : "attribute1val",
+					attribute2 : "attribute2val"
 				} );
 				
-				// This call should cause field2's set() function to run
-				model.set( 'field2', "newfield2value" );
+				// This call should cause attribute2's set() function to run
+				model.set( 'attribute2', "newattribute2value" );
 				
-				Y.Assert.areSame( "newfield2value field1val", model.get( 'field2' ), "field2 should be the concatenation of its own value, a space, and field2" );
+				Y.Assert.areSame( "newattribute2value attribute1val", model.get( 'attribute2' ), "attribute2 should be the concatenation of its own value, a space, and attribute2" );
 			},
 			
 			
@@ -1758,119 +1758,119 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 			
 			// Test the 'change' event
 			
-			"When a field is set, a generalized 'change' event should be fired" : function() {
+			"When an attribute is set, a generalized 'change' event should be fired" : function() {
 				var TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [ 'field1', 'field2' ]
+					addAttributes: [ 'attribute1', 'attribute2' ]
 				} );
 				var model = new TestModel(),
 				    changeEventFired = false,
-				    fieldNameChanged = "",
+				    attributeNameChanged = "",
 				    newValue = "";
 				    
-				model.addListener( 'change', function( model, fieldName, value ) {
+				model.addListener( 'change', function( model, attributeName, value ) {
 					changeEventFired = true;
-					fieldNameChanged = fieldName;
+					attributeNameChanged = attributeName;
 					newValue = value;
 				} );
 				
-				model.set( 'field2', "brandNewValue" );
+				model.set( 'attribute2', "brandNewValue" );
 				Y.Assert.isTrue( changeEventFired, "The 'change' event was not fired" );
-				Y.Assert.areSame( "field2", fieldNameChanged, "The fieldName that was changed was not provided to the event correctly." );
-				Y.Assert.areSame( "brandNewValue", newValue, "The value for field2 that was changed was not provided to the event correctly." );
+				Y.Assert.areSame( "attribute2", attributeNameChanged, "The attributeName that was changed was not provided to the event correctly." );
+				Y.Assert.areSame( "brandNewValue", newValue, "The value for attribute2 that was changed was not provided to the event correctly." );
 			},
 			
 			
-			"When a field is set, a 'change:xxx' event should be fired for the changed field" : function() {
+			"When an attribute is set, a 'change:xxx' event should be fired for the changed attribute" : function() {
 				var TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [ 'field1', 'field2' ]
+					addAttributes: [ 'attribute1', 'attribute2' ]
 				} );
 				var model = new TestModel(),
 				    changeEventFired = false,
 				    newValue = "";
 				    
-				model.addListener( 'change:field2', function( model, value ) {
+				model.addListener( 'change:attribute2', function( model, value ) {
 					changeEventFired = true;
 					newValue = value;
 				} );
 				
-				model.set( 'field2', "brandNewValue" );
-				Y.Assert.isTrue( changeEventFired, "The 'change:field2' event was not fired" );
-				Y.Assert.areSame( "brandNewValue", newValue, "The value for field2 that was changed was not provided to the event correctly." );
+				model.set( 'attribute2', "brandNewValue" );
+				Y.Assert.isTrue( changeEventFired, "The 'change:attribute2' event was not fired" );
+				Y.Assert.areSame( "brandNewValue", newValue, "The value for attribute2 that was changed was not provided to the event correctly." );
 			},
 			
 			
-			"When a field with a `set()` function of its own is set, the 'change' events should be fired" : function() {
+			"When an attribute with a `set()` function of its own is set, the 'change' events should be fired" : function() {
 				var TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [ 
+					addAttributes: [ 
 						{ 
-							// Field with a set() function that returns a new value
-							name : 'field1',
+							// Attribute with a set() function that returns a new value
+							name : 'attribute1',
 							set : function( value ) { 
 								return value;
 							}
 						},
 						{ 
-							// Field with a set() function that does not return a new value (presumably modifying some other Field in the model),
+							// Attribute with a set() function that does not return a new value (presumably modifying some other Attribute in the model),
 							// and therefore does not have a new value set to the underlying data
-							name : 'field2', 
+							name : 'attribute2', 
 							set : function( value, model ) {
-								// Presumably updating some other Field in the model
+								// Presumably updating some other Attribute in the model
 							}
 						} 
 					]
 				} );
 				
 				var model = new TestModel(),
-				    field1ChangeEventCount = 0,
-				    field1ChangeEventValue,
-				    field2ChangeEventCount = 0,
-				    field2ChangeEventValue;
+				    attribute1ChangeEventCount = 0,
+				    attribute1ChangeEventValue,
+				    attribute2ChangeEventCount = 0,
+				    attribute2ChangeEventValue;
 				    
-				model.addListener( 'change:field1', function( model, value ) {
-					field1ChangeEventCount++;
-					field1ChangeEventValue = value;
+				model.addListener( 'change:attribute1', function( model, value ) {
+					attribute1ChangeEventCount++;
+					attribute1ChangeEventValue = value;
 				} );
-				model.addListener( 'change:field2', function( model, value ) {
-					field2ChangeEventCount++;
-					field2ChangeEventValue = value;
+				model.addListener( 'change:attribute2', function( model, value ) {
+					attribute2ChangeEventCount++;
+					attribute2ChangeEventValue = value;
 				} );
 				
 				
-				// Test changing the field with a set() function that returns a new value
-				model.set( 'field1', 'field1value1' );
-				Y.Assert.areSame( 1, field1ChangeEventCount, "The field1 change event count should now be 1, with the initial value" );
-				Y.Assert.areSame( 0, field2ChangeEventCount, "The field2 change event count should still be 0, as no set has been performed on it yet" );
-				Y.Assert.areSame( 'field1value1', field1ChangeEventValue, "The field1 change event value was not correct" );
+				// Test changing the attribute with a set() function that returns a new value
+				model.set( 'attribute1', 'attribute1value1' );
+				Y.Assert.areSame( 1, attribute1ChangeEventCount, "The attribute1 change event count should now be 1, with the initial value" );
+				Y.Assert.areSame( 0, attribute2ChangeEventCount, "The attribute2 change event count should still be 0, as no set has been performed on it yet" );
+				Y.Assert.areSame( 'attribute1value1', attribute1ChangeEventValue, "The attribute1 change event value was not correct" );
 				
-				model.set( 'field1', 'field1value2' );
-				Y.Assert.areSame( 2, field1ChangeEventCount, "The field1 change event count should now be 2, with a new value" );
-				Y.Assert.areSame( 0, field2ChangeEventCount, "The field2 change event count should still be 0, as no set has been performed on it yet" );
-				Y.Assert.areSame( 'field1value2', field1ChangeEventValue, "The field1 change event value was not correct" );
+				model.set( 'attribute1', 'attribute1value2' );
+				Y.Assert.areSame( 2, attribute1ChangeEventCount, "The attribute1 change event count should now be 2, with a new value" );
+				Y.Assert.areSame( 0, attribute2ChangeEventCount, "The attribute2 change event count should still be 0, as no set has been performed on it yet" );
+				Y.Assert.areSame( 'attribute1value2', attribute1ChangeEventValue, "The attribute1 change event value was not correct" );
 				
-				model.set( 'field1', 'field1value2' );  // setting to the SAME value, to make sure a new 'change' event has not been fired
-				Y.Assert.areSame( 2, field1ChangeEventCount, "The field1 change event count should still be 2, being set to the same value" );
-				Y.Assert.areSame( 0, field2ChangeEventCount, "The field2 change event count should still be 0, as no set has been performed on it yet" );
+				model.set( 'attribute1', 'attribute1value2' );  // setting to the SAME value, to make sure a new 'change' event has not been fired
+				Y.Assert.areSame( 2, attribute1ChangeEventCount, "The attribute1 change event count should still be 2, being set to the same value" );
+				Y.Assert.areSame( 0, attribute2ChangeEventCount, "The attribute2 change event count should still be 0, as no set has been performed on it yet" );
 				
 				
-				// Test changing the field with a set() function that does *not* return a new value (which makes the model not store
+				// Test changing the attribute with a set() function that does *not* return a new value (which makes the model not store
 				// any new value on its underlying data hash)
-				model.set( 'field2', 'field2value1' );
-				Y.Assert.areSame( 2, field1ChangeEventCount, "The field1 change event count should still be 2, as no new set has been performed on it" );
-				Y.Assert.areSame( 1, field2ChangeEventCount, "The field2 change event count should now be 1, since a set has been performed on it" );
-				Y.Assert.isUndefined( field2ChangeEventValue, "The field2 change event value should have been undefined, as its set() function does not return anything" );
+				model.set( 'attribute2', 'attribute2value1' );
+				Y.Assert.areSame( 2, attribute1ChangeEventCount, "The attribute1 change event count should still be 2, as no new set has been performed on it" );
+				Y.Assert.areSame( 1, attribute2ChangeEventCount, "The attribute2 change event count should now be 1, since a set has been performed on it" );
+				Y.Assert.isUndefined( attribute2ChangeEventValue, "The attribute2 change event value should have been undefined, as its set() function does not return anything" );
 				
-				model.set( 'field2', 'field2value2' );
-				Y.Assert.areSame( 2, field1ChangeEventCount, "The field1 change event count should still be 2, as no new set has been performed on it (2nd time)" );
-				Y.Assert.areSame( 2, field2ChangeEventCount, "The field2 change event count should now be 2, since a set has been performed on it" );
-				Y.Assert.isUndefined( field2ChangeEventValue, "The field2 change event value should still be undefined, as its set() function does not return anything" );				
+				model.set( 'attribute2', 'attribute2value2' );
+				Y.Assert.areSame( 2, attribute1ChangeEventCount, "The attribute1 change event count should still be 2, as no new set has been performed on it (2nd time)" );
+				Y.Assert.areSame( 2, attribute2ChangeEventCount, "The attribute2 change event count should now be 2, since a set has been performed on it" );
+				Y.Assert.isUndefined( attribute2ChangeEventValue, "The attribute2 change event value should still be undefined, as its set() function does not return anything" );				
 			},
 			
 			
-			"When a field with only a `get()` function is set, the 'change' events should be fired with the value from the get function, not the raw value" : function() {
+			"When an attribute with only a `get()` function is set, the 'change' events should be fired with the value from the get function, not the raw value" : function() {
 				var TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [
+					addAttributes: [
 						{
-							name : 'myField',
+							name : 'myAttribute',
 							get : function( value, model ) { return value + 10; } // add 10, to make sure we're using the getter
 						}
 					]
@@ -1878,55 +1878,55 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 				
 				var model = new TestModel(),
 				    changeEventValue,
-				    fieldSpecificChangeEventValue;
+				    attributeSpecificChangeEventValue;
 				
 				model.on( {
-					'change' : function( model, fieldName, newValue ) {
+					'change' : function( model, attributeName, newValue ) {
 						changeEventValue = newValue;
 					},
-					'change:myField' : function( model, newValue ) {
-						fieldSpecificChangeEventValue = newValue;
+					'change:myAttribute' : function( model, newValue ) {
+						attributeSpecificChangeEventValue = newValue;
 					}
 				} );
 				
-				model.set( 'myField', 42 );  // the `get()` function on the Field will add 10 to this value when the field is retrieved
+				model.set( 'myAttribute', 42 );  // the `get()` function on the Attribute will add 10 to this value when the attribute is retrieved
 				
-				Y.Assert.areSame( 52, changeEventValue, "The value provided with the change event should have come from myField's `get()` function" );
-				Y.Assert.areSame( 52, fieldSpecificChangeEventValue, "The value provided with the field-specific change event should have come from myField's `get()` function" );
+				Y.Assert.areSame( 52, changeEventValue, "The value provided with the change event should have come from myAttribute's `get()` function" );
+				Y.Assert.areSame( 52, attributeSpecificChangeEventValue, "The value provided with the attribute-specific change event should have come from myAttribute's `get()` function" );
 			},
 			
 			
-			"When a field with both a `set()` function, and `get()` function of its own is set, the 'change' events should be fired with the value from the `get()` function, not the raw value" : function() {
+			"When an attribute with both a `set()` function, and `get()` function of its own is set, the 'change' events should be fired with the value from the `get()` function, not the raw value" : function() {
 				var TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [ 
-						'baseField',
+					addAttributes: [ 
+						'baseAttribute',
 						{
-							// Computed Field with both a set() function and a get() function, which simply uses 'baseField' for its value
-							// (which in practice, would probably be composed of two or more fields, and possible does calculations as well)
-							name : 'computedField',
-							set : function( value, model ) { model.set( 'baseField', value ); },
-							get : function( value, model ) { return model.get( 'baseField' ) + 10; }   // add 10, to make sure we're using the getter
+							// Computed Attribute with both a set() function and a get() function, which simply uses 'baseAttribute' for its value
+							// (which in practice, would probably be composed of two or more attributes, and possible does calculations as well)
+							name : 'computedAttribute',
+							set : function( value, model ) { model.set( 'baseAttribute', value ); },
+							get : function( value, model ) { return model.get( 'baseAttribute' ) + 10; }   // add 10, to make sure we're using the getter
 						}
 					]
 				} );
 				
 				var model = new TestModel(),
 				    changeEventValue,
-				    fieldSpecificChangeEventValue;
+				    attributeSpecificChangeEventValue;
 				
 				model.on( {
-					'change' : function( model, fieldName, newValue ) {
+					'change' : function( model, attributeName, newValue ) {
 						changeEventValue = newValue;
 					},
-					'change:computedField' : function( model, newValue ) {
-						fieldSpecificChangeEventValue = newValue;
+					'change:computedAttribute' : function( model, newValue ) {
+						attributeSpecificChangeEventValue = newValue;
 					}
 				} );
 				
-				model.set( 'computedField', 42 );  // the `get()` function will add 10 to this value when the field is retrieved
+				model.set( 'computedAttribute', 42 );  // the `get()` function will add 10 to this value when the attribute is retrieved
 								
-				Y.Assert.areSame( 52, changeEventValue, "The value provided with the change event should have come from the computedField's `get()` function" );
-				Y.Assert.areSame( 52, fieldSpecificChangeEventValue, "The value provided with the field-specific change event should have come from the computedField's `get()` function" );
+				Y.Assert.areSame( 52, changeEventValue, "The value provided with the change event should have come from the computedAttribute's `get()` function" );
+				Y.Assert.areSame( 52, attributeSpecificChangeEventValue, "The value provided with the attribute-specific change event should have come from the computedAttribute's `get()` function" );
 			},
 			
 			
@@ -1934,24 +1934,24 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 			// ------------------------
 			
 			
-			"for compatibility with Backbone's Collection, set() should set the id property to the Model object itself with the idField is changed" : function() {
+			"for compatibility with Backbone's Collection, set() should set the id property to the Model object itself with the idAttribute is changed" : function() {
 				var TestModel = Kevlar.Model.extend( {
-					addFields: [
-						{ name: 'field1' },
-						{ name: 'field2', set : function( value, model ) { return value + " " + model.get( 'field1' ); } }
+					addAttributes: [
+						{ name: 'attribute1' },
+						{ name: 'attribute2', set : function( value, model ) { return value + " " + model.get( 'attribute1' ); } }
 					],
-					idField: 'field1'
+					idAttribute: 'attribute1'
 				} );
 				
 				var model = new TestModel( {
-					field1 : "field1val",
-					field2 : "field2val"
+					attribute1 : "attribute1val",
+					attribute2 : "attribute2val"
 				} );
 				
-				Y.Assert.areSame( 'field1val', model.id, "The model's `id` property should have been set to field1's value, as that is the idField." );
+				Y.Assert.areSame( 'attribute1val', model.id, "The model's `id` property should have been set to attribute1's value, as that is the idAttribute." );
 				
-				model.set( 'field1', 'newValue' );
-				Y.Assert.areSame( 'newValue', model.id, "The model's `id` property should have been set to field1's value after another set(), as that is the idField." );
+				model.set( 'attribute1', 'newValue' );
+				Y.Assert.areSame( 'newValue', model.id, "The model's `id` property should have been set to attribute1's value after another set(), as that is the idAttribute." );
 			}
 		},
 		
@@ -1965,32 +1965,32 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 	
 			setUp : function() {
 				this.TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [
-						{ name: 'field1' },
-						{ name: 'field2', defaultValue: "field2's default" },
-						{ name: 'field3', defaultValue: function() { return "field3's default"; } },
-						{ name: 'field4', set : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
-						{ name: 'field5', set : function( value, model ) { return value + " " + model.get( 'field2' ); } }
+					addAttributes: [
+						{ name: 'attribute1' },
+						{ name: 'attribute2', defaultValue: "attribute2's default" },
+						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
+						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
 					]
 				} );
 			},
 			
 			
-			// Test that the default values of fields can be retrieved
+			// Test that the default values of attributes can be retrieved
 			
-			"A field with no defaultValue should return undefined when trying to retrieve its default value" : function() {
+			"A attribute with no defaultValue should return undefined when trying to retrieve its default value" : function() {
 				var model = new this.TestModel();
-				Y.Assert.isUndefined( model.getDefault( 'field1' ) );  // field1 has no default value
+				Y.Assert.isUndefined( model.getDefault( 'attribute1' ) );  // attribute1 has no default value
 			},
 			
-			"A defaultValue should be able to be retrieved directly when the field has one" : function() {
+			"A defaultValue should be able to be retrieved directly when the attribute has one" : function() {
 				var model = new this.TestModel();
-				Y.Assert.areSame( "field2's default", model.getDefault( 'field2' ) );  // field2 has a defaultValue of a string
+				Y.Assert.areSame( "attribute2's default", model.getDefault( 'attribute2' ) );  // attribute2 has a defaultValue of a string
 			},
 			
 			"A defaultValue should be able to be retrieved directly when the defaultValue is a function that returns its default" : function() {
 				var model = new this.TestModel();
-				Y.Assert.areSame( "field3's default", model.getDefault( 'field3' ) );  // field2 has a defaultValue that is a function that returns a string
+				Y.Assert.areSame( "attribute3's default", model.getDefault( 'attribute3' ) );  // attribute2 has a defaultValue that is a function that returns a string
 			}
 		},	
 			
@@ -2005,12 +2005,12 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 	
 			setUp : function() {
 				this.TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [
-						{ name: 'field1' },
-						{ name: 'field2', defaultValue: "field2's default" },
-						{ name: 'field3', defaultValue: function() { return "field3's default"; } },
-						{ name: 'field4', set : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
-						{ name: 'field5', set : function( value, model ) { return value + " " + model.get( 'field2' ); } }
+					addAttributes: [
+						{ name: 'attribute1' },
+						{ name: 'attribute2', defaultValue: "attribute2's default" },
+						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
+						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -2023,26 +2023,26 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 			},
 			
 			"isDirty() should return false after instantiating a Model with initial data" : function() {
-				var model = new this.TestModel( { field1: 1, field2: 2 } );
+				var model = new this.TestModel( { attribute1: 1, attribute2: 2 } );
 				Y.Assert.isFalse( model.isDirty() );
 			},
 			
-			"isDirty() should return true after setting a field's data" : function() {
+			"isDirty() should return true after setting an attribute's data" : function() {
 				var model = new this.TestModel();
-				model.set( 'field1', 1 );
+				model.set( 'attribute1', 1 );
 				Y.Assert.isTrue( model.isDirty() );
 			},
 			
-			"isDirty() should return false after setting a field's data, and then rolling back the data" : function() {
+			"isDirty() should return false after setting an attribute's data, and then rolling back the data" : function() {
 				var model = new this.TestModel();
-				model.set( 'field1', 1 );
+				model.set( 'attribute1', 1 );
 				model.rollback();
 				Y.Assert.isFalse( model.isDirty() );
 			},
 			
-			"isDirty() should return false after setting a field's data, and then committing the data" : function() {
+			"isDirty() should return false after setting an attribute's data, and then committing the data" : function() {
 				var model = new this.TestModel();
-				model.set( 'field1', 1 );
+				model.set( 'attribute1', 1 );
 				model.commit();
 				Y.Assert.isFalse( model.isDirty() );
 			}
@@ -2059,53 +2059,53 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 	
 			setUp : function() {
 				this.TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [
-						{ name: 'field1' },
-						{ name: 'field2', defaultValue: "field2's default" },
-						{ name: 'field3', defaultValue: function() { return "field3's default"; } },
-						{ name: 'field4', set : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
-						{ name: 'field5', set : function( value, model ) { return value + " " + model.get( 'field2' ); } }
+					addAttributes: [
+						{ name: 'attribute1' },
+						{ name: 'attribute2', defaultValue: "attribute2's default" },
+						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
+						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
 					]
 				} );
 			},
 			
 			
-			"isModified() should return false for fields that have not been changed" : function() {
+			"isModified() should return false for attributes that have not been changed" : function() {
 				var model = new this.TestModel();
-				Y.Assert.isFalse( model.isModified( 'field1' ), "field1, with no defaultValue, should not be modified" );
-				Y.Assert.isFalse( model.isModified( 'field2' ), "field2, with a defaultValue, should not be modified" );
+				Y.Assert.isFalse( model.isModified( 'attribute1' ), "attribute1, with no defaultValue, should not be modified" );
+				Y.Assert.isFalse( model.isModified( 'attribute2' ), "attribute2, with a defaultValue, should not be modified" );
 			},
 			
 			
-			"isModified() should return true for fields that have been changed" : function() {
+			"isModified() should return true for attributes that have been changed" : function() {
 				var model = new this.TestModel();
 				
-				model.set( 'field1', "new value 1" );
-				model.set( 'field2', "new value 2" );
-				Y.Assert.isTrue( model.isModified( 'field1' ), "field1 should be marked as modified" );
-				Y.Assert.isTrue( model.isModified( 'field2' ), "field2 should be marked as modified" );
+				model.set( 'attribute1', "new value 1" );
+				model.set( 'attribute2', "new value 2" );
+				Y.Assert.isTrue( model.isModified( 'attribute1' ), "attribute1 should be marked as modified" );
+				Y.Assert.isTrue( model.isModified( 'attribute2' ), "attribute2 should be marked as modified" );
 			},
 			
 			
-			"isModified() should return false for fields that have been changed, but then committed" : function() {
+			"isModified() should return false for attributes that have been changed, but then committed" : function() {
 				var model = new this.TestModel();
 				
-				model.set( 'field1', "new value 1" );
-				model.set( 'field2', "new value 2" );
+				model.set( 'attribute1', "new value 1" );
+				model.set( 'attribute2', "new value 2" );
 				model.commit();
-				Y.Assert.isFalse( model.isModified( 'field1' ), "field1 should have been committed, and therefore not marked as modified" );
-				Y.Assert.isFalse( model.isModified( 'field2' ), "field2 should have been committed, and therefore not marked as modified" );
+				Y.Assert.isFalse( model.isModified( 'attribute1' ), "attribute1 should have been committed, and therefore not marked as modified" );
+				Y.Assert.isFalse( model.isModified( 'attribute2' ), "attribute2 should have been committed, and therefore not marked as modified" );
 			},
 			
 			
-			"isModified() should return false for fields that have been changed, but then rolled back" : function() {
+			"isModified() should return false for attributes that have been changed, but then rolled back" : function() {
 				var model = new this.TestModel();
 				
-				model.set( 'field1', "new value 1" );
-				model.set( 'field2', "new value 2" );
+				model.set( 'attribute1', "new value 1" );
+				model.set( 'attribute2', "new value 2" );
 				model.rollback();
-				Y.Assert.isFalse( model.isModified( 'field1' ), "field1 should have been rolled back, and therefore not marked as modified" );
-				Y.Assert.isFalse( model.isModified( 'field2' ), "field2 should have been rolled back, and therefore not marked as modified" );
+				Y.Assert.isFalse( model.isModified( 'attribute1' ), "attribute1 should have been rolled back, and therefore not marked as modified" );
+				Y.Assert.isFalse( model.isModified( 'attribute2' ), "attribute2 should have been rolled back, and therefore not marked as modified" );
 			}
 		},
 		
@@ -2119,12 +2119,12 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 	
 			setUp : function() {
 				this.TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [
-						{ name: 'field1' },
-						{ name: 'field2', defaultValue: "field2's default" },
-						{ name: 'field3', defaultValue: function() { return "field3's default"; } },
-						{ name: 'field4', set : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
-						{ name: 'field5', get : function( value, model ) { return "field5 " + model.get( 'field2' ); } }
+					addAttributes: [
+						{ name: 'attribute1' },
+						{ name: 'attribute2', defaultValue: "attribute2's default" },
+						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
+						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
+						{ name: 'attribute5', get : function( value, model ) { return "attribute5 " + model.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -2132,47 +2132,47 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 			
 			"getData() should return a deep copy of the data, so that the returned object may be modified without messing up the Model" : function() {
 				var testModel = new this.TestModel( {
-					field1: "field1data",
-					field2: { nested: "nestedfield2data" }
+					attribute1: "attribute1data",
+					attribute2: { nested: "nestedattribute2data" }
 				} );
 				
-				// Retrieve all the data, and modify a field
+				// Retrieve all the data, and modify an attribute
 				var allData = testModel.getData();
-				allData.field1 = "newfield1data";
-				allData.field2.nested = "newnestedfield2data";
+				allData.attribute1 = "newattribute1data";
+				allData.attribute2.nested = "newnestedattribute2data";
 				
-				// Make sure that the original field data in the Model was not modified
-				Y.Assert.areSame( "field1data", testModel.get( 'field1' ), "field1 in the testModel should not have been modified. getData() not returning a copy of the data?" );
-				Y.Assert.areSame( "nestedfield2data", testModel.get( 'field2' ).nested, "field2 in the testModel should not have been modified. getData() not returning a copy of the data?" );
+				// Make sure that the original attribute data in the Model was not modified
+				Y.Assert.areSame( "attribute1data", testModel.get( 'attribute1' ), "attribute1 in the testModel should not have been modified. getData() not returning a copy of the data?" );
+				Y.Assert.areSame( "nestedattribute2data", testModel.get( 'attribute2' ).nested, "attribute2 in the testModel should not have been modified. getData() not returning a copy of the data?" );
 			},
 			
 			
-			"getData() should return a key for each of the Fields in the Model, whether or not any data has been set to them" : function() {
+			"getData() should return a key for each of the Attributes in the Model, whether or not any data has been set to them" : function() {
 				var Model = Kevlar.Model.extend( {
-					addFields : [ 'field1', 'field2' ]
+					addAttributes : [ 'attribute1', 'attribute2' ]
 				} );
-				var model = new Model( { field1: 'value1' } );
+				var model = new Model( { attribute1: 'value1' } );
 				
 				var data = model.getData();
-				Y.ObjectAssert.hasKey( 'field1', data, "The data returned should have field1" );
-				Y.Assert.areSame( 'value1', data.field1, "field1 should be 'value1'" );
-				Y.ObjectAssert.hasKey( 'field2', data, "The data returned should have field2, even though no value has been set to it" );
-				Y.Assert.isUndefined( data.field2, "field2 should be undefined in the returned data" );
+				Y.ObjectAssert.hasKey( 'attribute1', data, "The data returned should have attribute1" );
+				Y.Assert.areSame( 'value1', data.attribute1, "attribute1 should be 'value1'" );
+				Y.ObjectAssert.hasKey( 'attribute2', data, "The data returned should have attribute2, even though no value has been set to it" );
+				Y.Assert.isUndefined( data.attribute2, "attribute2 should be undefined in the returned data" );
 			},
 			
 			
-			"getData() should return the data by running fields' `get` functions (not just returning the raw data)" : function() {
+			"getData() should return the data by running attributes' `get` functions (not just returning the raw data)" : function() {
 				var Model = Kevlar.Model.extend( {
-					addFields : [ 
-						'field1', 
-						{ name: 'field2', get: function( value, model ) { return "42 " + model.get( 'field1' ); } }
+					addAttributes : [ 
+						'attribute1', 
+						{ name: 'attribute2', get: function( value, model ) { return "42 " + model.get( 'attribute1' ); } }
 					]
 				} );
-				var model = new Model( { field1: 'value1', field2: 'value2' } );
+				var model = new Model( { attribute1: 'value1', attribute2: 'value2' } );
 				
 				var data = model.getData();
-				Y.Assert.areSame( 'value1', data.field1, "field1 should be 'value1'" );
-				Y.Assert.areSame( '42 value1', data.field2, "field2 should have had its `get` function run, and that used as the value in the data" );
+				Y.Assert.areSame( 'value1', data.attribute1, "attribute1 should be 'value1'" );
+				Y.Assert.areSame( '42 value1', data.attribute2, "attribute2 should have had its `get` function run, and that used as the value in the data" );
 			},
 			
 			
@@ -2180,13 +2180,13 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 			
 			// Test with `persistedOnly` option set to true
 			
-			"getData() should only retrieve the data for the persisted fields (i.e. fields with persist: true) with the `persistedOnly` option set to true" : function() {
+			"getData() should only retrieve the data for the persisted attributes (i.e. attributes with persist: true) with the `persistedOnly` option set to true" : function() {
 				var Model = Kevlar.Model.extend( {
-					addFields : [
-						{ name : 'field1', persist: true },
-						{ name : 'field2', persist: false },
-						{ name : 'field3', persist: true },
-						{ name : 'field4', persist: false }
+					addAttributes : [
+						{ name : 'attribute1', persist: true },
+						{ name : 'attribute2', persist: false },
+						{ name : 'attribute3', persist: true },
+						{ name : 'attribute4', persist: false }
 					]
 				} );
 				
@@ -2194,7 +2194,7 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 				
 				var persistedData = model.getData( { persistedOnly: true } );
 				Y.Assert.areSame( 2, Kevlar.util.Object.length( persistedData ), "The persisted data should only have 2 properties" );
-				Y.ObjectAssert.ownsKeys( [ 'field1', 'field3' ], persistedData, "The persisted data should have 'field1' and 'field3'" );
+				Y.ObjectAssert.ownsKeys( [ 'attribute1', 'attribute3' ], persistedData, "The persisted data should have 'attribute1' and 'attribute3'" );
 			}
 		},
 		
@@ -2208,52 +2208,52 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 	
 			setUp : function() {
 				this.TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [
-						{ name: 'field1' },
-						{ name: 'field2', defaultValue: "field2's default" },
-						{ name: 'field3', defaultValue: function() { return "field3's default"; } },
-						{ name: 'field4', set : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
-						{ name: 'field5', set : function( value, model ) { return value + " " + model.get( 'field2' ); } }
+					addAttributes: [
+						{ name: 'attribute1' },
+						{ name: 'attribute2', defaultValue: "attribute2's default" },
+						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
+						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
 					]
 				} );
 			},
 			
 			
-			"getChanges() should return a single field that has had its value changed" : function() {
+			"getChanges() should return a single attribute that has had its value changed" : function() {
 				var model = new this.TestModel();
-				model.set( 'field1', "new value" );
+				model.set( 'attribute1', "new value" );
 				
 				var changes = model.getChanges();
 				Y.Assert.areSame( 1, Kevlar.util.Object.length( changes ), "The changes hash retrieved should have exactly 1 property" );
-				Y.Assert.areSame( "new value", changes.field1, "The change to field1 should have been 'new value'." );
+				Y.Assert.areSame( "new value", changes.attribute1, "The change to attribute1 should have been 'new value'." );
 			},
 			
-			"getChanges() should return multiple fields that have had their values changed" : function() {
+			"getChanges() should return multiple attributes that have had their values changed" : function() {
 				var model = new this.TestModel();
-				model.set( 'field1', "new value 1" );
-				model.set( 'field2', "new value 2" );
+				model.set( 'attribute1', "new value 1" );
+				model.set( 'attribute2', "new value 2" );
 				
 				var changes = model.getChanges();
 				Y.Assert.areSame( 2, Kevlar.util.Object.length( changes ), "The changes hash retrieved should have exactly 2 properties" );
-				Y.Assert.areSame( "new value 1", changes.field1, "The change to field1 should have been 'new value 1'." );
-				Y.Assert.areSame( "new value 2", changes.field2, "The change to field2 should have been 'new value 2'." );
+				Y.Assert.areSame( "new value 1", changes.attribute1, "The change to attribute1 should have been 'new value 1'." );
+				Y.Assert.areSame( "new value 2", changes.attribute2, "The change to attribute2 should have been 'new value 2'." );
 			},
 			
 			
-			"getChanges() should return the data by running fields' `get` functions (not just returning the raw data)" : function() {
+			"getChanges() should return the data by running attributes' `get` functions (not just returning the raw data)" : function() {
 				var Model = Kevlar.Model.extend( {
-					addFields : [ 
-						'field1', 
-						{ name: 'field2', get: function( value, model ) { return "42 " + model.get( 'field1' ); } }
+					addAttributes : [ 
+						'attribute1', 
+						{ name: 'attribute2', get: function( value, model ) { return "42 " + model.get( 'attribute1' ); } }
 					]
 				} );
 				var model = new Model();
-				model.set( 'field1', 'value1' );
-				model.set( 'field2', 'value2' ); 
+				model.set( 'attribute1', 'value1' );
+				model.set( 'attribute2', 'value2' ); 
 				
 				var data = model.getData();
-				Y.Assert.areSame( 'value1', data.field1, "field1 should be 'value1'" );
-				Y.Assert.areSame( '42 value1', data.field2, "field2 should have had its `get` function run, and that used as the value in the data" );
+				Y.Assert.areSame( 'value1', data.attribute1, "attribute1 should be 'value1'" );
+				Y.Assert.areSame( '42 value1', data.attribute2, "attribute2 should have had its `get` function run, and that used as the value in the data" );
 			},
 			
 			
@@ -2261,23 +2261,23 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 			
 			// Test with `persistedOnly` option set to true
 			
-			"getChanges() should only retrieve the data for the persisted fields (i.e. fields with persist: true) that have been changed when the `persistedOnly` option is set to true" : function() {
+			"getChanges() should only retrieve the data for the persisted attributes (i.e. attributes with persist: true) that have been changed when the `persistedOnly` option is set to true" : function() {
 				var Model = Kevlar.Model.extend( {
-					addFields : [
-						{ name : 'field1', persist: true },
-						{ name : 'field2', persist: false },
-						{ name : 'field3', persist: true },
-						{ name : 'field4', persist: false }
+					addAttributes : [
+						{ name : 'attribute1', persist: true },
+						{ name : 'attribute2', persist: false },
+						{ name : 'attribute3', persist: true },
+						{ name : 'attribute4', persist: false }
 					]
 				} );
 				
 				var model = new Model();
-				model.set( 'field1', 'value1' );
-				model.set( 'field2', 'value2' );
+				model.set( 'attribute1', 'value1' );
+				model.set( 'attribute2', 'value2' );
 				
 				var persistedChanges = model.getChanges( { persistedOnly: true } );
 				Y.Assert.areSame( 1, Kevlar.util.Object.length( persistedChanges ), "The persisted changes should only have 1 property" );
-				Y.ObjectAssert.ownsKeys( [ 'field1' ], persistedChanges, "The persisted changes should only have 'field1'" );
+				Y.ObjectAssert.ownsKeys( [ 'attribute1' ], persistedChanges, "The persisted changes should only have 'attribute1'" );
 			}
 		},
 		
@@ -2291,12 +2291,12 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 	
 			setUp : function() {
 				this.TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [
-						{ name: 'field1' },
-						{ name: 'field2', defaultValue: "field2's default" },
-						{ name: 'field3', defaultValue: function() { return "field3's default"; } },
-						{ name: 'field4', set : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
-						{ name: 'field5', set : function( value, model ) { return value + " " + model.get( 'field2' ); } }
+					addAttributes: [
+						{ name: 'attribute1' },
+						{ name: 'attribute2', defaultValue: "attribute2's default" },
+						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
+						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -2304,8 +2304,8 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 			
 			"committing changed data should cause the 'dirty' flag to be reset to false, and getChanges() to return an empty object" : function() {
 				var model = new this.TestModel();
-				model.set( 'field1', "new value 1" );
-				model.set( 'field2', "new value 2" );
+				model.set( 'attribute1', "new value 1" );
+				model.set( 'attribute2', "new value 2" );
 				model.commit();
 				
 				var changes = model.getChanges();
@@ -2317,14 +2317,14 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 			
 			"committing changed data should cause rollback() to have no effect" : function() {
 				var model = new this.TestModel();
-				model.set( 'field1', "new value 1" );
-				model.set( 'field2', "new value 2" );
+				model.set( 'attribute1', "new value 1" );
+				model.set( 'attribute2', "new value 2" );
 				model.commit();
 				
 				// Attempt a rollback, even though the data was committed. Should have no effect.
 				model.rollback();
-				Y.Assert.areSame( "new value 1", model.get( 'field1' ), "field1 should have been 'new value 1'. rollback() should not have had any effect." );
-				Y.Assert.areSame( "new value 2", model.get( 'field2' ), "field2 should have been 'new value 2'. rollback() should not have had any effect." );
+				Y.Assert.areSame( "new value 1", model.get( 'attribute1' ), "attribute1 should have been 'new value 1'. rollback() should not have had any effect." );
+				Y.Assert.areSame( "new value 2", model.get( 'attribute2' ), "attribute2 should have been 'new value 2'. rollback() should not have had any effect." );
 			}
 		},
 			
@@ -2339,12 +2339,12 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 	
 			setUp : function() {
 				this.TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [
-						{ name: 'field1' },
-						{ name: 'field2', defaultValue: "field2's default" },
-						{ name: 'field3', defaultValue: function() { return "field3's default"; } },
-						{ name: 'field4', set : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
-						{ name: 'field5', set : function( value, model ) { return value + " " + model.get( 'field2' ); } }
+					addAttributes: [
+						{ name: 'attribute1' },
+						{ name: 'attribute2', defaultValue: "attribute2's default" },
+						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
+						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -2352,19 +2352,19 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 				
 			"rollback() should revert the model's values back to default values if before any committed set() calls" : function() {
 				// No initial data. 
-				// field1 should be undefined
-				// field2 should have the string "field2's default"
+				// attribute1 should be undefined
+				// attribute2 should have the string "attribute2's default"
 				var model = new this.TestModel();
 				
 				// Set, and then rollback
-				model.set( 'field1', "new value 1" );
-				model.set( 'field2', "new value 2" );
+				model.set( 'attribute1', "new value 1" );
+				model.set( 'attribute2', "new value 2" );
 				Y.Assert.isTrue( model.isDirty(), "The 'dirty' flag should be true." );
 				model.rollback();
 				
 				// Check that they have the original values
-				Y.Assert.isUndefined( model.get( 'field1' ) );
-				Y.Assert.areSame( "field2's default", model.get( 'field2' ) );
+				Y.Assert.isUndefined( model.get( 'attribute1' ) );
+				Y.Assert.areSame( "attribute2's default", model.get( 'attribute2' ) );
 				
 				// Check that isDirty() returns false
 				Y.Assert.isFalse( model.isDirty(), "The 'dirty' flag should be false after rollback." );
@@ -2373,19 +2373,19 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 			
 			"rollback() should revert the model's values back to their pre-set() values" : function() {
 				var model = new this.TestModel( {
-					field1 : "original field1",
-					field2 : "original field2"
+					attribute1 : "original attribute1",
+					attribute2 : "original attribute2"
 				} );
 				
 				// Set, check the 'dirty' flag, and then rollback
-				model.set( 'field1', "new value 1" );
-				model.set( 'field2', "new value 2" );
+				model.set( 'attribute1', "new value 1" );
+				model.set( 'attribute2', "new value 2" );
 				Y.Assert.isTrue( model.isDirty(), "The 'dirty' flag should be true." );
 				model.rollback();
 				
 				// Check that they have the original values
-				Y.Assert.areSame( "original field1", model.get( 'field1' ) );
-				Y.Assert.areSame( "original field2", model.get( 'field2' ) );
+				Y.Assert.areSame( "original attribute1", model.get( 'attribute1' ) );
+				Y.Assert.areSame( "original attribute2", model.get( 'attribute2' ) );
 				
 				// Check that isDirty() returns false
 				Y.Assert.isFalse( model.isDirty(), "The 'dirty' flag should be false after rollback." );
@@ -2394,21 +2394,21 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 			
 			"rollback() should revert the model's values back to their pre-set() values, when more than one set() call is made" : function() {
 				var model = new this.TestModel( {
-					field1 : "original field1",
-					field2 : "original field2"
+					attribute1 : "original attribute1",
+					attribute2 : "original attribute2"
 				} );
 				
 				// Set twice, and then rollback
-				model.set( 'field1', "new value 1" );
-				model.set( 'field2', "new value 2" );
-				model.set( 'field1', "new value 1 - even newer" );
-				model.set( 'field2', "new value 2 - even newer" );
+				model.set( 'attribute1', "new value 1" );
+				model.set( 'attribute2', "new value 2" );
+				model.set( 'attribute1', "new value 1 - even newer" );
+				model.set( 'attribute2', "new value 2 - even newer" );
 				Y.Assert.isTrue( model.isDirty(), "The 'dirty' flag should be true." );
 				model.rollback();
 				
 				// Check that they have the original values after rollback (that the 2nd set of set() calls didn't overwrite the original values) 
-				Y.Assert.areSame( "original field1", model.get( 'field1' ) );
-				Y.Assert.areSame( "original field2", model.get( 'field2' ) );
+				Y.Assert.areSame( "original attribute1", model.get( 'attribute1' ) );
+				Y.Assert.areSame( "original attribute2", model.get( 'attribute2' ) );
 				
 				// Check that isDirty() returns false
 				Y.Assert.isFalse( model.isDirty(), "The 'dirty' flag should be false after rollback." );
@@ -2426,12 +2426,12 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 			
 			setUp : function() {
 				this.TestModel = Kevlar.extend( Kevlar.Model, {
-					addFields: [
-						{ name: 'field1' },
-						{ name: 'field2', defaultValue: "field2's default" },
-						{ name: 'field3', defaultValue: function() { return "field3's default"; } },
-						{ name: 'field4', set : function( value, model ) { return model.get( 'field1' ) + " " + model.get( 'field2' ); } },
-						{ name: 'field5', set : function( value, model ) { return value + " " + model.get( 'field2' ); } }
+					addAttributes: [
+						{ name: 'attribute1' },
+						{ name: 'attribute2', defaultValue: "attribute2's default" },
+						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
+						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -2509,8 +2509,8 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
 						
 						var Model = Kevlar.Model.extend( {
-							addFields : [ 'id' ],
-							idField : 'id',
+							addAttributes : [ 'id' ],
+							idAttribute : 'id',
 							
 							proxy : mockProxy
 						} );
@@ -2532,8 +2532,8 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
 						
 						var Model = Kevlar.Model.extend( {
-							addFields : [ 'id' ],
-							idField : 'id',
+							addAttributes : [ 'id' ],
+							idAttribute : 'id',
 							
 							proxy : mockProxy
 						} );
@@ -2566,7 +2566,7 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 						};
 						
 						this.Model = Kevlar.Model.extend( {
-							addFields : [ 'id', 'field1' ],
+							addAttributes : [ 'id', 'attribute1' ],
 							proxy  : this.mockProxy
 						} );
 					},
@@ -2642,7 +2642,7 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 					
 					setUp : function() {
 						this.Model = Kevlar.Model.extend( {
-							addFields : [ 'id', 'field1', 'field2' ],
+							addAttributes : [ 'id', 'attribute1', 'attribute2' ],
 							proxy  : this.mockProxy
 						} );
 					},
@@ -2672,28 +2672,28 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 						var model = new MyModel( { id: 1 } );
 						
 						// Initial set
-						model.set( 'field1', "origValue1" );
-						model.set( 'field2', "origValue2" );
+						model.set( 'attribute1', "origValue1" );
+						model.set( 'attribute2', "origValue2" );
 						
 						// Begin persistence operation, defining a callback for when it is complete
 						model.save( {
 							success : function() {
 								test.resume( function() {
-									Y.Assert.isTrue( model.isDirty(), "The model should still be dirty after the persistence operation. field1 was set after the persistence operation began." );
+									Y.Assert.isTrue( model.isDirty(), "The model should still be dirty after the persistence operation. attribute1 was set after the persistence operation began." );
 									
-									Y.Assert.isTrue( model.isModified( 'field1' ), "field1 should be marked as modified (dirty). It was updated (set) after the persistence operation began." );
-									Y.Assert.isFalse( model.isModified( 'field2' ), "field2 should not be marked as modified. It was not updated after the persistence operation began." );
+									Y.Assert.isTrue( model.isModified( 'attribute1' ), "attribute1 should be marked as modified (dirty). It was updated (set) after the persistence operation began." );
+									Y.Assert.isFalse( model.isModified( 'attribute2' ), "attribute2 should not be marked as modified. It was not updated after the persistence operation began." );
 									
-									Y.Assert.areSame( "newValue1", model.get( 'field1' ), "a get() operation on field1 should return the new value." );
-									Y.Assert.areSame( "origValue2", model.get( 'field2' ), "a get() operation on field2 should return the persisted value. It was not updated since the persistence operation began." );
+									Y.Assert.areSame( "newValue1", model.get( 'attribute1' ), "a get() operation on attribute1 should return the new value." );
+									Y.Assert.areSame( "origValue2", model.get( 'attribute2' ), "a get() operation on attribute2 should return the persisted value. It was not updated since the persistence operation began." );
 								} );
 							}
 						} );
 						
 						
-						// Now set the field while the async persistence operation is in progress. Test will resume when the timeout completes
-						model.set( 'field1', "newValue1" );
-						// note: not setting field2 here
+						// Now set the attribute while the async persistence operation is in progress. Test will resume when the timeout completes
+						model.set( 'attribute1', "newValue1" );
+						// note: not setting attribute2 here
 						
 						// Wait for the setTimeout in the MockProxy
 						test.wait( 100 );
@@ -2715,20 +2715,20 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 						var model = new MyModel( { id: 1 } );
 						
 						
-						// Change field1 first (so that it has changes), then save
-						model.set( 'field1', 'newfield1value' );
+						// Change attribute1 first (so that it has changes), then save
+						model.set( 'attribute1', 'newattribute1value' );
 						model.save();
 						
-						Y.Assert.areSame( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after field1 has been changed" );
-						Y.ObjectAssert.ownsKeys( [ 'field1' ], dataToPersist, "The dataToPersist should have 'field1'" );
+						Y.Assert.areSame( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after attribute1 has been changed" );
+						Y.ObjectAssert.ownsKeys( [ 'attribute1' ], dataToPersist, "The dataToPersist should have 'attribute1'" );
 						
 						
-						// Now change field2. The dataToPersist should not include field1, since it has been persisted
-						model.set( 'field2', 'newfield2value' );
+						// Now change attribute2. The dataToPersist should not include attribute1, since it has been persisted
+						model.set( 'attribute2', 'newattribute2value' );
 						model.save();
 						
-						Y.Assert.areSame( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after field2 has been changed" );
-						Y.ObjectAssert.ownsKeys( [ 'field2' ], dataToPersist, "The dataToPersist should have 'field2'" );
+						Y.Assert.areSame( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after attribute2 has been changed" );
+						Y.ObjectAssert.ownsKeys( [ 'attribute2' ], dataToPersist, "The dataToPersist should have 'attribute2'" );
 					}
 				}
 			]
@@ -2756,7 +2756,7 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 					
 					"destroy() should throw an error if there is no configured proxy" : function() {
 						var Model = Kevlar.Model.extend( {
-							addFields : [ 'field1', 'field2' ]
+							addAttributes : [ 'attribute1', 'attribute2' ]
 							// note: no proxy
 						} );
 						
@@ -2827,7 +2827,7 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 						    completeCallCount = 0;
 						
 						var Model = Kevlar.Model.extend( {
-							fields : [ 'field1' ],
+							attributes : [ 'attribute1' ],
 							proxy  : this.mockProxy
 						} );
 						var model = new Model();
@@ -2854,7 +2854,7 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 						};
 						
 						var Model = Kevlar.Model.extend( {
-							fields : [ 'field1' ],
+							attributes : [ 'attribute1' ],
 							proxy  : this.mockProxy
 						} );
 						var model = new Model();
@@ -2896,7 +2896,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					name: 'General create() tests',
 					
 					"create() should populate the model with any response data upon a successful ajax request" : function() {
-						var testData = { field1: 'value1', field2: 'value2' };
+						var testData = { attribute1: 'value1', attribute2: 'value2' };
 						var TestProxy = Kevlar.persistence.RestProxy.extend( {
 							ajax : function( options ) { 
 								options.success( testData );
@@ -2921,7 +2921,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"By default, the ajax function should be called with the HTTP method 'POST'" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { field1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var httpMethod = "";
 						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
@@ -2938,7 +2938,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"The HTTP method should be overridable via the actionMethods config" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { field1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var httpMethod = "";
 						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
@@ -2972,7 +2972,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					name: 'General read() tests',
 					
 					"read() should populate the model data upon a successful ajax request" : function() {
-						var testData = { field1: 'value1', field2: 'value2' };
+						var testData = { attribute1: 'value1', attribute2: 'value2' };
 						var TestProxy = Kevlar.persistence.RestProxy.extend( {
 							ajax : function( options ) { 
 								options.success( testData );
@@ -2998,7 +2998,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"By default, the ajax function should be called with the HTTP method 'GET'" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { field1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var httpMethod = "";
 						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
@@ -3015,7 +3015,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"The HTTP method should be overridable via the actionMethods config" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { field1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var httpMethod = "";
 						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
@@ -3051,7 +3051,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					name : "General update() tests",
 					
 					
-					"update() should NOT actually call the ajax method when no fields have been changed" : function() {
+					"update() should NOT actually call the ajax method when no attributes have been changed" : function() {
 						var ajaxCallCount = 0;
 						var TestProxy = Kevlar.persistence.RestProxy.extend( {
 							ajax : function() { ajaxCallCount++; }
@@ -3067,7 +3067,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					},
 					
 					
-					"update() should in fact call the ajax method when fields have been changed" : function() {
+					"update() should in fact call the ajax method when attributes have been changed" : function() {
 						var ajaxCallCount = 0;
 						var TestProxy = Kevlar.persistence.RestProxy.extend( {
 							ajax : function() { ajaxCallCount++; }
@@ -3075,7 +3075,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 						var proxy = new TestProxy();
 						
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { field1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						proxy.update( model );
 						
@@ -3102,7 +3102,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					},
 					
 						
-					"The 'success' and 'complete' callbacks provided to update() should be called if no fields have been changed, and it does not need to do its ajax request" : function() {
+					"The 'success' and 'complete' callbacks provided to update() should be called if no attributes have been changed, and it does not need to do its ajax request" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
 						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( {} );
 						
@@ -3124,7 +3124,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"The 'success' and 'complete' callbacks provided to update() should be called if the ajax request is successful" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { field1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var proxy = new this.TestProxy();
 						
@@ -3143,7 +3143,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"The 'error' and 'complete' callbacks provided to update() should be called if the ajax request fails" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { field1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 							
 						var proxy = new this.TestProxy();
 						
@@ -3167,7 +3167,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"By default, the ajax function should be called with the HTTP method 'PUT'" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { field1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var httpMethod = "";
 						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
@@ -3184,7 +3184,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"The HTTP method should be overridable via the actionMethods config" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { field1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var httpMethod = "";
 						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
@@ -3213,8 +3213,8 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					setUp : function() {						
 						this.mockModel = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( this.mockModel ).getData( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { field1: 'value1', field2: 'value2' } );
-						JsMockito.when( this.mockModel ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { field2: 'value2' } );  // 'field2' is the "change"
+						JsMockito.when( this.mockModel ).getData( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1', attribute2: 'value2' } );
+						JsMockito.when( this.mockModel ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute2: 'value2' } );  // 'attribute2' is the "change"
 					},
 					
 					
@@ -3231,10 +3231,10 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 						
 						proxy.update( this.mockModel );
 						
-						Y.Assert.areEqual( 2, Kevlar.util.Object.length( dataPersisted ), "The dataPersisted have exactly 2 keys, one for each of the fields in the model" );
-						Y.ObjectAssert.ownsKeys( [ 'field1', 'field2' ], dataPersisted );
-						Y.Assert.areEqual( 'value1', dataPersisted.field1 );
-						Y.Assert.areEqual( 'value2', dataPersisted.field2 );
+						Y.Assert.areEqual( 2, Kevlar.util.Object.length( dataPersisted ), "The dataPersisted have exactly 2 keys, one for each of the attributes in the model" );
+						Y.ObjectAssert.ownsKeys( [ 'attribute1', 'attribute2' ], dataPersisted );
+						Y.Assert.areEqual( 'value1', dataPersisted.attribute1 );
+						Y.Assert.areEqual( 'value2', dataPersisted.attribute2 );
 					},
 					
 					
@@ -3252,8 +3252,8 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 						proxy.update( this.mockModel );
 						
 						Y.Assert.areEqual( 1, Kevlar.util.Object.length( dataPersisted ), "The dataPersisted have exactly 1 key, the one that was changed" );
-						Y.ObjectAssert.ownsKeys( [ 'field2' ], dataPersisted );
-						Y.Assert.areEqual( 'value2', dataPersisted.field2 );
+						Y.ObjectAssert.ownsKeys( [ 'attribute2' ], dataPersisted );
+						Y.Assert.areEqual( 'value2', dataPersisted.attribute2 );
 					}
 				}
 			]
@@ -3282,7 +3282,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 						} );
 						
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { field1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var proxy = new TestProxy();
 						
@@ -3308,7 +3308,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 						} );
 						
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { field1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var proxy = new TestProxy();
 						
@@ -3332,7 +3332,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"By default, the ajax function should be called with the HTTP method 'DELETE'" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { field1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var httpMethod = "";
 						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
@@ -3349,7 +3349,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"The HTTP method should be overridable via the actionMethods config" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { field1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var httpMethod = "";
 						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {

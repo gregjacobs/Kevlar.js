@@ -14,7 +14,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 * @cfg {String} urlRoot
 	 * The url to use in a RESTful manner to perform CRUD operations. Ex: `/tasks`.
 	 * 
-	 * The {@link Kevlar.Model#idField id} of the {@link Kevlar.Model} being read/updated/deleted
+	 * The {@link Kevlar.Model#idAttribute id} of the {@link Kevlar.Model} being read/updated/deleted
 	 * will automatically be appended to this url. Ex: `/tasks/12`
 	 */
 	urlRoot : "",
@@ -182,7 +182,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	
 	
 	/**
-	 * Updates the given Model on the server.  This method uses "incremental" updates, in which only the changed fields of the `model`
+	 * Updates the given Model on the server.  This method uses "incremental" updates, in which only the changed attributes of the `model`
 	 * are persisted.
 	 * 
 	 * @method update
@@ -203,7 +203,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		
 		var changedData = model.getChanges( { persistedOnly: true } );
 		
-		// Short Circuit: If there is no changed data in any of the fields that are to be persisted, there is no need to make a 
+		// Short Circuit: If there is no changed data in any of the attributes that are to be persisted, there is no need to make a 
 		// request. Run the success callback and return out.
 		if( Kevlar.util.Object.isEmpty( changedData ) ) {
 			if( typeof options.success === 'function' ) {
