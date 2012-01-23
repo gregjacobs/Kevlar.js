@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>The source code</title>
+  <link href="../resources/prettify/prettify.css" type="text/css" rel="stylesheet" />
+  <script type="text/javascript" src="../resources/prettify/prettify.js"></script>
+  <style type="text/css">
+    .highlight { display: block; background-color: #ddd; }
+  </style>
+  <script type="text/javascript">
+    function highlight() {
+      document.getElementById(location.hash.replace(/#/, "")).className = "highlight";
+    }
+  </script>
+</head>
+<body onload="prettyPrint(); highlight();">
+  <pre class="prettyprint lang-js">/*global window, Kevlar */
+/*jslint forin: true */
+(function(){
+
+var KevlarUTIL = Kevlar.util,
+	TOARRAY = Kevlar.toArray,
+	EACH = Kevlar.each,
+	ISOBJECT = Kevlar.isObject,
+	TRUE = true,
+	FALSE = false;
+	
+<span id='Kevlar-util-Observable'>/**
+</span> * @class Kevlar.util.Observable
+ * Base class that provides a common interface for publishing events. Subclasses are expected to
+ * to have a property &quot;events&quot; with all the events defined, and, optionally, a property &quot;listeners&quot;
+ * with configured listeners defined.&lt;br&gt;
+ * For example:
+ * &lt;pre&gt;&lt;code&gt;
+Employee = Kevlar.extend(Kevlar.util.Observable, {
+	constructor: function(config){
+		this.name = config.name;
+		this.addEvents({
+			&quot;fired&quot; : true,
+			&quot;quit&quot; : true
+		});
+
+		// Copy configured listeners into *this* object so that the base class&amp;#39;s
+		// constructor will add them.
+		this.listeners = config.listeners;
+
+		// Call our superclass constructor to complete construction process.
+		Employee.superclass.constructor.call(config)
+	}
+});
+&lt;/code&gt;&lt;/pre&gt;
+ * This could then be used like this:&lt;pre&gt;&lt;code&gt;
+var newEmployee = new Employee({
+	name: employeeName,
+	listeners: {
+		quit: function() {
+			// By default, &quot;this&quot; will be the object that fired the event.
+			alert(this.name + &quot; has quit!&quot;);
+		}
+	}
+});
+&lt;/code&gt;&lt;/pre&gt;
+ */
+KevlarUTIL.Observable = function(){
+<span id='Kevlar-util-Observable-cfg-listeners'>	/**
+</span>	 * @cfg {Object} listeners (optional) &lt;p&gt;A config object containing one or more event handlers to be added to this
+	 * object during initialization.  This should be a valid listeners config object as specified in the
+	 * {@link #addListener} example for attaching multiple handlers at once.&lt;/p&gt;
+	 * To access DOM events directly from a Component's HTMLElement, listeners must be added to the &lt;i&gt;{@link ui.Component#getEl Element}&lt;/i&gt; 
+	 * after the Component has been rendered. A plugin can simplify this step:&lt;pre&gt;&lt;code&gt;
+// Plugin is configured with a listeners config object.
+// The Component is appended to the argument list of all handler functions.
+DomObserver = Kevlar.extend(Object, {
+	constructor: function(config) {
+		this.listeners = config.listeners ? config.listeners : config;
+	},
+
+	// Component passes itself into plugin&amp;#39;s init method
+	initPlugin: function(c) {
+		var p, l = this.listeners;
+		for (p in l) {
+			if (Kevlar.isFunction(l[p])) {
+				l[p] = this.createHandler(l[p], c);
+			} else {
+				l[p].fn = this.createHandler(l[p].fn, c);
+			}
+		}
+
+		// Add the listeners to the Element immediately following the render call
+		c.render = c.render.{@link Function#createSequence createSequence}(function() {
+			var e = c.getEl();
+			if (e) {
+				e.on(l);
+			}
+		});
+	},
+
+	createHandler: function(fn, c) {
+		return function(e) {
+			fn.call(this, e, c);
+		};
+	}
+});
+
+var combo = new Kevlar.form.ComboBox({
+
+	// Collapse combo when its element is clicked on
+	plugins: [ new DomObserver({
+		click: function(evt, comp) {
+			comp.collapse();
+		}
+	})],
+	store: myStore,
+	typeAhead: true,
+	mode: 'local',
+	triggerAction: 'all'
+});
+	 * &lt;/code&gt;&lt;/pre&gt;&lt;/p&gt;
+	 */
+	var me = this, e = me.events;
+	me.events = e || {};
+	if(me.listeners){
+		me.on(me.listeners);
+		delete me.listeners;
+	}
+};
+
+KevlarUTIL.Observable.prototype = {
+	// private
+	filterOptRe : /^(?:scope|delay|buffer|single)$/,
+
+<span id='Kevlar-util-Observable-method-fireEvent'>	/**
+</span>	 * &lt;p&gt;Fires the specified event with the passed parameters (minus the event name).&lt;/p&gt;
+	 * &lt;p&gt;An event may be set to bubble up an Observable parent hierarchy (See {@link ui.Component#getBubbleTarget})
+	 * by calling {@link #enableBubble}.&lt;/p&gt;
+	 * @param {String} eventName The name of the event to fire.
+	 * @param {Object...} args Variable number of parameters are passed to handlers.
+	 * @return {Boolean} returns false if any of the handlers return false otherwise it returns true.
+	 */
+	fireEvent : function() {
+		var args = TOARRAY(arguments),
+		    eventName = args[0].toLowerCase(),
+		    me = this,
+		    ret = TRUE,
+		    ce = me.events[eventName],
+		    q,
+		    parentComponent;
+			
+		if (me.eventsSuspended === TRUE) {
+			q = me.eventQueue;
+			if (q) {
+				q.push(args);
+			}
+			
+		} else if( ISOBJECT(ce) &amp;&amp; ce.bubble ) {
+			if( ce.fire.apply( ce, args.slice( 1 ) ) === false ) {
+				return FALSE;
+			}
+			
+			// Firing of the event on this Observable didn't return false, check the bubbleFn for permission (if the event has one).
+			// If the bubbleFn returns false, we return here and don't bubble
+			var bubbleFn = ce.bubbleFn,
+				bubbleFnScope = ce.bubbleFnScope;
+				
+			if( bubbleFn &amp;&amp; bubbleFn.call( bubbleFnScope, this ) === false ) {
+				return false;
+			}
+			
+			
+			// fire the event on the &quot;parent&quot; Observable (i.e. the &quot;bubble target&quot; observable)
+			parentComponent = me.getBubbleTarget &amp;&amp; me.getBubbleTarget();
+			if( parentComponent &amp;&amp; parentComponent.enableBubble ) {  // test for if parentComponent is an Observable?
+				// If the parentComponent doesn't have the bubbled event, 
+				// or the bubbled event on the parentComponent is not yet an Event object, 
+				// or the bubbled event on the parentComponent doesn't have the bubble flag set to true,
+				// or the bubbled event on the parentComponent doesn't have a bubbleFn, but this one does
+				// then run enableBubble for the event on the parentComponent
+				if( !parentComponent.events[ eventName ] || !Kevlar.isObject( parentComponent.events[ eventName ] ) || !parentComponent.events[ eventName ].bubble || ( !parentComponent.events[ eventName ].bubbleFn &amp;&amp; bubbleFn ) ) {
+					parentComponent.enableBubble( {
+						eventName: eventName,
+						bubbleFn: bubbleFn,
+						scope: bubbleFnScope
+					} );
+				}
+				return parentComponent.fireEvent.apply( parentComponent, args );
+			}
+			
+		} else {
+			if( ISOBJECT( ce ) ) {
+				args.shift();
+				ret = ce.fire.apply( ce, args );
+			}
+		}
+		
+		// Fire an &quot;all&quot; event for compatibility with Backbone. Will probably be removed in the future
+		if( eventName !== 'all' ) {
+			this.fireEvent.apply( this, [ 'all' ].concat( args ) );
+		}
+		
+		return ret;
+	},
+
+<span id='Kevlar-util-Observable-method-addListener'>	/**
+</span>	 * Appends an event handler to this object.
+	 * @param {String}   eventName The name of the event to listen for.
+	 * @param {Function} handler The method the event invokes.
+	 * @param {Object}   scope (optional) The scope (&lt;code&gt;&lt;b&gt;this&lt;/b&gt;&lt;/code&gt; reference) in which the handler function is executed.
+	 * &lt;b&gt;If omitted, defaults to the object which fired the event.&lt;/b&gt;
+	 * @param {Object}   options (optional) An object containing handler configuration.
+	 * properties. This may contain any of the following properties:&lt;ul&gt;
+	 * &lt;li&gt;&lt;b&gt;scope&lt;/b&gt; : Object&lt;div class=&quot;sub-desc&quot;&gt;The scope (&lt;code&gt;&lt;b&gt;this&lt;/b&gt;&lt;/code&gt; reference) in which the handler function is executed.
+	 * &lt;b&gt;If omitted, defaults to the object which fired the event.&lt;/b&gt;&lt;/div&gt;&lt;/li&gt;
+	 * &lt;li&gt;&lt;b&gt;delay&lt;/b&gt; : Number&lt;div class=&quot;sub-desc&quot;&gt;The number of milliseconds to delay the invocation of the handler after the event fires.&lt;/div&gt;&lt;/li&gt;
+	 * &lt;li&gt;&lt;b&gt;single&lt;/b&gt; : Boolean&lt;div class=&quot;sub-desc&quot;&gt;True to add a handler to handle just the next firing of the event, and then remove itself.&lt;/div&gt;&lt;/li&gt;
+	 * &lt;li&gt;&lt;b&gt;buffer&lt;/b&gt; : Number&lt;div class=&quot;sub-desc&quot;&gt;Causes the handler to be scheduled to run in an {@link Kevlar.util.DelayedTask} delayed
+	 * by the specified number of milliseconds. If the event fires again within that time, the original
+	 * handler is &lt;em&gt;not&lt;/em&gt; invoked, but the new handler is scheduled in its place.&lt;/div&gt;&lt;/li&gt;
+	 * &lt;li&gt;&lt;b&gt;target&lt;/b&gt; : Observable&lt;div class=&quot;sub-desc&quot;&gt;Only call the handler if the event was fired on the target Observable, &lt;i&gt;not&lt;/i&gt;
+	 * if the event was bubbled up from a child Observable.&lt;/div&gt;&lt;/li&gt;
+	 * &lt;/ul&gt;&lt;br&gt;
+	 * &lt;p&gt;
+	 * &lt;b&gt;Combining Options&lt;/b&gt;&lt;br&gt;
+	 * Using the options argument, it is possible to combine different types of listeners:&lt;br&gt;
+	 * &lt;br&gt;
+	 * A delayed, one-time listener.
+	 * &lt;pre&gt;&lt;code&gt;
+	 * myDataView.on('click', this.onClick, this, {
+single: true,
+delay: 100
+});&lt;/code&gt;&lt;/pre&gt;
+	 * &lt;p&gt;
+	 * &lt;b&gt;Attaching multiple handlers in 1 call&lt;/b&gt;&lt;br&gt;
+	 * The method also allows for a single argument to be passed which is a config object containing properties
+	 * which specify multiple handlers.
+	 * &lt;p&gt;
+	 * &lt;pre&gt;&lt;code&gt;
+myGridPanel.on({
+'click' : {
+	fn: this.onClick,
+	scope: this,
+	delay: 100
+},
+'mouseover' : {
+	fn: this.onMouseOver,
+	scope: this
+},
+'mouseout' : {
+	fn: this.onMouseOut,
+	scope: this
+}
+});&lt;/code&gt;&lt;/pre&gt;
+ * &lt;p&gt;
+ * Or a shorthand syntax:&lt;br&gt;
+ * &lt;pre&gt;&lt;code&gt;
+myGridPanel.on({
+'click' : this.onClick,
+'mouseover' : this.onMouseOver,
+'mouseout' : this.onMouseOut,
+ scope: this
+});&lt;/code&gt;&lt;/pre&gt;
+	 */
+	addListener : function(eventName, fn, scope, o){
+		var me = this,
+		    e,
+		    oe,
+		    isF,
+		    ce;
+			
+		if (ISOBJECT(eventName)) {
+			o = eventName;
+			for (e in o){
+				oe = o[e];
+				if (!me.filterOptRe.test(e)) {
+					me.addListener(e, oe.fn || oe, oe.scope || o.scope, oe.fn ? oe : o);
+				}
+			}
+		} else {
+			eventName = eventName.toLowerCase();
+			ce = me.events[eventName] || TRUE;
+			if (Kevlar.isBoolean(ce)) {
+				me.events[eventName] = ce = new KevlarUTIL.Event(me, eventName);
+			}
+			ce.addListener(fn, scope, ISOBJECT(o) ? o : {});
+		}
+		
+		return this;
+	},
+
+<span id='Kevlar-util-Observable-method-removeListener'>	/**
+</span>	 * Removes an event handler.
+	 * @param {String}   eventName The type of event the handler was associated with.
+	 * @param {Function} handler   The handler to remove. &lt;b&gt;This must be a reference to the function passed into the {@link #addListener} call.&lt;/b&gt;
+	 * @param {Object}   scope	 (optional) The scope originally specified for the handler.
+	 */
+	removeListener : function( eventName, fn, scope ) {
+		if( typeof eventName === 'object' ) {
+			var events = eventName; // for clarity
+			for( var event in events ) {
+				this.removeListener( event, events[ event ], events.scope );
+			}
+		} else {
+			var ce = this.events[ eventName.toLowerCase() ];
+			if ( ISOBJECT( ce ) ) {
+				ce.removeListener( fn, scope );
+			}
+		}
+		
+		return this;
+	},
+	
+
+<span id='Kevlar-util-Observable-method-purgeListeners'>	/**
+</span>	 * Removes all listeners for this object
+	 */
+	purgeListeners : function() {
+		var events = this.events,
+			evt,
+			key;
+		
+		for( key in events ) {
+			evt = events[ key ];
+			if( ISOBJECT( evt ) ) {
+				evt.clearListeners();
+			}
+		}
+	},
+	
+
+<span id='Kevlar-util-Observable-method-addEvents'>	/**
+</span>	 * Adds the specified events to the list of events which this Observable may fire.
+	 * @param {Object/String} o Either an object with event names as properties with a value of &lt;code&gt;true&lt;/code&gt;
+	 * or the first event name string if multiple event names are being passed as separate parameters.
+	 * @param {String} Optional. Event name if multiple event names are being passed as separate parameters.
+	 * Usage:&lt;pre&gt;&lt;code&gt;
+this.addEvents('storeloaded', 'storecleared');
+&lt;/code&gt;&lt;/pre&gt;
+	 */
+	addEvents : function(o){
+		var me = this;
+		me.events = me.events || {};
+		if (Kevlar.isString(o)) {
+			var a = arguments,
+			    i = a.length;
+			while(i--) {
+				me.events[a[i]] = me.events[a[i]] || TRUE;
+			}
+		} else {
+			Kevlar.applyIf(me.events, o);
+		}
+	},
+
+<span id='Kevlar-util-Observable-method-hasListener'>	/**
+</span>	 * Checks to see if this object has any listeners for a specified event
+	 * @param {String} eventName The name of the event to check for
+	 * @return {Boolean} True if the event is being listened for, else false
+	 */
+	hasListener : function(eventName){
+		var e = this.events[eventName];
+		return ISOBJECT(e) &amp;&amp; e.listeners.length &gt; 0;
+	},
+
+
+<span id='Kevlar-util-Observable-method-suspendEvents'>	/**
+</span>	 * Suspend the firing of all events. (see {@link #resumeEvents})
+	 * @param {Boolean} queueSuspended Pass as true to queue up suspended events to be fired
+	 * after the {@link #resumeEvents} call instead of discarding all suspended events;
+	 */
+	suspendEvents : function(queueSuspended){
+		this.eventsSuspended = TRUE;
+		if(queueSuspended &amp;&amp; !this.eventQueue){
+			this.eventQueue = [];
+		}
+	},
+
+<span id='Kevlar-util-Observable-method-resumeEvents'>	/**
+</span>	 * Resume firing events. (see {@link #suspendEvents})
+	 * If events were suspended using the `&lt;b&gt;queueSuspended&lt;/b&gt;` parameter, then all
+	 * events fired during event suspension will be sent to any listeners now.
+	 */
+	resumeEvents : function(){
+		var me = this,
+		    queued = me.eventQueue || [];
+		me.eventsSuspended = FALSE;
+		delete me.eventQueue;
+		EACH(queued, function(e) {
+			me.fireEvent.apply(me, e);
+		});
+	},
+	
+	
+<span id='Kevlar-util-Observable-method-relayEvents'>	/**
+</span>	 * Relays selected events from the specified Observable as if the events were fired by `&lt;b&gt;this&lt;/b&gt;`.
+	 * @param {Object} o The Observable whose events this object is to relay.
+	 * @param {Array} events Array of event names to relay.
+	 */
+	relayEvents : function(o, events){
+		var me = this;
+		function createHandler(eventName){
+			return function(){
+				return me.fireEvent.apply(me, [eventName].concat(Array.prototype.slice.call(arguments, 0)));
+			};
+		}
+		for(var i = 0, len = events.length; i &lt; len; i++){
+			var eventName = events[i];
+			me.events[eventName] = me.events[eventName] || true;
+			o.on(eventName, createHandler(eventName), me);
+		}
+	},
+	
+	
+<span id='Kevlar-util-Observable-method-enableBubble'>	/**
+</span>	 * &lt;p&gt;Enables events fired by this Observable to bubble up an owner hierarchy by calling {@link #getBubbleTarget} to determine
+	 * the object's owner. The default implementation of {@link #getBubbleTarget} in this class is just to return null, which specifies no owner.
+	 * This method should be overridden by subclasses to provide this if applicable.&lt;/p&gt;
+	 * &lt;p&gt;This is commonly used by {@link ui.Component ui.Components} to bubble events to owner {@link ui.Container iu.Containers}. 
+	 * See {@link ui.Component#getBubbleTarget}. The default implementation in {@link ui.Component} returns the Component's immediate owner, 
+	 * but if a known target is required, this can be overridden to access that target more quickly.&lt;/p&gt;
+	 * &lt;p&gt;Example:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;
+MyClass = Kevlar.extend( Kevlar.util.Observable, {
+
+	constructor : function() {
+		...
+		
+		this.addEvents( 'myBubbledEvent' );
+		this.enableBubble( 'myBubbledEvent' );  // enable the bubble
+	},
+
+
+	getBubbleTarget : function() {
+		// return a reference to some component that is the target for bubbling. this component may be listened to directly for the 'myBubbledEvent' event
+	}
+
+} );
+&lt;/code&gt;&lt;/pre&gt;
+	 * @param {Array/String.../Object...} events The event name to bubble, Array of event names, or one argument per event name. This may also
+	 *   be an array of objects, where the objects have the following properties:&lt;div class=&quot;mdetail-params&quot;&gt;&lt;ul&gt;
+	 *    &lt;li&gt;&lt;b&gt;eventName&lt;/b&gt; : String&lt;div class=&quot;sub-desc&quot;&gt;The name of the event to enable bubbling for.&lt;/div&gt;&lt;/li&gt;
+	 *   &lt;li&gt;
+	 *	 &lt;b&gt;bubbleFn&lt;/b&gt; : Function
+	 *	 &lt;div class=&quot;sub-desc&quot;&gt;
+	 *    A function that determines, at every level in the hierarchy, if bubbling should continue. If this function returns false
+	 *    at any point, the bubbling of the event is stopped. The function is given one argument: the Observable that the event
+	 *    has just been fired for.  This function can be used to test for some condition, and then stop bubbling based on that condition.
+	 *    &lt;/div&gt;
+	 *    &lt;/li&gt;
+	 *    &lt;li&gt;
+	 *    &lt;b&gt;scope&lt;/b&gt; : Object
+	 *    &lt;div class=&quot;sub-desc&quot;&gt;The scope to run the bubbleFn in. Defaults to the Observable that the event bubbling was enabled on.&lt;/div&gt;
+	 *    &lt;/li&gt;
+	 * &lt;/ul&gt;&lt;/div&gt;
+	 */
+	enableBubble: function( events ) {
+		var me = this;
+		if( !Kevlar.isEmpty( events ) ) {
+			events = Kevlar.isArray( events ) ? events : Kevlar.toArray( arguments );
+			
+			Kevlar.each( events, function( eventArg ) {
+				var eventName, bubbleFn, scope;  // the last 2 vars are for if an argument was specified as an object, and these were included
+				
+				// an object with the key 'eventName' is accepted for the enableBubble method
+				if( typeof eventArg === 'object' ) {
+					eventName = eventArg.eventName;
+					bubbleFn = eventArg.bubbleFn;
+					scope = eventArg.scope;
+				} else {
+					eventName = eventArg;  // string event argument
+				}
+				
+				eventName = eventName.toLowerCase();
+				var ce = me.events[ eventName ] || true;
+				if( Kevlar.isBoolean( ce ) ) {
+					ce = new KevlarUTIL.Event( me, eventName );
+					me.events[ eventName ] = ce;
+				}
+				ce.bubble = true;
+				
+				// Add the bubbleFn, if provided by an object argument to enableBubble
+				if( typeof bubbleFn === 'function' ) {
+					ce.bubbleFn = bubbleFn;
+					ce.bubbleFnScope = scope || me;  // default to the Observable's scope
+				}
+			} );
+		}
+	},
+	
+	
+<span id='Kevlar-util-Observable-method-getBubbleTarget'>	/**
+</span>	 * Specifies the Observable that is the target of the event's bubbling, if bubbling is enabled for
+	 * events by the {@link #enableBubble} method. This default implementation returns null, and should
+	 * be overridden by subclasses to specify their bubbling target.
+	 * 
+	 * @protected
+	 * @method getBubbleTarget
+	 * @return {Kevlar.util.Observable} The Observable that is the target for event bubbling, or null if none.
+	 */
+	getBubbleTarget : function() {
+		return null;
+	}
+	
+};
+
+var OBSERVABLE = KevlarUTIL.Observable.prototype;
+<span id='Kevlar-util-Observable-method-on'>/**
+</span> * Appends an event handler to this object (shorthand for {@link #addListener}.)
+ * @param {String}   eventName	 The type of event to listen for
+ * @param {Function} handler	   The method the event invokes
+ * @param {Object}   scope		 (optional) The scope (&lt;code&gt;&lt;b&gt;this&lt;/b&gt;&lt;/code&gt; reference) in which the handler function is executed.
+ * &lt;b&gt;If omitted, defaults to the object which fired the event.&lt;/b&gt;
+ * @param {Object}   options	   (optional) An object containing handler configuration.
+ * @method on
+ */
+OBSERVABLE.on = OBSERVABLE.addListener;
+<span id='Kevlar-util-Observable-method-un'>/**
+</span> * Removes an event handler (shorthand for {@link #removeListener}.)
+ * @param {String}   eventName	 The type of event the handler was associated with.
+ * @param {Function} handler	   The handler to remove. &lt;b&gt;This must be a reference to the function passed into the {@link #addListener} call.&lt;/b&gt;
+ * @param {Object}   scope		 (optional) The scope originally specified for the handler.
+ * @method un
+ */
+OBSERVABLE.un = OBSERVABLE.removeListener;
+
+<span id='Kevlar-util-Observable-method-bind'>/**
+</span> * Appends an event handler to this object (shorthand for {@link #addListener}.)
+ * @param {String}   eventName	 The type of event to listen for
+ * @param {Function} handler	   The method the event invokes
+ * @param {Object}   scope		 (optional) The scope (&lt;code&gt;&lt;b&gt;this&lt;/b&gt;&lt;/code&gt; reference) in which the handler function is executed.
+ * &lt;b&gt;If omitted, defaults to the object which fired the event.&lt;/b&gt;
+ * @param {Object}   options	   (optional) An object containing handler configuration.
+ * @method bind
+ */
+OBSERVABLE.bind = OBSERVABLE.addListener;
+<span id='Kevlar-util-Observable-method-unbind'>/**
+</span> * Removes an event handler (shorthand for {@link #removeListener}.)
+ * @param {String}   eventName	 The type of event the handler was associated with.
+ * @param {Function} handler	   The handler to remove. &lt;b&gt;This must be a reference to the function passed into the {@link #addListener} call.&lt;/b&gt;
+ * @param {Object}   scope		 (optional) The scope originally specified for the handler.
+ * @method unbind
+ */
+OBSERVABLE.unbind = OBSERVABLE.removeListener;
+<span id='Kevlar-util-Observable-method-trigger'>/**
+</span> * Alias of {@link #fireEvent}
+ * 
+ * @method trigger
+ */
+OBSERVABLE.trigger = OBSERVABLE.fireEvent;
+
+<span id='Kevlar-util-Observable-static-method-releaseCapture'>/**
+</span> * Removes &lt;b&gt;all&lt;/b&gt; added captures from the Observable.
+ * @param {Kevlar.util.Observable} o The Observable to release
+ * @static
+ */
+KevlarUTIL.Observable.releaseCapture = function(o){
+	o.fireEvent = OBSERVABLE.fireEvent;
+};
+
+function createTargeted(h, o, scope){
+	return function(){
+		if(o.target == arguments[0]){
+			h.apply(scope, TOARRAY(arguments));
+		}
+	};
+}
+
+function createBuffered(h, o, l, scope){
+	l.task = new KevlarUTIL.DelayedTask();
+	return function(){
+		l.task.delay(o.buffer, h, scope, TOARRAY(arguments));
+	};
+}
+
+function createSingle(h, e, fn, scope){
+	return function(){
+		e.removeListener(fn, scope);
+		return h.apply(scope, arguments);
+	};
+}
+
+function createDelayed(h, o, l, scope){
+	return function(){
+		var task = new KevlarUTIL.DelayedTask();
+		if(!l.tasks) {
+			l.tasks = [];
+		}
+		l.tasks.push(task);
+		task.delay(o.delay || 10, h, scope, TOARRAY(arguments));
+	};
+}
+
+
+
+KevlarUTIL.Event = function(obj, name){
+	this.name = name;
+	this.obj = obj;
+	this.listeners = [];
+	
+	// this object may also get the properties 'bubble', 'bubbleFn', and 'bubbleFnScope' if Observable's enableBubble() method is run for it
+};
+
+KevlarUTIL.Event.prototype = {
+	addListener : function(fn, scope, options){
+		var me = this,
+		    l;
+		scope = scope || me.obj;
+		if(!me.isListening(fn, scope)){
+			l = me.createListener(fn, scope, options);
+			if(me.firing){ // if we are currently firing this event, don't disturb the listener loop
+				me.listeners = me.listeners.slice(0);
+			}
+			me.listeners.push(l);
+		}
+	},
+
+	createListener: function(fn, scope, o){
+		o = o || {};
+		scope = scope || this.obj;
+		
+		var l = {
+			fn: fn,
+			scope: scope,
+			options: o
+		}, h = fn;
+		if(o.target){
+			h = createTargeted(h, o, scope);
+		}
+		if(o.delay){
+			h = createDelayed(h, o, l, scope);
+		}
+		if(o.single){
+			h = createSingle(h, this, fn, scope);
+		}
+		if(o.buffer){
+			h = createBuffered(h, o, l, scope);
+		}
+		l.fireFn = h;
+		return l;
+	},
+
+	findListener : function(fn, scope){
+		var list = this.listeners,
+		    i = list.length,
+		    l,
+		    s;
+		while(i--) {
+			l = list[i];
+			if(l) {
+				s = l.scope;
+				if(l.fn == fn &amp;&amp; (s == scope || s == this.obj)){
+					return i;
+				}
+			}
+		}
+		return -1;
+	},
+
+	isListening : function(fn, scope){
+		return this.findListener(fn, scope) != -1;
+	},
+
+	removeListener : function(fn, scope){
+		var index,
+		    l,
+		    k,
+		    me = this,
+		    ret = FALSE;
+		if((index = me.findListener(fn, scope)) != -1){
+			if (me.firing) {
+				me.listeners = me.listeners.slice(0);
+			}
+			l = me.listeners[index];
+			if(l.task) {
+				l.task.cancel();
+				delete l.task;
+			}
+			k = l.tasks &amp;&amp; l.tasks.length;
+			if(k) {
+				while(k--) {
+					l.tasks[k].cancel();
+				}
+				delete l.tasks;
+			}
+			me.listeners.splice(index, 1);
+			ret = TRUE;
+		}
+		return ret;
+	},
+
+	// Iterate to stop any buffered/delayed events
+	clearListeners : function(){
+		var me = this,
+		    l = me.listeners,
+		    i = l.length;
+		while(i--) {
+			me.removeListener(l[i].fn, l[i].scope);
+		}
+	},
+
+	fire : function() {
+		var me = this,
+		    args = TOARRAY(arguments),
+		    listeners = me.listeners,
+		    len = listeners.length,
+		    i = 0,
+		    l,
+		    handlerReturnedFalse = false;  // added code
+
+		if(len &gt; 0){
+			me.firing = TRUE;
+			for (; i &lt; len; i++) {
+				l = listeners[i];
+				if(l &amp;&amp; l.fireFn.apply(l.scope || me.obj || window, args) === FALSE) {
+					handlerReturnedFalse = true;
+					//return (me.firing = FALSE);  -- old code, prevented other handlers from running if one returned false
+				}
+			}
+		}
+		me.firing = FALSE;
+		//return TRUE;  -- old code
+		return ( handlerReturnedFalse ) ? false : true;  // if any of the event handlers returned false, return false from this method. otherwise, return true
+	}
+};
+})();</pre>
+</body>
+</html>
