@@ -2147,7 +2147,8 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Retrieves the values for all of the attributes in the Model. Note: returns a copy of the data so that the object
+	 * Retrieves the values for all of the attributes in the Model. The Model attributes' {@link Kevlar.Attribute#get get} function will
+	 * be run (if one exists) to pre-process the data before it is returned in the final hash. Note: returns a copy of the data so that the object
 	 * retrieved from this method may be modified.
 	 * 
 	 * @methods getData
@@ -2231,6 +2232,20 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		this.modifiedData = {};
 		this.dirty = false;
+	},
+	
+	
+	// --------------------------------
+	
+	
+	/**
+	 * Creates a clone of the Model, by copying its instance data. Event handlers are not copied.
+	 * 
+	 * @method clone
+	 * @return {Kevlar.Model} The new Model instance, which is a clone of the Model this method was called on.
+	 */
+	clone : function() {
+		return new this.constructor( Kevlar.util.Object.clone( this.data ) );
 	},
 	
 	
