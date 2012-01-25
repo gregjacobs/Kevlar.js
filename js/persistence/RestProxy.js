@@ -19,21 +19,21 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 */
 	urlRoot : "",
 	
-    /**
-     * @cfg {Boolean} appendId
-     * True to automatically append the ID of the Model to the {@link #urlRoot} when
-     * performing 'read', 'update', and 'delete' actions. 
-     */
-    appendId: true,
-    
-    /**
-     * @cfg {Boolean} incremental
-     * True to have the RestProxy only provide data that has changed to the server when
-     * updating a model. By using this, it isn't exactly following REST per se, but can
-     * optimize requests by only providing a subset of the full model data. Only enable
-     * this if your server supports this.
-     */
-    incremental : false,
+	/**
+	 * @cfg {Boolean} appendId
+	 * True to automatically append the ID of the Model to the {@link #urlRoot} when
+	 * performing 'read', 'update', and 'delete' actions. 
+	 */
+	appendId: true,
+	
+	/**
+	 * @cfg {Boolean} incremental
+	 * True to have the RestProxy only provide data that has changed to the server when
+	 * updating a model. By using this, it isn't exactly following REST per se, but can
+	 * optimize requests by only providing a subset of the full model data. Only enable
+	 * this if your server supports this.
+	*/
+	incremental : false,
 	
 	/**
 	 * @cfg {String} rootProperty
