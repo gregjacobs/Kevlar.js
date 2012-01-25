@@ -552,7 +552,11 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Creates a clone of the Model, by copying its instance data. Event handlers are not copied.
+	 * @hide
+	 * Creates a clone of the Model, by copying its instance data.
+	 * 
+	 * Note: This is a simplistic early version of the method, where the final version will most likely
+	 * account for shared nested models and other such nested data. Do not use just yet.
 	 * 
 	 * @method clone
 	 * @return {Kevlar.Model} The new Model instance, which is a clone of the Model this method was called on.
