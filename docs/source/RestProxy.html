@@ -36,21 +36,21 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 */
 	urlRoot : &quot;&quot;,
 	
-<span id='Kevlar-persistence-RestProxy-cfg-appendId'>    /**
-</span>     * @cfg {Boolean} appendId
-     * True to automatically append the ID of the Model to the {@link #urlRoot} when
-     * performing 'read', 'update', and 'delete' actions. 
-     */
-    appendId: true,
-    
-<span id='Kevlar-persistence-RestProxy-cfg-incremental'>    /**
-</span>     * @cfg {Boolean} incremental
-     * True to have the RestProxy only provide data that has changed to the server when
-     * updating a model. By using this, it isn't exactly following REST per se, but can
-     * optimize requests by only providing a subset of the full model data. Only enable
-     * this if your server supports this.
-     */
-    incremental : false,
+<span id='Kevlar-persistence-RestProxy-cfg-appendId'>	/**
+</span>	 * @cfg {Boolean} appendId
+	 * True to automatically append the ID of the Model to the {@link #urlRoot} when
+	 * performing 'read', 'update', and 'delete' actions. 
+	 */
+	appendId: true,
+	
+<span id='Kevlar-persistence-RestProxy-cfg-incremental'>	/**
+</span>	 * @cfg {Boolean} incremental
+	 * True to have the RestProxy only provide data that has changed to the server when
+	 * updating a model. By using this, it isn't exactly following REST per se, but can
+	 * optimize requests by only providing a subset of the full model data. Only enable
+	 * this if your server supports this.
+	*/
+	incremental : false,
 	
 <span id='Kevlar-persistence-RestProxy-cfg-rootProperty'>	/**
 </span>	 * @cfg {String} rootProperty
@@ -120,7 +120,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		options = options || {};
 				
 		// Set the data to persist, based on if the proxy is set to do incremental updates or not
-		var dataToPersist = model.getData( { persistedOnly: true } );
+		var dataToPersist = model.getData( { persistedOnly: true, raw: true } );
 				
 		// Handle needing a different &quot;root&quot; wrapper object for the data
 		if( this.rootProperty ) {
@@ -218,7 +218,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		options = options || {};
 		var scope = options.scope || options.context || window;
 		
-		var changedData = model.getChanges( { persistedOnly: true } );
+		var changedData = model.getChanges( { persistedOnly: true, raw: true } );
 		
 		// Short Circuit: If there is no changed data in any of the attributes that are to be persisted, there is no need to make a 
 		// request. Run the success callback and return out.
@@ -236,9 +236,9 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		// Set the data to persist, based on if the proxy is set to do incremental updates or not
 		var dataToPersist;
 		if( this.incremental ) {
-			dataToPersist = changedData;               // uses incremental updates, we can just send it the changes
+			dataToPersist = changedData;   // uses incremental updates, we can just send it the changes
 		} else {
-			dataToPersist = model.getData( { persistedOnly: true } );  // non-incremental updates, provide all persisted data
+			dataToPersist = model.getData( { persistedOnly: true, raw: true } );  // non-incremental updates, provide all persisted data
 		}
 		
 		
