@@ -1710,21 +1710,6 @@ Kevlar.Attribute = Kevlar.extend( Object, {
 } );
 
 /**
- * @class Kevlar.Class
- * 
- * Base class that all Kevlar classes extend from (and yours probably should too!). Provides a number of
- * object oriented features to JavaScript classes.
- */
-/*global Kevlar */
-Kevlar.Class = function() {};
-
-Kevlar.Class.prototype = {
-	constructor : Kevlar,
-	
-	
-};
-
-/**
  * @class Kevlar.Model
  * @extends Kevlar.util.Observable
  * 
@@ -1864,6 +1849,15 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			 * @param {Mixed} value The new value.
 			 */
 			'change',
+			
+			/**
+			 * Fires when the data in the model is {@link #method-commit committed}. This happens if the
+			 * {@link #method-commit commit} method is called, and after a successful {@link #save}.
+			 * 
+			 * @event commit
+			 * @param {Kevlar.Model} model This Model instance.
+			 */
+			'commit',
 			
 			/**
 			 * Fires when the Model has been destroyed (via {@link #method-destroy}).
@@ -2296,6 +2290,8 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	commit : function() {
 		this.modifiedData = {};  // reset the modifiedData hash. There is no modified data.
 		this.dirty = false;
+		
+		this.fireEvent( 'commit', this );
 	},
 	
 	

@@ -140,6 +140,15 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			'change',
 			
 			/**
+			 * Fires when the data in the model is {@link #method-commit committed}. This happens if the
+			 * {@link #method-commit commit} method is called, and after a successful {@link #save}.
+			 * 
+			 * @event commit
+			 * @param {Kevlar.Model} model This Model instance.
+			 */
+			'commit',
+			
+			/**
 			 * Fires when the Model has been destroyed (via {@link #method-destroy}).
 			 * 
 			 * @event destroy
@@ -570,6 +579,8 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	commit : function() {
 		this.modifiedData = {};  // reset the modifiedData hash. There is no modified data.
 		this.dirty = false;
+		
+		this.fireEvent( 'commit', this );
 	},
 	
 	
