@@ -1540,7 +1540,7 @@ Kevlar.Attribute = Kevlar.extend( Object, {
 	/**
 	 * @cfg {Function} set
 	 * A function that can be used to convert the value provided to the attribute, to a new value which will be stored
-	 * on the {@link Kevlar.Model Model}. This function is passed two arguments:
+	 * on the {@link Kevlar.Model Model}. This function is passed the following arguments:
 	 * 
 	 * @cfg {Mixed} set.value The provided data value to the attribute. If the attribute has no initial data value, its {@link #defaultValue}
 	 *   will be provided to this argument upon instantiation of the {@link Kevlar.Model Model}.
@@ -1574,7 +1574,7 @@ Kevlar.Attribute = Kevlar.extend( Object, {
 	 * @cfg {Function} get
 	 * A function that can be used to change the value that is returned when the Model's {@link Kevlar.Model#get get} method is called
 	 * on the Attribute. This is useful to create "computed" attributes, which may be created based on other Attributes' values.  The function is 
-	 * passed two arguments, and should return the computed value:
+	 * passed two arguments, and should return the computed value.
 	 * 
 	 * @cfg {Mixed} get.value The value that the Attribute currently has stored in the {@link Kevlar.Model Model}.
 	 * @cfg {Kevlar.Model} get.model The Model instance that this Attribute belongs to.
@@ -1593,6 +1593,30 @@ Kevlar.Attribute = Kevlar.extend( Object, {
 	 * use a {@link #set} function instead. 
 	 * 
 	 * However, also note that both a {@link #set} and a `get` function can be used in conjunction.
+	 */
+	
+	/**
+	 * @cfg {Function} raw
+	 * A function that can be used to convert an Attribute's value to a raw representation, usually for persisting data on a server.
+	 * This function is automatically called (if it exists) when a persistence {@link Kevlar.persistence.Proxy proxy} is collecting
+	 * the data to send to the server. The function is passed two arguments, and should return the raw value.
+	 * 
+	 * @cfg {Mixed} raw.value The underlying value that the Attribute currently has stored in the {@link Kevlar.Model Model}.
+	 * @cfg {Kevlar.Model} raw.model The Model instance that this Attribute belongs to.
+	 * 
+	 * For example, a Date object is normally converted to JSON with both its date and time components in a serialized string (such
+	 * as "2012-01-26T01:20:54.619Z"). To instead persist the Date in m/d/yyyy format, one could create an Attribute such as this:
+	 * 
+	 *     {
+	 *         name : 'eventDate',
+	 *         set : function( value, model ) { return new Date( value ); },  // so the value is stored as a Date object when used client-side
+	 *         raw : function( value, model ) {
+	 *             return (value.getMonth()+1) + '/' + value.getDate() + '/' + value.getFullYear();  // m/d/yyyy format 
+	 *         }
+	 *     }
+	 * 
+	 * The value that this function returns is the value that is used when the Model's {@link Kevlar.Model#raw raw} method is called
+	 * on the Attribute.
 	 */
 	
 	/**
@@ -1684,6 +1708,21 @@ Kevlar.Attribute = Kevlar.extend( Object, {
 	}
 	
 } );
+
+/**
+ * @class Kevlar.Class
+ * 
+ * Base class that all Kevlar classes extend from (and yours probably should too!). Provides a number of
+ * object oriented features to JavaScript classes.
+ */
+/*global Kevlar */
+Kevlar.Class = function() {};
+
+Kevlar.Class.prototype = {
+	constructor : Kevlar,
+	
+	
+};
 
 /**
  * @class Kevlar.Model
@@ -2077,11 +2116,13 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * 
 	 * @method get
 	 * @param {String} attributeName The name of the Attribute whose value to retieve.
-	 * @return {Mixed} The value of the attribute given by `attributeName`, or undefined if the value has never been set.  
+	 * @return {Mixed} The value of the attribute returned by the Attribute's {@link Kevlar.Attribute#get get} function (if
+	 * one exists), or the underlying value of the attribute. Will return undefined if there is no {@link Kevlar.Attribute#get get}
+	 * function, and the value has never been set.  
 	 */
 	get : function( attributeName ) {
 		if( !( attributeName in this.attributes ) ) {
-			throw new Error( "Kevlar.Model::get() error: attribute '" + attributeName + "' was not found in the Model." );
+			throw new Error( "Kevlar.Model::get() error: attribute '" + attributeName + "' was not found on the Model." );
 		}
 		
 		var value = this.data[ attributeName ],
@@ -2090,6 +2131,35 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		// If there is a `get` function on the Attribute, run it now to convert the value before it is returned.
 		if( typeof attribute.get === 'function' ) {
 			value = attribute.get.call( attribute.scope || this, value, this );  // provided the value, and the Model instance
+		}
+		
+		return value;
+	},
+	
+	
+	/**
+	 * Retrieves the *raw* value for the attribute given by `attributeName`. If the {@link Kevlar.Attribute Attributes} has a
+	 * {@link Kevlar.Attribute#raw raw} function defined, that function will be called, and its return value will be used
+	 * by the return of this method. If not, the underlying data that is currently stored will be returned, bypassing any
+	 * {@link Kevlar.Attribute#get get} function defined on the {@link Kevlar.Attribute Attribute}.
+	 * 
+	 * @method raw
+	 * @param {String} attributeName The name of the Attribute whose raw value to retieve.
+	 * @return {Mixed} The value of the attribute returned by the Attribute's {@link Kevlar.Attribute#raw raw} function (if
+	 * one exists), or the underlying value of the attribute. Will return undefined if there is no {@link Kevlar.Attribute#raw raw}
+	 * function, and the value has never been set.
+	 */
+	raw : function( attributeName ) {
+		if( !( attributeName in this.attributes ) ) {
+			throw new Error( "Kevlar.Model::raw() error: attribute '" + attributeName + "' was not found on the Model." );
+		}
+		
+		var value = this.data[ attributeName ],
+		    attribute = this.attributes[ attributeName ];
+		    
+		// If there is a `raw` function on the Attribute, run it now to convert the value before it is returned.
+		if( typeof attribute.raw === 'function' ) {
+			value = attribute.raw.call( attribute.scope || this, value, this );  // provided the value, and the Model instance
 		}
 		
 		return value;
@@ -2153,8 +2223,13 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * 
 	 * @methods getData
 	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This may include:
-	 * @param {Boolean} [options.persistedOnly] True to have the method only return data for the persisted Attributes (i.e.,
-	 *   Attributes with the {@link Kevlar.Attribute#persist persist} config set to true, which is the default).
+	 * @param {Boolean} [options.persistedOnly] True to have the method only return data for the persisted attributes (i.e.,
+	 *   attributes with the {@link Kevlar.Attribute#persist persist} config set to true, which is the default).
+	 * @param {Boolean} [options.raw] True to have the method only return the raw data for the attributes. This is used for
+	 *   persistence, where the raw data values go to the server rather than higher-level objects, or where some kind of serialization
+	 *   to a string must take place before persistence (such as for Date objects). The Attribute's {@link Kevlar.Attribute#raw raw} function 
+	 *   is called for the value, but if the Attribute does not have one, its {@link Kevlar.Attribute#get get} function will be used, or 
+	 *   otherwise the underlying data is used.
 	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.Attribute Attribute} values.
 	 */
 	getData : function( options ) {
@@ -2239,7 +2314,11 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Creates a clone of the Model, by copying its instance data. Event handlers are not copied.
+	 * @hide
+	 * Creates a clone of the Model, by copying its instance data.
+	 * 
+	 * Note: This is a simplistic early version of the method, where the final version will most likely
+	 * account for shared nested models and other such nested data. Do not use just yet.
 	 * 
 	 * @method clone
 	 * @return {Kevlar.Model} The new Model instance, which is a clone of the Model this method was called on.
@@ -2492,21 +2571,21 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 */
 	urlRoot : "",
 	
-    /**
-     * @cfg {Boolean} appendId
-     * True to automatically append the ID of the Model to the {@link #urlRoot} when
-     * performing 'read', 'update', and 'delete' actions. 
-     */
-    appendId: true,
-    
-    /**
-     * @cfg {Boolean} incremental
-     * True to have the RestProxy only provide data that has changed to the server when
-     * updating a model. By using this, it isn't exactly following REST per se, but can
-     * optimize requests by only providing a subset of the full model data. Only enable
-     * this if your server supports this.
-     */
-    incremental : false,
+	/**
+	 * @cfg {Boolean} appendId
+	 * True to automatically append the ID of the Model to the {@link #urlRoot} when
+	 * performing 'read', 'update', and 'delete' actions. 
+	 */
+	appendId: true,
+	
+	/**
+	 * @cfg {Boolean} incremental
+	 * True to have the RestProxy only provide data that has changed to the server when
+	 * updating a model. By using this, it isn't exactly following REST per se, but can
+	 * optimize requests by only providing a subset of the full model data. Only enable
+	 * this if your server supports this.
+	*/
+	incremental : false,
 	
 	/**
 	 * @cfg {String} rootProperty

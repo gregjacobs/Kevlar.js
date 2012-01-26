@@ -390,11 +390,13 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * 
 	 * @method get
 	 * @param {String} attributeName The name of the Attribute whose value to retieve.
-	 * @return {Mixed} The value of the attribute given by `attributeName`, or undefined if the value has never been set.  
+	 * @return {Mixed} The value of the attribute returned by the Attribute's {@link Kevlar.Attribute#get get} function (if
+	 * one exists), or the underlying value of the attribute. Will return undefined if there is no {@link Kevlar.Attribute#get get}
+	 * function, and the value has never been set.  
 	 */
 	get : function( attributeName ) {
 		if( !( attributeName in this.attributes ) ) {
-			throw new Error( "Kevlar.Model::get() error: attribute '" + attributeName + "' was not found in the Model." );
+			throw new Error( "Kevlar.Model::get() error: attribute '" + attributeName + "' was not found on the Model." );
 		}
 		
 		var value = this.data[ attributeName ],
@@ -403,6 +405,35 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		// If there is a `get` function on the Attribute, run it now to convert the value before it is returned.
 		if( typeof attribute.get === 'function' ) {
 			value = attribute.get.call( attribute.scope || this, value, this );  // provided the value, and the Model instance
+		}
+		
+		return value;
+	},
+	
+	
+	/**
+	 * Retrieves the *raw* value for the attribute given by `attributeName`. If the {@link Kevlar.Attribute Attributes} has a
+	 * {@link Kevlar.Attribute#raw raw} function defined, that function will be called, and its return value will be used
+	 * by the return of this method. If not, the underlying data that is currently stored will be returned, bypassing any
+	 * {@link Kevlar.Attribute#get get} function defined on the {@link Kevlar.Attribute Attribute}.
+	 * 
+	 * @method raw
+	 * @param {String} attributeName The name of the Attribute whose raw value to retieve.
+	 * @return {Mixed} The value of the attribute returned by the Attribute's {@link Kevlar.Attribute#raw raw} function (if
+	 * one exists), or the underlying value of the attribute. Will return undefined if there is no {@link Kevlar.Attribute#raw raw}
+	 * function, and the value has never been set.
+	 */
+	raw : function( attributeName ) {
+		if( !( attributeName in this.attributes ) ) {
+			throw new Error( "Kevlar.Model::raw() error: attribute '" + attributeName + "' was not found on the Model." );
+		}
+		
+		var value = this.data[ attributeName ],
+		    attribute = this.attributes[ attributeName ];
+		    
+		// If there is a `raw` function on the Attribute, run it now to convert the value before it is returned.
+		if( typeof attribute.raw === 'function' ) {
+			value = attribute.raw.call( attribute.scope || this, value, this );  // provided the value, and the Model instance
 		}
 		
 		return value;
@@ -466,8 +497,13 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * 
 	 * @methods getData
 	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This may include:
-	 * @param {Boolean} [options.persistedOnly] True to have the method only return data for the persisted Attributes (i.e.,
-	 *   Attributes with the {@link Kevlar.Attribute#persist persist} config set to true, which is the default).
+	 * @param {Boolean} [options.persistedOnly] True to have the method only return data for the persisted attributes (i.e.,
+	 *   attributes with the {@link Kevlar.Attribute#persist persist} config set to true, which is the default).
+	 * @param {Boolean} [options.raw] True to have the method only return the raw data for the attributes. This is used for
+	 *   persistence, where the raw data values go to the server rather than higher-level objects, or where some kind of serialization
+	 *   to a string must take place before persistence (such as for Date objects). The Attribute's {@link Kevlar.Attribute#raw raw} function 
+	 *   is called for the value, but if the Attribute does not have one, its {@link Kevlar.Attribute#get get} function will be used, or 
+	 *   otherwise the underlying data is used.
 	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.Attribute Attribute} values.
 	 */
 	getData : function( options ) {

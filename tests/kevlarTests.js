@@ -1536,62 +1536,6 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 				}
 			]
 		},
-		
-		
-		{
-			/*
-			 * Test get()
-			 */
-			name: 'Test get()',
-	
-	
-			setUp : function() {
-				this.TestModel = Kevlar.extend( Kevlar.Model, {
-					addAttributes: [
-						{ name: 'attribute1' },
-						{ name: 'attribute2', defaultValue: "attribute2's default" },
-						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-						{ name: 'attribute5', get : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } }
-					]
-				} );
-			},
-			
-			
-			"running get() on an attribute with no initial value and no default value should return undefined" : function() {
-				var model = new this.TestModel();
-				Y.Assert.isUndefined( model.get( 'attribute1' ) );  // attribute1 has no default value
-			},
-			
-			"running get() on an attribute with an initial value and no default value should return the initial value" : function() {
-				var model = new this.TestModel( {
-					attribute1 : "initial value"
-				} );
-				Y.Assert.areSame( "initial value", model.get( 'attribute1' ) );  // attribute1 has no default value
-			},
-			
-			"running get() on an attribute with no initial value but does have a default value should return the default value" : function() {
-				var model = new this.TestModel();
-				Y.Assert.areSame( "attribute2's default", model.get( 'attribute2' ) );  // attribute2 has a default value
-			},
-			
-			"running get() on an attribute with an initial value and a default value should return the initial value" : function() {
-				var model = new this.TestModel( {
-					attribute2 : "initial value"
-				} );
-				Y.Assert.areSame( "initial value", model.get( 'attribute2' ) );  // attribute2 has a default value
-			},
-			
-			"running get() on an attribute with no initial value but does have a default value which is a function should return the default value" : function() {
-				var model = new this.TestModel();
-				Y.Assert.areSame( "attribute3's default", model.get( 'attribute3' ) );  // attribute3 has a defaultValue that is a function
-			},
-			
-			"running get() on an attribute with a `get` function defined should return the value that the `get` function returns" : function() {
-				var model = new this.TestModel( { attribute1: 'value1' } );
-				Y.Assert.areSame( "value1 attribute2's default", model.get( 'attribute5' ) );
-			}
-		},
 				
 		
 		{
@@ -1985,6 +1929,123 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 				
 				model.set( 'attribute1', 'newValue' );
 				Y.Assert.areSame( 'newValue', model.id, "The model's `id` property should have been set to attribute1's value after another set(), as that is the idAttribute." );
+			}
+		},
+		
+		
+		{
+			/*
+			 * Test get()
+			 */
+			name: 'Test get()',
+	
+	
+			setUp : function() {
+				this.TestModel = Kevlar.extend( Kevlar.Model, {
+					addAttributes: [
+						{ name: 'attribute1' },
+						{ name: 'attribute2', defaultValue: "attribute2's default" },
+						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
+						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
+						{ name: 'attribute5', get : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } }
+					]
+				} );
+			},
+			
+			
+			"running get() on an attribute with no initial value and no default value should return undefined" : function() {
+				var model = new this.TestModel();
+				Y.Assert.isUndefined( model.get( 'attribute1' ) );  // attribute1 has no default value
+			},
+			
+			"running get() on an attribute with an initial value and no default value should return the initial value" : function() {
+				var model = new this.TestModel( {
+					attribute1 : "initial value"
+				} );
+				Y.Assert.areSame( "initial value", model.get( 'attribute1' ) );  // attribute1 has no default value
+			},
+			
+			"running get() on an attribute with no initial value but does have a default value should return the default value" : function() {
+				var model = new this.TestModel();
+				Y.Assert.areSame( "attribute2's default", model.get( 'attribute2' ) );  // attribute2 has a default value
+			},
+			
+			"running get() on an attribute with an initial value and a default value should return the initial value" : function() {
+				var model = new this.TestModel( {
+					attribute2 : "initial value"
+				} );
+				Y.Assert.areSame( "initial value", model.get( 'attribute2' ) );  // attribute2 has a default value
+			},
+			
+			"running get() on an attribute with no initial value but does have a default value which is a function should return the default value" : function() {
+				var model = new this.TestModel();
+				Y.Assert.areSame( "attribute3's default", model.get( 'attribute3' ) );  // attribute3 has a defaultValue that is a function
+			},
+			
+			"running get() on an attribute with a `get` function defined should return the value that the `get` function returns" : function() {
+				var model = new this.TestModel( { attribute1: 'value1' } );
+				Y.Assert.areSame( "value1 attribute2's default", model.get( 'attribute5' ) );
+			}
+		},
+		
+		
+		{
+			/*
+			 * Test raw()
+			 */
+			name: 'Test raw()',
+	
+	
+			setUp : function() {
+				this.TestModel = Kevlar.extend( Kevlar.Model, {
+					addAttributes: [
+						{ name: 'attribute1' },
+						{ name: 'attribute2', defaultValue: "attribute2's default" },
+						{ 
+							name: 'attribute3', 
+							get : function( value, model ) { 
+								return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); 
+							} 
+						},
+						{ 
+							name: 'attribute4', 
+							raw : function( value, model ) { 
+								return value + " " + model.get( 'attribute1' );
+							} 
+						}
+					]
+				} );
+			},
+			
+			
+			"running raw() on an attribute with no initial value and no default value should return undefined" : function() {
+				var model = new this.TestModel();
+				Y.Assert.isUndefined( model.raw( 'attribute1' ) );  // attribute1 has no default value
+			},
+			
+			"running raw() on an attribute with an initial value and no default value should return the initial value" : function() {
+				var model = new this.TestModel( {
+					attribute1 : "initial value"
+				} );
+				Y.Assert.areSame( "initial value", model.raw( 'attribute1' ) );  // attribute1 has no default value
+			},
+			
+			"running raw() on an attribute with no initial value but does have a default value should return the default value" : function() {
+				var model = new this.TestModel();
+				Y.Assert.areSame( "attribute2's default", model.raw( 'attribute2' ) );  // attribute2 has a default value
+			},
+			
+			"running raw() on an attribute with a `get` function defined should return the *underlying* value, not the value that the `get` function returns" : function() {
+				var model = new this.TestModel( { attribute3: 'value1' } );
+				Y.Assert.areSame( "value1", model.raw( 'attribute3' ) );
+			},
+			
+			"running raw() on an attribute with a `raw` function defined should return the value that the `raw` function returns" : function() {
+				var model = new this.TestModel( { 
+					attribute1: 'value1',
+					attribute4: 'value4'
+				} );
+				Y.Assert.areSame( "value4 value1", model.raw( 'attribute4' ) );
 			}
 		},
 		

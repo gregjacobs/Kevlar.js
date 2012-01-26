@@ -38,7 +38,7 @@ Kevlar.Attribute = Kevlar.extend( Object, {
 	/**
 	 * @cfg {Function} set
 	 * A function that can be used to convert the value provided to the attribute, to a new value which will be stored
-	 * on the {@link Kevlar.Model Model}. This function is passed two arguments:
+	 * on the {@link Kevlar.Model Model}. This function is passed the following arguments:
 	 * 
 	 * @cfg {Mixed} set.value The provided data value to the attribute. If the attribute has no initial data value, its {@link #defaultValue}
 	 *   will be provided to this argument upon instantiation of the {@link Kevlar.Model Model}.
@@ -72,7 +72,7 @@ Kevlar.Attribute = Kevlar.extend( Object, {
 	 * @cfg {Function} get
 	 * A function that can be used to change the value that is returned when the Model's {@link Kevlar.Model#get get} method is called
 	 * on the Attribute. This is useful to create "computed" attributes, which may be created based on other Attributes' values.  The function is 
-	 * passed two arguments, and should return the computed value:
+	 * passed two arguments, and should return the computed value.
 	 * 
 	 * @cfg {Mixed} get.value The value that the Attribute currently has stored in the {@link Kevlar.Model Model}.
 	 * @cfg {Kevlar.Model} get.model The Model instance that this Attribute belongs to.
@@ -91,6 +91,30 @@ Kevlar.Attribute = Kevlar.extend( Object, {
 	 * use a {@link #set} function instead. 
 	 * 
 	 * However, also note that both a {@link #set} and a `get` function can be used in conjunction.
+	 */
+	
+	/**
+	 * @cfg {Function} raw
+	 * A function that can be used to convert an Attribute's value to a raw representation, usually for persisting data on a server.
+	 * This function is automatically called (if it exists) when a persistence {@link Kevlar.persistence.Proxy proxy} is collecting
+	 * the data to send to the server. The function is passed two arguments, and should return the raw value.
+	 * 
+	 * @cfg {Mixed} raw.value The underlying value that the Attribute currently has stored in the {@link Kevlar.Model Model}.
+	 * @cfg {Kevlar.Model} raw.model The Model instance that this Attribute belongs to.
+	 * 
+	 * For example, a Date object is normally converted to JSON with both its date and time components in a serialized string (such
+	 * as "2012-01-26T01:20:54.619Z"). To instead persist the Date in m/d/yyyy format, one could create an Attribute such as this:
+	 * 
+	 *     {
+	 *         name : 'eventDate',
+	 *         set : function( value, model ) { return new Date( value ); },  // so the value is stored as a Date object when used client-side
+	 *         raw : function( value, model ) {
+	 *             return (value.getMonth()+1) + '/' + value.getDate() + '/' + value.getFullYear();  // m/d/yyyy format 
+	 *         }
+	 *     }
+	 * 
+	 * The value that this function returns is the value that is used when the Model's {@link Kevlar.Model#raw raw} method is called
+	 * on the Attribute.
 	 */
 	
 	/**
