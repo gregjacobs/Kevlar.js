@@ -491,19 +491,19 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Retrieves the values for all of the attributes in the Model. The Model attributes' {@link Kevlar.Attribute#get get} function will
-	 * be run (if one exists) to pre-process the data before it is returned in the final hash. Note: returns a copy of the data so that the object
-	 * retrieved from this method may be modified.
+	 * Retrieves the values for all of the attributes in the Model. The Model attributes are retrieved via the {@link #get} method,
+	 * to pre-process the data before it is returned in the final hash, unless the `raw` option is set to true,
+	 * in which case the Model attributes are retrieved via {@link #raw}. 
+	 * 
+	 * Note: returns a copy of the data so that the object retrieved from this method may be modified.
 	 * 
 	 * @methods getData
 	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This may include:
 	 * @param {Boolean} [options.persistedOnly] True to have the method only return data for the persisted attributes (i.e.,
 	 *   attributes with the {@link Kevlar.Attribute#persist persist} config set to true, which is the default).
-	 * @param {Boolean} [options.raw] True to have the method only return the raw data for the attributes. This is used for
-	 *   persistence, where the raw data values go to the server rather than higher-level objects, or where some kind of serialization
-	 *   to a string must take place before persistence (such as for Date objects). The Attribute's {@link Kevlar.Attribute#raw raw} function 
-	 *   is called for the value, but if the Attribute does not have one, its {@link Kevlar.Attribute#get get} function will be used, or 
-	 *   otherwise the underlying data is used.
+	 * @param {Boolean} [options.raw] True to have the method only return the raw data for the attributes, by way of the {@link #raw} method. 
+	 *   This is used for persistence, where the raw data values go to the server rather than higher-level objects, or where some kind of serialization
+	 *   to a string must take place before persistence (such as for Date objects). 
 	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.Attribute Attribute} values.
 	 */
 	getData : function( options ) {
@@ -511,11 +511,12 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		var attributes = this.attributes,
 		    persistedOnly = !!options.persistedOnly,
+		    raw = !!options.raw,
 		    data = {};
 		    
 		for( var attributeName in this.attributes ) {
 			if( !persistedOnly || attributes[ attributeName ].isPersisted() === true ) {
-				data[ attributeName ] = this.get( attributeName );
+				data[ attributeName ] = ( raw ) ? this.raw( attributeName ) : this.get( attributeName );
 			}
 		}
 		return Kevlar.util.Object.clone( data );
@@ -526,12 +527,18 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * Retrieves the values for all of the {@link Kevlar.Attribute attributes} in the Model whose values have been changed since
 	 * the last {@link #commit} or {@link #rollback}. 
 	 * 
+	 * The Model attributes are retrieved via the {@link #get} method, to pre-process the data before it is returned in the final hash, 
+	 * unless the `raw` option is set to true, in which case the Model attributes are retrieved via {@link #raw}. 
+	 * 
 	 * Note: returns a copy of the data so that the object retrieved from this method may be modified.
 	 * 
 	 * @method getChanges
 	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This may include:
 	 * @param {Boolean} [options.persistedOnly] True to have the method only return data for the persisted Attributes (i.e.,
 	 *   Attributes with the {@link Kevlar.Attribute#persist persist} config set to true, which is the default).
+	 * @param {Boolean} [options.raw] True to have the method only return the raw data for the attributes, by way of the {@link #raw} method. 
+	 *   This is used for persistence, where the raw data values go to the server rather than higher-level objects, or where some kind of serialization
+	 *   to a string must take place before persistence (such as for Date objects). 
 	 * @return {Object} A hash of the attributes that have been changed since the last {@link #commit} or {@link #rollback}.
 	 *   The hash's property names are the attribute names, and the hash's values are the new values.
 	 */
@@ -541,11 +548,12 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		var modifiedData = Kevlar.util.Object.clone( this.modifiedData ),
 		    attributes = this.attributes,
 		    persistedOnly = !!options.persistedOnly,
+		    raw = !!options.raw,
 		    changes = {};
 		
 		for( var attributeName in modifiedData ) {
 			if( !persistedOnly || attributes[ attributeName ].isPersisted() === true ) {
-				changes[ attributeName ] = this.get( attributeName );
+				changes[ attributeName ] = ( raw ) ? this.raw( attributeName ) : this.get( attributeName );
 			}
 		}
 		return changes;

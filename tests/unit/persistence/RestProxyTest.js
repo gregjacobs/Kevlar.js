@@ -44,7 +44,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"By default, the ajax function should be called with the HTTP method 'POST'" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true, raw: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var httpMethod = "";
 						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
@@ -61,7 +61,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"The HTTP method should be overridable via the actionMethods config" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true, raw: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var httpMethod = "";
 						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
@@ -121,7 +121,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"By default, the ajax function should be called with the HTTP method 'GET'" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true, raw: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var httpMethod = "";
 						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
@@ -138,7 +138,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"The HTTP method should be overridable via the actionMethods config" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true, raw: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var httpMethod = "";
 						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
@@ -182,7 +182,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 						var proxy = new TestProxy();
 						
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( {} );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true, raw: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( {} );
 						
 						proxy.update( model );
 						
@@ -198,7 +198,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 						var proxy = new TestProxy();
 						
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true, raw: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						proxy.update( model );
 						
@@ -227,7 +227,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 						
 					"The 'success' and 'complete' callbacks provided to update() should be called if no attributes have been changed, and it does not need to do its ajax request" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( {} );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true, raw: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( {} );
 						
 						var proxy = new this.TestProxy();
 						
@@ -247,7 +247,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"The 'success' and 'complete' callbacks provided to update() should be called if the ajax request is successful" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true, raw: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var proxy = new this.TestProxy();
 						
@@ -266,7 +266,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"The 'error' and 'complete' callbacks provided to update() should be called if the ajax request fails" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true, raw: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 							
 						var proxy = new this.TestProxy();
 						
@@ -290,7 +290,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"By default, the ajax function should be called with the HTTP method 'PUT'" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true, raw: true, raw: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var httpMethod = "";
 						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
@@ -307,7 +307,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"The HTTP method should be overridable via the actionMethods config" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true, raw: true, raw: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var httpMethod = "";
 						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
@@ -336,8 +336,8 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					setUp : function() {						
 						this.mockModel = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( this.mockModel ).getData( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1', attribute2: 'value2' } );
-						JsMockito.when( this.mockModel ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute2: 'value2' } );  // 'attribute2' is the "change"
+						JsMockito.when( this.mockModel ).getData( /*{ persistedOnly: true, raw: true, raw: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1', attribute2: 'value2' } );
+						JsMockito.when( this.mockModel ).getChanges( /*{ persistedOnly: true, raw: true, raw: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute2: 'value2' } );  // 'attribute2' is the "change"
 					},
 					
 					
@@ -405,7 +405,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 						} );
 						
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true, raw: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var proxy = new TestProxy();
 						
@@ -431,7 +431,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 						} );
 						
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true, raw: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var proxy = new TestProxy();
 						
@@ -455,7 +455,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"By default, the ajax function should be called with the HTTP method 'DELETE'" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true, raw: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var httpMethod = "";
 						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {
@@ -472,7 +472,7 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 					
 					"The HTTP method should be overridable via the actionMethods config" : function() {
 						var model = JsMockito.mock( Kevlar.Model );
-						JsMockito.when( model ).getChanges( /*{ persistedOnly: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
+						JsMockito.when( model ).getChanges( /*{ persistedOnly: true, raw: true } Unfortunately, JsMockito won't match this*/ ).thenReturn( { attribute1: 'value1' } );
 						
 						var httpMethod = "";
 						var TestProxy = Kevlar.extend( Kevlar.persistence.RestProxy, {

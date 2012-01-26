@@ -1176,7 +1176,7 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 			},
 			
 			
-			"getData() should return the data by running attributes' `get` functions (not just returning the raw data)" : function() {
+			"getData() should return the data by running attributes' `get` functions (not just returning the raw data), when the `raw` option is not provided" : function() {
 				var Model = Kevlar.Model.extend( {
 					addAttributes : [ 
 						'attribute1', 
@@ -1188,6 +1188,27 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 				var data = model.getData();
 				Y.Assert.areSame( 'value1', data.attribute1, "attribute1 should be 'value1'" );
 				Y.Assert.areSame( '42 value1', data.attribute2, "attribute2 should have had its `get` function run, and that used as the value in the data" );
+			},
+			
+			
+			// -------------------------------
+			
+			// Test with `raw` option set to true
+			
+			"when the `raw` option is provided as true, getData() should return the data by running attributes' `raw` functions (not using `get`)" : function() {
+				var Model = Kevlar.Model.extend( {
+					addAttributes : [ 
+						'attribute1', 
+						{ name: 'attribute2', get: function( value, model ) { return "42 " + model.get( 'attribute1' ); } },
+						{ name: 'attribute3', raw: function( value, model ) { return value + " " + model.get( 'attribute1' ); } }
+					]
+				} );
+				var model = new Model( { attribute1: 'value1', attribute2: 'value2', attribute3: 'value3' } );
+				
+				var data = model.getData( { raw: true } );
+				Y.Assert.areSame( 'value1', data.attribute1, "attribute1 should be 'value1'" );
+				Y.Assert.areSame( 'value2', data.attribute2, "attribute2 should NOT have had its `get` function run. Its underlying data should have been returned" );
+				Y.Assert.areSame( 'value3 value1', data.attribute3, "attribute3 should have had its `raw` function run, and that value returned" );
 			},
 			
 			
@@ -1259,16 +1280,44 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 				var Model = Kevlar.Model.extend( {
 					addAttributes : [ 
 						'attribute1', 
-						{ name: 'attribute2', get: function( value, model ) { return "42 " + model.get( 'attribute1' ); } }
+						{ name: 'attribute2', get: function( value, model ) { return "42 " + model.get( 'attribute1' ); } },
+						'attribute3'
 					]
 				} );
 				var model = new Model();
 				model.set( 'attribute1', 'value1' );
 				model.set( 'attribute2', 'value2' ); 
 				
-				var data = model.getData();
+				var data = model.getChanges();
 				Y.Assert.areSame( 'value1', data.attribute1, "attribute1 should be 'value1'" );
 				Y.Assert.areSame( '42 value1', data.attribute2, "attribute2 should have had its `get` function run, and that used as the value in the data" );
+				Y.Assert.isFalse( 'attribute3' in data, "attribute3 should not exist in the 'changes' data, as it was never changed" );
+			},
+			
+			
+			// -------------------------------
+			
+			// Test with `raw` option set to true
+			
+			"when the `raw` option is provided as true, getChanges() should return the data by running attributes' `raw` functions (not using `get`)" : function() {
+				var Model = Kevlar.Model.extend( {
+					addAttributes : [
+						'attribute1', 
+						{ name: 'attribute2', get: function( value, model ) { return "42 " + model.get( 'attribute1' ); } },
+						{ name: 'attribute3', raw: function( value, model ) { return value + " " + model.get( 'attribute1' ); } },
+						{ name: 'attribute4', defaultValue: 'value4' }
+					]
+				} );
+				var model = new Model();
+				model.set( 'attribute1', 'value1' );
+				model.set( 'attribute2', 'value2' ); 
+				model.set( 'attribute3', 'value3' ); 
+				
+				var data = model.getChanges( { raw: true } );
+				Y.Assert.areSame( 'value1', data.attribute1, "attribute1 should be 'value1'" );
+				Y.Assert.areSame( 'value2', data.attribute2, "attribute2 should NOT have had its `get` function run. Its underlying data should have been returned" );
+				Y.Assert.areSame( 'value3 value1', data.attribute3, "attribute3 should have had its `raw` function run, and that value returned" );
+				Y.Assert.isFalse( 'attribute4' in data, "attribute4 should not exist in the 'changes' data, as it was never changed" );
 			},
 			
 			
