@@ -840,7 +840,7 @@ KevlarUTIL.Observable.prototype = {
 		
 		// Fire an "all" event for compatibility with Backbone. Will probably be removed in the future
 		if( eventName !== 'all' ) {
-			this.fireEvent.apply( this, [ 'all' ].concat( args ) );
+			this.fireEvent.apply( this, [ 'all' ].concat( Array.prototype.slice.call( arguments, 0 ) ) );
 		}
 		
 		return ret;
