@@ -366,9 +366,13 @@ this.addEvents('storeloaded', 'storecleared');
 		    queued = me.eventQueue || [];
 		me.eventsSuspended = FALSE;
 		delete me.eventQueue;
-		EACH(queued, function(e) {
-			me.fireEvent.apply(me, e);
-		});
+		
+		for( var i = 0, len = queued.length; i < len; i++ ) {
+			var result = me.fireEvent.apply( me, queued[ i ] );
+			if( result === false ) {  // handler returned false, stop firing other events. Not sure why we'd need this, but this was the original behavior with the .each() method
+				return;
+			}
+		}
 	},
 	
 	
@@ -434,12 +438,16 @@ MyClass = Kevlar.extend( Kevlar.util.Observable, {
 	 * </ul></div>
 	 */
 	enableBubble: function( events ) {
-		var me = this;
+		var me = this,
+		    eventArg,
+		    eventName, bubbleFn, scope;
+		    
 		if( !Kevlar.isEmpty( events ) ) {
 			events = Kevlar.isArray( events ) ? events : Kevlar.toArray( arguments );
 			
-			Kevlar.each( events, function( eventArg ) {
-				var eventName, bubbleFn, scope;  // the last 2 vars are for if an argument was specified as an object, and these were included
+			for( var i = 0, len = events.length; i < len; i++ ) {
+				eventArg = events[ i ];
+				eventName = bubbleFn = scope = undefined;  // the last 2 vars are for if an argument was specified as an object, and these were included
 				
 				// an object with the key 'eventName' is accepted for the enableBubble method
 				if( typeof eventArg === 'object' ) {
@@ -463,7 +471,7 @@ MyClass = Kevlar.extend( Kevlar.util.Observable, {
 					ce.bubbleFn = bubbleFn;
 					ce.bubbleFnScope = scope || me;  // default to the Observable's scope
 				}
-			} );
+			}
 		}
 	},
 	

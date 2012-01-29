@@ -8,7 +8,7 @@
  * MIT Licensed - http://extjs.com/license/mit.txt
  */
 
-/*global window, jQuery */
+/*global window, jQuery, Class */
 /*jslint forin: true */
 /**
  * @class Kevlar
@@ -76,327 +76,26 @@ Kevlar.prototype = {
 	
 	
 	/**
-	 * Copies all the properties of config to obj.
-	 *
-	 * @method apply
-	 * @param {Object} obj The receiver of the properties
-	 * @param {Object} config The source of the properties
-	 * @param {Object} defaults A different object that will also be applied for default values
-	 * @return {Object} returns obj
+	 * @inheritdoc Class#static-apply
 	 */
-	apply : function( o, c, defaults ) {
-		if( defaults ) {
-			Kevlar.apply(o, defaults);  // no "this" reference for friendly out of scope calls
-		}
-		if( o && c && typeof c == 'object' ) {
-			for( var p in c ) {
-				o[ p ] = c[ p ];
-			}
-		}
-		return o;
-	},
+	apply : Class.apply,
 	
 	
 	/**
-	 * Copies all the properties of config to obj if they don't already exist.
-	 *
-	 * @method applyIf
-	 * @param {Object} obj The receiver of the properties
-	 * @param {Object} config The source of the properties
-	 * @return {Object} returns obj
+	 * @inheritdoc Class#static-applyIf
 	 */
-	applyIf : function( o, c ) {
-		if( o ) {
-			for( var p in c ) {
-				if( !Kevlar.isDefined( o[ p ] ) ) {  // no "this" reference for friendly out of scope calls
-					o[ p ] = c[ p ];
-				}
-			}
-		}
-		return o;
-	},
+	applyIf : Class.applyIf,
 	
 	
 	/**
-	 * Extends one class to create a subclass of it based on a passed literal (`overrides`), and optionally any mixin 
-	 * classes that are desired.
-	 * 
-	 * This method adds a few methods to the class that it creates:
-	 * 
-	 * - override : Method that can be used to override members of the class with a passed object literal. 
-	 *   Same as {@link #override}, without the first argument.
-	 * - extend : Method that can be used to directly extend the class. Same as this method, except without
-	 *   the first argument.
-	 * - hasMixin : Method that can be used to find out if the class (or any of its superclasses) implement a given mixin. 
-	 *   Accepts one argument: the class (constructor function) of the mixin. Note that it is preferable to check if a given 
-	 *   object is an instance of another class or has a mixin by using the {@link #isInstanceOf} method. This hasMixin() 
-	 *   method will just determine if the class has a given mixin, and not if it is an instance of a superclass, or even an 
-	 *   instance of itself.
-	 * 
-	 * 
-	 * For example, to create a subclass of Kevlar.util.Observable, which will provide Observable events for the class:
-	 *     MyComponent = Kevlar.extend( Kevlar.util.Observable, {
-	 *         
-	 *         constructor : function( config ) {
-	 *             // apply the properties of the config to the object
-	 *             Kevlar.apply( this, config );
-	 *             
-	 *             // Call superclass constructor
-	 *             MyComponent.superclass.constructor.call( this );
-	 *             
-	 *             // Your postprocessing here
-	 *         },
-	 *     
-	 *         // extension of another method (assuming Observable had this method)
-	 *         someMethod : function() {
-	 *             // some preprocessing, if needed
-	 *         
-	 *             MyComponent.superclass.someMethod.apply( this, arguments );  // send all arguments to superclass method
-	 *             
-	 *             // some post processing, if needed
-	 *         },
-	 *     
-	 *         // a new method for this subclass (not an extended method)
-	 *         yourMethod: function() {
-	 *             // etc.
-	 *         }
-	 *     } );
-	 *
-	 * This is an example of creating a class with a mixin called MyMixin:
-	 * 
-	 *     MyComponent = Kevlar.extend( Kevlar.util.Observable, [ MyMixin ], {
-	 *         
-	 *         constructor : function( config ) {
-	 *             // apply the properties of the config to the object
-	 *             Kevlar.apply( this, config );
-	 *             
-	 *             // Call superclass constructor
-	 *             MyComponent.superclass.constructor.call( this );
-	 *             
-	 *             // Call the mixin's constructor
-	 *             MyMixin.constructor.call( this );
-	 *             
-	 *             // Your postprocessing here
-	 *         },
-	 *         
-	 *         
-	 *         // properties/methods of the mixin will be added automatically, if they don't exist already on the class
-	 *         
-	 *         
-	 *         // method that overrides or extends a mixin's method
-	 *         mixinMethod : function() {
-	 *             // call the mixin's method, if desired
-	 *             MyMixin.prototype.mixinMethod.call( this );
-	 *             
-	 *             // post processing
-	 *         }
-	 *         
-	 *     } );
-	 * 
-	 * Note that calling superclass methods can be done with either the [Class].superclass or [Class].__super__ property.
-	 *
-	 * @method extend
-	 * @param {Function} superclass The constructor function of the class being extended.
-	 * @param {Array} mixins (optional) Any mixin classes (constructor functions) that should be mixed into the new subclass
-	 *   after it is extended from the superclass.  Mixin properties/methods will <em>not</em> overwrite class methods, and
-	 *   mixins are taken in the supplied order for later-defined mixins to take precedence over earlier-defined mixins in the array.
-	 *   This argument is the second argument to allow client code to be clean and readable.
-	 * @param {Object} overrides <p>An object literal with members that make up the subclass's properties/method. These are copied into the subclass's
-	 *   prototype, and are therefore shared between all instances of the new class.</p> <p>This may contain a special member named
-	 *   `<b>constructor</b>`, which is used to define the constructor function of the new subclass. If this property is <i>not</i> specified,
-	 *   a constructor function is generated and returned which just calls the superclass's constructor, passing on its parameters.</p>
-	 *   <p><b>It is essential that you call the superclass constructor in any provided constructor. See example code.</b></p>
-	 * @return {Function} The subclass constructor from the `overrides` parameter, or a generated one if not provided.
+	 * @inheritdoc Class#static-extend
 	 */
-	extend : (function() {
-		// Set up some vars that will be used with the extend() method
-		var classIdCounter = 0,  // a variable used for assigning a unique ID to each function, for use with the hasMixin() method that is attached to subclasses. Will be incremented for each new function.
-		    objectConstructor = Object.prototype.constructor;
-		
-		// inline overrides function
-		var inlineOverride = function( o ) {
-			for( var m in o ) {
-				this[ m ] = o[ m ];
-			}
-		};
-
-		// extend() method itself
-		return function( superclass, mixins, overrides ) {
-			// mixins is an optional argument. it is at the 2nd argument position to allow client code to be clean and readable
-			if( !Kevlar.isArray( mixins ) ) {
-				overrides = mixins;
-				mixins = [];   // empty mixins array. Needed because it will be attached to the subclass Function object.
-			}
-			
-			var subclass = overrides.constructor != objectConstructor ? overrides.constructor : function() { superclass.apply( this, arguments ); },
-			    F = function(){},
-			    subclassPrototype,
-			    superclassPrototype = superclass.prototype;
-			
-			F.prototype = superclassPrototype;
-			subclassPrototype = subclass.prototype = new F();  // set up prototype chain
-			subclassPrototype.constructor = subclass;          // fix constructor property
-			subclass.superclass = subclass.__super__ = superclassPrototype;
-			
-			// If the superclass is Object, set its constructor property to itself
-			if( superclassPrototype.constructor == objectConstructor ) {
-				superclassPrototype.constructor = superclass;
-			}
-			
-			// Attach extra methods to subclass
-			subclass.override = function( o ){
-				Kevlar.override( subclass, o );
-			};
-			subclassPrototype.superclass = subclassPrototype.supr = ( function() {
-				return superclassPrototype;
-			} );
-			subclassPrototype.override = inlineOverride;   // inlineOverride function defined above
-			
-			// Add the properties/methods defined in the "overrides" config (which is basically the subclass's 
-			// properties/methods) onto the subclass prototype now
-			Kevlar.override( subclass, overrides );
-			
-			subclass.extend = function( mixins, object ) { return Kevlar.extend( subclass, mixins, object ); };
-			
-			// Expose the constructor property on the class itself (as opposed to only on its prototype, which is normally only
-			// available to instances of the class)
-			subclass.constructor = subclassPrototype.constructor;
-			
-			
-			// -----------------------------------
-			
-			
-			// Handle mixins by applying their methods/properties to the subclass prototype. Methods defined by
-			// the class itself will not be overwritten, and the later defined mixins take precedence over earlier
-			// defined mixins. (Moving backwards through the mixins array to have the later mixin's methods/properties take priority)
-			for( var i = mixins.length-1; i >= 0; i-- ) {
-				var mixinPrototype = mixins[ i ].prototype;
-				for( var prop in mixinPrototype ) {
-					// Do not overwrite properties that already exist on the prototype
-					if( typeof subclassPrototype[ prop ] === 'undefined' ) {
-						subclassPrototype[ prop ] = mixinPrototype[ prop ];
-					}
-				}
-			}
-			
-			// Store which mixin classes the subclass has. This is used in the hasMixin() method
-			subclass.mixins = mixins;
-						
-			var mixinCache = {};  // cache used for caching results of if the given class has a mixin
-			
-			// Create the hasMixin() method as a static method on the subclass, and on the subclass's prototype, for determining 
-			// if a given class/subclass has a mixin on itself, or any of its superclasses
-			subclass.hasMixin = subclassPrototype.hasMixin = function( mixinClass, /* optional arg for the method itself, which defaults to the subclass */ nextParentClass ) {
-				// Assign the mixinClass (the class we're looking for as a mixin) an ID if it doesn't yet have one
-				var mixinClassId = mixinClass._classId;
-				if( !mixinClassId ) {
-					mixinClassId = mixinClass._classId = ++classIdCounter;  // classIdCounter is from the closure of the extend() method
-				}
-				
-				// If we have the results of a call to this method for this mixin already, returned the cached result
-				if( typeof mixinCache[ mixinClassId ] !== 'undefined' ) {
-					return mixinCache[ mixinClassId ];
-				
-				} else {
-					// No cached result from a previous call to this method for the mixin, do the lookup
-					var currentClass = nextParentClass || subclass,  // subclass is from closure
-					    mixins = currentClass.mixins;
-					
-					// The current class (which must be a super class of the subclass in this case) was not set up using extend(), and doesn't 
-					// have the 'mixins' property. Return false immediately.
-					if( !mixins ) {
-						mixinCache[ mixinClassId ] = false;
-						return false;
-					}
-					
-					
-					// Look for the mixin on the current class we're processing
-					for( var i = 0, len = mixins.length; i < len; i++ ) {
-						if( mixins[ i ] === mixinClass ) {
-							// mixin was found, cache the result and return true now
-							mixinCache[ mixinClassId ] = true;
-							return true;
-						}
-					}
-					
-					// mixin wasn't found, check its superclass for the mixin (if it has one)
-					if( currentClass.superclass && currentClass.superclass.constructor && currentClass.superclass.constructor !== Object ) {
-						var returnValue = arguments.callee( mixinClass, currentClass.superclass.constructor );
-						mixinCache[ mixinClassId ] = returnValue;  // cache the result from the call to its superclass
-						return returnValue;
-						
-					} else {
-						// mixin wasn't found, and the class has no superclass, cache the result and return false
-						mixinCache[ mixinClassId ] = false;
-						return false;
-					}
-				}
-			};
-			
-			return subclass;
-		};
-	})(),
+	extend : Class.extend,
 	
 	
-	/**
-	 * Determines if a given object (`obj`) is an instance of a given class (`jsClass`). This method will
-	 * return true if the `obj` is an instance of the `jsClass` itself, if it is a subclass of the `jsClass`,
-	 * or if the `jsClass` is a mixin on the `obj`. For more information about classes and mixins, see the
-	 * {@link #extend} method.
-	 * 
-	 * @method isInstanceOf
-	 * @param {Mixed} obj The object to test.
-	 * @param {Function} jsClass The class (constructor function) to see if the obj is an instance of, or has a mixin
-	 * @return {Boolean} True if the obj is an instance of the jsClass (it is a direct instance of it, 
-	 *   it inherits from it, or the jsClass is a mixin of it)
-	 */
-	isInstanceOf : function( obj, jsClass ) {
-		if( typeof jsClass !== 'function' ) {
-			throw new Error( "jsClass argument of isInstanceOf method expected a Function (constructor function) for a JavaScript class" );
-		}
-		
-		if( !Kevlar.isObject( obj ) ) {   // note: no 'this' reference on Kevlar.isObject() for friendly out-of-scope calls (i.e. method is called when reference is locally cached)
-			return false;
-		} else if( obj instanceof jsClass ) {
-			return true;
-		} else if( obj.hasMixin && obj.hasMixin( jsClass ) ) {  // make sure it has the hasMixin method first. It will have this method if the object was set up with Kevlar.extend()
-			return true;
-		} else {
-			return false;
-		}
-	},
-
-
-	/**
-	 * Adds a list of functions to the prototype of an existing class, overwriting any existing methods with the same name.
-	 * Usage:
-	 * 
-	 *     Kevlar.override( MyClass, {
-	 *         newMethod1 : function() {
-	 *             // etc.
-	 *         },
-	 *         newMethod2 : function( foo ) {
-	 *             // etc.
-	 *         }
-	 *     } );
-	 * 
-	 * @param {Object} origclass The class to override
-	 * @param {Object} overrides The list of functions to add to origClass.  This should be specified as an object literal
-	 * containing one or more methods.
-	 * @method override
-	 */
-	override : function( origclass, overrides ) {
-		if( overrides ){
-			var p = origclass.prototype;
-			Kevlar.apply( p, overrides );
-			if( Kevlar.isIE && overrides.hasOwnProperty( 'toString' ) ){
-				p.toString = overrides.toString;
-			}
-		}
-	},
+	// --------------------------------
 	
 	
-
 	/**
 	 * Creates namespaces to be used for scoping variables and classes so that they are not global.
 	 * Specifying the last node of a namespace implicitly creates all other nodes. Usage:
@@ -423,6 +122,7 @@ Kevlar.prototype = {
 		} );
 		return o;
 	},
+	
 
 	/**
 	 * Converts any iterable (numeric indices and a length property) into a true array
