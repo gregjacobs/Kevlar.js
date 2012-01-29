@@ -8,14 +8,14 @@
 			includes: [
 				{ file: "../vendor/Class.js/Class.js" },
 				
-				{ file: "../js/Kevlar.js" },
-				{ file: "../js/namespaces.js" },
+				{ file: "../src/Kevlar.js" },
+				{ file: "../src/namespaces.js" },
 				
-				{ file: "../js/util/Observable.js" },
+				{ file: "../src/util/Observable.js" },
 				
-				{ file: "../js/persistence/Proxy.js" },
+				{ file: "../src/persistence/Proxy.js" },
 				
-				{ tree: "../js/" }
+				{ tree: "../src/" }
 			]
 		}
 	]
