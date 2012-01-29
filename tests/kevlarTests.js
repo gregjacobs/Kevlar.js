@@ -2467,6 +2467,21 @@ tests.unit.add( new Ext.test.TestSuite( {
 				model.rollback();
 				Y.Assert.areSame( "new value 1", model.get( 'attribute1' ), "attribute1 should have been 'new value 1'. rollback() should not have had any effect." );
 				Y.Assert.areSame( "new value 2", model.get( 'attribute2' ), "attribute2 should have been 'new value 2'. rollback() should not have had any effect." );
+			},
+			
+			
+			"committing changed data should fire the 'commit' event" : function() {
+				var commitEventCount = 0;
+				var model = new this.TestModel();
+				model.addListener( 'commit', function() {
+					commitEventCount++;
+				} );
+				
+				model.set( 'attribute1', "new value 1" );
+				model.set( 'attribute2', "new value 2" );
+				model.commit();
+				
+				Y.Assert.areSame( 1, commitEventCount, "The 'commit' event should have been fired exactly once after committing." );
 			}
 		},
 			
