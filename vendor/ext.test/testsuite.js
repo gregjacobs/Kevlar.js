@@ -26,12 +26,6 @@ Ext.test.TestSuite = Ext.extend( Y.Test.Suite, {
 	constructor: function( config ) {
 		Ext.test.TestSuite.superclass.constructor.apply(this, arguments);
 		
-		if ( !this.parentSuite && !this.disableRegister ) {
-			Ext.test.Session.registerSuite( this );
-		} else if( this.parentSuite ) {
-			this.parentSuite.add( this );
-		}
-		
 		this.initItems();
 	},
 	
@@ -64,20 +58,28 @@ Ext.test.TestSuite = Ext.extend( Y.Test.Suite, {
 	add: function( item ) {
 		var it = item;
 		    it.parentSuite = this;
-			
-		if ( !(item instanceof Ext.test.TestCase) && !(item instanceof Ext.test.TestSuite)) {
-			// NOTE: By providing the parentSuite config to the constructor, these will
-			// automatically be added to the testSuite. Don't need to call superclass method here.
+		
+		if ( !( item instanceof Ext.test.TestCase ) && !( item instanceof Ext.test.TestSuite ) ) {
 			if (it.ttype == 'testsuite' || it.ttype == 'suite') {
 				it = new Ext.test.TestSuite( item );
 			} else {
 				it = new Ext.test.TestCase( item );
 			}
-			
-		} else {
-			Ext.test.TestSuite.superclass.add.call( this, it );
 		}
 		
+		return Ext.test.TestSuite.superclass.add.call( this, it );
+	},
+	
+	
+	/**
+	 * Adds the TestSuite to a parent TestSuite.
+	 * 
+	 * @method addTo
+	 * @param {Ext.test.TestSuite} parentTestSuite The parent TestSuite to add this TestSuite to.
+	 * @return {Ext.test.TestSuite} This TestSuite instance.
+	 */
+	addTo : function( parentTestSuite ) {
+		parentTestSuite.add( this );
 		return this;
 	},
 	
@@ -165,6 +167,9 @@ Ext.test.TestSuite = Ext.extend( Y.Test.Suite, {
 		}
 	}
 });
+
+// Alias a simpler name
+Ext.test.Suite = Ext.test.TestSuite;
 
 // Ext 3.2.1 Unit Tests Compatibility
 Y.Test.Suite = Ext.test.TestSuite;

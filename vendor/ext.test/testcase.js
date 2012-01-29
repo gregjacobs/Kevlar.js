@@ -17,15 +17,22 @@ Ext.test.TestCase = Ext.extend( Y.Test.Case, {
 	 * default instanciated Ext.test.Session where the Ext.test.TestCase register.
 	 */
 	constructor: function(config) {
-		//Ext.apply(this, config);
-		Ext.test.TestCase.superclass.constructor.apply(this, arguments);
+		//Ext.apply(this, config);  -- no need for this, superclass does it
 		
-		this.testSession = this.testSession || Ext.test.Session;     
-		if(!this.parentSuite) {
-			this.testSession.registerCase( this );
-		} else {
-			this.parentSuite.add( this );
-		}
+		Ext.test.TestCase.superclass.constructor.apply(this, arguments);
+	},
+	
+	
+	/**
+	 * Adds the TestCase to a parent TestSuite.
+	 * 
+	 * @method addTo
+	 * @param {Ext.test.TestSuite} parentTestSuite The parent TestSuite to add this TestCase to.
+	 * @return {Ext.test.TestCase} This TestCase instance.
+	 */
+	addTo : function( parentTestSuite ) {
+		parentTestSuite.add( this );
+		return this;
 	},
 	
 	
@@ -51,17 +58,6 @@ Ext.test.TestCase = Ext.extend( Y.Test.Case, {
 			}
 		}
 		return tests;
-	},
-	
-	
-	/**
-	 * Retrieves the parent {@link Ext.test.TestSuite} of the TestCase.
-	 * 
-	 * @method getParentSuite
-	 * @return {Ext.test.TestSuite}
-	 */
-	getParentSuite : function() {
-		return this.parentSuite;
 	}
 	
 });
