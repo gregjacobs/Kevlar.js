@@ -2462,7 +2462,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Determines if a given attribute has been modified since the last {@link #commit} or {@link #rollback}.
+	 * Determines if a given attribute has been modified since the last {@link #method-commit} or {@link #method-rollback}.
 	 * 
 	 * @method isModified
 	 * @param {String} attributeName
@@ -2508,7 +2508,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	/**
 	 * Retrieves the values for all of the {@link Kevlar.Attribute attributes} in the Model whose values have been changed since
-	 * the last {@link #commit} or {@link #rollback}. 
+	 * the last {@link #method-commit} or {@link #method-rollback}. 
 	 * 
 	 * The Model attributes are retrieved via the {@link #get} method, to pre-process the data before it is returned in the final hash, 
 	 * unless the `raw` option is set to true, in which case the Model attributes are retrieved via {@link #raw}. 
@@ -2659,7 +2659,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	/**
 	 * Persists the Model data to the backend, using the configured {@link #proxy}. If the request to persist the Model's data is successful,
-	 * the Model's data will be {@link #commit committed} upon completion.
+	 * the Model's data will be {@link #method-commit committed} upon completion.
 	 * 
 	 * @method save
 	 * @param {Object} [options] An object which may contain the following properties:
