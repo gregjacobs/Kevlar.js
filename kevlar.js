@@ -9,6 +9,8 @@
  * Class.js
  * Copyright(c) 2012 Gregory Jacobs.
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php
+ * 
+ * https://github.com/gregjacobs/Class.js
  */
 /**
  * @class Class
@@ -26,6 +28,53 @@
  * Note that this is not the base class of all `Class` classes. It is a utility to create classes, and extend other classes. The
  * fact that it is not required to be at the top of any inheritance hierarchy means that you may use it to extend classes from
  * other frameworks and libraries, with all of the features that this implementation provides. 
+ * 
+ * This project is located at: https://github.com/gregjacobs/Class.js
+ * 
+ * 
+ * Simple example of creating classes:
+ *     
+ *     var Animal = Class( {
+ *         constructor : function( name ) {
+ *             this.name = name;
+ *         },
+ *         
+ *         sayHi : function() {
+ *             alert( "Hi, my name is: " + this.name );
+ *         },
+ *         
+ *         eat : function() {
+ *             alert( this.name + " is eating" );
+ *         }
+ *     } );
+ *     
+ *     
+ *     var Dog = Animal.extend( {
+ *         // Override sayHi method from superclass
+ *         sayHi : function() {
+ *             alert( "Woof! My name is: " + this.name );
+ *         }
+ *     } );
+ *     
+ *     var Cat = Animal.extend( {
+ *         // Override sayHi method from superclass
+ *         sayHi : function() {
+ *             alert( "Meow! My name is: " + this.name );
+ *         }
+ *     } );
+ *     
+ *     
+ *     var dog1 = new Dog( "Lassie" );
+ *     var dog2 = new Dog( "Bolt" );
+ *     var cat = new Cat( "Leonardo Di Fishy" );
+ *     
+ *     dog1.sayHi();  // "Woof! My name is: Lassie"
+ *     dog2.sayHi();  // "Woof! My name is: Bolt"
+ *     cat.sayHi();  // "Meow! My name is: Leonardo Di Fishy"
+ *     
+ *     dog1.eat();  // "Lassie is eating"
+ *     dog2.eat();  // "Bolt is eating"
+ *     cat.eat();  // "Leonardo Di Fishy is eating"
  */
 /*global window */
 /*jslint forin:true */
@@ -64,10 +113,53 @@ var Class = (function() {
 	
 	
 	/**
+	 * Creates a new class that extends from `Object` (the base class of all classes in JavaScript). Running the
+	 * `Class` constructor function is equivalent of calling {@link #extend Class.extend()}. To extend classes
+	 * that are already subclassed, use either {@link Class#extend}, or the static `extend` method that is added
+	 * to all subclasses.
+	 * 
+	 * Examples for the `Class` constructor:
+	 * 
+	 *     // Create a new class, with Object as the superclass
+	 *     // (i.e. no other particular superclass; see {@link #extend} for that)
+	 *     var MyClass = Class( {
+	 *         constructor : function() {
+	 *             console.log( "Constructing, 123" );
+	 *         },
+	 *     
+	 *         method1 : function() {},
+	 *         method2 : function() {}
+	 *     } );
+	 *     
+	 *     
+	 *     // Can be used with the `new` keyword as well, if desired
+	 *     var MyClass = new Class( {
+	 *         constructor : function() {
+	 *             console.log( "Constructing, 123" );
+	 *         },
+	 *     
+	 *         method1 : function() {},
+	 *         method2 : function() {}
+	 *     } );
+	 *     
+	 *     
+	 *     // The above two examples are exactly equivalent to:
+	 *     var MyClass = Class.extend( Object, {
+	 *         constructor : function() {
+	 *             console.log( "Constructing, 123" );
+	 *         },
+	 *     
+	 *         method1 : function() {},
+	 *         method2 : function() {}
+	 *     } );
+	 * 
+	 * See {@link #extend} for details about extending classes.
+	 * 
 	 * @constructor
+	 * @param {Object} classDefinition The class definition. See the `overrides` parameter of {@link #extend}.
 	 */
-	var Class = function() {
-		
+	var Class = function( classDefinition ) {
+		return Class.extend( Object, classDefinition );
 	};
 	
 	
@@ -97,6 +189,7 @@ var Class = (function() {
 	/**
 	 * Copies all the properties of config to obj if they don't already exist.
 	 *
+	 * @static
 	 * @method applyIf
 	 * @param {Object} obj The receiver of the properties
 	 * @param {Object} config The source of the properties
@@ -271,6 +364,20 @@ var Class = (function() {
 			
 			// -----------------------------------
 			
+			// Now apply inherited statics to the class. Inherited statics from the superclass are first applied,
+			// and then all overrides (so that subclasses's inheritableStatics take precedence)
+			if( inheritedStatics || superclass.__Class_inheritedStatics ) {
+				inheritedStatics = Class.apply( {}, inheritedStatics, superclass.__Class_inheritedStatics );  // inheritedStatics takes precedence of the superclass's inherited statics
+				Class.apply( subclass, inheritedStatics );
+				subclass.__Class_inheritedStatics = inheritedStatics;  // store the inheritedStatics for the next subclass
+			}
+			
+			// Now apply statics to the class. These statics should override any inheritableStatics for the current subclass.
+			// However, the inheritableStatics will still affect subclasses of this subclass.
+			if( statics ) {
+				Class.apply( subclass, statics );
+			}
+			
 			
 			// Handle mixins by applying their methods/properties to the subclass prototype. Methods defined by
 			// the class itself will not be overwritten, and the later defined mixins take precedence over earlier
@@ -308,10 +415,11 @@ var Class = (function() {
 	 *         }
 	 *     } );
 	 * 
+	 * @static
+	 * @method override
 	 * @param {Object} origclass The class to override
 	 * @param {Object} overrides The list of functions to add to origClass.  This should be specified as an object literal
 	 * containing one or more methods.
-	 * @method override
 	 */
 	Class.override = function( origclass, overrides ) {
 		if( overrides ){
@@ -331,6 +439,7 @@ var Class = (function() {
 	 * or if the `jsClass` is a mixin on the `obj`. For more information about classes and mixins, see the
 	 * {@link #extend} method.
 	 * 
+	 * @static
 	 * @method isInstanceOf
 	 * @param {Mixed} obj The object (instance) to test.
 	 * @param {Function} jsClass The class (constructor function) of which to see if the `obj` is an instance of, or has a mixin of.
@@ -492,19 +601,22 @@ Kevlar.prototype = {
 	
 	
 	/**
-	 * @inheritdoc Class#static-apply
+	 * @method apply
+	 * @inheritdoc Class#static-method-apply
 	 */
 	apply : Class.apply,
 	
 	
 	/**
-	 * @inheritdoc Class#static-applyIf
+	 * @method applyIf
+	 * @inheritdoc Class#static-method-applyIf
 	 */
 	applyIf : Class.applyIf,
 	
 	
 	/**
-	 * @inheritdoc Class#static-extend
+	 * @method extend
+	 * @inheritdoc Class#static-method-extend
 	 */
 	extend : Class.extend,
 	
@@ -1627,7 +1739,7 @@ Kevlar.apply( Kevlar.persistence.Proxy, {
  * defines the behaviors of a {@link Kevlar.Model Model's} attributes. A {@link Kevlar.Model Model} is made up of Attributes. 
  * 
  * Note: You will most likely not instantiate Attribute objects directly. This is used by {@link Kevlar.Model} with its
- * {@link Kevlar.Model#addAttributes addAttributes} config. Anonymous config objects provided to {@link Kevlar.Model#addAttributes addAttributes}
+ * {@link Kevlar.Model#attributes attributes} prototype config. Anonymous config objects provided to {@link Kevlar.Model#attributes attributes}
  * will be passed to the Attribute constructor.
  */
 /*global Kevlar */
@@ -1849,23 +1961,49 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	proxy : null,
 	
 	/**
-	 * @cfg {String[]/Object[]} addAttributes
+	 * @cfg {String[]/Object[]} attributes
 	 * Array of {@link Kevlar.Attribute Attribute} declarations. These are objects with any number of properties, but they
-	 * must have the property 'name'. See the configuration options of {@link Kevlar.Attribute} for more information. Anonymous
-	 * config objects will become instantiated {@link Kevlar.Attribute} objects. An item in the array may also simply be a 
-	 * string, which will specify the name of the {@link Kevlar.Attribute Attribute}, with no other {@link Kevlar.Attribute Attribute} 
+	 * must have the property 'name'. See the configuration options of {@link Kevlar.Attribute} for more information. 
+	 * 
+	 * Anonymous config objects defined here will become instantiated {@link Kevlar.Attribute} objects. An item in the array may also simply 
+	 * be a string, which will specify the name of the {@link Kevlar.Attribute Attribute}, with no other {@link Kevlar.Attribute Attribute} 
 	 * configuration options.
 	 * 
-	 * Attributes defined on the prototype of a Model (like below), and its subclasses, are concatenated together come
+	 * Attributes defined on the prototype of a Model, and its superclasses, are concatenated together come
 	 * instantiation time. This means that the Kevlar.Model base class can define the 'id' attribute, and then subclasses
-	 * can define their own attributes to append to it.  So if a subclass defined the attributes `[ 'name', 'phone' ]`, then the
+	 * can define their own attributes to append to it. So if a subclass defined the attributes `[ 'name', 'phone' ]`, then the
 	 * final concatenated array of attributes for the subclass would be `[ 'id', 'name', 'phone' ]`. This works for however many
 	 * levels of subclasses there are.
 	 * 
-	 * This array will become an object (hash) come instantiation time, with the keys as the attribute names, and the values as
-	 * the instantiated {@link Kevlar.Attribute} objects that represent them.
+	 * Example:
+	 * 
+	 *     attributes : [
+	 *         'id',    // name-only; no other configs for this attribute (not recommended! should declare the {@link Kevlar.Attribute#type type})
+	 *         { name: 'firstName', type: 'string' },
+	 *         { name: 'lastName', type: 'string' },
+	 *         {
+	 *             name : 'fullName',
+	 *             get  : function( value, model ) {
+	 *                 return model.get( 'firstName' ) + ' ' + model.get( 'lastName' );
+	 *             }
+	 *         }
+	 *     ]
+	 * 
+	 * Note: If using hierarchies of more than one Model subclass deep, consider using the {@link #addAttributes} alias instead of this
+	 * config, which does the same thing (defines attributes), but better conveys that attributes in subclasses are being *added* to the
+	 * attributes of the superclass, rather than *overriding* attributes of the superclass.
 	 */
-	addAttributes : [],
+	attributes : [],
+	
+	/**
+	 * @cfg {String[]/Object[]} addAttributes
+	 * Alias of {@link #attributes}, which may make more sense to use in hierarchies of models that go past more than one level of nesting, 
+	 * as it conveys the meaning that the attributes are being *added* to the attributes that are already defined in its superclass, not
+	 * replacing them.
+	 * 
+	 * This config is recommended over {@link #attributes} for any hierarchy of models that goes past one level of nesting, or even those that 
+	 * don't but may do so in the future.
+	 */
 	
 	/**
 	 * @cfg {String} idAttribute
@@ -1877,6 +2015,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	/**
 	 * @private
 	 * @property {Object} attributes
+	 * 
 	 * A hash of the combined Attributes, which have been put together from the current Model subclass, and all of
 	 * its superclasses. This is created by the {@link #initAttributes} method upon instantiation.
 	 */
@@ -1884,6 +2023,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	/**
 	 * @private
 	 * @property {Object} data
+	 * 
 	 * A hash that holds the current data for the {@link Kevlar.Attribute Attributes}. The property names in this object match 
 	 * the attribute names.  This hash holds the current data as it is modified by {@link #set}.
 	 */
@@ -1891,6 +2031,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	/**
 	 * @private
 	 * @property {Boolean} dirty
+	 * 
 	 * Flag for quick-testing if the Model currently has un-committed data.
 	 */
 	dirty : false,
@@ -1933,7 +2074,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * Creates a new Model instance.
 	 * 
 	 * @constructor 
-	 * @param {Object} [data] Any initial data for the {@link #addAttributes attributes}, specified in an object (hash map). See {@link #set}.
+	 * @param {Object} [data] Any initial data for the {@link #attributes attributes}, specified in an object (hash map). See {@link #set}.
 	 */
 	constructor : function( data ) {		
 		// Call superclass constructor
@@ -2048,7 +2189,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	/**
 	 * Initializes the Model's {@link #attributes} by walking up the prototype change from the current Model subclass
-	 * up to this (the base) class, collecting their `addAttributes` arrays, and combining them into one single attributes hash. 
+	 * up to this (the base) class, collecting their `attributes` arrays, and combining them into one single attributes hash. 
 	 * See {@link attributes} for more information.
 	 * 
 	 * @private
@@ -2062,9 +2203,12 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		    currentConstructor = this.constructor,
 		    currentProto = currentConstructor.prototype;
 		
-		// Walk up the prototype chain from the current object, collecting 'addAttributes' objects as we go along
+		// Walk up the prototype chain from the current object, collecting 'attributes' and 'addAttributes' objects as we go along
 		do {
-			if( currentProto.hasOwnProperty( 'addAttributes' ) && Kevlar.isArray( currentProto.addAttributes ) ) {    // skip over any prototype that doesn't define 'addAttributes' itself
+			// skip over any prototype that doesn't define `attributes` or `addAttributes` itself
+			if( currentProto.hasOwnProperty( 'attributes' ) && Kevlar.isArray( currentProto.attributes ) ) {    
+				attributesObjects = attributesObjects.concat( currentProto.attributes );
+			} else if( currentProto.hasOwnProperty( 'addAttributes' ) && Kevlar.isArray( currentProto.addAttributes ) ) {
 				attributesObjects = attributesObjects.concat( currentProto.addAttributes );
 			}
 		} while( ( currentConstructor = ( currentProto = currentConstructor.superclass ) && currentProto.constructor ) );

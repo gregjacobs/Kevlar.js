@@ -19,23 +19,49 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	proxy : null,
 	
 	/**
-	 * @cfg {String[]/Object[]} addAttributes
+	 * @cfg {String[]/Object[]} attributes
 	 * Array of {@link Kevlar.Attribute Attribute} declarations. These are objects with any number of properties, but they
-	 * must have the property 'name'. See the configuration options of {@link Kevlar.Attribute} for more information. Anonymous
-	 * config objects will become instantiated {@link Kevlar.Attribute} objects. An item in the array may also simply be a 
-	 * string, which will specify the name of the {@link Kevlar.Attribute Attribute}, with no other {@link Kevlar.Attribute Attribute} 
+	 * must have the property 'name'. See the configuration options of {@link Kevlar.Attribute} for more information. 
+	 * 
+	 * Anonymous config objects defined here will become instantiated {@link Kevlar.Attribute} objects. An item in the array may also simply 
+	 * be a string, which will specify the name of the {@link Kevlar.Attribute Attribute}, with no other {@link Kevlar.Attribute Attribute} 
 	 * configuration options.
 	 * 
-	 * Attributes defined on the prototype of a Model (like below), and its subclasses, are concatenated together come
+	 * Attributes defined on the prototype of a Model, and its superclasses, are concatenated together come
 	 * instantiation time. This means that the Kevlar.Model base class can define the 'id' attribute, and then subclasses
-	 * can define their own attributes to append to it.  So if a subclass defined the attributes `[ 'name', 'phone' ]`, then the
+	 * can define their own attributes to append to it. So if a subclass defined the attributes `[ 'name', 'phone' ]`, then the
 	 * final concatenated array of attributes for the subclass would be `[ 'id', 'name', 'phone' ]`. This works for however many
 	 * levels of subclasses there are.
 	 * 
-	 * This array will become an object (hash) come instantiation time, with the keys as the attribute names, and the values as
-	 * the instantiated {@link Kevlar.Attribute} objects that represent them.
+	 * Example:
+	 * 
+	 *     attributes : [
+	 *         'id',    // name-only; no other configs for this attribute (not recommended! should declare the {@link Kevlar.Attribute#type type})
+	 *         { name: 'firstName', type: 'string' },
+	 *         { name: 'lastName', type: 'string' },
+	 *         {
+	 *             name : 'fullName',
+	 *             get  : function( value, model ) {
+	 *                 return model.get( 'firstName' ) + ' ' + model.get( 'lastName' );
+	 *             }
+	 *         }
+	 *     ]
+	 * 
+	 * Note: If using hierarchies of more than one Model subclass deep, consider using the {@link #addAttributes} alias instead of this
+	 * config, which does the same thing (defines attributes), but better conveys that attributes in subclasses are being *added* to the
+	 * attributes of the superclass, rather than *overriding* attributes of the superclass.
 	 */
-	addAttributes : [],
+	attributes : [],
+	
+	/**
+	 * @cfg {String[]/Object[]} addAttributes
+	 * Alias of {@link #attributes}, which may make more sense to use in hierarchies of models that go past more than one level of nesting, 
+	 * as it conveys the meaning that the attributes are being *added* to the attributes that are already defined in its superclass, not
+	 * replacing them.
+	 * 
+	 * This config is recommended over {@link #attributes} for any hierarchy of models that goes past one level of nesting, or even those that 
+	 * don't but may do so in the future.
+	 */
 	
 	/**
 	 * @cfg {String} idAttribute
@@ -47,6 +73,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	/**
 	 * @private
 	 * @property {Object} attributes
+	 * 
 	 * A hash of the combined Attributes, which have been put together from the current Model subclass, and all of
 	 * its superclasses. This is created by the {@link #initAttributes} method upon instantiation.
 	 */
@@ -54,6 +81,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	/**
 	 * @private
 	 * @property {Object} data
+	 * 
 	 * A hash that holds the current data for the {@link Kevlar.Attribute Attributes}. The property names in this object match 
 	 * the attribute names.  This hash holds the current data as it is modified by {@link #set}.
 	 */
@@ -61,6 +89,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	/**
 	 * @private
 	 * @property {Boolean} dirty
+	 * 
 	 * Flag for quick-testing if the Model currently has un-committed data.
 	 */
 	dirty : false,
@@ -103,7 +132,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * Creates a new Model instance.
 	 * 
 	 * @constructor 
-	 * @param {Object} [data] Any initial data for the {@link #addAttributes attributes}, specified in an object (hash map). See {@link #set}.
+	 * @param {Object} [data] Any initial data for the {@link #attributes attributes}, specified in an object (hash map). See {@link #set}.
 	 */
 	constructor : function( data ) {		
 		// Call superclass constructor
@@ -218,7 +247,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	/**
 	 * Initializes the Model's {@link #attributes} by walking up the prototype change from the current Model subclass
-	 * up to this (the base) class, collecting their `addAttributes` arrays, and combining them into one single attributes hash. 
+	 * up to this (the base) class, collecting their `attributes` arrays, and combining them into one single attributes hash. 
 	 * See {@link attributes} for more information.
 	 * 
 	 * @private
@@ -232,9 +261,12 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		    currentConstructor = this.constructor,
 		    currentProto = currentConstructor.prototype;
 		
-		// Walk up the prototype chain from the current object, collecting 'addAttributes' objects as we go along
+		// Walk up the prototype chain from the current object, collecting 'attributes' and 'addAttributes' objects as we go along
 		do {
-			if( currentProto.hasOwnProperty( 'addAttributes' ) && Kevlar.isArray( currentProto.addAttributes ) ) {    // skip over any prototype that doesn't define 'addAttributes' itself
+			// skip over any prototype that doesn't define `attributes` or `addAttributes` itself
+			if( currentProto.hasOwnProperty( 'attributes' ) && Kevlar.isArray( currentProto.attributes ) ) {    
+				attributesObjects = attributesObjects.concat( currentProto.attributes );
+			} else if( currentProto.hasOwnProperty( 'addAttributes' ) && Kevlar.isArray( currentProto.addAttributes ) ) {
 				attributesObjects = attributesObjects.concat( currentProto.addAttributes );
 			}
 		} while( ( currentConstructor = ( currentProto = currentConstructor.superclass ) && currentProto.constructor ) );

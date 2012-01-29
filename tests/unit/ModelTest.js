@@ -65,7 +65,9 @@ tests.unit.add( new Ext.test.TestSuite( {
 				var prototypeAttributes = [];
 				for( i = 0, len = models.length; i < len; i++ ) {
 					var currentPrototype = models[ i ].prototype;
-					if( currentPrototype.hasOwnProperty( 'addAttributes' ) ) {
+					if( currentPrototype.hasOwnProperty( 'attributes' ) ) {
+						prototypeAttributes = prototypeAttributes.concat( models[ i ].prototype.attributes );
+					} else if( currentPrototype.hasOwnProperty( 'addAttributes' ) ) {
 						prototypeAttributes = prototypeAttributes.concat( models[ i ].prototype.addAttributes );
 					}
 				}
@@ -244,6 +246,27 @@ tests.unit.add( new Ext.test.TestSuite( {
 				var instanceAttributes = (new SubSubClassModel()).attributes;
 				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
 				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
+			},
+			
+			
+			// -------------------------------
+			
+			
+			"One should be able to use `attributes` in place of `addAttributes` on the prototype, if they wish" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'a', 'b' ]
+				} );
+				var SubModel = Model.extend( {
+					attributes : [ 'c' ]
+				} );
+				
+				// Run the test code
+				this.assertAttributesHashCorrect( Model, SubModel );
+				
+				var instanceAttributes = (new SubModel()).attributes;
+				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'c', instanceAttributes, "SubSubClassModel should have the 'c' attribute defined in its final 'attributes' hash." );
 			}
 		},
 		

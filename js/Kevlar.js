@@ -76,19 +76,22 @@ Kevlar.prototype = {
 	
 	
 	/**
-	 * @inheritdoc Class#static-apply
+	 * @method apply
+	 * @inheritdoc Class#static-method-apply
 	 */
 	apply : Class.apply,
 	
 	
 	/**
-	 * @inheritdoc Class#static-applyIf
+	 * @method applyIf
+	 * @inheritdoc Class#static-method-applyIf
 	 */
 	applyIf : Class.applyIf,
 	
 	
 	/**
-	 * @inheritdoc Class#static-extend
+	 * @method extend
+	 * @inheritdoc Class#static-method-extend
 	 */
 	extend : Class.extend,
 	
