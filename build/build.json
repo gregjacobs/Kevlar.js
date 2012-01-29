@@ -4,18 +4,18 @@
 	pkgs: [
 		{
 			name: "Kevlar JS",
-			filename: "kevlar.js",
+			filename: "../kevlar.js",
 			includes: [
-				{ file: "vendor/Class.js/Class.js" },
+				{ file: "../vendor/Class.js/Class.js" },
 				
-				{ file: "js/Kevlar.js" },
-				{ file: "js/namespaces.js" },
+				{ file: "../js/Kevlar.js" },
+				{ file: "../js/namespaces.js" },
 				
-				{ file: "js/util/Observable.js" },
+				{ file: "../js/util/Observable.js" },
 				
-				{ file: "js/persistence/Proxy.js" },
+				{ file: "../js/persistence/Proxy.js" },
 				
-				{ tree: "js/" }
+				{ tree: "../js/" }
 			]
 		}
 	]
