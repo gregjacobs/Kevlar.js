@@ -4,17 +4,19 @@
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php
  */
 /*global Ext, tests */
-tests.unit = new Ext.test.TestSuite( { name : 'unit' } );
-tests.unit.persistence = new Ext.test.TestSuite( { name : 'persistence', parentSuite: tests.unit } );
-tests.unit.util = new Ext.test.TestSuite( { name : 'util', parentSuite: tests.unit } );
+(function() {
+	tests.unit             = new Ext.test.TestSuite( 'unit' );
+	tests.unit.persistence = new Ext.test.TestSuite( 'persistence' ) .addTo( tests.unit );
+	tests.unit.util        = new Ext.test.TestSuite( 'util' )        .addTo( tests.unit );
+	
+	Ext.test.Session.addSuite( tests.unit );
+})();
 
 /*global jQuery, Ext, Y, tests, Kevlar */
 /*jslint evil:true */
-tests.unit.Kevlar = new Ext.test.TestSuite( {
+tests.unit.add( new Ext.test.TestSuite( {
 	
-	parentSuite: tests.unit,
 	name: 'Kevlar',
-	
 	
 	items : [
 	
@@ -896,12 +898,11 @@ tests.unit.Kevlar = new Ext.test.TestSuite( {
 		}
 	]
 	
-} );
+} ) );
 
 /*global Ext, Y, Kevlar, tests */
-Ext.test.Session.addTest( {
+tests.unit.add( new Ext.test.TestCase( {
 	
-	parentSuite: tests.unit,
 	name: 'Kevlar.Attribute',
 	
 	
@@ -1075,12 +1076,10 @@ Ext.test.Session.addTest( {
 		Y.Assert.areSame( "C2", defaultData.c.innerC2, "The 'default' config provided as an object should have been recursed for functions, and their return values used as the properties." );
 	}
 	
-} );
+} ) );
 
 /*global window, Ext, Y, JsMockito, tests, Kevlar */
-tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
-    
-	parentSuite: tests.unit,
+tests.unit.add( new Ext.test.TestSuite( {
 	name: 'Kevlar.Model',
 	
 	
@@ -3016,12 +3015,10 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 		}
 	]
 	
-} );
+} ) );
 
 /*global window, jQuery, Ext, Y, JsMockito, Kevlar, tests */
-tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
-	
-	parentSuite : tests.unit.persistence,
+tests.unit.persistence.add( new Ext.test.TestSuite( {
 	name: 'Kevlar.persistence.RestProxy',
 	
 	
@@ -3556,12 +3553,10 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 			}
 		}
 	]
-} );
+} ) );
 
 /*global jQuery, Ext, Y, Kevlar, tests */
-tests.unit.util.Object = new Ext.test.TestSuite( {
-	
-	parentSuite : tests.unit.util,
+tests.unit.util.add( new Ext.test.TestSuite( {
 	name : 'Kevlar.util.Object',
 	
 	items : [
@@ -3974,12 +3969,10 @@ tests.unit.util.Object = new Ext.test.TestSuite( {
 			}
 		}
 	]
-} );
+} ) );
 
 /*global Ext, Y, Kevlar, tests */
-tests.unit.util.Observable = new Ext.test.TestSuite( {
-	
-	parentSuite : tests.unit.util,
+tests.unit.util.add( new Ext.test.TestSuite( {
 	name: 'Kevlar.util.Observable',
 	
 	
@@ -4237,13 +4230,14 @@ tests.unit.util.Observable = new Ext.test.TestSuite( {
 		}
 	]
 	
-} );
+} ) );
 
 /*global Ext, tests */
-tests.integration = new Ext.test.TestSuite( { name : 'integration' } );
-//tests.integration.persistence = new Ext.test.TestSuite( { name : 'persistence', parentSuite: tests.integration } );
-//tests.integration.util = new Ext.test.TestSuite( { name : 'util', parentSuite: tests.integration } );
-
-// Because we don't have an integration test for Kevlar
-tests.integration.Kevlar = {};
+(function() {
+	tests.integration               = new Ext.test.TestSuite( 'integration' );
+	//tests.integration.persistence = new Ext.test.TestSuite( 'persistence' ) .addTo( tests.integration );
+	//tests.integration.util        = new Ext.test.TestSuite( 'util' )        .addTo( tests.integration );
+	
+	Ext.test.Session.addSuite( tests.integration );
+})();
 

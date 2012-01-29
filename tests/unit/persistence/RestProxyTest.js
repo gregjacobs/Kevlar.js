@@ -1,7 +1,5 @@
 /*global window, jQuery, Ext, Y, JsMockito, Kevlar, tests */
-tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
-	
-	parentSuite : tests.unit.persistence,
+tests.unit.persistence.add( new Ext.test.TestSuite( {
 	name: 'Kevlar.persistence.RestProxy',
 	
 	
@@ -536,4 +534,4 @@ tests.unit.persistence.RestProxy = new Ext.test.TestSuite( {
 			}
 		}
 	]
-} );
+} ) );

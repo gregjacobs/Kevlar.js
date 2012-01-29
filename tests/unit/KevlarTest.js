@@ -1,10 +1,8 @@
 /*global jQuery, Ext, Y, tests, Kevlar */
 /*jslint evil:true */
-tests.unit.Kevlar = new Ext.test.TestSuite( {
+tests.unit.add( new Ext.test.TestSuite( {
 	
-	parentSuite: tests.unit,
 	name: 'Kevlar',
-	
 	
 	items : [
 	
@@ -886,4 +884,4 @@ tests.unit.Kevlar = new Ext.test.TestSuite( {
 		}
 	]
 	
-} );
+} ) );

@@ -1,7 +1,5 @@
 /*global Ext, Y, Kevlar, tests */
-tests.unit.util.Observable = new Ext.test.TestSuite( {
-	
-	parentSuite : tests.unit.util,
+tests.unit.util.add( new Ext.test.TestSuite( {
 	name: 'Kevlar.util.Observable',
 	
 	
@@ -259,4 +257,4 @@ tests.unit.util.Observable = new Ext.test.TestSuite( {
 		}
 	]
 	
-} );
+} ) );

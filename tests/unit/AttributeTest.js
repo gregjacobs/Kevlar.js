@@ -1,7 +1,6 @@
 /*global Ext, Y, Kevlar, tests */
-Ext.test.Session.addTest( {
+tests.unit.add( new Ext.test.TestCase( {
 	
-	parentSuite: tests.unit,
 	name: 'Kevlar.Attribute',
 	
 	
@@ -175,4 +174,4 @@ Ext.test.Session.addTest( {
 		Y.Assert.areSame( "C2", defaultData.c.innerC2, "The 'default' config provided as an object should have been recursed for functions, and their return values used as the properties." );
 	}
 	
-} );
+} ) );

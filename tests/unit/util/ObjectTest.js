@@ -1,7 +1,5 @@
 /*global jQuery, Ext, Y, Kevlar, tests */
-tests.unit.util.Object = new Ext.test.TestSuite( {
-	
-	parentSuite : tests.unit.util,
+tests.unit.util.add( new Ext.test.TestSuite( {
 	name : 'Kevlar.util.Object',
 	
 	items : [
@@ -414,4 +412,4 @@ tests.unit.util.Object = new Ext.test.TestSuite( {
 			}
 		}
 	]
-} );
+} ) );

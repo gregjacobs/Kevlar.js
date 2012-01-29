@@ -1,7 +1,5 @@
 /*global window, Ext, Y, JsMockito, tests, Kevlar */
-tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
-    
-	parentSuite: tests.unit,
+tests.unit.add( new Ext.test.TestSuite( {
 	name: 'Kevlar.Model',
 	
 	
@@ -1937,4 +1935,4 @@ tests.unit.Kevlar.Model = new Ext.test.TestSuite( {
 		}
 	]
 	
-} );
+} ) );
