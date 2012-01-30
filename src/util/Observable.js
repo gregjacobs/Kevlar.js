@@ -4,7 +4,6 @@
 
 var KevlarUTIL = Kevlar.util,
 	TOARRAY = Kevlar.toArray,
-	EACH = Kevlar.each,
 	ISOBJECT = Kevlar.isObject,
 	TRUE = true,
 	FALSE = false;

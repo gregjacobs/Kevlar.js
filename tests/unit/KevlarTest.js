@@ -1,85 +1,10 @@
-/*global jQuery, Ext, Y, tests, Kevlar */
+/*global window, jQuery, Ext, Y, tests, Kevlar */
 /*jslint evil:true */
 tests.unit.add( new Ext.test.TestSuite( {
 	
 	name: 'Kevlar',
 	
 	items : [
-	
-		/*
-		 * Test Kevlar.each()
-		 */
-		{
-			name : "Test each()",
-			
-			test_each: function(){
-				var sum = 0;
-				Kevlar.each([1, 2, 3, 4], function(val){
-					sum += val;
-				});
-				Y.Assert.areEqual(10, sum, 'Simple each on an array of numbers');
-					
-				var s = '';
-				Kevlar.each(['T', 'e', 's', 't', 'i', 'n', 'g'], function(c){
-					s += c;
-				});
-				Y.Assert.areEqual('Testing', s, 'Simple each on array of strings');
-					
-				sum = 0;
-				Kevlar.each(5, function(num){
-					sum += num;
-				});
-				Y.Assert.areEqual(5, sum, 'Test with a non array parameter, number');
-					
-				var hit = false;
-				Kevlar.each([], function(){
-					hit = true;
-				});
-				Y.Assert.isFalse(hit, 'Test with empty array parameter');
-					
-				hit = false;
-				Kevlar.each(null, function(){
-					hit = true;
-				});
-				Y.Assert.isFalse(hit, 'Test with null parameter');
-					
-				hit = false;
-				Kevlar.each(document.getElementsByTagName('body'), function(){
-					hit = true;
-				});
-				Y.Assert.isTrue(hit, 'Test iteration over NodeLists');
-					
-				var arr = [];
-				Kevlar.each([1, 2, 3, 4, 5, 6], function(val, idx){
-					arr.push(idx);
-				});
-				Y.ArrayAssert.itemsAreEqual([0, 1, 2, 3, 4, 5], arr, 'Test index is passed correctly');
-					
-				sum = 0;
-				Kevlar.each([1, 2, 3, 4, 5, 6], function(val){
-					if(val > 4){
-						return false;
-					}
-					sum += val;
-				});
-				Y.Assert.areEqual(10, sum, 'Test that returning false stops iteration');
-					
-				sum = 0;
-				var scope = {value: 3};
-				Kevlar.each([1, 2, 3], function(val){
-					sum += val * this.value;
-				}, scope);
-				Y.Assert.areEqual(18, sum, 'Test scope argument #1');
-					
-				sum = 0;
-				scope = {value: 5};
-				Kevlar.each([1, 2, 3], function(val){
-					sum += val * this.value; //value should be 5
-				}, scope);
-				Y.Assert.areEqual(30, sum, 'Test scope argument #2');
-			}
-		},
-			
 		
 		/*
 		 * Test Kevlar.isArray()
@@ -347,8 +272,10 @@ tests.unit.add( new Ext.test.TestSuite( {
 				Y.Assert.isFalse(Kevlar.isString({}), 'Test with number');
 			}
 		},
-			
-			
+		
+		
+		// --------------------------------
+		
 		
 		/*
 		 * Test Kevlar.namespace()
@@ -397,10 +324,16 @@ tests.unit.add( new Ext.test.TestSuite( {
 			name : "Test toArray()",
 			
 			/*
-			 * Test Kevlar.()
+			 * Test Kevlar.toArray()
 			 */
 			test_toArray: function(){
-				Y.Assert.isArray(Kevlar.toArray(document.getElementsByTagName('body')), 'Test with node list');
+				Y.Assert.isArray( Kevlar.toArray( document.getElementsByTagName( 'body' ) ), 'Test with node list' );
+				
+				(function() {
+					var arr = Kevlar.toArray( arguments );
+					Y.Assert.isArray( arr, 'Test with arguments object' );
+					Y.Assert.areSame( 3, arr.length, 'Should be 3 args in the array' );
+				})( 1, 2, 3 );
 			}
 		}
 	]
