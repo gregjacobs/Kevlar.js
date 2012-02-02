@@ -286,8 +286,10 @@ tests.unit.add( new Ext.test.TestSuite( {
 				Y.Assert.isFalse(Kevlar.isString({}), 'Test with number');
 			}
 		},
-			
-			
+		
+		
+		// --------------------------------
+		
 		
 		/*
 		 * Test Kevlar.namespace()

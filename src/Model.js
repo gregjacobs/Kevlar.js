@@ -558,6 +558,11 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		for( var attributeName in this.attributes ) {
 			if( !persistedOnly || attributes[ attributeName ].isPersisted() === true ) {
 				data[ attributeName ] = ( raw ) ? this.raw( attributeName ) : this.get( attributeName );
+				
+				// Temporary fix for getting the data out of nested models
+				if( data[ attributeName ] instanceof Kevlar.Model ) {
+					data[ attributeName ] = data[ attributeName ].getData( options );
+				}
 			}
 		}
 		return Kevlar.util.Object.clone( data );
