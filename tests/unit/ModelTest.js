@@ -1575,6 +1575,26 @@ tests.unit.add( new Ext.test.TestSuite( {
 				
 				// Check that isDirty() returns false
 				Y.Assert.isFalse( model.isDirty(), "The 'dirty' flag should be false after rollback." );
+			},
+			
+			
+			"rollback() should fire the 'rollback' event" : function() {
+				var rollbackEventCount = 0;
+				
+				var model = new this.TestModel( {
+					attribute1 : 'orig1',
+					attribute2 : 'orig2'
+				} );
+				model.on( 'rollback', function() {
+					rollbackEventCount++;
+				} );
+				
+				
+				model.set( 'attribute1', 'new1' );
+				
+				Y.Assert.areSame( 0, rollbackEventCount, "Initial condition: The rollback event should not have been fired yet" );
+				model.rollback();
+				Y.Assert.areSame( 1, rollbackEventCount, "The rollback event should have been fired exactly once" );
 			}
 			
 		},

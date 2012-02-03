@@ -178,6 +178,15 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			'commit',
 			
 			/**
+			 * Fires when the data in the model is {@link #method-rollback rolled back}. This happens when the
+			 * {@link #method-rollback rollback} method is called.
+			 * 
+			 * @event rollback
+			 * @param {Kevlar.Model} model This Model instance.
+			 */
+			'rollback',
+			
+			/**
 			 * Fires when the Model has been destroyed (via {@link #method-destroy}).
 			 * 
 			 * @event destroy
@@ -637,6 +646,8 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		this.modifiedData = {};
 		this.dirty = false;
+		
+		this.fireEvent( 'rollback', this );
 	},
 	
 	
