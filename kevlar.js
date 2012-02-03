@@ -29,7 +29,7 @@
  * fact that it is not required to be at the top of any inheritance hierarchy means that you may use it to extend classes from
  * other frameworks and libraries, with all of the features that this implementation provides. 
  * 
- * This project is located at: https://github.com/gregjacobs/Class.js
+ * This project is located at: <a href="https://github.com/gregjacobs/Class.js" target="_blank">https://github.com/gregjacobs/Class.js</a>
  * 
  * 
  * Simple example of creating classes:
@@ -70,17 +70,20 @@
  *     
  *     dog1.sayHi();  // "Woof! My name is: Lassie"
  *     dog2.sayHi();  // "Woof! My name is: Bolt"
- *     cat.sayHi();  // "Meow! My name is: Leonardo Di Fishy"
+ *     cat.sayHi();   // "Meow! My name is: Leonardo Di Fishy"
  *     
  *     dog1.eat();  // "Lassie is eating"
  *     dog2.eat();  // "Bolt is eating"
- *     cat.eat();  // "Leonardo Di Fishy is eating"
+ *     cat.eat();   // "Leonardo Di Fishy is eating"
  */
 /*global window */
 /*jslint forin:true */
 var Class = (function() {
 	
 	// Utility functions / variables
+	
+	var version = "0.1.1";
+	
 	
 	/**
 	 * Determines if a value is an object.
@@ -113,6 +116,8 @@ var Class = (function() {
 	
 	
 	/**
+	 * @constructor
+	 * 
 	 * Creates a new class that extends from `Object` (the base class of all classes in JavaScript). Running the
 	 * `Class` constructor function is equivalent of calling {@link #extend Class.extend()}. To extend classes
 	 * that are already subclassed, use either {@link Class#extend}, or the static `extend` method that is added
@@ -122,7 +127,7 @@ var Class = (function() {
 	 * 
 	 *     // Create a new class, with Object as the superclass
 	 *     // (i.e. no other particular superclass; see {@link #extend} for that)
-	 *     var MyClass = Class( {
+	 *     var MyClass = new Class( {
 	 *         constructor : function() {
 	 *             console.log( "Constructing, 123" );
 	 *         },
@@ -132,8 +137,9 @@ var Class = (function() {
 	 *     } );
 	 *     
 	 *     
-	 *     // Can be used with the `new` keyword as well, if desired
-	 *     var MyClass = new Class( {
+	 *     // Can be used without the `new` keyword as well, if desired.
+	 *     // This may actually make more sense, as you're creating the definition for a class, not an instance.
+	 *     var MyClass = Class( {
 	 *         constructor : function() {
 	 *             console.log( "Constructing, 123" );
 	 *         },
@@ -155,12 +161,20 @@ var Class = (function() {
 	 * 
 	 * See {@link #extend} for details about extending classes.
 	 * 
-	 * @constructor
 	 * @param {Object} classDefinition The class definition. See the `overrides` parameter of {@link #extend}.
 	 */
 	var Class = function( classDefinition ) {
 		return Class.extend( Object, classDefinition );
 	};
+	
+	
+	/**
+	 * @static
+	 * @property {String} version
+	 * 
+	 * Readonly property that gives the version number of Class.js that is being used.
+	 */
+	Class.version = version;
 	
 	
 	/**
@@ -327,7 +341,7 @@ var Class = (function() {
 			delete overrides.mixins;
 			
 			
-			var subclass = overrides.constructor !== objectConstructor ? overrides.constructor : function() { superclass.apply( this, arguments ); },
+			var subclass = overrides.constructor !== objectConstructor ? overrides.constructor : ( superclass === Object ? function(){} : function() { return superclass.apply( this, arguments ); } ),
 			    F = function(){},
 			    subclassPrototype,
 			    superclassPrototype = superclass.prototype;
@@ -522,6 +536,7 @@ var Class = (function() {
 	return Class;
 	
 } )();
+
 
 // Note: Kevlar license header automatically injected by build process.
 
@@ -2038,24 +2053,73 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 */
 	
 	
+	statics : {
+		/**
+		 * Static property used to provide a "client id" to models. See {@link #cid}.
+		 * 
+		 * @private
+		 * @static
+		 * @property {Number} currentCid
+		 */
+		currentCid : 0
+	},
+	
+	
+	inheritedStatics : {
+		/**
+		 * A static property that is unique to each Kevlar.Model subclass, which uniquely identifies it.
+		 * This is used as part of the Model cache, where it is determined if a Model instance already exists
+		 * if two models have the same modelTypeId, and instance id.
+		 * 
+		 * @inheritable
+		 * @static
+		 * @property {Number} modelTypeId
+		 */
+	},
+	
+	
+	
 	/**
 	 * Creates a new Model instance.
 	 * 
 	 * @constructor 
 	 * @param {Object} [data] Any initial data for the {@link #attributes attributes}, specified in an object (hash map). See {@link #set}.
 	 */
-	constructor : function( data ) {		
-		// Call superclass constructor
-		Kevlar.Model.superclass.constructor.call( this );
+	constructor : function( data ) {
+		var me = this;
 		
-		// If this class has a proxy definition that is an object literal, instantiate it *onto the prototype*
-		// (so one Proxy instance can be shared for every model)
-		if( this.proxy && typeof this.proxy === 'object' && !( this.proxy instanceof Kevlar.persistence.Proxy ) ) {
-			this.constructor.prototype.proxy = Kevlar.persistence.Proxy.create( this.proxy );
+		// Default the data to an empty object
+		data = data || {};
+		
+		
+		// --------------------------
+		
+		// Handle this new model being a duplicate of a model that already exists (with the same id)
+				
+		// If there already exists a model of the same type, with the same ID, update that instance,
+		// and return that instance from the constructor. We don't create duplicate Model instances
+		// with the same ID.
+		me = Kevlar.ModelCache.get( me, data[ me.idAttribute ] );
+		if( me !== this ) {
+			me.set( data );   // set any provided initial data to the already-existing instance (as to combine them),
+			return me;        // and then return the already-existing instance
 		}
 		
 		
-		this.addEvents(
+		// --------------------------
+		
+		
+		// Call superclass constructor (Observable)
+		Kevlar.Model.superclass.constructor.call( me );
+		
+		// If this class has a proxy definition that is an object literal, instantiate it *onto the prototype*
+		// (so one Proxy instance can be shared for every model)
+		if( me.proxy && typeof me.proxy === 'object' && !( me.proxy instanceof Kevlar.persistence.Proxy ) ) {
+			me.constructor.prototype.proxy = Kevlar.persistence.Proxy.create( me.proxy );
+		}
+		
+		
+		me.addEvents(
 			/**
 			 * Fires when a {@link Kevlar.Attribute} in the Model has changed its value. This is a 
 			 * convenience event to respond to just a single attribute's change. Ex: if you want to
@@ -2106,17 +2170,15 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		);
 		
 		// Initialize the 'attributes' array, which gets turned into an object (hash)
-		this.initAttributes();
+		me.initAttributes();
 		
 		
 		// Create a "client id" to maintain compatibility with Backbone's Collection
-		this.cid = 'c' + (++Kevlar.Model.currentCid);
+		me.cid = 'c' + (++Kevlar.Model.currentCid);
 		
-		// Default the data to an empty object
-		data = data || {};
 		
 		// Set the default values for attributes that don't have an initial value.
-		var attributes = this.attributes,  // this.attributes is a hash of the Attribute objects, keyed by their name
+		var attributes = me.attributes,  // me.attributes is a hash of the Attribute objects, keyed by their name
 		    attributeDefaultValue;
 		for( var name in attributes ) {
 			if( data[ name ] === undefined && ( attributeDefaultValue = attributes[ name ].defaultValue ) !== undefined ) {
@@ -2125,17 +2187,17 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		}
 		
 		// Initialize the underlying data object, which stores all attribute values
-		this.data = {};
+		me.data = {};
 		
 		// Initialize the data hash for storing attribute names of modified data, and their original values (see property description)
-		this.modifiedData = {};
+		me.modifiedData = {};
 		
 		// Set the initial data / defaults, if we have any
-		this.set( data );
-		this.commit();  // and because we are initializing, the data is not dirty
+		me.set( data );
+		me.commit();  // and because we are initializing, the data is not dirty
 		
 		// Call hook method for subclasses
-		this.initialize();
+		me.initialize();
 	},
 	
 	
@@ -2291,6 +2353,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			// Get the current value of the attribute
 			var currentValue = this.data[ attributeName ];
 			
+			
 			// If the attribute has a 'set' function defined, call it to convert the data
 			if( typeof attribute.set === 'function' ) {
 				value = attribute.set.call( attribute.scope || this, value, this );  // provided the value, and the Model instance
@@ -2314,6 +2377,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 					this.fireEvent( 'change', this, attributeName, value );
 				}
 			}
+			
 			
 			// Only change if there is no current value for the attribute, or if new value is different from the current
 			if( !( attributeName in this.data ) || !Kevlar.util.Object.isEqual( currentValue, value ) ) {
@@ -2791,15 +2855,76 @@ Kevlar.Model.prototype.fetch = Kevlar.Model.prototype.load;
  */
 Kevlar.Model.prototype.toJSON = Kevlar.Model.prototype.getData;
 
-
 /**
- * Static property used to provide a "client id" to models. See {@link #cid}.
- * 
- * @static 
  * @private
- * @property currentCid
+ * @class Kevlar.ModelCache
+ * @singleton
+ * 
+ * Singleton class which caches models by their type (subclass type), and id. This is used
+ * to retrieve models, and not duplicate them when instantiating the same model type with the
+ * same instance id. 
+ * 
+ * This is a class used internally by Kevlar, and should not be used directly.
  */
-Kevlar.Model.currentCid = 0;
+/*global Kevlar */
+Kevlar.ModelCache = {
+	
+	/**
+	 * Private variable which is used to return new unique ID's for each model type ({@link Kevlar.Model} subclass).
+	 * 
+	 * @private
+	 * @property {Number} modelTypeIdCounter
+	 */
+	modelTypeIdCounter : 0,
+	
+	
+	/**
+	 * The hashmap of model references stored in the cache. This hashmap is a two-level hashmap, first keyed by the
+	 * {@link Kevlar.Model Model's} assigned `__Kevlar_modelTypeId`, and then its instance id.
+	 * 
+	 * @private
+	 * @property {Object} models
+	 */
+	models : {},
+	
+	
+	/**
+	 * Returns a Model that is in the cache with the same model type (model subclass) and instance id, if one exists
+	 * that matches the type of the provided `model`, and the provided instance `id`. If a Model does not already exist, 
+	 * the provided `model` is simply returned.
+	 * 
+	 * @method get
+	 * @param {Kevlar.Model} model
+	 * @param {String} [id]
+	 */
+	get : function( model, id ) {
+		var modelClass = model.constructor,
+		    modelTypeId = modelClass.__Kevlar_modelTypeId,  // the current modelTypeId, if any
+		    cachedModel;
+				
+		// Assign this Model subclass a unique modelTypeId if it doesn't have one yet
+		if( !modelTypeId ) {
+			modelTypeId = ++this.modelTypeIdCounter;
+			
+			// Assign the model's constructor (i.e. the Kevlar.Model subclass) a new, unique modelTypeId
+			modelClass.__Kevlar_modelTypeId = modelTypeId;
+			
+			// Add a hashmap for the new model type in the cache as well
+			this.models[ modelTypeId ] = {};
+		}
+				
+		// If the model has an id provided with it, pull the cached model with that id (if it exists), or otherwise cache it
+		if( typeof id !== 'undefined' ) {
+			cachedModel = this.models[ modelTypeId ][ id ];
+			if( !cachedModel ) {
+				this.models[ modelTypeId ][ id ] = model;
+			}
+		}
+		
+		return cachedModel || model;
+	}
+
+};
 
 /**
  * @class Kevlar.persistence.RestProxy

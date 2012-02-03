@@ -95,23 +95,17 @@ tests.unit.add( new Ext.test.TestSuite( {
 				}
 			},
 			
+			
 			// ---------------------------
 			
 			
 			// Tests
 			
-			
-			"The Kevlar.Model class itself (i.e. no superclass Model) should just have the attributes defined on its prototype." : function() {
-				var Model = Kevlar.Model;
-				
-				// Run the test code
-				this.assertAttributesHashCorrect( Model );
-			},
-			
-			
 			"Attributes should inherit from a Model subclass's superclass when the subclass defines no attributes of its own" : function() {
-				var Model = Kevlar.Model;
-				var SubClassModel = Kevlar.extend( Model, {} );
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'field1' ]
+				} );
+				var SubClassModel = Model.extend( {} );
 				
 				// Run the test code
 				this.assertAttributesHashCorrect( Model, SubClassModel );
@@ -120,8 +114,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			"Attributes should inherit from a Model subclass's superclass when the subclass does define attributes of its own" : function() {
 				// Reference the base class, and create a subclass
-				var Model = Kevlar.Model;
-				var SubClassModel = Kevlar.extend( Model, {
+				var Model = Kevlar.Model.extend( {} );
+				var SubClassModel = Model.extend( {
 					addAttributes : [ 'a', 'b' ]
 				} );
 				
@@ -138,7 +132,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			"Attributes should inherit from a Model subclass's superclass, and its superclass as well (i.e. more than one level up)" : function() {
 				// Reference the base class, and create two subclasses
-				var Model = Kevlar.Model;
+				var Model = Kevlar.Model.extend( {} );
 				var SubClassModel = Kevlar.extend( Model, {
 					addAttributes : [ 'a', 'b' ]
 				} );
@@ -162,7 +156,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			"Attributes should inherit from a Model subclass's superclass, and all of its superclasses (i.e. more than two levels up)" : function() {
 				// Reference the base class, and create two subclasses
-				var Model = Kevlar.Model;
+				var Model = Kevlar.Model.extend( {} );
 				var SubClassModel = Kevlar.extend( Model, {
 					addAttributes : [ 'a', 'b' ]
 				} );
@@ -189,7 +183,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			
 			"Attribute definitions defined in a subclass should take precedence over attribute definitions in a superclass" : function() {
-				var Model = Kevlar.Model;
+				var Model = Kevlar.Model.extend( {} );
 				var SubClassModel = Kevlar.extend( Model, {
 					addAttributes : [ { name : 'a', defaultValue: 1 } ]
 				} );
@@ -213,7 +207,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			"A subclass that doesn't define any attributes should inherit all of them from its superclass(es)" : function() {
 				// Reference the base class, and create two subclasses
-				var Model = Kevlar.Model;
+				var Model = Kevlar.Model.extend( {} );
 				var SubClassModel = Kevlar.extend( Model, {
 					addAttributes : [ 'a', 'b' ]
 				} );
@@ -232,7 +226,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			"A superclass that doesn't define any attributes should be skipped for attributes, but the subclass should still inherit from superclasses above it" : function() {
 				// Reference the base class, and create two subclasses
-				var Model = Kevlar.Model;
+				var Model = Kevlar.Model.extend( {} );
 				var SubClassModel = Kevlar.extend( Model, {} );  // one that doesn't define any attributes
 				var SubSubClassModel = Kevlar.extend( SubClassModel, {
 					addAttributes : [ 'a', 'b' ]
@@ -274,9 +268,9 @@ tests.unit.add( new Ext.test.TestSuite( {
 		
 		{
 			/*
-			 * Test Initialization (the constructor)
+			 * Test Initialization (constructor)
 			 */
-			name: 'Test Initialization (the constructor)',
+			name: 'Test Initialization (constructor)',
 			ttype : 'testsuite',
 			
 			
