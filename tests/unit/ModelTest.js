@@ -478,7 +478,70 @@ tests.unit.add( new Ext.test.TestSuite( {
 				}
 			]
 		},
+		
+		
+		{
+			/*
+			 * Test getId()
+			 */
+			name : "Test getId()",
+			
+			_should : {
+				error : {
+					"getId() should throw an error if the default idAttribute 'id' does not exist on the model" : 
+						"Error: The `idAttribute` (currently set to an attribute named 'id') was not found on the Model. Set the `idAttribute` config to the name of the id attribute in the Model. The model can't be saved or destroyed without it.",
+					"getId() should throw an error with a custom idAttribute that does not relate to an attribute on the model" : 
+						"Error: The `idAttribute` (currently set to an attribute named 'myIdAttribute') was not found on the Model. Set the `idAttribute` config to the name of the id attribute in the Model. The model can't be saved or destroyed without it."
+				}
+			},
+			
+			"getId() should throw an error if the default idAttribute 'id' does not exist on the model" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [
+						// note: no attribute named 'id'
+						'field1',
+						'field2'
+					]
+				} );
 				
+				var model = new Model();
+				model.getId();
+				
+				Y.Assert.fail( "The test should have errored" );
+			},
+			
+			
+			"getId() should throw an error with a custom idAttribute that does not relate to an attribute on the model" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [
+						'field1',
+						'field2'
+					],
+					
+					idAttribute: 'myIdAttribute'
+				} );
+				
+				var model = new Model();
+				model.getId();
+				
+				Y.Assert.fail( "The test should have errored" );
+			},
+			
+			
+			"getId() should return the value of the idAttribute" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'myIdAttribute' ],
+					idAttribute: 'myIdAttribute'
+				} );
+				
+				var model = new Model( {
+					myIdAttribute: 1
+				} );
+				
+				Y.Assert.areSame( 1, model.getId() );
+			}
+		},
+		
 		
 		{
 			/*

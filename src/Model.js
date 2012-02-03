@@ -326,7 +326,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	getId : function() {
 		// Provide a friendlier error message than what get() provides if the idAttribute is not an Attribute of the Model
 		if( !( this.idAttribute in this.attributes ) ) {
-			throw new Error( "Error: The `idAttribute` (currently set to an attribute named '" + this.idAttribute + "') was not found on the Model. Please set the `idAttribute` config to the name of the id attribute in the Model. The model can't be saved or destroyed without it." );
+			throw new Error( "Error: The `idAttribute` (currently set to an attribute named '" + this.idAttribute + "') was not found on the Model. Set the `idAttribute` config to the name of the id attribute in the Model. The model can't be saved or destroyed without it." );
 		}
 		return this.get( this.idAttribute );
 	},
@@ -366,7 +366,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			// attributeName and value provided
 			var attribute = this.attributes[ attributeName ];
 			if( !attribute ) {
-				throw new Error( "Kevlar.Model.set(): A attribute with the attributeName '" + attributeName + "' was not found." );
+				throw new Error( "Kevlar.Model.set(): An attribute with the attributeName '" + attributeName + "' was not found." );
 			}
 			
 			// Get the current value of the attribute
