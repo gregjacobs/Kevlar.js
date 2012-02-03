@@ -22,7 +22,7 @@
  * fact that it is not required to be at the top of any inheritance hierarchy means that you may use it to extend classes from
  * other frameworks and libraries, with all of the features that this implementation provides. 
  * 
- * This project is located at: https://github.com/gregjacobs/Class.js
+ * This project is located at: <a href="https://github.com/gregjacobs/Class.js" target="_blank">https://github.com/gregjacobs/Class.js</a>
  * 
  * 
  * Simple example of creating classes:
@@ -63,17 +63,20 @@
  *     
  *     dog1.sayHi();  // "Woof! My name is: Lassie"
  *     dog2.sayHi();  // "Woof! My name is: Bolt"
- *     cat.sayHi();  // "Meow! My name is: Leonardo Di Fishy"
+ *     cat.sayHi();   // "Meow! My name is: Leonardo Di Fishy"
  *     
  *     dog1.eat();  // "Lassie is eating"
  *     dog2.eat();  // "Bolt is eating"
- *     cat.eat();  // "Leonardo Di Fishy is eating"
+ *     cat.eat();   // "Leonardo Di Fishy is eating"
  */
 /*global window */
 /*jslint forin:true */
 var Class = (function() {
 	
 	// Utility functions / variables
+	
+	var version = "0.1.1";
+	
 	
 	/**
 	 * Determines if a value is an object.
@@ -106,6 +109,8 @@ var Class = (function() {
 	
 	
 	/**
+	 * @constructor
+	 * 
 	 * Creates a new class that extends from `Object` (the base class of all classes in JavaScript). Running the
 	 * `Class` constructor function is equivalent of calling {@link #extend Class.extend()}. To extend classes
 	 * that are already subclassed, use either {@link Class#extend}, or the static `extend` method that is added
@@ -115,7 +120,7 @@ var Class = (function() {
 	 * 
 	 *     // Create a new class, with Object as the superclass
 	 *     // (i.e. no other particular superclass; see {@link #extend} for that)
-	 *     var MyClass = Class( {
+	 *     var MyClass = new Class( {
 	 *         constructor : function() {
 	 *             console.log( "Constructing, 123" );
 	 *         },
@@ -125,8 +130,9 @@ var Class = (function() {
 	 *     } );
 	 *     
 	 *     
-	 *     // Can be used with the `new` keyword as well, if desired
-	 *     var MyClass = new Class( {
+	 *     // Can be used without the `new` keyword as well, if desired.
+	 *     // This may actually make more sense, as you're creating the definition for a class, not an instance.
+	 *     var MyClass = Class( {
 	 *         constructor : function() {
 	 *             console.log( "Constructing, 123" );
 	 *         },
@@ -148,12 +154,20 @@ var Class = (function() {
 	 * 
 	 * See {@link #extend} for details about extending classes.
 	 * 
-	 * @constructor
 	 * @param {Object} classDefinition The class definition. See the `overrides` parameter of {@link #extend}.
 	 */
 	var Class = function( classDefinition ) {
 		return Class.extend( Object, classDefinition );
 	};
+	
+	
+	/**
+	 * @static
+	 * @property {String} version
+	 * 
+	 * Readonly property that gives the version number of Class.js that is being used.
+	 */
+	Class.version = version;
 	
 	
 	/**
@@ -320,7 +334,7 @@ var Class = (function() {
 			delete overrides.mixins;
 			
 			
-			var subclass = overrides.constructor !== objectConstructor ? overrides.constructor : function() { superclass.apply( this, arguments ); },
+			var subclass = overrides.constructor !== objectConstructor ? overrides.constructor : ( superclass === Object ? function(){} : function() { return superclass.apply( this, arguments ); } ),
 			    F = function(){},
 			    subclassPrototype,
 			    superclassPrototype = superclass.prototype;
@@ -515,3 +529,4 @@ var Class = (function() {
 	return Class;
 	
 } )();
+
