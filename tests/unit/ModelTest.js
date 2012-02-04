@@ -7,6 +7,214 @@ tests.unit.add( new Ext.test.TestSuite( {
 	
 		{
 			/*
+			 * Test Initialization (constructor)
+			 */
+			name: 'Test Initialization (constructor)',
+			ttype : 'testsuite',
+			
+			
+			items : [
+				{
+					/*
+					 * Test lazy instantiating a proxy
+					 */
+					name : "Test lazy instantiating a proxy",
+					
+					_should : {
+						error : {
+							"Attempting to instantiate a proxy with no 'type' attribute should throw an error" :
+								"Kevlar.persistence.proxy.create(): No `type` property provided on proxy config object",
+								
+							"Attempting to instantiate a proxy with an invalid 'type' attribute should throw an error" :
+								"Kevlar.persistence.Proxy.create(): Unknown Proxy type: 'nonexistentproxy'"
+						}
+					},
+					
+					"Attempting to instantiate a proxy with no 'type' attribute should throw an error" : function() {
+						var TestModel = Kevlar.extend( Kevlar.Model, {
+							addAttributes: [ 'attribute1' ],
+							proxy : {}
+						} );
+						
+						var model = new TestModel();
+					},
+					
+					"Attempting to instantiate a proxy with an invalid 'type' attribute should throw an error" : function() {
+						var TestModel = Kevlar.extend( Kevlar.Model, {
+							addAttributes: [ 'attribute1' ],
+							proxy : { 
+								type : 'nonExistentProxy'
+							}
+						} );
+						
+						var model = new TestModel();
+					},
+					
+					"Providing a valid config object should instantiate the Proxy *on class's the prototype*" : function() {
+						var TestModel = Kevlar.extend( Kevlar.Model, {
+							addAttributes: [ 'attribute1' ],
+							proxy : { 
+								type : 'rest'  // a valid proxy type
+							}
+						} );
+						
+						var model = new TestModel();
+						Y.Assert.isInstanceOf( Kevlar.persistence.RestProxy, TestModel.prototype.proxy );
+					},
+					
+					"Providing a valid config object should instantiate the Proxy *on the correct subclass's prototype*, shadowing superclasses" : function() {
+						var TestModel = Kevlar.extend( Kevlar.Model, {
+							addAttributes: [ 'attribute1' ],
+							proxy : { 
+								type : 'nonExistentProxy'  // an invalid proxy type
+							}
+						} );
+						
+						var TestSubModel = Kevlar.extend( TestModel, {
+							addAttributes: [ 'attribute1' ],
+							proxy : { 
+								type : 'rest'  // a valid proxy type
+							}
+						} );
+						
+						var model = new TestSubModel();
+						Y.Assert.isInstanceOf( Kevlar.persistence.RestProxy, TestSubModel.prototype.proxy );
+					}
+				},
+				
+			
+				{
+					/*
+					 * Test change event upon initialization
+					 */
+					name : "Test change event upon initialization",
+					
+					setUp : function() {
+						this.TestModel = Kevlar.extend( Kevlar.Model, {
+							addAttributes: [
+								{ name: 'attribute1' },
+								{ name: 'attribute2', defaultValue: "attribute2's default" },
+								{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
+								{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
+								{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+							]
+						} );
+					},
+					
+					
+					/* This test is no longer valid, as the constructor currently does not allow for a `listeners` config
+					"The Model should not fire its 'change' event during the set of the initial data" : function() {
+						var changeEventFired = false;
+						var model = new this.TestModel( {
+							attribute1: "attribute1 value"
+						} );
+						
+						//model.addListener( 'change', function() { changeEventFired = true; } );
+						Y.Assert.isFalse( changeEventFired, "The change event should not have fired during the set of the initial data" );
+					},
+					*/
+					
+					"The Model should fire its 'change' event when an attribute's data is set externally" : function() {
+						var changeEventFired = false;
+						var model = new this.TestModel();
+						model.addListener( 'change', function() { changeEventFired = true; } );
+						
+						// Set the value
+						model.set( 'attribute1', 'value1' );
+						Y.Assert.isTrue( changeEventFired, "The change event should have been fired during the set of the new data" );
+					}
+				},
+			
+			
+				{
+					/*
+					 * Test that the initial default values are applied
+					 */
+					name : "Test that the initial default values are applied",
+					
+					setUp : function() {
+						this.TestModel = Kevlar.extend( Kevlar.Model, {
+							addAttributes: [
+								{ name: 'attribute1' },
+								{ name: 'attribute2', defaultValue: "attribute2's default" },
+								{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
+								{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
+								{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+							]
+						} );
+					},
+			
+					// Test that default values are applied to attribute values
+					
+					"A attribute with a defaultValue but no provided data should have its defaultValue when retrieved" : function() {
+						var model = new this.TestModel();  // no data provided
+						
+						Y.Assert.areSame( "attribute2's default", model.get( 'attribute2' ) );
+					},
+					
+					"A attribute with a defaultValue that is a function, but no provided data should have its defaultValue when retrieved" : function() {
+						var model = new this.TestModel();  // no data provided
+						
+						Y.Assert.areSame( "attribute3's default", model.get( 'attribute3' ) );  // attribute3 has a defaultValue that is a function
+					},
+					
+					"A attribute with a defaultValue and also provided data should have its provided data when retrieved" : function() {
+						var model = new this.TestModel( {
+							attribute2 : "attribute2's data"
+						} );
+						
+						Y.Assert.areSame( "attribute2's data", model.get( 'attribute2' ), "The 'default' specified on the Attribute should *not* have been applied, since it has a value." );
+					}
+				},
+				
+				{
+					/*
+					 * Test initial data
+					 */
+					name : "Test initial data",
+					
+					"Providing initial data to the constructor should not leave the model set as 'dirty' (i.e. it should have no 'changes')" : function() {
+						var Model = Kevlar.Model.extend( {
+							addAttributes : [ 'attribute1', 'attribute2' ]
+						} );
+						
+						var model = new Model( { attribute1: 'value1', attribute2: 'value2' } );
+						Y.Assert.isFalse( model.isDirty(), "The model should not be dirty upon initialization" );
+						Y.Assert.isTrue( Kevlar.util.Object.isEmpty( model.getChanges ), "There should not be any 'changes' upon initialization" );
+					}
+				},				
+				
+				
+				{
+					/*
+					 * Test that initialize() is called
+					 */
+					name : "Test that initialize() is called",
+					
+					
+					"The initialize() method should be called with the constructor function, for subclass initialization" : function() {
+						var initializeCalled = false;
+						
+						var MyModel = Kevlar.Model.extend( {
+							addAttributes : [ 
+								'test',
+								{ name: 'test2', defaultValue: 'defaultForTest2' }
+							],
+							initialize : function() {
+								initializeCalled = true;
+							}
+						} );
+						
+						var model = new MyModel();
+						Y.Assert.isTrue( initializeCalled, "The initialize() method should have been called" ); 
+					}
+				}
+			]
+		},
+		
+	
+		{
+			/*
 			 * Test Attributes Inheritance
 			 */
 			name: 'Test Attributes Inheritance',
@@ -266,212 +474,6 @@ tests.unit.add( new Ext.test.TestSuite( {
 		
 		
 		
-		{
-			/*
-			 * Test Initialization (constructor)
-			 */
-			name: 'Test Initialization (constructor)',
-			ttype : 'testsuite',
-			
-			
-			items : [
-				{
-					/*
-					 * Test lazy instantiating a proxy
-					 */
-					name : "Test lazy instantiating a proxy",
-					
-					_should : {
-						error : {
-							"Attempting to instantiate a proxy with no 'type' attribute should throw an error" :
-								"Kevlar.persistence.proxy.create(): No `type` property provided on proxy config object",
-								
-							"Attempting to instantiate a proxy with an invalid 'type' attribute should throw an error" :
-								"Kevlar.persistence.Proxy.create(): Unknown Proxy type: 'nonexistentproxy'"
-						}
-					},
-					
-					"Attempting to instantiate a proxy with no 'type' attribute should throw an error" : function() {
-						var TestModel = Kevlar.extend( Kevlar.Model, {
-							addAttributes: [ 'attribute1' ],
-							proxy : {}
-						} );
-						
-						var model = new TestModel();
-					},
-					
-					"Attempting to instantiate a proxy with an invalid 'type' attribute should throw an error" : function() {
-						var TestModel = Kevlar.extend( Kevlar.Model, {
-							addAttributes: [ 'attribute1' ],
-							proxy : { 
-								type : 'nonExistentProxy'
-							}
-						} );
-						
-						var model = new TestModel();
-					},
-					
-					"Providing a valid config object should instantiate the Proxy *on class's the prototype*" : function() {
-						var TestModel = Kevlar.extend( Kevlar.Model, {
-							addAttributes: [ 'attribute1' ],
-							proxy : { 
-								type : 'rest'  // a valid proxy type
-							}
-						} );
-						
-						var model = new TestModel();
-						Y.Assert.isInstanceOf( Kevlar.persistence.RestProxy, TestModel.prototype.proxy );
-					},
-					
-					"Providing a valid config object should instantiate the Proxy *on the correct subclass's prototype*, shadowing superclasses" : function() {
-						var TestModel = Kevlar.extend( Kevlar.Model, {
-							addAttributes: [ 'attribute1' ],
-							proxy : { 
-								type : 'nonExistentProxy'  // an invalid proxy type
-							}
-						} );
-						
-						var TestSubModel = Kevlar.extend( TestModel, {
-							addAttributes: [ 'attribute1' ],
-							proxy : { 
-								type : 'rest'  // a valid proxy type
-							}
-						} );
-						
-						var model = new TestSubModel();
-						Y.Assert.isInstanceOf( Kevlar.persistence.RestProxy, TestSubModel.prototype.proxy );
-					}
-				},
-				
-			
-				{
-					/*
-					 * Test change event upon initialization
-					 */
-					name : "Test change event upon initialization",
-					
-					setUp : function() {
-						this.TestModel = Kevlar.extend( Kevlar.Model, {
-							addAttributes: [
-								{ name: 'attribute1' },
-								{ name: 'attribute2', defaultValue: "attribute2's default" },
-								{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-								{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-								{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
-							]
-						} );
-					},
-					
-					
-					/* This test is no longer valid, as the constructor currently does not allow for a `listeners` config
-					"The Model should not fire its 'change' event during the set of the initial data" : function() {
-						var changeEventFired = false;
-						var model = new this.TestModel( {
-							attribute1: "attribute1 value"
-						} );
-						
-						//model.addListener( 'change', function() { changeEventFired = true; } );
-						Y.Assert.isFalse( changeEventFired, "The change event should not have fired during the set of the initial data" );
-					},
-					*/
-					
-					"The Model should fire its 'change' event when an attribute's data is set externally" : function() {
-						var changeEventFired = false;
-						var model = new this.TestModel();
-						model.addListener( 'change', function() { changeEventFired = true; } );
-						
-						// Set the value
-						model.set( 'attribute1', 'value1' );
-						Y.Assert.isTrue( changeEventFired, "The change event should have been fired during the set of the new data" );
-					}
-				},
-			
-			
-				{
-					/*
-					 * Test that the initial default values are applied
-					 */
-					name : "Test that the initial default values are applied",
-					
-					setUp : function() {
-						this.TestModel = Kevlar.extend( Kevlar.Model, {
-							addAttributes: [
-								{ name: 'attribute1' },
-								{ name: 'attribute2', defaultValue: "attribute2's default" },
-								{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-								{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-								{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
-							]
-						} );
-					},
-			
-					// Test that default values are applied to attribute values
-					
-					"A attribute with a defaultValue but no provided data should have its defaultValue when retrieved" : function() {
-						var model = new this.TestModel();  // no data provided
-						
-						Y.Assert.areSame( "attribute2's default", model.get( 'attribute2' ) );
-					},
-					
-					"A attribute with a defaultValue that is a function, but no provided data should have its defaultValue when retrieved" : function() {
-						var model = new this.TestModel();  // no data provided
-						
-						Y.Assert.areSame( "attribute3's default", model.get( 'attribute3' ) );  // attribute3 has a defaultValue that is a function
-					},
-					
-					"A attribute with a defaultValue and also provided data should have its provided data when retrieved" : function() {
-						var model = new this.TestModel( {
-							attribute2 : "attribute2's data"
-						} );
-						
-						Y.Assert.areSame( "attribute2's data", model.get( 'attribute2' ), "The 'default' specified on the Attribute should *not* have been applied, since it has a value." );
-					}
-				},
-				
-				{
-					/*
-					 * Test initial data
-					 */
-					name : "Test initial data",
-					
-					"Providing initial data to the constructor should not leave the model set as 'dirty' (i.e. it should have no 'changes')" : function() {
-						var Model = Kevlar.Model.extend( {
-							addAttributes : [ 'attribute1', 'attribute2' ]
-						} );
-						
-						var model = new Model( { attribute1: 'value1', attribute2: 'value2' } );
-						Y.Assert.isFalse( model.isDirty(), "The model should not be dirty upon initialization" );
-						Y.Assert.isTrue( Kevlar.util.Object.isEmpty( model.getChanges ), "There should not be any 'changes' upon initialization" );
-					}
-				},				
-				
-				
-				{
-					/*
-					 * Test that initialize() is called
-					 */
-					name : "Test that initialize() is called",
-					
-					
-					"The initialize() method should be called with the constructor function, for subclass initialization" : function() {
-						var initializeCalled = false;
-						
-						var MyModel = Kevlar.Model.extend( {
-							addAttributes : [ 
-								'test',
-								{ name: 'test2', defaultValue: 'defaultForTest2' }
-							],
-							initialize : function() {
-								initializeCalled = true;
-							}
-						} );
-						
-						var model = new MyModel();
-						Y.Assert.isTrue( initializeCalled, "The initialize() method should have been called" ); 
-					}
-				}
-			]
-		},
 		
 		
 		{
