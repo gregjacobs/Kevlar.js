@@ -128,24 +128,73 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 */
 	
 	
+	statics : {
+		/**
+		 * Static property used to provide a "client id" to models. See {@link #cid}.
+		 * 
+		 * @private
+		 * @static
+		 * @property {Number} currentCid
+		 */
+		currentCid : 0
+	},
+	
+	
+	inheritedStatics : {
+		/**
+		 * A static property that is unique to each Kevlar.Model subclass, which uniquely identifies it.
+		 * This is used as part of the Model cache, where it is determined if a Model instance already exists
+		 * if two models have the same modelTypeId, and instance id.
+		 * 
+		 * @inheritable
+		 * @static
+		 * @property {Number} modelTypeId
+		 */
+	},
+	
+	
+	
 	/**
 	 * Creates a new Model instance.
 	 * 
 	 * @constructor 
 	 * @param {Object} [data] Any initial data for the {@link #attributes attributes}, specified in an object (hash map). See {@link #set}.
 	 */
-	constructor : function( data ) {		
-		// Call superclass constructor
-		Kevlar.Model.superclass.constructor.call( this );
+	constructor : function( data ) {
+		var me = this;
 		
-		// If this class has a proxy definition that is an object literal, instantiate it *onto the prototype*
-		// (so one Proxy instance can be shared for every model)
-		if( this.proxy && typeof this.proxy === 'object' && !( this.proxy instanceof Kevlar.persistence.Proxy ) ) {
-			this.constructor.prototype.proxy = Kevlar.persistence.Proxy.create( this.proxy );
+		// Default the data to an empty object
+		data = data || {};
+		
+		
+		// --------------------------
+		
+		// Handle this new model being a duplicate of a model that already exists (with the same id)
+				
+		// If there already exists a model of the same type, with the same ID, update that instance,
+		// and return that instance from the constructor. We don't create duplicate Model instances
+		// with the same ID.
+		me = Kevlar.ModelCache.get( me, data[ me.idAttribute ] );
+		if( me !== this ) {
+			me.set( data );   // set any provided initial data to the already-existing instance (as to combine them),
+			return me;        // and then return the already-existing instance
 		}
 		
 		
-		this.addEvents(
+		// --------------------------
+		
+		
+		// Call superclass constructor (Observable)
+		Kevlar.Model.superclass.constructor.call( me );
+		
+		// If this class has a proxy definition that is an object literal, instantiate it *onto the prototype*
+		// (so one Proxy instance can be shared for every model)
+		if( me.proxy && typeof me.proxy === 'object' && !( me.proxy instanceof Kevlar.persistence.Proxy ) ) {
+			me.constructor.prototype.proxy = Kevlar.persistence.Proxy.create( me.proxy );
+		}
+		
+		
+		me.addEvents(
 			/**
 			 * Fires when a {@link Kevlar.Attribute} in the Model has changed its value. This is a 
 			 * convenience event to respond to just a single attribute's change. Ex: if you want to
@@ -178,6 +227,15 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			'commit',
 			
 			/**
+			 * Fires when the data in the model is {@link #method-rollback rolled back}. This happens when the
+			 * {@link #method-rollback rollback} method is called.
+			 * 
+			 * @event rollback
+			 * @param {Kevlar.Model} model This Model instance.
+			 */
+			'rollback',
+			
+			/**
 			 * Fires when the Model has been destroyed (via {@link #method-destroy}).
 			 * 
 			 * @event destroy
@@ -187,17 +245,15 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		);
 		
 		// Initialize the 'attributes' array, which gets turned into an object (hash)
-		this.initAttributes();
+		me.initAttributes();
 		
 		
 		// Create a "client id" to maintain compatibility with Backbone's Collection
-		this.cid = 'c' + (++Kevlar.Model.currentCid);
+		me.cid = 'c' + (++Kevlar.Model.currentCid);
 		
-		// Default the data to an empty object
-		data = data || {};
 		
 		// Set the default values for attributes that don't have an initial value.
-		var attributes = this.attributes,  // this.attributes is a hash of the Attribute objects, keyed by their name
+		var attributes = me.attributes,  // me.attributes is a hash of the Attribute objects, keyed by their name
 		    attributeDefaultValue;
 		for( var name in attributes ) {
 			if( data[ name ] === undefined && ( attributeDefaultValue = attributes[ name ].defaultValue ) !== undefined ) {
@@ -206,17 +262,17 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		}
 		
 		// Initialize the underlying data object, which stores all attribute values
-		this.data = {};
+		me.data = {};
 		
 		// Initialize the data hash for storing attribute names of modified data, and their original values (see property description)
-		this.modifiedData = {};
+		me.modifiedData = {};
 		
 		// Set the initial data / defaults, if we have any
-		this.set( data );
-		this.commit();  // and because we are initializing, the data is not dirty
+		me.set( data );
+		me.commit();  // and because we are initializing, the data is not dirty
 		
 		// Call hook method for subclasses
-		this.initialize();
+		me.initialize();
 	},
 	
 	
@@ -372,6 +428,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			// Get the current value of the attribute
 			var currentValue = this.data[ attributeName ];
 			
+			
 			// If the attribute has a 'set' function defined, call it to convert the data
 			if( typeof attribute.set === 'function' ) {
 				value = attribute.set.call( attribute.scope || this, value, this );  // provided the value, and the Model instance
@@ -395,6 +452,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 					this.fireEvent( 'change', this, attributeName, value );
 				}
 			}
+			
 			
 			// Only change if there is no current value for the attribute, or if new value is different from the current
 			if( !( attributeName in this.data ) || !Kevlar.util.Object.isEqual( currentValue, value ) ) {
@@ -637,6 +695,8 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		this.modifiedData = {};
 		this.dirty = false;
+		
+		this.fireEvent( 'rollback', this );
 	},
 	
 	
@@ -869,13 +929,3 @@ Kevlar.Model.prototype.fetch = Kevlar.Model.prototype.load;
  * @method toJSON
  */
 Kevlar.Model.prototype.toJSON = Kevlar.Model.prototype.getData;
-
-
-/**
- * Static property used to provide a "client id" to models. See {@link #cid}.
- * 
- * @static 
- * @private
- * @property currentCid
- */
-Kevlar.Model.currentCid = 0;

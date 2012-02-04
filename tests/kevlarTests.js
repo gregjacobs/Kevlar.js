@@ -533,6 +533,99 @@ tests.unit.add( new Ext.test.TestCase( {
 } ) );
 
 /*global window, Ext, Y, JsMockito, tests, Kevlar */
+tests.unit.add( new Ext.test.TestCase( {
+	name: 'Kevlar.ModelCache',
+	
+	setUp : function() {
+		// Reset the ModelCache's modelTypeIdCounter back to 0, and its models cache back to empty between tests
+		Kevlar.ModelCache.modelTypeIdCounter = 0;
+		Kevlar.ModelCache.models = {};
+	},
+	
+	tearDown : function() {
+		// Reset the ModelCache's variables on tearDown as well, so we don't affect other tests
+		Kevlar.ModelCache.modelTypeIdCounter = 0;
+		Kevlar.ModelCache.models = {};
+	},
+	
+	
+	
+	"get() should assign a '__Kevlar_modelTypeId' to a model subclass that hasn't had one assigned yet (i.e. a new one)" : function() {
+		var MockModel = function(){};
+		
+		Y.Assert.isUndefined( MockModel.__Kevlar_modelTypeId, "Initial condition: the Model should not have a __Kevlar_modelTypeId yet" );
+		
+		var model = new MockModel();
+		Kevlar.ModelCache.get( model );
+		
+		Y.Assert.areSame( 1, MockModel.__Kevlar_modelTypeId, "The Model should have had a new __Kevlar_modelTypeId assigned" );
+	},
+	
+	
+	"get() should return a reference to the same model provided to it if not providing an id" : function() {
+		var MockModel = function(){};
+		var model = new MockModel();
+		
+		var retrievedModel = Kevlar.ModelCache.get( model );
+		Y.Assert.areSame( model, retrievedModel );
+	},
+	
+	
+	"get() should *not* return a reference to the first model, when a second one is passed in with the same type (subclass), but not passing in any id's" : function() {
+		var MockModel = function(){};
+		    
+		var model1 = new MockModel(),
+		    model2 = new MockModel();
+		
+		var retrievedModel1 = Kevlar.ModelCache.get( model1 );
+		var retrievedModel2 = Kevlar.ModelCache.get( model2 );
+		
+		Y.Assert.areNotSame( retrievedModel1, retrievedModel2 );
+	},
+	
+	
+	"get() should return a reference to the first model, when a second one is passed with the same id" : function() {
+		var MockModel = function(){};
+		var model1 = new MockModel();
+		var model2 = new MockModel();
+		
+		var retrievedModel1 = Kevlar.ModelCache.get( model1, 1 );  // same id of
+		var retrievedModel2 = Kevlar.ModelCache.get( model2, 1 );  // 1 on both
+		
+		Y.Assert.areSame( retrievedModel1, retrievedModel2 );
+	},
+	
+	
+	"get() should *not* return a reference to the first model, when a second one is passed with the same id, but of a different model type (subclass)" : function() {
+		var MockModel1 = function(){},
+		    MockModel2 = function(){};
+		    
+		var model1 = new MockModel1(),
+		    model2 = new MockModel2();
+		
+		var retrievedModel1 = Kevlar.ModelCache.get( model1, 1 );  // same id of 1 on both,
+		var retrievedModel2 = Kevlar.ModelCache.get( model2, 1 );  // but different types of models
+		
+		Y.Assert.areNotSame( retrievedModel1, retrievedModel2 );
+	},
+	
+	
+	"get() should *not* return a reference to the first model, when a second one is passed with the same type (subclass), but with a different id" : function() {
+		var MockModel = function(){};
+		    
+		var model1 = new MockModel(),
+		    model2 = new MockModel();
+		
+		var retrievedModel1 = Kevlar.ModelCache.get( model1, 1 );  // same type on both,
+		var retrievedModel2 = Kevlar.ModelCache.get( model2, 2 );  // but different id's
+		
+		Y.Assert.areNotSame( retrievedModel1, retrievedModel2 );
+	}
+	
+	
+} ) );
+
+/*global window, Ext, Y, JsMockito, tests, Kevlar */
 tests.unit.add( new Ext.test.TestSuite( {
 	name: 'Kevlar.Model',
 	
@@ -541,276 +634,9 @@ tests.unit.add( new Ext.test.TestSuite( {
 	
 		{
 			/*
-			 * Test Attributes Inheritance
+			 * Test Initialization (constructor)
 			 */
-			name: 'Test Attributes Inheritance',
-			
-	
-			setUp : function() {
-				this.TestModel = Kevlar.extend( Kevlar.Model, {
-					addAttributes: [
-						{ name: 'attribute1' },
-						{ name: 'attribute2', defaultValue: "attribute2's default" },
-						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
-					]
-				} );
-			},
-			
-			
-			
-			/*
-			 * Utility method to remove duplicates from an array. Used by {@link #assertAttributesHashCorrect} for its check for the number of
-			 * attributes that should exist.  Uses a hash to remove duplicates.
-			 * 
-			 * @method removeArrayDuplicates 
-			 * @param {Array} arr
-			 */
-			removeArrayDuplicates : function( arr ) {
-				var out=[], obj={};
-				
-				for( var i = 0, len = arr.length; i < len; i++ ) {
-					obj[ arr[ i ] ] = 0;
-				}
-				for( i in obj ) { if( obj.hasOwnProperty( i ) ) { out.push( i ); } }
-				
-				return out;
-			},
-			
-			
-			/*
-			 * Given a Model (provided as the last arg), and its superclasses, asserts that the number of attributes found on the prototypes of each Model
-			 * matches the number of keys in the final {@link Kevlar.Model#attributes} hash, and that there is one key for each Attribute
-			 * found in the 'attributes' prototype arrays.
-			 * 
-			 * Basically asserts that the final hash that the Kevlar.Model compiles from itself, and all of its superclasses, is correct.
-			 * 
-			 * @method assertAttributesHashCorrect
-			 * @param {Kevlar.Model...} One or more Model classes, starting with the highest level Model (the "highest superclass" Model),
-			 *   going all the way down to the lowest subclass Model.  Ex of args: Model, SubClassModel, SubSubClassModel. In this example,
-			 *   the SubSubClassModel is the Model that will be tested.  
-			 */
-			assertAttributesHashCorrect : function( /* ... */ ) {
-				var models = Kevlar.toArray( arguments ),
-				    i, len;
-				
-				// Get the full array of prototype attributes (from the Model, SubClassModel, SubSubClassModel, etc), and the expected number of attributes
-				var prototypeAttributes = [];
-				for( i = 0, len = models.length; i < len; i++ ) {
-					var currentPrototype = models[ i ].prototype;
-					if( currentPrototype.hasOwnProperty( 'attributes' ) ) {
-						prototypeAttributes = prototypeAttributes.concat( models[ i ].prototype.attributes );
-					} else if( currentPrototype.hasOwnProperty( 'addAttributes' ) ) {
-						prototypeAttributes = prototypeAttributes.concat( models[ i ].prototype.addAttributes );
-					}
-				}
-				
-				// Convert the array to a duplicates-removed array of attribute names
-				var attributeNames = [];
-				for( i = 0, len = prototypeAttributes.length; i < len; i++ ) {
-					var attributeName = new Kevlar.Attribute( prototypeAttributes[ i ] ).getName();
-					attributeNames.push( attributeName );
-				}
-				attributeNames = this.removeArrayDuplicates( attributeNames );
-				var expectedAttributeCount = attributeNames.length;
-				
-				
-				// Check the instance attributes of the Model under test now
-				var instance = new models[ models.length - 1 ](),  // the last Model class provided to the method. It is assumed that all previous arguments are its superclasses
-				    instanceAttributes = instance.attributes;
-				
-				var attributeCount = Kevlar.util.Object.length( instanceAttributes );
-				Y.Assert.areSame( expectedAttributeCount, attributeCount, "There should be the same number of resulting attributes in the 'instanceAttributes' hash as the original 'attributes' arrays of the Model classes." );
-				
-				// Check that all of the attributes defined by each Model's prototype exist in the final 'attributes' hash
-				for( i = 0, len = attributeNames.length; i < len; i++ ) {
-					Y.ObjectAssert.hasKey( attributeNames[ i ], instanceAttributes, "The Model (last arg to assertAttributesHashCorrect) should have defined the '" + attributeNames[ i ] + "' attribute in its final 'attributes' hash" );
-				}
-			},
-			
-			// ---------------------------
-			
-			
-			// Tests
-			
-			
-			"The Kevlar.Model class itself (i.e. no superclass Model) should just have the attributes defined on its prototype." : function() {
-				var Model = Kevlar.Model;
-				
-				// Run the test code
-				this.assertAttributesHashCorrect( Model );
-			},
-			
-			
-			"Attributes should inherit from a Model subclass's superclass when the subclass defines no attributes of its own" : function() {
-				var Model = Kevlar.Model;
-				var SubClassModel = Kevlar.extend( Model, {} );
-				
-				// Run the test code
-				this.assertAttributesHashCorrect( Model, SubClassModel );
-			},
-			
-			
-			"Attributes should inherit from a Model subclass's superclass when the subclass does define attributes of its own" : function() {
-				// Reference the base class, and create a subclass
-				var Model = Kevlar.Model;
-				var SubClassModel = Kevlar.extend( Model, {
-					addAttributes : [ 'a', 'b' ]
-				} );
-				
-				// Run the test code
-				this.assertAttributesHashCorrect( Model, SubClassModel );
-				
-				// As a sanity check for the assertAttributesHashCorrect test code, assert that at least the attributes defined by subclasses are there 
-				// (not asserting anything against the base Kevlar.Model's attributes array, as they are subject to change).
-				var instanceAttributes = (new SubClassModel()).attributes;
-				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
-				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
-			},
-			
-			
-			"Attributes should inherit from a Model subclass's superclass, and its superclass as well (i.e. more than one level up)" : function() {
-				// Reference the base class, and create two subclasses
-				var Model = Kevlar.Model;
-				var SubClassModel = Kevlar.extend( Model, {
-					addAttributes : [ 'a', 'b' ]
-				} );
-				var SubSubClassModel = Kevlar.extend( SubClassModel, {
-					addAttributes : [ 'c', 'd', 'e' ]
-				} );
-				
-				// Run the test code
-				this.assertAttributesHashCorrect( Model, SubClassModel, SubSubClassModel );
-				
-				// As a sanity check for the assertAttributesHashCorrect test code, assert that at least the attributes defined by subclasses are there 
-				// (not asserting anything against the base Kevlar.Model's attributes array, as they are subject to change).
-				var instanceAttributes = (new SubSubClassModel()).attributes;
-				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
-				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
-				Y.ObjectAssert.hasKey( 'c', instanceAttributes, "SubSubClassModel should have the 'c' attribute defined in its final 'attributes' hash." );
-				Y.ObjectAssert.hasKey( 'd', instanceAttributes, "SubSubClassModel should have the 'd' attribute defined in its final 'attributes' hash." );
-				Y.ObjectAssert.hasKey( 'e', instanceAttributes, "SubSubClassModel should have the 'e' attribute defined in its final 'attributes' hash." );
-			},
-			
-			
-			"Attributes should inherit from a Model subclass's superclass, and all of its superclasses (i.e. more than two levels up)" : function() {
-				// Reference the base class, and create two subclasses
-				var Model = Kevlar.Model;
-				var SubClassModel = Kevlar.extend( Model, {
-					addAttributes : [ 'a', 'b' ]
-				} );
-				var SubSubClassModel = Kevlar.extend( SubClassModel, {
-					addAttributes : [ 'c', 'd', 'e' ]
-				} );
-				var SubSubSubClassModel = Kevlar.extend( SubSubClassModel, {
-					addAttributes : [ 'f' ]
-				} );
-				
-				// Run the test code
-				this.assertAttributesHashCorrect( Model, SubClassModel, SubSubClassModel, SubSubSubClassModel );
-				
-				// As a sanity check for the assertAttributesHashCorrect test code, assert that at least the attributes defined by subclasses are there 
-				// (not asserting anything against the base Kevlar.Model's attributes array, as they are subject to change).
-				var instanceAttributes = (new SubSubSubClassModel()).attributes;
-				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
-				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
-				Y.ObjectAssert.hasKey( 'c', instanceAttributes, "SubSubSubClassModel should have the 'c' attribute defined in its final 'attributes' hash." );
-				Y.ObjectAssert.hasKey( 'd', instanceAttributes, "SubSubSubClassModel should have the 'd' attribute defined in its final 'attributes' hash." );
-				Y.ObjectAssert.hasKey( 'e', instanceAttributes, "SubSubSubClassModel should have the 'e' attribute defined in its final 'attributes' hash." );
-				Y.ObjectAssert.hasKey( 'f', instanceAttributes, "SubSubSubClassModel should have the 'f' attribute defined in its final 'attributes' hash." );
-			},
-			
-			
-			"Attribute definitions defined in a subclass should take precedence over attribute definitions in a superclass" : function() {
-				var Model = Kevlar.Model;
-				var SubClassModel = Kevlar.extend( Model, {
-					addAttributes : [ { name : 'a', defaultValue: 1 } ]
-				} );
-				var SubSubClassModel = Kevlar.extend( SubClassModel, {
-					addAttributes : [ { name : 'a', defaultValue: 2 }, 'b' ]
-				} );
-				
-				// Run the test code
-				this.assertAttributesHashCorrect( Model, SubClassModel, SubSubClassModel );
-				
-				// As a sanity check for the assertAttributesHashCorrect test code, assert that at least the attributes defined by subclasses are there 
-				// (not asserting anything against the base Kevlar.Model's attributes array, as they are subject to change).
-				var instanceAttributes = (new SubSubClassModel()).attributes;
-				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
-				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
-				
-				// Check that the default value of the Attribute 'a' is 2, not 1 (as the Attribute in the subclass should have overridden its superclass Attribute)
-				Y.Assert.areSame( 2, instanceAttributes[ 'a' ].defaultValue, "The attribute in the subclass should have overridden its superclass" ); 
-			},
-			
-			
-			"A subclass that doesn't define any attributes should inherit all of them from its superclass(es)" : function() {
-				// Reference the base class, and create two subclasses
-				var Model = Kevlar.Model;
-				var SubClassModel = Kevlar.extend( Model, {
-					addAttributes : [ 'a', 'b' ]
-				} );
-				var SubSubClassModel = Kevlar.extend( SubClassModel, {} );
-				
-				// Run the test code
-				this.assertAttributesHashCorrect( Model, SubClassModel, SubSubClassModel );
-				
-				// As a sanity check for the assertAttributesHashCorrect test code, assert that at least the attributes defined by subclasses are there 
-				// (not asserting anything against the base Kevlar.Model's attributes array, as they are subject to change).
-				var instanceAttributes = (new SubSubClassModel()).attributes;
-				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
-				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
-			},
-			
-			
-			"A superclass that doesn't define any attributes should be skipped for attributes, but the subclass should still inherit from superclasses above it" : function() {
-				// Reference the base class, and create two subclasses
-				var Model = Kevlar.Model;
-				var SubClassModel = Kevlar.extend( Model, {} );  // one that doesn't define any attributes
-				var SubSubClassModel = Kevlar.extend( SubClassModel, {
-					addAttributes : [ 'a', 'b' ]
-				} );
-				
-				// Run the test code
-				this.assertAttributesHashCorrect( Model, SubClassModel, SubSubClassModel );
-				
-				// As a sanity check for the assertAttributesHashCorrect test code, assert that at least the attributes defined by subclasses are there 
-				// (not asserting anything against the base Kevlar.Model's attributes array, as they are subject to change).
-				var instanceAttributes = (new SubSubClassModel()).attributes;
-				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
-				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
-			},
-			
-			
-			// -------------------------------
-			
-			
-			"One should be able to use `attributes` in place of `addAttributes` on the prototype, if they wish" : function() {
-				var Model = Kevlar.Model.extend( {
-					attributes : [ 'a', 'b' ]
-				} );
-				var SubModel = Model.extend( {
-					attributes : [ 'c' ]
-				} );
-				
-				// Run the test code
-				this.assertAttributesHashCorrect( Model, SubModel );
-				
-				var instanceAttributes = (new SubModel()).attributes;
-				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
-				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
-				Y.ObjectAssert.hasKey( 'c', instanceAttributes, "SubSubClassModel should have the 'c' attribute defined in its final 'attributes' hash." );
-			}
-		},
-		
-		
-		
-		{
-			/*
-			 * Test Initialization (the constructor)
-			 */
-			name: 'Test Initialization (the constructor)',
+			name: 'Test Initialization (constructor)',
 			ttype : 'testsuite',
 			
 			
@@ -1012,6 +838,269 @@ tests.unit.add( new Ext.test.TestSuite( {
 				}
 			]
 		},
+		
+	
+		{
+			/*
+			 * Test Attributes Inheritance
+			 */
+			name: 'Test Attributes Inheritance',
+			
+	
+			setUp : function() {
+				this.TestModel = Kevlar.extend( Kevlar.Model, {
+					addAttributes: [
+						{ name: 'attribute1' },
+						{ name: 'attribute2', defaultValue: "attribute2's default" },
+						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
+						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+					]
+				} );
+			},
+			
+			
+			
+			/*
+			 * Utility method to remove duplicates from an array. Used by {@link #assertAttributesHashCorrect} for its check for the number of
+			 * attributes that should exist.  Uses a hash to remove duplicates.
+			 * 
+			 * @method removeArrayDuplicates 
+			 * @param {Array} arr
+			 */
+			removeArrayDuplicates : function( arr ) {
+				var out=[], obj={};
+				
+				for( var i = 0, len = arr.length; i < len; i++ ) {
+					obj[ arr[ i ] ] = 0;
+				}
+				for( i in obj ) { if( obj.hasOwnProperty( i ) ) { out.push( i ); } }
+				
+				return out;
+			},
+			
+			
+			/*
+			 * Given a Model (provided as the last arg), and its superclasses, asserts that the number of attributes found on the prototypes of each Model
+			 * matches the number of keys in the final {@link Kevlar.Model#attributes} hash, and that there is one key for each Attribute
+			 * found in the 'attributes' prototype arrays.
+			 * 
+			 * Basically asserts that the final hash that the Kevlar.Model compiles from itself, and all of its superclasses, is correct.
+			 * 
+			 * @method assertAttributesHashCorrect
+			 * @param {Kevlar.Model...} One or more Model classes, starting with the highest level Model (the "highest superclass" Model),
+			 *   going all the way down to the lowest subclass Model.  Ex of args: Model, SubClassModel, SubSubClassModel. In this example,
+			 *   the SubSubClassModel is the Model that will be tested.  
+			 */
+			assertAttributesHashCorrect : function( /* ... */ ) {
+				var models = Kevlar.toArray( arguments ),
+				    i, len;
+				
+				// Get the full array of prototype attributes (from the Model, SubClassModel, SubSubClassModel, etc), and the expected number of attributes
+				var prototypeAttributes = [];
+				for( i = 0, len = models.length; i < len; i++ ) {
+					var currentPrototype = models[ i ].prototype;
+					if( currentPrototype.hasOwnProperty( 'attributes' ) ) {
+						prototypeAttributes = prototypeAttributes.concat( models[ i ].prototype.attributes );
+					} else if( currentPrototype.hasOwnProperty( 'addAttributes' ) ) {
+						prototypeAttributes = prototypeAttributes.concat( models[ i ].prototype.addAttributes );
+					}
+				}
+				
+				// Convert the array to a duplicates-removed array of attribute names
+				var attributeNames = [];
+				for( i = 0, len = prototypeAttributes.length; i < len; i++ ) {
+					var attributeName = new Kevlar.Attribute( prototypeAttributes[ i ] ).getName();
+					attributeNames.push( attributeName );
+				}
+				attributeNames = this.removeArrayDuplicates( attributeNames );
+				var expectedAttributeCount = attributeNames.length;
+				
+				
+				// Check the instance attributes of the Model under test now
+				var instance = new models[ models.length - 1 ](),  // the last Model class provided to the method. It is assumed that all previous arguments are its superclasses
+				    instanceAttributes = instance.attributes;
+				
+				var attributeCount = Kevlar.util.Object.length( instanceAttributes );
+				Y.Assert.areSame( expectedAttributeCount, attributeCount, "There should be the same number of resulting attributes in the 'instanceAttributes' hash as the original 'attributes' arrays of the Model classes." );
+				
+				// Check that all of the attributes defined by each Model's prototype exist in the final 'attributes' hash
+				for( i = 0, len = attributeNames.length; i < len; i++ ) {
+					Y.ObjectAssert.hasKey( attributeNames[ i ], instanceAttributes, "The Model (last arg to assertAttributesHashCorrect) should have defined the '" + attributeNames[ i ] + "' attribute in its final 'attributes' hash" );
+				}
+			},
+			
+			
+			// ---------------------------
+			
+			
+			// Tests
+			
+			"Attributes should inherit from a Model subclass's superclass when the subclass defines no attributes of its own" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'field1' ]
+				} );
+				var SubClassModel = Model.extend( {} );
+				
+				// Run the test code
+				this.assertAttributesHashCorrect( Model, SubClassModel );
+			},
+			
+			
+			"Attributes should inherit from a Model subclass's superclass when the subclass does define attributes of its own" : function() {
+				// Reference the base class, and create a subclass
+				var Model = Kevlar.Model.extend( {} );
+				var SubClassModel = Model.extend( {
+					addAttributes : [ 'a', 'b' ]
+				} );
+				
+				// Run the test code
+				this.assertAttributesHashCorrect( Model, SubClassModel );
+				
+				// As a sanity check for the assertAttributesHashCorrect test code, assert that at least the attributes defined by subclasses are there 
+				// (not asserting anything against the base Kevlar.Model's attributes array, as they are subject to change).
+				var instanceAttributes = (new SubClassModel()).attributes;
+				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
+			},
+			
+			
+			"Attributes should inherit from a Model subclass's superclass, and its superclass as well (i.e. more than one level up)" : function() {
+				// Reference the base class, and create two subclasses
+				var Model = Kevlar.Model.extend( {} );
+				var SubClassModel = Kevlar.extend( Model, {
+					addAttributes : [ 'a', 'b' ]
+				} );
+				var SubSubClassModel = Kevlar.extend( SubClassModel, {
+					addAttributes : [ 'c', 'd', 'e' ]
+				} );
+				
+				// Run the test code
+				this.assertAttributesHashCorrect( Model, SubClassModel, SubSubClassModel );
+				
+				// As a sanity check for the assertAttributesHashCorrect test code, assert that at least the attributes defined by subclasses are there 
+				// (not asserting anything against the base Kevlar.Model's attributes array, as they are subject to change).
+				var instanceAttributes = (new SubSubClassModel()).attributes;
+				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'c', instanceAttributes, "SubSubClassModel should have the 'c' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'd', instanceAttributes, "SubSubClassModel should have the 'd' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'e', instanceAttributes, "SubSubClassModel should have the 'e' attribute defined in its final 'attributes' hash." );
+			},
+			
+			
+			"Attributes should inherit from a Model subclass's superclass, and all of its superclasses (i.e. more than two levels up)" : function() {
+				// Reference the base class, and create two subclasses
+				var Model = Kevlar.Model.extend( {} );
+				var SubClassModel = Kevlar.extend( Model, {
+					addAttributes : [ 'a', 'b' ]
+				} );
+				var SubSubClassModel = Kevlar.extend( SubClassModel, {
+					addAttributes : [ 'c', 'd', 'e' ]
+				} );
+				var SubSubSubClassModel = Kevlar.extend( SubSubClassModel, {
+					addAttributes : [ 'f' ]
+				} );
+				
+				// Run the test code
+				this.assertAttributesHashCorrect( Model, SubClassModel, SubSubClassModel, SubSubSubClassModel );
+				
+				// As a sanity check for the assertAttributesHashCorrect test code, assert that at least the attributes defined by subclasses are there 
+				// (not asserting anything against the base Kevlar.Model's attributes array, as they are subject to change).
+				var instanceAttributes = (new SubSubSubClassModel()).attributes;
+				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'c', instanceAttributes, "SubSubSubClassModel should have the 'c' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'd', instanceAttributes, "SubSubSubClassModel should have the 'd' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'e', instanceAttributes, "SubSubSubClassModel should have the 'e' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'f', instanceAttributes, "SubSubSubClassModel should have the 'f' attribute defined in its final 'attributes' hash." );
+			},
+			
+			
+			"Attribute definitions defined in a subclass should take precedence over attribute definitions in a superclass" : function() {
+				var Model = Kevlar.Model.extend( {} );
+				var SubClassModel = Kevlar.extend( Model, {
+					addAttributes : [ { name : 'a', defaultValue: 1 } ]
+				} );
+				var SubSubClassModel = Kevlar.extend( SubClassModel, {
+					addAttributes : [ { name : 'a', defaultValue: 2 }, 'b' ]
+				} );
+				
+				// Run the test code
+				this.assertAttributesHashCorrect( Model, SubClassModel, SubSubClassModel );
+				
+				// As a sanity check for the assertAttributesHashCorrect test code, assert that at least the attributes defined by subclasses are there 
+				// (not asserting anything against the base Kevlar.Model's attributes array, as they are subject to change).
+				var instanceAttributes = (new SubSubClassModel()).attributes;
+				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
+				
+				// Check that the default value of the Attribute 'a' is 2, not 1 (as the Attribute in the subclass should have overridden its superclass Attribute)
+				Y.Assert.areSame( 2, instanceAttributes[ 'a' ].defaultValue, "The attribute in the subclass should have overridden its superclass" ); 
+			},
+			
+			
+			"A subclass that doesn't define any attributes should inherit all of them from its superclass(es)" : function() {
+				// Reference the base class, and create two subclasses
+				var Model = Kevlar.Model.extend( {} );
+				var SubClassModel = Kevlar.extend( Model, {
+					addAttributes : [ 'a', 'b' ]
+				} );
+				var SubSubClassModel = Kevlar.extend( SubClassModel, {} );
+				
+				// Run the test code
+				this.assertAttributesHashCorrect( Model, SubClassModel, SubSubClassModel );
+				
+				// As a sanity check for the assertAttributesHashCorrect test code, assert that at least the attributes defined by subclasses are there 
+				// (not asserting anything against the base Kevlar.Model's attributes array, as they are subject to change).
+				var instanceAttributes = (new SubSubClassModel()).attributes;
+				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
+			},
+			
+			
+			"A superclass that doesn't define any attributes should be skipped for attributes, but the subclass should still inherit from superclasses above it" : function() {
+				// Reference the base class, and create two subclasses
+				var Model = Kevlar.Model.extend( {} );
+				var SubClassModel = Kevlar.extend( Model, {} );  // one that doesn't define any attributes
+				var SubSubClassModel = Kevlar.extend( SubClassModel, {
+					addAttributes : [ 'a', 'b' ]
+				} );
+				
+				// Run the test code
+				this.assertAttributesHashCorrect( Model, SubClassModel, SubSubClassModel );
+				
+				// As a sanity check for the assertAttributesHashCorrect test code, assert that at least the attributes defined by subclasses are there 
+				// (not asserting anything against the base Kevlar.Model's attributes array, as they are subject to change).
+				var instanceAttributes = (new SubSubClassModel()).attributes;
+				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
+			},
+			
+			
+			// -------------------------------
+			
+			
+			"One should be able to use `attributes` in place of `addAttributes` on the prototype, if they wish" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'a', 'b' ]
+				} );
+				var SubModel = Model.extend( {
+					attributes : [ 'c' ]
+				} );
+				
+				// Run the test code
+				this.assertAttributesHashCorrect( Model, SubModel );
+				
+				var instanceAttributes = (new SubModel()).attributes;
+				Y.ObjectAssert.hasKey( 'a', instanceAttributes, "SubSubClassModel should have the 'a' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'b', instanceAttributes, "SubSubClassModel should have the 'b' attribute defined in its final 'attributes' hash." );
+				Y.ObjectAssert.hasKey( 'c', instanceAttributes, "SubSubClassModel should have the 'c' attribute defined in its final 'attributes' hash." );
+			}
+		},
+		
+		
+		
 		
 		
 		{
@@ -2109,6 +2198,26 @@ tests.unit.add( new Ext.test.TestSuite( {
 				
 				// Check that isDirty() returns false
 				Y.Assert.isFalse( model.isDirty(), "The 'dirty' flag should be false after rollback." );
+			},
+			
+			
+			"rollback() should fire the 'rollback' event" : function() {
+				var rollbackEventCount = 0;
+				
+				var model = new this.TestModel( {
+					attribute1 : 'orig1',
+					attribute2 : 'orig2'
+				} );
+				model.on( 'rollback', function() {
+					rollbackEventCount++;
+				} );
+				
+				
+				model.set( 'attribute1', 'new1' );
+				
+				Y.Assert.areSame( 0, rollbackEventCount, "Initial condition: The rollback event should not have been fired yet" );
+				model.rollback();
+				Y.Assert.areSame( 1, rollbackEventCount, "The rollback event should have been fired exactly once" );
 			}
 			
 		},
@@ -3846,4 +3955,120 @@ tests.unit.util.add( new Ext.test.TestSuite( {
 	
 	Ext.test.Session.addSuite( tests.integration );
 })();
+
+/*global window, Ext, Y, JsMockito, tests, Kevlar */
+tests.integration.add( new Ext.test.TestSuite( {
+	
+	name: 'Model with ModelCache',
+	
+	
+	items : [
+	
+		{
+			/*
+			 * Test that by constructing a Model, it indirectly gets a __Kevlar_modelTypeId property from the ModelCache
+			 */
+			name : "Test that by constructing a Model, it indirectly gets a __Kevlar_modelTypeId property from the ModelCache",
+			
+			
+			"constructing the first instance of a new Model subclass should indirectly get a __Kevlar_modelTypeId property by the ModelCache" : function() {
+				var Model = Kevlar.Model.extend( {} );
+				
+				Y.Assert.isUndefined( Model.__Kevlar_modelTypeId, "Initial condition: The Model subclass should not yet have a __Kevlar_modelTypeId property" );
+				var instance1 = new Model();
+				Y.Assert.isNumber( Model.__Kevlar_modelTypeId, "The Model should now have a static __Kevlar_modelTypeId property" );
+			},
+			
+			
+			"constructing the second instance of a new Model subclass should not change the __Kevlar_modelTypeId property that was set from instantiating the first instance" : function() {
+				var Model = Kevlar.Model.extend( {} );
+				var instance1 = new Model();
+				
+				var __Kevlar_modelTypeId = Model.__Kevlar_modelTypeId;
+				Y.Assert.isNumber( Model.__Kevlar_modelTypeId, "Initial Condition: The Model should now have a static __Kevlar_modelTypeId property, which is a number" );
+				
+				var instance2 = new Model();
+				Y.Assert.areSame( __Kevlar_modelTypeId, Model.__Kevlar_modelTypeId, "The Model's __Kevlar_modelTypeId should not have been changed from instantiating a second instance" );
+			}
+		},
+		
+		
+		
+		{
+			/*
+			 * Duplicate models should not be able to be instantiated
+			 */
+			name : "Duplicate models should not be able to be instantiated",
+			
+			
+			// Tests making sure different types / ids do NOT return the same model instance	
+			"Instatiating two models of different types, but the same instance ID, should *not* be 'combined' into the same instance" : function() {
+				var ModelClass1 = Kevlar.Model.extend( {
+					attributes : [ 'id' ],
+					idAttribute : 'id'
+				} );
+				var ModelClass2 = Kevlar.Model.extend( {
+					attributes : [ 'id' ],
+					idAttribute : 'id'
+				} );
+				
+				var model1 = new ModelClass1( { id: 1 } );  // same id, but
+				var model2 = new ModelClass2( { id: 1 } );  // different classes
+				
+				Y.Assert.areNotSame( model1, model2 );
+			},
+			
+			
+			"Instatiating two models of the same type, but the different instance IDs, should *not* be 'combined' into the same instance" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'id' ],
+					idAttribute : 'id'
+				} );
+				
+				var model1 = new Model( { id: 1 } );  // different id, but
+				var model2 = new Model( { id: 2 } );  // same class
+				
+				Y.Assert.areNotSame( model1, model2 );
+			},
+			
+			
+			// Tests making sure that the same type/id returns the same model instance, and combines the data
+			
+			"Instantiating two models of both the same type, and which have the same instance ID, should really become the same single instance (i.e. not duplicating it). The same reference should be returned when constructing the duplicate model" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'id' ],
+					idAttribute : 'id'
+				} );
+				
+				var model1 = new Model( { id: 1 } );
+				var model2 = new Model( { id: 1 } );
+				
+				// Make sure that only one model was created for id 1
+				Y.Assert.areSame( model1, model2, "model1 and model2 should point to the same object" );
+			},
+			
+			
+			"Instantiating two models with the same ID should combine the initial data, with still, only one actual instance should be created" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'id', 'firstName', 'lastName' ],
+					idAttribute : 'id'
+				} );
+				
+				var model1 = new Model( { id: 1, firstName: "Joe" } );
+				var model2 = new Model( { id: 1, lastName: "Shmo" } );
+				
+				// Make sure that only one model was created for id 1
+				Y.Assert.areSame( model1, model2, "model1 and model2 should point to the same object" );
+				
+				// Make sure that the data was combined onto the same model instance
+				Y.Assert.areSame( "Joe", model1.get( 'firstName' ) );
+				Y.Assert.areSame( "Shmo", model1.get( 'lastName' ) ); 
+			}
+		}
+		
+	]
+	
+	
+
+} ) );
 
