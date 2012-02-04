@@ -1798,70 +1798,18 @@ tests.unit.add( new Ext.test.TestSuite( {
 						Y.Assert.areSame( 1, completeCallCount, "The 'complete' function should have been called exactly once" );
 					}
 				},
-					
-					
+				
+				
 				{
-					name : "Test concurrent persistence and model updates",
+					name : "Test basic persistence",
 					
 					setUp : function() {
 						this.Model = Kevlar.Model.extend( {
-							addAttributes : [ 'id', 'attribute1', 'attribute2' ],
-							proxy  : this.mockProxy
+							addAttributes : [ 'id', 'attribute1', 'attribute2' ]
 						} );
 					},
 					
 					// ---------------------------------
-					
-					// TODO: Test that if a model attribute is modified twice after a persistence operation is started, it should be able to be reverted to its original value
-					
-					
-					// Test that model attributes that are updated during a persistence request do not get marked as committed
-					
-					"Model attributes that are updated (via set()) while a persistence request is in progress should not be marked as committed when the persistence request completes" : function() {
-						var test = this;
-						var MockProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
-							update : function( model, options ) {
-								// update method just calls 'success' callback in 50ms
-								window.setTimeout( function() {
-									options.success.call( options.scope || window );
-								}, 50 );
-							}
-						} );
-						
-						var MyModel = this.Model.extend( {
-							proxy : new MockProxy()
-						} );
-						
-						var model = new MyModel( { id: 1 } );
-						
-						// Initial set
-						model.set( 'attribute1', "origValue1" );
-						model.set( 'attribute2', "origValue2" );
-						
-						// Begin persistence operation, defining a callback for when it is complete
-						model.save( {
-							success : function() {
-								test.resume( function() {
-									Y.Assert.isTrue( model.isDirty(), "The model should still be dirty after the persistence operation. attribute1 was set after the persistence operation began." );
-									
-									Y.Assert.isTrue( model.isModified( 'attribute1' ), "attribute1 should be marked as modified (dirty). It was updated (set) after the persistence operation began." );
-									Y.Assert.isFalse( model.isModified( 'attribute2' ), "attribute2 should not be marked as modified. It was not updated after the persistence operation began." );
-									
-									Y.Assert.areSame( "newValue1", model.get( 'attribute1' ), "a get() operation on attribute1 should return the new value." );
-									Y.Assert.areSame( "origValue2", model.get( 'attribute2' ), "a get() operation on attribute2 should return the persisted value. It was not updated since the persistence operation began." );
-								} );
-							}
-						} );
-						
-						
-						// Now set the attribute while the async persistence operation is in progress. Test will resume when the timeout completes
-						model.set( 'attribute1', "newValue1" );
-						// note: not setting attribute2 here
-						
-						// Wait for the setTimeout in the MockProxy
-						test.wait( 100 );
-					},
-					
 					
 					
 					"Model attributes that have been persisted should not be persisted again if they haven't changed since the last persist" : function() {
@@ -1893,6 +1841,113 @@ tests.unit.add( new Ext.test.TestSuite( {
 						Y.Assert.areSame( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after attribute2 has been changed" );
 						Y.ObjectAssert.ownsKeys( [ 'attribute2' ], dataToPersist, "The dataToPersist should have 'attribute2'" );
 					}
+				},
+				
+				
+					
+				{
+					name : "Test concurrent persistence and model updates",
+					
+					
+					setUp : function() {
+						this.Model = Kevlar.Model.extend( {
+							addAttributes : [ 'id', 'attribute1', 'attribute2' ],
+							proxy  : this.mockProxy
+						} );
+					},
+					
+					
+					// Creates a test Model with a mock proxy, which fires its 'success' callback after the given timeout
+					createModel : function( timeout ) {
+						return Kevlar.extend( Kevlar.persistence.Proxy, {
+							update : function( model, options ) {
+								// update method just calls 'success' callback in 50ms
+								window.setTimeout( function() {
+									options.success.call( options.scope || window );
+								}, timeout );
+							}
+						} );
+					},
+					
+					
+					// ----------------------------
+					
+					// Test that model attributes that are updated during a persistence request do not get marked as committed
+					
+					"Model attributes that are updated (via set()) while a persistence request is in progress should not be marked as committed when the persistence request completes" : function() {
+						var test = this;
+						
+						var Model = this.createModel( 50 ), // 50ms success callback
+						    model = new Model( { id: 1 } );
+						
+						// Initial set
+						model.set( 'attribute1', "origValue1" );
+						model.set( 'attribute2', "origValue2" );
+						
+						// Begin persistence operation, defining a callback for when it is complete
+						model.save( {
+							success : function() {
+								test.resume( function() {
+									Y.Assert.isTrue( model.isDirty(), "The model should still be dirty after the persistence operation. attribute1 was set after the persistence operation began." );
+									
+									Y.Assert.isTrue( model.isModified( 'attribute1' ), "attribute1 should be marked as modified (dirty). It was updated (set) after the persistence operation began." );
+									Y.Assert.isFalse( model.isModified( 'attribute2' ), "attribute2 should not be marked as modified. It was not updated after the persistence operation began." );
+									
+									Y.Assert.areSame( "newValue1", model.get( 'attribute1' ), "a get() operation on attribute1 should return the new value." );
+									Y.Assert.areSame( "origValue2", model.get( 'attribute2' ), "a get() operation on attribute2 should return the persisted value. It was not updated since the persistence operation began." );
+								} );
+							}
+						} );
+						
+						
+						// Now set the attribute while the async persistence operation is in progress. Test will resume when the timeout completes
+						model.set( 'attribute1', "newValue1" );
+						// note: not setting attribute2 here
+						
+						// Wait for the setTimeout in the MockProxy
+						test.wait( 100 );
+					},
+					
+					
+					"Model attributes that are updated *more than once* (via set()) while a persistence request is in progress should not be marked as committed when the persistence request completes" : function() {
+						var test = this;
+						
+						var Model = this.createModel( 50 ), // 50ms success callback
+						    model = new Model( { id: 1 } );
+						
+						// Initial set
+						model.set( 'attribute1', "origValue1" );
+						model.set( 'attribute2', "origValue2" );
+						
+						// Begin persistence operation, defining a callback for when it is complete
+						model.save( {
+							success : function() {
+								test.resume( function() {
+									Y.Assert.isTrue( model.isDirty(), "The model should still be dirty after the persistence operation. attribute1 was set after the persistence operation began." );
+									
+									Y.Assert.isTrue( model.isModified( 'attribute1' ), "attribute1 should be marked as modified (dirty). It was updated (set) after the persistence operation began." );
+									Y.Assert.isFalse( model.isModified( 'attribute2' ), "attribute2 should not be marked as modified. It was not updated after the persistence operation began." );
+									
+									Y.Assert.areSame( "newValue11", model.get( 'attribute1' ), "a get() operation on attribute1 should return the new value." );
+									Y.Assert.areSame( "origValue2", model.get( 'attribute2' ), "a get() operation on attribute2 should return the persisted value. It was not updated since the persistence operation began." );
+									
+									// Now rollback the model, and see if the original value of attribute1 is still there
+									model.rollback();
+									Y.Assert.areSame( "origValue1", model.get( 'attribute1' ), "The value for attribute1 should have been rolled back to its original value" ); 
+								} );
+							}
+						} );
+						
+						
+						// Now set the attribute twice while the async persistence operation is in progress. Test will resume when the timeout completes
+						model.set( 'attribute1', "newValue1" );
+						model.set( 'attribute1', "newValue11" );  // set it again
+						// note: not setting attribute2 here
+						
+						// Wait for the setTimeout in the MockProxy
+						test.wait( 100 );
+					}
+					
 				}
 			]
 		},
