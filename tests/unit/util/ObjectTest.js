@@ -410,6 +410,59 @@ tests.unit.util.add( new Ext.test.TestSuite( {
 				};
 				Y.Assert.isFalse( Kevlar.util.Object.isEmpty( obj ) );
 			}
-		}
+		},
+		
+		
+		/*
+		 * Test keysToArray()
+		 */
+		{
+			name : "Test keysToArray()",
+			
+			
+			"keysToArray() should return an empty array for an empty object" : function() {
+				var obj = {};
+				
+				var arr = Kevlar.util.Object.keysToArray( obj );
+				Y.Assert.areSame( 0, arr.length );
+			},
+			
+			
+			"keysToArray() should return an empty array for an object with only prototype properties" : function() {
+				var MyClass = function(){};
+				MyClass.prototype.prop1 = 1;
+				MyClass.prototype.prop2 = 2;
+				
+				var obj = new MyClass();
+				
+				var arr = Kevlar.util.Object.keysToArray( obj );
+				Y.Assert.areSame( 0, arr.length );
+			},
+			
+			
+			"keysToArray() should return an array of the key names of the object" : function() {
+				var obj = {
+					prop1: 1,
+					prop2: 2
+				};
+				
+				var arr = Kevlar.util.Object.keysToArray( obj );
+				Y.ArrayAssert.itemsAreSame( [ 'prop1', 'prop2' ], arr );
+			},
+			
+			
+			"keysToArray() should return an array of the key names of the object, but ignore prototype properties" : function() {
+				var MyClass = function(){
+					this.myOwnedProp = 1;
+				};
+				MyClass.prototype.prop1 = 1;
+				MyClass.prototype.prop2 = 2;
+				
+				var obj = new MyClass();
+				
+				var arr = Kevlar.util.Object.keysToArray( obj );
+				Y.ArrayAssert.itemsAreSame( [ 'myOwnedProp' ], arr );
+			}
+		}	
 	]
 } ) );

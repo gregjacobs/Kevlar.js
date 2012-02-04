@@ -2441,15 +2441,14 @@ tests.unit.add( new Ext.test.TestSuite( {
 						Y.Assert.areSame( 1, completeCallCount, "The 'complete' function should have been called exactly once" );
 					}
 				},
-					
-					
+				
+				
 				{
-					name : "Test concurrent persistence and model updates",
+					name : "Test basic persistence",
 					
 					setUp : function() {
 						this.Model = Kevlar.Model.extend( {
-							addAttributes : [ 'id', 'attribute1', 'attribute2' ],
-							proxy  : this.mockProxy
+							addAttributes : [ 'id', 'attribute1', 'attribute2' ]
 						} );
 					},
 					
@@ -2484,28 +2483,45 @@ tests.unit.add( new Ext.test.TestSuite( {
 						
 						Y.Assert.areSame( 1, Kevlar.util.Object.length( dataToPersist ), "The dataToPersist should only have one key after attribute2 has been changed" );
 						Y.ObjectAssert.ownsKeys( [ 'attribute2' ], dataToPersist, "The dataToPersist should have 'attribute2'" );
+					}
+				},
+				
+				
+					
+				{
+					name : "Test concurrent persistence and model updates",
+					
+					
+					setUp : function() {
+						this.Model = Kevlar.Model.extend( {
+							addAttributes : [ 'id', 'attribute1', 'attribute2' ],
+							proxy  : this.mockProxy
+						} );
 					},
 					
 					
+					// Creates a test Model with a mock proxy, which fires its 'success' callback after the given timeout
+					createModel : function( timeout ) {
+						return Kevlar.extend( Kevlar.persistence.Proxy, {
+							update : function( model, options ) {
+								// update method just calls 'success' callback in 50ms
+								window.setTimeout( function() {
+									options.success.call( options.scope || window );
+								}, timeout );
+							}
+						} );
+					},
+					
+					
+					// ----------------------------
 					
 					// Test that model attributes that are updated during a persistence request do not get marked as committed
 					
 					"Model attributes that are updated (via set()) while a persistence request is in progress should not be marked as committed when the persistence request completes" : function() {
 						var test = this;
-						var MockProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
-							update : function( model, options ) {
-								// update method just calls 'success' callback in 50ms
-								window.setTimeout( function() {
-									options.success.call( options.scope || window );
-								}, 50 );
-							}
-						} );
 						
-						var MyModel = this.Model.extend( {
-							proxy : new MockProxy()
-						} );
-						
-						var model = new MyModel( { id: 1 } );
+						var Model = this.createModel( 50 ), // 50ms success callback
+						    model = new Model( { id: 1 } );
 						
 						// Initial set
 						model.set( 'attribute1', "origValue1" );
@@ -2536,23 +2552,11 @@ tests.unit.add( new Ext.test.TestSuite( {
 					},
 					
 					
-					// TODO: Test that if a model attribute is modified twice after a persistence operation is started, it should be able to be reverted to its original value
 					"Model attributes that are updated *more than once* (via set()) while a persistence request is in progress should not be marked as committed when the persistence request completes" : function() {
 						var test = this;
-						var MockProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
-							update : function( model, options ) {
-								// update method just calls 'success' callback in 50ms
-								window.setTimeout( function() {
-									options.success.call( options.scope || window );
-								}, 50 );
-							}
-						} );
 						
-						var MyModel = this.Model.extend( {
-							proxy : new MockProxy()
-						} );
-						
-						var model = new MyModel( { id: 1 } );
+						var Model = this.createModel( 50 ), // 50ms success callback
+						    model = new Model( { id: 1 } );
 						
 						// Initial set
 						model.set( 'attribute1', "origValue1" );
@@ -2578,7 +2582,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 						} );
 						
 						
-						// Now set the attribute while the async persistence operation is in progress. Test will resume when the timeout completes
+						// Now set the attribute twice while the async persistence operation is in progress. Test will resume when the timeout completes
 						model.set( 'attribute1', "newValue1" );
 						model.set( 'attribute1', "newValue11" );  // set it again
 						// note: not setting attribute2 here
@@ -3682,7 +3686,60 @@ tests.unit.util.add( new Ext.test.TestSuite( {
 				};
 				Y.Assert.isFalse( Kevlar.util.Object.isEmpty( obj ) );
 			}
-		}
+		},
+		
+		
+		/*
+		 * Test keysToArray()
+		 */
+		{
+			name : "Test keysToArray()",
+			
+			
+			"keysToArray() should return an empty array for an empty object" : function() {
+				var obj = {};
+				
+				var arr = Kevlar.util.Object.keysToArray( obj );
+				Y.Assert.areSame( 0, arr.length );
+			},
+			
+			
+			"keysToArray() should return an empty array for an object with only prototype properties" : function() {
+				var MyClass = function(){};
+				MyClass.prototype.prop1 = 1;
+				MyClass.prototype.prop2 = 2;
+				
+				var obj = new MyClass();
+				
+				var arr = Kevlar.util.Object.keysToArray( obj );
+				Y.Assert.areSame( 0, arr.length );
+			},
+			
+			
+			"keysToArray() should return an array of the key names of the object" : function() {
+				var obj = {
+					prop1: 1,
+					prop2: 2
+				};
+				
+				var arr = Kevlar.util.Object.keysToArray( obj );
+				Y.ArrayAssert.itemsAreSame( [ 'prop1', 'prop2' ], arr );
+			},
+			
+			
+			"keysToArray() should return an array of the key names of the object, but ignore prototype properties" : function() {
+				var MyClass = function(){
+					this.myOwnedProp = 1;
+				};
+				MyClass.prototype.prop1 = 1;
+				MyClass.prototype.prop2 = 2;
+				
+				var obj = new MyClass();
+				
+				var arr = Kevlar.util.Object.keysToArray( obj );
+				Y.ArrayAssert.itemsAreSame( [ 'myOwnedProp' ], arr );
+			}
+		}	
 	]
 } ) );
 

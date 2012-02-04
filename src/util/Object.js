@@ -5,6 +5,7 @@
  * Utility class for methods relating to Object functionality.
  */
 /*global Kevlar */
+/*jslint forin:true */
 Kevlar.util.Object = {
 	
 	/**
@@ -102,7 +103,7 @@ Kevlar.util.Object = {
 			var objLength = Kevlar.util.Object.length;  // no 'this' reference for friendly out of scope calls
 			if( objLength( a ) !== objLength( b ) ) { return false; }
 			
-			for (var p in a) {
+			for( var p in a ) {
 				if(typeof(a[p]) !== typeof(b[p])) { return false; }
 				if((a[p]===null) !== (b[p]===null)) { return false; }
 				switch (typeof(a[p])) {
@@ -163,6 +164,26 @@ Kevlar.util.Object = {
 			}
 		}
 		return true;
+	},
+	
+	
+	/**
+	 * Takes each of the keys (property names) of an object, and puts them into an array.
+	 * 
+	 * @method keysToArray
+	 * @param {Object} obj
+	 * @return {String[]} An array of the key (property) names.
+	 */
+	keysToArray : function( obj ) {
+		var arr = [],
+		    key;
+		    
+		for( key in obj ) {
+			if( obj.hasOwnProperty( key ) ) {
+				arr.push( key );
+			}
+		}
+		return arr;
 	}
 	
 };
