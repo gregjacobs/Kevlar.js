@@ -125,7 +125,7 @@ Kevlar.Attribute = Kevlar.extend( Object, {
 	
 	/**
 	 * @cfg {Boolean} persist
-	 * True if the attribute should be persisted by its {@link Kevlar.Model Model} using the Model's {@link Kevlar.Model#proxy proxy}.
+	 * True if the attribute should be persisted by its {@link Kevlar.Model Model} using the Model's {@link Kevlar.Model#persistenceProxy persistenceProxy}.
 	 * Set to false to prevent the attribute from being persisted.
 	 */
 	persist : true,

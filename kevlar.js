@@ -1645,7 +1645,7 @@ Kevlar.persistence.Proxy = Kevlar.extend( Kevlar.util.Observable, {
 Kevlar.apply( Kevlar.persistence.Proxy, {
 	
 	/**
-	 * An object (hashmap) of proxy name -> Proxy class key/value pairs, used to look up
+	 * An object (hashmap) of persistence proxy name -> Proxy class key/value pairs, used to look up
 	 * a Proxy subclass by name.
 	 * 
 	 * @private
@@ -1660,7 +1660,7 @@ Kevlar.apply( Kevlar.persistence.Proxy, {
 	 *
 	 * @static  
 	 * @method register
-	 * @param {String} type The type name of the proxy.
+	 * @param {String} type The type name of the persistence proxy.
 	 * @param {Function} proxyClass The class (constructor function) to register.
 	 */
 	register : function( type, proxyClass ) {
@@ -1705,7 +1705,7 @@ Kevlar.apply( Kevlar.persistence.Proxy, {
 			
 		} else if( !( 'type' in config ) ) {
 			// No `type` property provided on config object
-			throw new Error( "Kevlar.persistence.proxy.create(): No `type` property provided on proxy config object" );
+			throw new Error( "Kevlar.persistence.Proxy.create(): No `type` property provided on persistenceProxy config object" );
 			 
 		} else {
 			// No registered Proxy type with the given type, throw an error
@@ -1842,7 +1842,7 @@ Kevlar.Attribute = Kevlar.extend( Object, {
 	
 	/**
 	 * @cfg {Boolean} persist
-	 * True if the attribute should be persisted by its {@link Kevlar.Model Model} using the Model's {@link Kevlar.Model#proxy proxy}.
+	 * True if the attribute should be persisted by its {@link Kevlar.Model Model} using the Model's {@link Kevlar.Model#persistenceProxy persistenceProxy}.
 	 * Set to false to prevent the attribute from being persisted.
 	 */
 	persist : true,
@@ -1961,9 +1961,9 @@ Kevlar.data.NativeObjectConverter = {
 		    raw = !!options.raw,
 		    data = {};
 		
-		
 		// Prime the cache with the Model provided to this method, so that if a circular reference points back to this
-		// model, the data object is not duplicated as an internal object (i.e. make it refer right back to this data object)
+		// model, the data object is not duplicated as an internal object (i.e. it should refer right back to the converted Model's 
+		// data object)
 		cache[ obj.getClientId() ] = data;
 		
 		// Recursively goes through the data structure, and convert models to objects
@@ -2023,10 +2023,10 @@ Kevlar.data.NativeObjectConverter = {
 Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	/**
-	 * @cfg {Kevlar.persistence.Proxy} proxy
-	 * The proxy to use (if any) to persist the data to the server.
+	 * @cfg {Kevlar.persistence.Proxy} persistenceProxy
+	 * The persistence proxy to use (if any) to persist the data to the server.
 	 */
-	proxy : null,
+	persistenceProxy : null,
 	
 	/**
 	 * @cfg {String[]/Object[]} attributes
@@ -2205,10 +2205,10 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		// Call superclass constructor (Observable)
 		Kevlar.Model.superclass.constructor.call( me );
 		
-		// If this class has a proxy definition that is an object literal, instantiate it *onto the prototype*
+		// If this class has a persistenceProxy definition that is an object literal, instantiate it *onto the prototype*
 		// (so one Proxy instance can be shared for every model)
-		if( me.proxy && typeof me.proxy === 'object' && !( me.proxy instanceof Kevlar.persistence.Proxy ) ) {
-			me.constructor.prototype.proxy = Kevlar.persistence.Proxy.create( me.proxy );
+		if( me.persistenceProxy && typeof me.persistenceProxy === 'object' && !( me.persistenceProxy instanceof Kevlar.persistence.Proxy ) ) {
+			me.constructor.prototype.persistenceProxy = Kevlar.persistence.Proxy.create( me.persistenceProxy );
 		}
 		
 		
@@ -2623,8 +2623,6 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * to pre-process the data before it is returned in the final hash, unless the `raw` option is set to true,
 	 * in which case the Model attributes are retrieved via {@link #raw}. 
 	 * 
-	 * Note: returns a copy of the data so that the object retrieved from this method may be modified.
-	 * 
 	 * @methods getData
 	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This object is sent to
 	 *   the {@link Kevlar.data.NativeObjectConverter#convert NativeObjectConverter's convert method}, and accepts all of the options
@@ -2641,9 +2639,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * the last {@link #method-commit} or {@link #method-rollback}. 
 	 * 
 	 * The Model attributes are retrieved via the {@link #get} method, to pre-process the data before it is returned in the final hash, 
-	 * unless the `raw` option is set to true, in which case the Model attributes are retrieved via {@link #raw}. 
-	 * 
-	 * Note: returns a copy of the data so that the object retrieved from this method may be modified.
+	 * unless the `raw` option is set to true, in which case the Model attributes are retrieved via {@link #raw}.
 	 * 
 	 * @method getChanges
 	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This object is sent to
@@ -2664,7 +2660,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Commits dirty attributes' data. Data can no longer be reverted after a commit has been performed. Note: When developing with a {@link #proxy},
+	 * Commits dirty attributes' data. Data can no longer be reverted after a commit has been performed. Note: When developing with a {@link #persistenceProxy},
 	 * this method should normally not need to be called explicitly, as it will be called upon the successful persistence of the Model's data
 	 * to the server.
 	 * 
@@ -2721,34 +2717,34 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Sets the {@link #proxy} to use to persist the Model's data. Note that this is set
+	 * Sets the {@link #persistenceProxy} to use to persist the Model's data. Note that this is set
 	 * to the *prototype* of the Model, for use with all instances of the Model. Because
-	 * of this, it is usually best to define the {@link #proxy} on the prototype of a Model
+	 * of this, it is usually best to define the {@link #persistenceProxy} on the prototype of a Model
 	 * subclass.
 	 * 
 	 * @method setProxy
-	 * @param {Kevlar.persistence.Proxy} proxy
+	 * @param {Kevlar.persistence.Proxy} persistenceProxy
 	 */
-	setProxy : function( proxy ) {
+	setProxy : function( persistenceProxy ) {
 		// Proxy's get placed on the prototype, so they are shared between instances
-		this.constructor.prototype.proxy = proxy;
+		this.constructor.prototype.persistenceProxy = persistenceProxy;
 	},
 	
 	
 	/**
-	 * Gets the {@link #proxy} that is currently configured for this Model. Note that
-	 * the same proxy instance is shared between all instances of the model.
+	 * Gets the {@link #persistenceProxy} that is currently configured for this Model. Note that
+	 * the same persistenceProxy instance is shared between all instances of the model.
 	 * 
 	 * @method getProxy
-	 * @return {Kevlar.persistence.Proxy} The proxy, or null if there is no proxy currently set.
+	 * @return {Kevlar.persistence.Proxy} The persistenceProxy, or null if there is no persistenceProxy currently set.
 	 */
 	getProxy : function() {
-		return this.proxy;
+		return this.persistenceProxy;
 	},
 	
 	
 	/**
-	 * Loads the Model data from the server, using the configured {@link #proxy}.
+	 * Loads the Model data from the server, using the configured {@link #persistenceProxy}.
 	 * 
 	 * @method load
 	 * @param {Object} [options] An object which may contain the following properties:
@@ -2761,9 +2757,9 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	load : function( options ) {
 		options = options || {};
 		
-		// No proxy, cannot load. Throw an error
-		if( !this.proxy ) {
-			throw new Error( "Kevlar.Model::load() error: Cannot load. No proxy." );
+		// No persistenceProxy, cannot load. Throw an error
+		if( !this.persistenceProxy ) {
+			throw new Error( "Kevlar.Model::load() error: Cannot load. No persistenceProxy." );
 		}
 		
 		var proxyOptions = {
@@ -2775,12 +2771,12 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		};
 		
 		// Make a request to update the data on the server
-		this.proxy.read( this, proxyOptions );
+		this.persistenceProxy.read( this, proxyOptions );
 	},
 	
 	
 	/**
-	 * Persists the Model data to the backend, using the configured {@link #proxy}. If the request to persist the Model's data is successful,
+	 * Persists the Model data to the backend, using the configured {@link #persistenceProxy}. If the request to persist the Model's data is successful,
 	 * the Model's data will be {@link #method-commit committed} upon completion.
 	 * 
 	 * @method save
@@ -2796,9 +2792,9 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		options = options || {};
 		var scope = options.scope || options.context || window;
 		
-		// No proxy, cannot save. Throw an error
-		if( !this.proxy ) {
-			throw new Error( "Kevlar.Model::save() error: Cannot save. No proxy." );
+		// No persistenceProxy, cannot save. Throw an error
+		if( !this.persistenceProxy ) {
+			throw new Error( "Kevlar.Model::save() error: Cannot save. No persistenceProxy." );
 		}
 		
 		// Store a "snapshot" of the data that is being persisted. This is used to compare against the Model's current data at the time of when the persistence operation 
@@ -2851,15 +2847,15 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		// Make a request to create or update the data on the server
 		if( typeof this.getId() === 'undefined' ) {
-			this.proxy.create( this, proxyOptions );
+			this.persistenceProxy.create( this, proxyOptions );
 		} else {
-			this.proxy.update( this, proxyOptions );
+			this.persistenceProxy.update( this, proxyOptions );
 		}
 	},
 	
 	
 	/**
-	 * Destroys the Model on the backend, using the configured {@link #proxy}.
+	 * Destroys the Model on the backend, using the configured {@link #persistenceProxy}.
 	 * 
 	 * @method destroy
 	 * @param {Object} [options] An object which may contain the following properties:
@@ -2874,9 +2870,9 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		options = options || {};
 		var scope = options.scope || options.context || window;
 		
-		// No proxy, cannot destroy. Throw an error
-		if( !this.proxy ) {
-			throw new Error( "Kevlar.Model::destroy() error: Cannot destroy. No proxy." );
+		// No persistenceProxy, cannot destroy. Throw an error
+		if( !this.persistenceProxy ) {
+			throw new Error( "Kevlar.Model::destroy() error: Cannot destroy. No persistenceProxy." );
 		}
 		
 		var successCallback = function() {
@@ -2906,7 +2902,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		};
 		
 		// Make a request to destroy the data on the server
-		this.proxy.destroy( this, proxyOptions );
+		this.persistenceProxy.destroy( this, proxyOptions );
 	}
 	
 	
@@ -3103,8 +3099,8 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 */
 	create : function( model, options ) {
 		options = options || {};
-				
-		// Set the data to persist, based on if the proxy is set to do incremental updates or not
+		
+		// Set the data to persist
 		var dataToPersist = model.getData( { persistedOnly: true, raw: true } );
 				
 		// Handle needing a different "root" wrapper object for the data
@@ -3218,7 +3214,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		}
 		
 		
-		// Set the data to persist, based on if the proxy is set to do incremental updates or not
+		// Set the data to persist, based on if the persistence proxy is set to do incremental updates or not
 		var dataToPersist;
 		if( this.incremental ) {
 			dataToPersist = changedData;   // uses incremental updates, we can just send it the changes
@@ -3329,7 +3325,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	
 } );
 
-// Register the proxy so that it can be created by an object literal with a `type` property
+// Register the persistence proxy so that it can be created by an object literal with a `type` property
 Kevlar.persistence.Proxy.register( 'rest', Kevlar.persistence.RestProxy );
 
 /**

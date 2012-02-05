@@ -101,8 +101,8 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 */
 	create : function( model, options ) {
 		options = options || {};
-				
-		// Set the data to persist, based on if the proxy is set to do incremental updates or not
+		
+		// Set the data to persist
 		var dataToPersist = model.getData( { persistedOnly: true, raw: true } );
 				
 		// Handle needing a different "root" wrapper object for the data
@@ -216,7 +216,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		}
 		
 		
-		// Set the data to persist, based on if the proxy is set to do incremental updates or not
+		// Set the data to persist, based on if the persistence proxy is set to do incremental updates or not
 		var dataToPersist;
 		if( this.incremental ) {
 			dataToPersist = changedData;   // uses incremental updates, we can just send it the changes
@@ -327,5 +327,5 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	
 } );
 
-// Register the proxy so that it can be created by an object literal with a `type` property
+// Register the persistence proxy so that it can be created by an object literal with a `type` property
 Kevlar.persistence.Proxy.register( 'rest', Kevlar.persistence.RestProxy );

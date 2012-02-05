@@ -16,33 +16,33 @@ tests.unit.add( new Ext.test.TestSuite( {
 			items : [
 				{
 					/*
-					 * Test lazy instantiating a proxy
+					 * Test lazy instantiating a persistenceProxy
 					 */
-					name : "Test lazy instantiating a proxy",
+					name : "Test lazy instantiating a persistenceProxy",
 					
 					_should : {
 						error : {
-							"Attempting to instantiate a proxy with no 'type' attribute should throw an error" :
-								"Kevlar.persistence.proxy.create(): No `type` property provided on proxy config object",
+							"Attempting to instantiate a persistenceProxy with no 'type' attribute should throw an error" :
+								"Kevlar.persistence.Proxy.create(): No `type` property provided on persistenceProxy config object",
 								
-							"Attempting to instantiate a proxy with an invalid 'type' attribute should throw an error" :
+							"Attempting to instantiate a persistenceProxy with an invalid 'type' attribute should throw an error" :
 								"Kevlar.persistence.Proxy.create(): Unknown Proxy type: 'nonexistentproxy'"
 						}
 					},
 					
-					"Attempting to instantiate a proxy with no 'type' attribute should throw an error" : function() {
+					"Attempting to instantiate a persistenceProxy with no 'type' attribute should throw an error" : function() {
 						var TestModel = Kevlar.extend( Kevlar.Model, {
 							addAttributes: [ 'attribute1' ],
-							proxy : {}
+							persistenceProxy : {}
 						} );
 						
 						var model = new TestModel();
 					},
 					
-					"Attempting to instantiate a proxy with an invalid 'type' attribute should throw an error" : function() {
+					"Attempting to instantiate a persistenceProxy with an invalid 'type' attribute should throw an error" : function() {
 						var TestModel = Kevlar.extend( Kevlar.Model, {
 							addAttributes: [ 'attribute1' ],
-							proxy : { 
+							persistenceProxy : { 
 								type : 'nonExistentProxy'
 							}
 						} );
@@ -53,32 +53,32 @@ tests.unit.add( new Ext.test.TestSuite( {
 					"Providing a valid config object should instantiate the Proxy *on class's the prototype*" : function() {
 						var TestModel = Kevlar.extend( Kevlar.Model, {
 							addAttributes: [ 'attribute1' ],
-							proxy : { 
-								type : 'rest'  // a valid proxy type
+							persistenceProxy : { 
+								type : 'rest'  // a valid persistenceProxy type
 							}
 						} );
 						
 						var model = new TestModel();
-						Y.Assert.isInstanceOf( Kevlar.persistence.RestProxy, TestModel.prototype.proxy );
+						Y.Assert.isInstanceOf( Kevlar.persistence.RestProxy, TestModel.prototype.persistenceProxy );
 					},
 					
 					"Providing a valid config object should instantiate the Proxy *on the correct subclass's prototype*, shadowing superclasses" : function() {
 						var TestModel = Kevlar.extend( Kevlar.Model, {
 							addAttributes: [ 'attribute1' ],
-							proxy : { 
-								type : 'nonExistentProxy'  // an invalid proxy type
+							persistenceProxy : { 
+								type : 'nonExistentProxy'  // an invalid persistenceProxy type
 							}
 						} );
 						
 						var TestSubModel = Kevlar.extend( TestModel, {
 							addAttributes: [ 'attribute1' ],
-							proxy : { 
-								type : 'rest'  // a valid proxy type
+							persistenceProxy : { 
+								type : 'rest'  // a valid persistenceProxy type
 							}
 						} );
 						
 						var model = new TestSubModel();
-						Y.Assert.isInstanceOf( Kevlar.persistence.RestProxy, TestSubModel.prototype.proxy );
+						Y.Assert.isInstanceOf( Kevlar.persistence.RestProxy, TestSubModel.prototype.persistenceProxy );
 					}
 				},
 				
@@ -1500,21 +1500,21 @@ tests.unit.add( new Ext.test.TestSuite( {
 			// Special instructions
 			_should : {
 				error : {
-					"load() should throw an error if there is no configured proxy" : "Kevlar.Model::load() error: Cannot load. No proxy."
+					"load() should throw an error if there is no configured persistenceProxy" : "Kevlar.Model::load() error: Cannot load. No persistenceProxy."
 				}
 			},
 			
 			
-			"load() should throw an error if there is no configured proxy" : function() {
+			"load() should throw an error if there is no configured persistenceProxy" : function() {
 				var model = new this.TestModel( {
-					// note: no configured proxy
+					// note: no configured persistenceProxy
 				} );
 				model.load();
-				Y.Assert.fail( "load() should have thrown an error with no configured proxy" );
+				Y.Assert.fail( "load() should have thrown an error with no configured persistenceProxy" );
 			},
 			
 			
-			"load() should delegate to its proxy's read() method to retrieve the data" : function() {
+			"load() should delegate to its persistenceProxy's read() method to retrieve the data" : function() {
 				var readCallCount = 0;
 				var MockProxy = Kevlar.persistence.Proxy.extend( {
 					read : function( model, options ) {
@@ -1523,7 +1523,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				} );
 				
 				var MyModel = this.TestModel.extend( {
-					proxy : new MockProxy()
+					persistenceProxy : new MockProxy()
 				} );
 				
 				var model = new MyModel();
@@ -1531,7 +1531,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				// Run the load() method to delegate 
 				model.load();
 				
-				Y.Assert.areSame( 1, readCallCount, "The proxy's read() method should have been called exactly once" );
+				Y.Assert.areSame( 1, readCallCount, "The persistenceProxy's read() method should have been called exactly once" );
 			}
 		},
 		
@@ -1550,29 +1550,29 @@ tests.unit.add( new Ext.test.TestSuite( {
 					// Special instructions
 					_should : {
 						error : {
-							"save() should throw an error if there is no configured proxy" : "Kevlar.Model::save() error: Cannot save. No proxy."
+							"save() should throw an error if there is no configured persistenceProxy" : "Kevlar.Model::save() error: Cannot save. No persistenceProxy."
 						}
 					},
 					
 					
-					"save() should throw an error if there is no configured proxy" : function() {
+					"save() should throw an error if there is no configured persistenceProxy" : function() {
 						var Model = Kevlar.Model.extend( {
-							// note: no proxy
+							// note: no persistenceProxy
 						} );
 						var model = new Model();
 						model.save();
-						Y.Assert.fail( "save() should have thrown an error with no configured proxy" );
+						Y.Assert.fail( "save() should have thrown an error with no configured persistenceProxy" );
 					},
 					
 					
-					"save() should delegate to its proxy's create() method to persist changes when the Model does not have an id set" : function() {
+					"save() should delegate to its persistenceProxy's create() method to persist changes when the Model does not have an id set" : function() {
 						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
 						
 						var Model = Kevlar.Model.extend( {
 							addAttributes : [ 'id' ],
 							idAttribute : 'id',
 							
-							proxy : mockProxy
+							persistenceProxy : mockProxy
 						} );
 						
 						var model = new Model();  // note: no 'id' set
@@ -1583,19 +1583,19 @@ tests.unit.add( new Ext.test.TestSuite( {
 						try {
 							JsMockito.verify( mockProxy ).create();
 						} catch( message ) {
-							Y.Assert.fail( "The proxy's update() method should have been called exactly once. " + message );
+							Y.Assert.fail( "The persistenceProxy's update() method should have been called exactly once. " + message );
 						}
 					},
 					
 					
-					"save() should delegate to its proxy's update() method to persist changes, when the Model has an id" : function() {
+					"save() should delegate to its persistenceProxy's update() method to persist changes, when the Model has an id" : function() {
 						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
 						
 						var Model = Kevlar.Model.extend( {
 							addAttributes : [ 'id' ],
 							idAttribute : 'id',
 							
-							proxy : mockProxy
+							persistenceProxy : mockProxy
 						} );
 						
 						var model = new Model( { id: 1 } );
@@ -1606,7 +1606,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 						try {
 							JsMockito.verify( mockProxy, JsMockito.Verifiers.once() ).update();
 						} catch( message ) {
-							Y.Assert.fail( "The proxy's update() method should have been called exactly once. " + message );
+							Y.Assert.fail( "The persistenceProxy's update() method should have been called exactly once. " + message );
 						}
 					}
 				},
@@ -1627,12 +1627,12 @@ tests.unit.add( new Ext.test.TestSuite( {
 						
 						this.Model = Kevlar.Model.extend( {
 							addAttributes : [ 'id', 'attribute1' ],
-							proxy  : this.mockProxy
+							persistenceProxy  : this.mockProxy
 						} );
 					},
 					
 					
-					"save should call its 'success' and 'complete' callbacks if the proxy successfully creates" : function() {
+					"save should call its 'success' and 'complete' callbacks if the persistenceProxy successfully creates" : function() {
 						var successCallCount = 0,
 						    completeCallCount = 0;
 						    
@@ -1648,7 +1648,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 					},
 					
 					
-					"save should call its 'error' and 'complete' callbacks if the proxy encounters an error while creating" : function() {
+					"save should call its 'error' and 'complete' callbacks if the persistenceProxy encounters an error while creating" : function() {
 						var errorCallCount = 0,
 						    completeCallCount = 0;
 						
@@ -1664,7 +1664,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 					},
 					
 					
-					"save should call its 'success' and 'complete' callbacks if the proxy successfully updates" : function() {
+					"save should call its 'success' and 'complete' callbacks if the persistenceProxy successfully updates" : function() {
 						var successCallCount = 0,
 						    completeCallCount = 0;
 						    
@@ -1680,7 +1680,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 					},
 					
 					
-					"save should call its 'error' and 'complete' callbacks if the proxy encounters an error while updating" : function() {
+					"save should call its 'error' and 'complete' callbacks if the persistenceProxy encounters an error while updating" : function() {
 						var errorCallCount = 0,
 						    completeCallCount = 0;
 						
@@ -1718,7 +1718,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 							}
 						} );
 						var MyModel = this.Model.extend( {
-							proxy : new MockProxy()
+							persistenceProxy : new MockProxy()
 						} );
 						var model = new MyModel( { id: 1 } );
 						
@@ -1746,7 +1746,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 					name : "Test concurrent persistence and model updates",
 										
 					
-					// Creates a test Model with a mock proxy, which fires its 'success' callback after the given timeout
+					// Creates a test Model with a mock persistenceProxy, which fires its 'success' callback after the given timeout
 					createModel : function( timeout ) {
 						var MockProxy = Kevlar.persistence.Proxy.extend( {
 							update : function( model, options ) {
@@ -1759,7 +1759,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 						
 						return Kevlar.Model.extend( {
 							addAttributes : [ 'id', 'attribute1', 'attribute2' ],
-							proxy : new MockProxy()
+							persistenceProxy : new MockProxy()
 						} );
 					},
 					
@@ -1861,27 +1861,27 @@ tests.unit.add( new Ext.test.TestSuite( {
 					// Special instructions
 					_should : {
 						error : {
-							"destroy() should throw an error if there is no configured proxy" : "Kevlar.Model::destroy() error: Cannot destroy. No proxy."
+							"destroy() should throw an error if there is no configured persistenceProxy" : "Kevlar.Model::destroy() error: Cannot destroy. No persistenceProxy."
 						}
 					},
 					
 					
-					"destroy() should throw an error if there is no configured proxy" : function() {
+					"destroy() should throw an error if there is no configured persistenceProxy" : function() {
 						var Model = Kevlar.Model.extend( {
 							addAttributes : [ 'attribute1', 'attribute2' ]
-							// note: no proxy
+							// note: no persistenceProxy
 						} );
 						
 						var model = new Model();
 						model.destroy();
-						Y.Assert.fail( "destroy() should have thrown an error with no configured proxy" );
+						Y.Assert.fail( "destroy() should have thrown an error with no configured persistenceProxy" );
 					},
 					
 					
-					"destroy() should delegate to its proxy's destroy() method to persist the destruction of the model" : function() {
+					"destroy() should delegate to its persistenceProxy's destroy() method to persist the destruction of the model" : function() {
 						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );				
 						var Model = Kevlar.Model.extend( {
-							proxy : mockProxy
+							persistenceProxy : mockProxy
 						} );
 						
 						var model = new Model();
@@ -1904,7 +1904,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 						};
 						
 						var Model = Kevlar.Model.extend( {
-							proxy : mockProxy
+							persistenceProxy : mockProxy
 						} );
 						
 						var model = new Model();
@@ -1934,13 +1934,13 @@ tests.unit.add( new Ext.test.TestSuite( {
 					},
 					
 			
-					"destroy() should call its 'success' and 'complete' callbacks if the proxy is successful" : function() {
+					"destroy() should call its 'success' and 'complete' callbacks if the persistenceProxy is successful" : function() {
 						var successCallCount = 0,
 						    completeCallCount = 0;
 						
 						var Model = Kevlar.Model.extend( {
 							attributes : [ 'attribute1' ],
-							proxy  : this.mockProxy
+							persistenceProxy  : this.mockProxy
 						} );
 						var model = new Model();
 						
@@ -1955,7 +1955,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 					},
 					
 					
-					"destroy() should call its 'error' and 'complete' callbacks if the proxy encounters an error" : function() {
+					"destroy() should call its 'error' and 'complete' callbacks if the persistenceProxy encounters an error" : function() {
 						var errorCallCount = 0,
 						    completeCallCount = 0;
 						    
@@ -1967,7 +1967,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 						
 						var Model = Kevlar.Model.extend( {
 							attributes : [ 'attribute1' ],
-							proxy  : this.mockProxy
+							persistenceProxy  : this.mockProxy
 						} );
 						var model = new Model();
 						

@@ -62,7 +62,7 @@ Kevlar.persistence.Proxy = Kevlar.extend( Kevlar.util.Observable, {
 Kevlar.apply( Kevlar.persistence.Proxy, {
 	
 	/**
-	 * An object (hashmap) of proxy name -> Proxy class key/value pairs, used to look up
+	 * An object (hashmap) of persistence proxy name -> Proxy class key/value pairs, used to look up
 	 * a Proxy subclass by name.
 	 * 
 	 * @private
@@ -77,7 +77,7 @@ Kevlar.apply( Kevlar.persistence.Proxy, {
 	 *
 	 * @static  
 	 * @method register
-	 * @param {String} type The type name of the proxy.
+	 * @param {String} type The type name of the persistence proxy.
 	 * @param {Function} proxyClass The class (constructor function) to register.
 	 */
 	register : function( type, proxyClass ) {
@@ -122,7 +122,7 @@ Kevlar.apply( Kevlar.persistence.Proxy, {
 			
 		} else if( !( 'type' in config ) ) {
 			// No `type` property provided on config object
-			throw new Error( "Kevlar.persistence.proxy.create(): No `type` property provided on proxy config object" );
+			throw new Error( "Kevlar.persistence.Proxy.create(): No `type` property provided on persistenceProxy config object" );
 			 
 		} else {
 			// No registered Proxy type with the given type, throw an error
