@@ -1925,6 +1925,7 @@ Kevlar.Attribute = Kevlar.extend( Object, {
 } );
 
 /**
+ * @private
  * @class Kevlar.data.NativeObjectConverter
  * @singleton
  * 
@@ -2702,14 +2703,22 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @hide
 	 * Creates a clone of the Model, by copying its instance data.
 	 * 
-	 * Note: This is a simplistic early version of the method, where the final version will most likely
-	 * account for shared nested models and other such nested data. Do not use just yet.
+	 * Note: This is a very very early, alpha version of the method, where the final version will most likely
+	 * account for shared nested models and other such nested data. Will also handle circular dependencies.
+	 * Do not use just yet.
 	 * 
 	 * @method clone
 	 * @return {Kevlar.Model} The new Model instance, which is a clone of the Model this method was called on.
 	 */
 	clone : function() {
-		return new this.constructor( Kevlar.util.Object.clone( this.data ) );
+		var data = Kevlar.util.Object.clone( this.getData(), /* deep */ false );
+		
+		// Remove the id, so that it becomes a new model. If this is kept here, a reference to this exact
+		// model will be returned instead of a new one, as the framework does not allow duplicate models with
+		// the same id.
+		delete data[ this.idAttribute ];  
+		
+		return new this.constructor( data );
 	},
 	
 	
