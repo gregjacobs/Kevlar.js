@@ -1,4 +1,5 @@
 /**
+ * @private
  * @class Kevlar.data.NativeObjectConverter
  * @singleton
  * 
