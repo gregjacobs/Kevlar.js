@@ -2490,25 +2490,22 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 				{
 					name : "Test concurrent persistence and model updates",
-					
-					
-					setUp : function() {
-						this.Model = Kevlar.Model.extend( {
-							addAttributes : [ 'id', 'attribute1', 'attribute2' ],
-							proxy  : this.mockProxy
-						} );
-					},
-					
+										
 					
 					// Creates a test Model with a mock proxy, which fires its 'success' callback after the given timeout
 					createModel : function( timeout ) {
-						return Kevlar.extend( Kevlar.persistence.Proxy, {
+						var MockProxy = Kevlar.persistence.Proxy.extend( {
 							update : function( model, options ) {
 								// update method just calls 'success' callback in 50ms
 								window.setTimeout( function() {
 									options.success.call( options.scope || window );
 								}, timeout );
 							}
+						} );
+						
+						return Kevlar.Model.extend( {
+							addAttributes : [ 'id', 'attribute1', 'attribute2' ],
+							proxy : new MockProxy()
 						} );
 					},
 					
@@ -3739,7 +3736,7 @@ tests.unit.util.add( new Ext.test.TestSuite( {
 				var arr = Kevlar.util.Object.keysToArray( obj );
 				Y.ArrayAssert.itemsAreSame( [ 'myOwnedProp' ], arr );
 			}
-		}	
+		}
 	]
 } ) );
 
