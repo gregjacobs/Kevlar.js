@@ -1164,15 +1164,48 @@ tests.unit.add( new Ext.test.TestSuite( {
 				} );
 			},
 			
+			// -------------------------------------
 			
-			"isModified() should return false for attributes that have not been changed" : function() {
+			// Test checking the model as a whole
+			
+			"isModified should return false if there are no changes on the model" : function() {
 				var model = new this.TestModel();
+				
+				Y.Assert.isFalse( model.isModified() );
+			},
+			
+			
+			"isModified should return true if there is at least one change on the model" : function() {
+				var model = new this.TestModel();
+				model.set( 'attribute1', 'newValue1' );
+				
+				Y.Assert.isTrue( model.isModified() );
+			},
+			
+			
+			"isModified should return true if there are multiple changes on the model" : function() {
+				var model = new this.TestModel();
+				model.set( 'attribute1', 'newValue1' );
+				model.set( 'attribute2', 'newValue2' );
+				
+				Y.Assert.isTrue( model.isModified() );
+			},
+			
+			
+			// -------------------------------------
+			
+			// Test checking particular attributes
+			
+			"isModified() should return false for particular attributes that have not been changed, even if there are other changes" : function() {
+				var model = new this.TestModel();
+				model.set( 'attribute3', 'testing123' );
+				
 				Y.Assert.isFalse( model.isModified( 'attribute1' ), "attribute1, with no defaultValue, should not be modified" );
 				Y.Assert.isFalse( model.isModified( 'attribute2' ), "attribute2, with a defaultValue, should not be modified" );
 			},
 			
 			
-			"isModified() should return true for attributes that have been changed" : function() {
+			"isModified() should return true for particular attributes that have been changed" : function() {
 				var model = new this.TestModel();
 				
 				model.set( 'attribute1', "new value 1" );
@@ -1182,7 +1215,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			},
 			
 			
-			"isModified() should return false for attributes that have been changed, but then committed" : function() {
+			"isModified() should return false for particular attributes that have been changed, but then committed" : function() {
 				var model = new this.TestModel();
 				
 				model.set( 'attribute1', "new value 1" );
@@ -1193,7 +1226,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			},
 			
 			
-			"isModified() should return false for attributes that have been changed, but then rolled back" : function() {
+			"isModified() should return false for particular attributes that have been changed, but then rolled back" : function() {
 				var model = new this.TestModel();
 				
 				model.set( 'attribute1', "new value 1" );

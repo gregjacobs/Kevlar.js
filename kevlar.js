@@ -2518,7 +2518,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		var value = this.data[ attributeName ],
 		    attribute = this.attributes[ attributeName ];
-		    
+		
 		// If there is a `get` function on the Attribute, run it now to convert the value before it is returned.
 		if( typeof attribute.get === 'function' ) {
 			value = attribute.get.call( attribute.scope || this, value, this );  // provided the value, and the Model instance
@@ -2596,14 +2596,20 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Determines if a given attribute has been modified since the last {@link #method-commit} or {@link #method-rollback}.
+	 * Determines if any attribute(s) in the model are modified, or if a given attribute has been modified, since the last 
+	 * {@link #method-commit} or {@link #method-rollback}.
 	 * 
 	 * @method isModified
-	 * @param {String} attributeName
+	 * @param {String} [attributeName] Provide this argument to test if a particular attribute has been modified. If this is not 
+	 *   provided, the model itself will be checked to see if there are any modified attributes. 
 	 * @return {Boolean} True if the attribute has been modified, false otherwise.
 	 */
 	isModified : function( attributeName ) {
-		return ( attributeName in this.modifiedData );
+		if( !attributeName ) {
+			return !Kevlar.util.Object.isEmpty( this.modifiedData );
+		} else {
+			return ( attributeName in this.modifiedData );
+		}
 	},
 	
 	
