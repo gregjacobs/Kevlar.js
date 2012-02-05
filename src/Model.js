@@ -109,6 +109,14 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 */
 	
 	/**
+	 * @protected
+	 * @property {String} clientId (readonly)
+	 * 
+	 * A unique ID for the Model on the client side. This is used to uniquely identify each Model instance.
+	 * Retrieve with {@link #getClientId}.
+	 */
+	
+	/**
 	 * @hide
 	 * @property {String} id (readonly)
 	 * The id for the Model. This property is set when the attribute specified by the {@link #idAttribute} config
@@ -248,8 +256,8 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		me.initAttributes();
 		
 		
-		// Create a "client id" to maintain compatibility with Backbone's Collection
-		me.cid = 'c' + (++Kevlar.Model.currentCid);
+		// Create a client ID for the Model, and set it to the property 'cid' as well to maintain compatibility with Backbone's Collection
+		me.clientId = me.cid = 'c' + (++Kevlar.Model.currentCid);
 		
 		
 		// Set the default values for attributes that don't have an initial value.
@@ -366,6 +374,17 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 */
 	getAttributes : function() {
 		return this.attributes;
+	},
+	
+	
+	/**
+	 * Retrieves the Model instance's unique {@link #clientId}.
+	 * 
+	 * @method getClientId
+	 * @return {String} The Model instance's unique {@link #clientId}. 
+	 */
+	getClientId : function() {
+		return this.clientId;
 	},
 	
 	
@@ -585,7 +604,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @return {Boolean} True if the attribute has been modified, false otherwise.
 	 */
 	isModified : function( attributeName ) {
-		return this.modifiedData.hasOwnProperty( attributeName );
+		return ( attributeName in this.modifiedData );
 	},
 	
 	
@@ -597,33 +616,13 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * Note: returns a copy of the data so that the object retrieved from this method may be modified.
 	 * 
 	 * @methods getData
-	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This may include:
-	 * @param {Boolean} [options.persistedOnly] True to have the method only return data for the persisted attributes (i.e.,
-	 *   attributes with the {@link Kevlar.Attribute#persist persist} config set to true, which is the default).
-	 * @param {Boolean} [options.raw] True to have the method only return the raw data for the attributes, by way of the {@link #raw} method. 
-	 *   This is used for persistence, where the raw data values go to the server rather than higher-level objects, or where some kind of serialization
-	 *   to a string must take place before persistence (such as for Date objects). 
+	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This object is sent to
+	 *   the {@link Kevlar.data.NativeObjectConverter#convert NativeObjectConverter's convert method}, and accepts all of the options
+	 *   that the {@link Kevlar.data.NativeObjectConverter#convert} method does. See that method for details.
 	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.Attribute Attribute} values.
 	 */
 	getData : function( options ) {
-		options = options || {};
-		
-		var attributes = this.attributes,
-		    persistedOnly = !!options.persistedOnly,
-		    raw = !!options.raw,
-		    data = {};
-		    
-		for( var attributeName in this.attributes ) {
-			if( !persistedOnly || attributes[ attributeName ].isPersisted() === true ) {
-				data[ attributeName ] = ( raw ) ? this.raw( attributeName ) : this.get( attributeName );
-				
-				// Temporary fix for getting the data out of nested models
-				if( data[ attributeName ] instanceof Kevlar.Model ) {
-					data[ attributeName ] = data[ attributeName ].getData( options );
-				}
-			}
-		}
-		return Kevlar.util.Object.clone( data );
+		return Kevlar.data.NativeObjectConverter.convert( this, options );
 	},
 	
 	
@@ -637,30 +636,20 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * Note: returns a copy of the data so that the object retrieved from this method may be modified.
 	 * 
 	 * @method getChanges
-	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This may include:
-	 * @param {Boolean} [options.persistedOnly] True to have the method only return data for the persisted Attributes (i.e.,
-	 *   Attributes with the {@link Kevlar.Attribute#persist persist} config set to true, which is the default).
-	 * @param {Boolean} [options.raw] True to have the method only return the raw data for the attributes, by way of the {@link #raw} method. 
-	 *   This is used for persistence, where the raw data values go to the server rather than higher-level objects, or where some kind of serialization
-	 *   to a string must take place before persistence (such as for Date objects). 
+	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This object is sent to
+	 *   the {@link Kevlar.data.NativeObjectConverter#convert NativeObjectConverter's convert method}, and accepts all of the options
+	 *   that the {@link Kevlar.data.NativeObjectConverter#convert} method does. See that method for details.
 	 * @return {Object} A hash of the attributes that have been changed since the last {@link #commit} or {@link #rollback}.
 	 *   The hash's property names are the attribute names, and the hash's values are the new values.
 	 */
 	getChanges : function( options ) {
 		options = options || {};
 		
-		var modifiedData = Kevlar.util.Object.clone( this.modifiedData ),
-		    attributes = this.attributes,
-		    persistedOnly = !!options.persistedOnly,
-		    raw = !!options.raw,
-		    changes = {};
+		// Provide specific attribute names to the NativeObjectConverter's convert() method, which are only the
+		// names for attributes that have changed
+		options.attributeNames = Kevlar.util.Object.keysToArray( this.modifiedData );
 		
-		for( var attributeName in modifiedData ) {
-			if( !persistedOnly || attributes[ attributeName ].isPersisted() === true ) {
-				changes[ attributeName ] = ( raw ) ? this.raw( attributeName ) : this.get( attributeName );
-			}
-		}
-		return changes;
+		return Kevlar.data.NativeObjectConverter.convert( this, options );
 	},
 	
 	

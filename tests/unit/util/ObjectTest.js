@@ -463,6 +463,6 @@ tests.unit.util.add( new Ext.test.TestSuite( {
 				var arr = Kevlar.util.Object.keysToArray( obj );
 				Y.ArrayAssert.itemsAreSame( [ 'myOwnedProp' ], arr );
 			}
-		}	
+		}
 	]
 } ) );
