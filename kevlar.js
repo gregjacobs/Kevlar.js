@@ -2147,18 +2147,6 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 */
 	
 	
-	statics : {
-		/**
-		 * Static property used to provide a "client id" to models. See {@link #cid}.
-		 * 
-		 * @private
-		 * @static
-		 * @property {Number} currentCid
-		 */
-		currentCid : 0
-	},
-	
-	
 	inheritedStatics : {
 		/**
 		 * A static property that is unique to each Kevlar.Model subclass, which uniquely identifies it.
@@ -2268,7 +2256,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		
 		// Create a client ID for the Model, and set it to the property 'cid' as well to maintain compatibility with Backbone's Collection
-		me.clientId = me.cid = 'c' + (++Kevlar.Model.currentCid);
+		me.clientId = me.cid = 'c' + Kevlar.newId();
 		
 		
 		// Set the default values for attributes that don't have an initial value.
@@ -2704,14 +2692,14 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * Creates a clone of the Model, by copying its instance data.
 	 * 
 	 * Note: This is a very very early, alpha version of the method, where the final version will most likely
-	 * account for shared nested models and other such nested data. Will also handle circular dependencies.
-	 * Do not use just yet.
+	 * account for shared nested models, while copying embedded models and other such nested data. Will also handle 
+	 * circular dependencies. Do not use just yet.
 	 * 
 	 * @method clone
 	 * @return {Kevlar.Model} The new Model instance, which is a clone of the Model this method was called on.
 	 */
 	clone : function() {
-		var data = Kevlar.util.Object.clone( this.getData(), /* deep */ false );
+		var data = Kevlar.util.Object.clone( this.getData() );
 		
 		// Remove the id, so that it becomes a new model. If this is kept here, a reference to this exact
 		// model will be returned instead of a new one, as the framework does not allow duplicate models with

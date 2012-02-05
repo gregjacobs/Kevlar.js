@@ -136,18 +136,6 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 */
 	
 	
-	statics : {
-		/**
-		 * Static property used to provide a "client id" to models. See {@link #cid}.
-		 * 
-		 * @private
-		 * @static
-		 * @property {Number} currentCid
-		 */
-		currentCid : 0
-	},
-	
-	
 	inheritedStatics : {
 		/**
 		 * A static property that is unique to each Kevlar.Model subclass, which uniquely identifies it.
@@ -257,7 +245,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		
 		// Create a client ID for the Model, and set it to the property 'cid' as well to maintain compatibility with Backbone's Collection
-		me.clientId = me.cid = 'c' + (++Kevlar.Model.currentCid);
+		me.clientId = me.cid = 'c' + Kevlar.newId();
 		
 		
 		// Set the default values for attributes that don't have an initial value.
