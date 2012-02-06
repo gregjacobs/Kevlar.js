@@ -1543,19 +1543,22 @@ tests.unit.add( new Ext.test.TestSuite( {
 				} );
 				var model = new TestModel(),
 				    changeEventFired = false,
-				    attributeNameChanged = "",
-				    newValue = "";
+				    attributeNameChanged,
+				    newValue,
+				    oldValue;
 				    
-				model.addListener( 'change', function( model, attributeName, value ) {
+				model.addListener( 'change', function( model, attributeName, _newValue, _oldValue ) {
 					changeEventFired = true;
 					attributeNameChanged = attributeName;
-					newValue = value;
+					newValue = _newValue;
+					oldValue = _oldValue;
 				} );
 				
 				model.set( 'attribute2', "brandNewValue" );
 				Y.Assert.isTrue( changeEventFired, "The 'change' event was not fired" );
 				Y.Assert.areSame( "attribute2", attributeNameChanged, "The attributeName that was changed was not provided to the event correctly." );
 				Y.Assert.areSame( "brandNewValue", newValue, "The value for attribute2 that was changed was not provided to the event correctly." );
+				Y.Assert.isUndefined( oldValue, "The oldValue for attribute2 that was changed was not provided to the event correctly. Should have been undefined, from having no original value" );
 			},
 			
 			
@@ -1565,16 +1568,19 @@ tests.unit.add( new Ext.test.TestSuite( {
 				} );
 				var model = new TestModel(),
 				    changeEventFired = false,
-				    newValue = "";
+				    newValue,
+				    oldValue;
 				    
-				model.addListener( 'change:attribute2', function( model, value ) {
+				model.addListener( 'change:attribute2', function( model, _newValue, _oldValue ) {
 					changeEventFired = true;
-					newValue = value;
+					newValue = _newValue;
+					oldValue = _oldValue;
 				} );
 				
 				model.set( 'attribute2', "brandNewValue" );
 				Y.Assert.isTrue( changeEventFired, "The 'change:attribute2' event was not fired" );
 				Y.Assert.areSame( "brandNewValue", newValue, "The value for attribute2 that was changed was not provided to the event correctly." );
+				Y.Assert.isUndefined( oldValue, "The oldValue for attribute2 that was changed was not provided to the event correctly. Should have been undefined, from having no original value" );
 			},
 			
 			
@@ -1645,9 +1651,9 @@ tests.unit.add( new Ext.test.TestSuite( {
 			},
 			
 			
-			"When an attribute with only a `get()` function is set, the 'change' events should be fired with the value from the get function, not the raw value" : function() {
+			"When an attribute with only a `get()` function is set, the 'change' events should be fired with the value from the get function, not the raw value (for both the newValue, and oldValue)" : function() {
 				var TestModel = Kevlar.extend( Kevlar.Model, {
-					addAttributes: [
+					attributes: [
 						{
 							name : 'myAttribute',
 							get : function( value, model ) { return value + 10; } // add 10, to make sure we're using the getter
@@ -1655,23 +1661,29 @@ tests.unit.add( new Ext.test.TestSuite( {
 					]
 				} );
 				
-				var model = new TestModel(),
-				    changeEventValue,
-				    attributeSpecificChangeEventValue;
+				var model = new TestModel( { myAttribute: 10 } ),
+				    changeEventNewValue,
+				    changeEventOldValue,
+				    attributeSpecificChangeEventNewValue,
+				    attributeSpecificChangeEventOldValue;
 				
 				model.on( {
-					'change' : function( model, attributeName, newValue ) {
-						changeEventValue = newValue;
+					'change' : function( model, attributeName, newValue, oldValue ) {
+						changeEventNewValue = newValue;
+						changeEventOldValue = oldValue;
 					},
-					'change:myAttribute' : function( model, newValue ) {
-						attributeSpecificChangeEventValue = newValue;
+					'change:myAttribute' : function( model, newValue, oldValue ) {
+						attributeSpecificChangeEventNewValue = newValue;
+						attributeSpecificChangeEventOldValue = oldValue;
 					}
 				} );
 				
 				model.set( 'myAttribute', 42 );  // the `get()` function on the Attribute will add 10 to this value when the attribute is retrieved
 				
-				Y.Assert.areSame( 52, changeEventValue, "The value provided with the change event should have come from myAttribute's `get()` function" );
-				Y.Assert.areSame( 52, attributeSpecificChangeEventValue, "The value provided with the attribute-specific change event should have come from myAttribute's `get()` function" );
+				Y.Assert.areSame( 52, changeEventNewValue, "The newValue provided with the change event should have come from myAttribute's `get()` function" );
+				Y.Assert.areSame( 20, changeEventOldValue, "The oldValue provided with the change event should have come from myAttribute's `get()` function" );
+				Y.Assert.areSame( 52, attributeSpecificChangeEventNewValue, "The newValue provided with the attribute-specific change event should have come from myAttribute's `get()` function" );
+				Y.Assert.areSame( 20, attributeSpecificChangeEventOldValue, "The oldValue provided with the attribute-specific change event should have come from myAttribute's `get()` function" );
 			},
 			
 			
@@ -1689,23 +1701,30 @@ tests.unit.add( new Ext.test.TestSuite( {
 					]
 				} );
 				
-				var model = new TestModel(),
-				    changeEventValue,
-				    attributeSpecificChangeEventValue;
+				var model = new TestModel( { baseAttribute: 10 } ),
+				    changeEventNewValue,
+				    changeEventOldValue,
+				    attributeSpecificChangeEventNewValue,
+				    attributeSpecificChangeEventOldValue;
 				
 				model.on( {
-					'change' : function( model, attributeName, newValue ) {
-						changeEventValue = newValue;
+					'change' : function( model, attributeName, newValue, oldValue ) {
+						changeEventNewValue = newValue;
+						changeEventOldValue = oldValue;
 					},
-					'change:computedAttribute' : function( model, newValue ) {
-						attributeSpecificChangeEventValue = newValue;
+					'change:computedAttribute' : function( model, newValue, oldValue ) {
+						attributeSpecificChangeEventNewValue = newValue;
+						attributeSpecificChangeEventOldValue = oldValue;
 					}
 				} );
 				
 				model.set( 'computedAttribute', 42 );  // the `get()` function will add 10 to this value when the attribute is retrieved
 								
-				Y.Assert.areSame( 52, changeEventValue, "The value provided with the change event should have come from the computedAttribute's `get()` function" );
-				Y.Assert.areSame( 52, attributeSpecificChangeEventValue, "The value provided with the attribute-specific change event should have come from the computedAttribute's `get()` function" );
+				
+				Y.Assert.areSame( 52, changeEventNewValue, "The newValue provided with the change event should have come from computedAttribute's `get()` function" );
+				Y.Assert.areSame( 20, changeEventOldValue, "The oldValue provided with the change event should have come from computedAttribute's `get()` function" );
+				Y.Assert.areSame( 52, attributeSpecificChangeEventNewValue, "The newValue provided with the attribute-specific change event should have come from computedAttribute's `get()` function" );
+				Y.Assert.areSame( 20, attributeSpecificChangeEventOldValue, "The oldValue provided with the attribute-specific change event should have come from computedAttribute's `get()` function" );
 			},
 			
 			

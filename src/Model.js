@@ -200,7 +200,8 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			 * 
 			 * @event change:[attributeName]
 			 * @param {Kevlar.Model} model This Model instance.
-			 * @param {Mixed} value The new value. 
+			 * @param {Mixed} newValue The new value, processed by the attribute's {@link Kevlar.Attribute#get get} function if one exists. 
+			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.Attribute#get get} function if one exists. 
 			 */
 			
 			/**
@@ -209,7 +210,8 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			 * @event change
 			 * @param {Kevlar.Model} model This Model instance.
 			 * @param {String} attributeName The attribute name for the Attribute that was changed.
-			 * @param {Mixed} value The new value.
+			 * @param {Mixed} newValue The new value, processed by the attribute's {@link Kevlar.Attribute#get get} function if one exists. 
+			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.Attribute#get get} function if one exists. 
 			 */
 			'change',
 			
@@ -413,9 +415,9 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * 
 	 * @method set
 	 * @param {String/Object} attributeName The attribute name for the Attribute to set, or an object (hash) of name/value pairs.
-	 * @param {Mixed} [value] The value to set to the attribute. Required if the `attributeName` argument is a string (i.e. not a hash). 
+	 * @param {Mixed} [newValue] The value to set to the attribute. Required if the `attributeName` argument is a string (i.e. not a hash). 
 	 */
-	set : function( attributeName, value ) {
+	set : function( attributeName, newValue ) {
 		if( typeof attributeName === 'object' ) {
 			// Hash provided 
 			var values = attributeName;  // for clarity
@@ -426,24 +428,25 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			}
 			
 		} else {
-			// attributeName and value provided
+			// attributeName and newValue provided
 			var attribute = this.attributes[ attributeName ];
 			if( !attribute ) {
 				throw new Error( "Kevlar.Model.set(): An attribute with the attributeName '" + attributeName + "' was not found." );
 			}
 			
-			// Get the current value of the attribute
-			var currentValue = this.data[ attributeName ];
+			// Get the current value of the attribute, and its current "getter" value (to provide to the 'change' event as the oldValue)
+			var currentValue = this.data[ attributeName ],
+			    currentGetterValue = this.get( attributeName );
 			
 			
 			// If the attribute has a 'set' function defined, call it to convert the data
 			if( typeof attribute.set === 'function' ) {
-				value = attribute.set.call( attribute.scope || this, value, this );  // provided the value, and the Model instance
+				newValue = attribute.set.call( attribute.scope || this, newValue, this );  // provided the newValue, and the Model instance
 				
 				// *** Temporary workaround to get the 'change' event to fire on an Attribute whose set() function does not
 				// return a new value to set to the underlying data. This will be resolved once dependencies are 
 				// automatically resolved in the Attribute's get() function
-				if( value === undefined ) {
+				if( newValue === undefined ) {
 					// This is to make the following block below think that there is already data in for the attribute, and
 					// that it has the same value. If we don't have this, the change event will fire twice, the
 					// the model will be set as 'dirty', and the old value will be put into the `modifiedData` hash.
@@ -452,38 +455,38 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 					}
 					
 					// Fire the events with the value of the Attribute after it has been processed by any Attribute-specific `get()` function.
-					value = this.get( attributeName );
+					newValue = this.get( attributeName );
 					
 					// Now manually fire the events
-					this.fireEvent( 'change:' + attributeName, this, value );
-					this.fireEvent( 'change', this, attributeName, value );
+					this.fireEvent( 'change:' + attributeName, this, newValue, currentGetterValue );  // model, newValue, oldValue
+					this.fireEvent( 'change', this, attributeName, newValue, currentGetterValue );    // model, attributeName, newValue, oldValue
 				}
 			}
 			
 			
-			// Only change if there is no current value for the attribute, or if new value is different from the current
-			if( !( attributeName in this.data ) || !Kevlar.util.Object.isEqual( currentValue, value ) ) {
-				// Store the attribute's *current* value (not the new value) into the "modifiedData" attributes hash.
+			// Only change if there is no current value for the attribute, or if newValue is different from the current
+			if( !( attributeName in this.data ) || !Kevlar.util.Object.isEqual( currentValue, newValue ) ) {
+				// Store the attribute's *current* value (not the newValue) into the "modifiedData" attributes hash.
 				// This should only happen the first time the attribute is set, so that the attribute can be rolled back even if there are multiple
 				// set() calls to change it.
 				if( !( attributeName in this.modifiedData ) ) {
 					this.modifiedData[ attributeName ] = currentValue;
 				}
-				this.data[ attributeName ] = value;
+				this.data[ attributeName ] = newValue;
 				this.dirty = true;
 				
 				
 				// Now that we have set the new raw value to the internal `data` hash, we want to fire the events with the value
 				// of the Attribute after it has been processed by any Attribute-specific `get()` function.
-				value = this.get( attributeName );
+				newValue = this.get( attributeName );
 				
 				// If the attribute is the "idAttribute", set the `id` property on the model for compatibility with Backbone's Collection
 				if( attributeName === this.idAttribute ) {
-					this.id = value;
+					this.id = newValue;
 				}
 				
-				this.fireEvent( 'change:' + attributeName, this, value );
-				this.fireEvent( 'change', this, attributeName, value );
+				this.fireEvent( 'change:' + attributeName, this, newValue, currentGetterValue );  // model, newValue, oldValue
+				this.fireEvent( 'change', this, attributeName, newValue, currentGetterValue );    // model, attributeName, newValue, oldValue
 			}
 		}
 	},
