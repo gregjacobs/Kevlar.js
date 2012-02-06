@@ -1,6 +1,6 @@
 {
 	projectName: "Kevlar",
-	licenseText: "Kevlar JS Library\nCopyright(c) 2011 Gregory Jacobs.\nMIT Licensed. http://www.opensource.org/licenses/mit-license.php\n\nhttps://github.com/gregjacobs/Kevlar.js",
+	licenseText: "Kevlar JS Library\nVersion 0.1.1\n\nCopyright(c) 2011 Gregory Jacobs.\nMIT Licensed. http://www.opensource.org/licenses/mit-license.php\n\nhttps://github.com/gregjacobs/Kevlar.js",
 	pkgs: [
 		{
 			name: "Kevlar JS",
