@@ -17,6 +17,8 @@
 <body onload="prettyPrint(); highlight();">
   <pre class="prettyprint lang-js">/*!
  * Class.js
+ * Version 0.1.2
+ * 
  * Copyright(c) 2012 Gregory Jacobs.
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php
  * 
@@ -34,14 +36,17 @@
  *   another (unlike the `instanceof` operator, which checks if an *instance* is a subclass of a given class).
  * - An `instanceOf()` method, which should be used instead of the JavaScript `instanceof` operator, to determine if the instance 
  *   is an instance of a provided class, superclass, or mixin (the JavaScript `instanceof` operator only covers the first two).
+ * - The ability to add static methods while creating/extending a class, right inside the definition using special properties `statics`
+ *   and `inheritedStatics`. The former only applies properties to the class being created, while the latter applies properties to the
+ *   class being created, and all subclasses which extend it. (Note that the keyword for this had to be `statics`, and not `static`, as 
+ *   `static` is a reserved word in Javascript). 
+ * - A special static method, onClassExtended(), which can be placed in either the `statics` or `inheritedStatics` section, that is
+ *   executed after the class has been extended.
  * 
  * Note that this is not the base class of all `Class` classes. It is a utility to create classes, and extend other classes. The
  * fact that it is not required to be at the top of any inheritance hierarchy means that you may use it to extend classes from
  * other frameworks and libraries, with all of the features that this implementation provides. 
- * 
- * This project is located at: https://github.com/gregjacobs/Class.js
- * 
- * 
+ *  
  * Simple example of creating classes:
  *     
  *     var Animal = Class( {
@@ -80,17 +85,20 @@
  *     
  *     dog1.sayHi();  // &quot;Woof! My name is: Lassie&quot;
  *     dog2.sayHi();  // &quot;Woof! My name is: Bolt&quot;
- *     cat.sayHi();  // &quot;Meow! My name is: Leonardo Di Fishy&quot;
+ *     cat.sayHi();   // &quot;Meow! My name is: Leonardo Di Fishy&quot;
  *     
  *     dog1.eat();  // &quot;Lassie is eating&quot;
  *     dog2.eat();  // &quot;Bolt is eating&quot;
- *     cat.eat();  // &quot;Leonardo Di Fishy is eating&quot;
+ *     cat.eat();   // &quot;Leonardo Di Fishy is eating&quot;
  */
 /*global window */
 /*jslint forin:true */
 var Class = (function() {
 	
 	// Utility functions / variables
+	
+	var version = &quot;0.1.2&quot;;
+	
 	
 <span id='Class-static-method-isObject'>	/**
 </span>	 * Determines if a value is an object.
@@ -123,7 +131,9 @@ var Class = (function() {
 	
 	
 <span id='Class-method-constructor'><span id='Class'>	/**
-</span></span>	 * Creates a new class that extends from `Object` (the base class of all classes in JavaScript). Running the
+</span></span>	 * @constructor
+	 * 
+	 * Creates a new class that extends from `Object` (the base class of all classes in JavaScript). Running the
 	 * `Class` constructor function is equivalent of calling {@link #extend Class.extend()}. To extend classes
 	 * that are already subclassed, use either {@link Class#extend}, or the static `extend` method that is added
 	 * to all subclasses.
@@ -132,7 +142,7 @@ var Class = (function() {
 	 * 
 	 *     // Create a new class, with Object as the superclass
 	 *     // (i.e. no other particular superclass; see {@link #extend} for that)
-	 *     var MyClass = Class( {
+	 *     var MyClass = new Class( {
 	 *         constructor : function() {
 	 *             console.log( &quot;Constructing, 123&quot; );
 	 *         },
@@ -142,8 +152,9 @@ var Class = (function() {
 	 *     } );
 	 *     
 	 *     
-	 *     // Can be used with the `new` keyword as well, if desired
-	 *     var MyClass = new Class( {
+	 *     // Can be used without the `new` keyword as well, if desired.
+	 *     // This may actually make more sense, as you're creating the definition for a class, not an instance.
+	 *     var MyClass = Class( {
 	 *         constructor : function() {
 	 *             console.log( &quot;Constructing, 123&quot; );
 	 *         },
@@ -165,12 +176,20 @@ var Class = (function() {
 	 * 
 	 * See {@link #extend} for details about extending classes.
 	 * 
-	 * @constructor
 	 * @param {Object} classDefinition The class definition. See the `overrides` parameter of {@link #extend}.
 	 */
 	var Class = function( classDefinition ) {
 		return Class.extend( Object, classDefinition );
 	};
+	
+	
+<span id='Class-static-property-version'>	/**
+</span>	 * @static
+	 * @property {String} version
+	 * 
+	 * Readonly property that gives the version number of Class.js that is being used.
+	 */
+	Class.version = version;
 	
 	
 <span id='Class-static-method-apply'>	/**
@@ -337,7 +356,7 @@ var Class = (function() {
 			delete overrides.mixins;
 			
 			
-			var subclass = overrides.constructor !== objectConstructor ? overrides.constructor : function() { superclass.apply( this, arguments ); },
+			var subclass = overrides.constructor !== objectConstructor ? overrides.constructor : ( superclass === Object ? function(){} : function() { return superclass.apply( this, arguments ); } ),
 			    F = function(){},
 			    subclassPrototype,
 			    superclassPrototype = superclass.prototype;
@@ -405,6 +424,12 @@ var Class = (function() {
 			
 				// Store which mixin classes the subclass has. This is used in the hasMixin() method
 				subclass.mixins = mixins;
+			}
+			
+			
+			// If there is a static onClassExtended method, call it now with the new subclass as the argument
+			if( typeof subclass.onClassExtended === 'function' ) {
+				subclass.onClassExtended( subclass );
 			}
 			
 			return subclass;
@@ -532,6 +557,7 @@ var Class = (function() {
 	return Class;
 	
 } )();
+
 </pre>
 </body>
 </html>

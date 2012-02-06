@@ -1959,7 +1959,7 @@ Kevlar.data.NativeObjectConverter = {
 	 *   (Note: only affects the Model passed to this method, and not nested models.)
 	 * @param {Boolean} [options.persistedOnly] True to have the method only return data for the persisted attributes on
 	 *   Models (i.e. attributes with the {@link Kevlar.Attribute#persist persist} config set to true, which is the default).
-	 * @param {Boolean} [options.raw] True to have the method only return the raw data for the attributes, by way of the {@link #raw} method. 
+	 * @param {Boolean} [options.raw] True to have the method only return the raw data for the attributes, by way of the {@link Kevlar.Model#raw} method. 
 	 *   This is used for persistence, where the raw data values go to the server rather than higher-level objects, or where some kind of serialization
 	 *   to a string must take place before persistence (such as for Date objects). 
 	 * 
@@ -2654,7 +2654,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This object is sent to
 	 *   the {@link Kevlar.data.NativeObjectConverter#convert NativeObjectConverter's convert method}, and accepts all of the options
 	 *   that the {@link Kevlar.data.NativeObjectConverter#convert} method does. See that method for details.
-	 * @return {Object} A hash of the attributes that have been changed since the last {@link #commit} or {@link #rollback}.
+	 * @return {Object} A hash of the attributes that have been changed since the last {@link #method-commit} or {@link #method-rollback}.
 	 *   The hash's property names are the attribute names, and the hash's values are the new values.
 	 */
 	getChanges : function( options ) {

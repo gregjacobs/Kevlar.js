@@ -1,5 +1,22 @@
-/**
- * @private
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>The source code</title>
+  <link href="../resources/prettify/prettify.css" type="text/css" rel="stylesheet" />
+  <script type="text/javascript" src="../resources/prettify/prettify.js"></script>
+  <style type="text/css">
+    .highlight { display: block; background-color: #ddd; }
+  </style>
+  <script type="text/javascript">
+    function highlight() {
+      document.getElementById(location.hash.replace(/#/, "")).className = "highlight";
+    }
+  </script>
+</head>
+<body onload="prettyPrint(); highlight();">
+  <pre class="prettyprint lang-js"><span id='Kevlar-data-NativeObjectConverter'>/**
+</span> * @private
  * @class Kevlar.data.NativeObjectConverter
  * @singleton
  * 
@@ -9,8 +26,8 @@
 /*global Kevlar */
 Kevlar.data.NativeObjectConverter = {
 	
-	/**
-	 * Converts a {@link Kevlar.Collection Collection} or {@link Kevlar.Model} to its native Array/Object representation,
+<span id='Kevlar-data-NativeObjectConverter-method-convert'>	/**
+</span>	 * Converts a {@link Kevlar.Collection Collection} or {@link Kevlar.Model} to its native Array/Object representation,
 	 * while dealing with circular dependencies.
 	 * 
 	 * @method convert
@@ -53,7 +70,7 @@ Kevlar.data.NativeObjectConverter = {
 			// Model that gets converted, i.e. the Model provided to this method)
 			delete options.attributeNames;
 			
-			for( i = 0, len = attributeNames.length; i < len; i++ ) {
+			for( i = 0, len = attributeNames.length; i &lt; len; i++ ) {
 				attributeName = attributeNames[ i ];
 				if( !persistedOnly || attributes[ attributeName ].isPersisted() === true ) {
 					currentValue = data[ attributeName ] = ( raw ) ? obj.raw( attributeName ) : obj.get( attributeName );
@@ -81,4 +98,6 @@ Kevlar.data.NativeObjectConverter = {
 		return data;
 	}
 	
-};
+};</pre>
+</body>
+</html>

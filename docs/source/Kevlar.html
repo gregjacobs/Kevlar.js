@@ -132,14 +132,21 @@ Kevlar.prototype = {
 	 * @method namespace
 	 */
 	namespace : function(){
-		var o, d;
-		Kevlar.each( arguments, function(v) {
-			d = v.split( &quot;.&quot; );
+		var o, d, i, len, j, jlen, ns,
+		    args = arguments;   // var for minification collapse
+		    
+		for( i = 0, len = args.length; i &lt; len; i++ ) {
+			d = args[ i ].split( '.' );
+			
+			// First in the dot delimited string is the global
 			o = window[ d[ 0 ] ] = window[ d[ 0 ] ] || {};
-			Kevlar.each( d.slice( 1 ), function( v2 ) {
-				o = o[ v2 ] = o[ v2 ] || {};
-			} );
-		} );
+			
+			// Now start at the second namespace in, to continue down the line of dot delimited namespaces to create
+			for( j = 1, jlen = d.length; j &lt; jlen; j++ ) {
+				ns = d[ j ];  // the current namespace
+				o = o[ ns ] = o[ ns ] || {};
+			}
+		}
 		return o;
 	},
 	
@@ -160,44 +167,6 @@ Kevlar.prototype = {
 			return res.slice( i || 0, j || res.length );
 		} else {
 			return Array.prototype.slice.call( a, i || 0, j || a.length );
-		}
-	},
-	
-
-<span id='Kevlar-method-each'>	/**
-</span>	 * Iterates an array calling the supplied function.
-	 * @param {Array/NodeList/Mixed} array The array to be iterated. If this
-	 * argument is not really an array, the supplied function is called once.
-	 * @param {Function} fn The function to be called with each item. If the
-	 * supplied function returns false, iteration stops and this method returns
-	 * the current &lt;code&gt;index&lt;/code&gt;. This function is called with
-	 * the following arguments:
-	 * &lt;div class=&quot;mdetail-params&quot;&gt;&lt;ul&gt;
-	 * &lt;li&gt;&lt;code&gt;item&lt;/code&gt; : &lt;i&gt;Mixed&lt;/i&gt;
-	 * &lt;div class=&quot;sub-desc&quot;&gt;The item at the current &lt;code&gt;index&lt;/code&gt;
-	 * in the passed &lt;code&gt;array&lt;/code&gt;&lt;/div&gt;&lt;/li&gt;
-	 * &lt;li&gt;&lt;code&gt;index&lt;/code&gt; : &lt;i&gt;Number&lt;/i&gt;
-	 * &lt;div class=&quot;sub-desc&quot;&gt;The current index within the array&lt;/div&gt;&lt;/li&gt;
-	 * &lt;li&gt;&lt;code&gt;allItems&lt;/code&gt; : &lt;i&gt;Array&lt;/i&gt;
-	 * &lt;div class=&quot;sub-desc&quot;&gt;The &lt;code&gt;array&lt;/code&gt; passed as the first
-	 * argument to &lt;code&gt;Kevlar.each&lt;/code&gt;.&lt;/div&gt;&lt;/li&gt;
-	 * &lt;/ul&gt;&lt;/div&gt;
-	 * @param {Object} scope The scope (&lt;code&gt;this&lt;/code&gt; reference) in which the specified function is executed.
-	 * Defaults to the &lt;code&gt;item&lt;/code&gt; at the current &lt;code&gt;index&lt;/code&gt;
-	 * within the passed &lt;code&gt;array&lt;/code&gt;.
-	 * @return {Mixed} See description for the fn parameter.
-	 */
-	each : function( array, fn, scope ){   // needed for Kevlar.DelayedTask, and Kevlar.Observable
-		if( Kevlar.isEmpty( array, true ) ) {
-			return;
-		}
-		if( typeof array.length === 'undefined' || Kevlar.isPrimitive( array ) ) {
-			array = [ array ];
-		}
-		for( var i = 0, len = array.length; i &lt; len; i++ ) {
-			if( fn.call( scope || array[i], array[i], i, array ) === false ) {
-				return i;
-			}
 		}
 	},
 	
