@@ -2754,10 +2754,10 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * Gets the {@link #persistenceProxy} that is currently configured for this Model. Note that
 	 * the same persistenceProxy instance is shared between all instances of the model.
 	 * 
-	 * @method getProxy
+	 * @method getPersistenceProxy
 	 * @return {Kevlar.persistence.Proxy} The persistenceProxy, or null if there is no persistenceProxy currently set.
 	 */
-	getProxy : function() {
+	getPersistenceProxy : function() {
 		return this.persistenceProxy;
 	},
 	
