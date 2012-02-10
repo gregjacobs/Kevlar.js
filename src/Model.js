@@ -138,14 +138,22 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	inheritedStatics : {
 		/**
-		 * A static property that is unique to each Kevlar.Model subclass, which uniquely identifies it.
+		 * A static property that is unique to each Kevlar.Model subclass, which uniquely identifies the subclass.
 		 * This is used as part of the Model cache, where it is determined if a Model instance already exists
-		 * if two models have the same modelTypeId, and instance id.
+		 * if two models are of the same type (i.e. have the same __Kevlar_modelTypeId), and instance id.
 		 * 
+		 * @private
 		 * @inheritable
 		 * @static
-		 * @property {Number} modelTypeId
+		 * @property {Number} __Kevlar_modelTypeId
 		 */
+		
+		
+		// Subclass-specific setup
+		onClassExtended : function( newModelClass ) {
+			// Assign a unique id to this class, which is used in hashmaps that hold the class
+			newModelClass.__Kevlar_modelTypeId = Kevlar.newId();
+		}
 	},
 	
 	

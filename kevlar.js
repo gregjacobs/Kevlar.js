@@ -1860,6 +1860,33 @@ Kevlar.Attribute = Kevlar.extend( Object, {
 	 */
 	persist : true,
 	
+	/**
+	 * @cfg {Boolean} embedded
+	 * If a {@link Kevlar.Model Model} is set to the attribute, setting this config to true has the parent {@link Kevlar.Model Model} treat the child 
+	 * {@link Kevlar.Model Model} as if it is a part of itself. Normally, a child Model that is not embedded is treated as a "relation", where it is
+	 * considered as independent from the parent Model.
+	 * 
+	 * So what this means is that, when true:
+	 * 
+	 * - The parent Model is considered as "changed" when an attribute in the child Model is changed. The attribute that holds the child
+	 *   model is the "change".
+	 * - The parent Model's {@link Kevlar.Model#change change} event is fired when an attribute on the child Model is changed.
+	 * - The child Model's data is persisted with the parent Model's data, unless the {@link #persistIdOnly} config is set to true,
+	 *   in which case just the child Model's {@link Kevlar.Model#idAttribute id} is persisted with the parent Model.
+	 * 
+	 * Note that this configuration may be a part of a special "ModelAttribute" subclass in the future.
+	 */
+	embedded : false,
+	
+	/**
+	 * @cfg {Boolean} persistIdOnly
+	 * In the case that an {@link #embedded} {@link Kevlar.Model Model} is set to the attribute, set this to true to only have the 
+	 * {@link Kevlar.Model#idProperty id} of the embedded model be persisted, rather than all of the Model data.
+	 */
+	persistIdOnly : false,
+	
+	
+	
 	
 	/**
 	 * Creates a new Attribute instance. Note: You will normally not be using this constructor function, as this class
@@ -2162,14 +2189,22 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	inheritedStatics : {
 		/**
-		 * A static property that is unique to each Kevlar.Model subclass, which uniquely identifies it.
+		 * A static property that is unique to each Kevlar.Model subclass, which uniquely identifies the subclass.
 		 * This is used as part of the Model cache, where it is determined if a Model instance already exists
-		 * if two models have the same modelTypeId, and instance id.
+		 * if two models are of the same type (i.e. have the same __Kevlar_modelTypeId), and instance id.
 		 * 
+		 * @private
 		 * @inheritable
 		 * @static
-		 * @property {Number} modelTypeId
+		 * @property {Number} __Kevlar_modelTypeId
 		 */
+		
+		
+		// Subclass-specific setup
+		onClassExtended : function( newModelClass ) {
+			// Assign a unique id to this class, which is used in hashmaps that hold the class
+			newModelClass.__Kevlar_modelTypeId = Kevlar.newId();
+		}
 	},
 	
 	
@@ -2959,15 +2994,6 @@ Kevlar.Model.prototype.toJSON = Kevlar.Model.prototype.getData;
 Kevlar.ModelCache = {
 	
 	/**
-	 * Private variable which is used to return new unique ID's for each model type ({@link Kevlar.Model} subclass).
-	 * 
-	 * @private
-	 * @property {Number} modelTypeIdCounter
-	 */
-	modelTypeIdCounter : 0,
-	
-	
-	/**
 	 * The hashmap of model references stored in the cache. This hashmap is a two-level hashmap, first keyed by the
 	 * {@link Kevlar.Model Model's} assigned `__Kevlar_modelTypeId`, and then its instance id.
 	 * 
@@ -2988,17 +3014,11 @@ Kevlar.ModelCache = {
 	 */
 	get : function( model, id ) {
 		var modelClass = model.constructor,
-		    modelTypeId = modelClass.__Kevlar_modelTypeId,  // the current modelTypeId, if any
+		    modelTypeId = modelClass.__Kevlar_modelTypeId,  // the current modelTypeId, defined when the Model is extended
 		    cachedModel;
-				
-		// Assign this Model subclass a unique modelTypeId if it doesn't have one yet
-		if( !modelTypeId ) {
-			modelTypeId = ++this.modelTypeIdCounter;
-			
-			// Assign the model's constructor (i.e. the Kevlar.Model subclass) a new, unique modelTypeId
-			modelClass.__Kevlar_modelTypeId = modelTypeId;
-			
-			// Add a hashmap for the new model type in the cache as well
+		
+		// If there is not a cache for this modelTypeId, create one now
+		if( !this.models[ modelTypeId ] ) {
 			this.models[ modelTypeId ] = {};
 		}
 				

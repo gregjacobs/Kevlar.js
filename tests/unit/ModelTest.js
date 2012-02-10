@@ -16,6 +16,21 @@ tests.unit.add( new Ext.test.TestSuite( {
 			items : [
 				{
 					/*
+					 * Test the onClassExtended static method 
+					 */
+					name : "Test the onClassExtended static method",
+					
+										
+					"After extending model, the subclass should have a unique __Kevlar_modelTypeId property" : function() {
+						var Model = Kevlar.Model.extend( {} );
+						
+						Y.Assert.isNumber( Model.__Kevlar_modelTypeId, "The Model should now have a static __Kevlar_modelTypeId property that is a number" );
+					}
+				},
+			
+			
+				{
+					/*
 					 * Test lazy instantiating a persistenceProxy
 					 */
 					name : "Test lazy instantiating a persistenceProxy",

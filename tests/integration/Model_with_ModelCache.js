@@ -4,38 +4,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 	name: 'Model with ModelCache',
 	
 	
-	items : [
-	
-		{
-			/*
-			 * Test that by constructing a Model, it indirectly gets a __Kevlar_modelTypeId property from the ModelCache
-			 */
-			name : "Test that by constructing a Model, it indirectly gets a __Kevlar_modelTypeId property from the ModelCache",
-			
-			
-			"constructing the first instance of a new Model subclass should indirectly get a __Kevlar_modelTypeId property by the ModelCache" : function() {
-				var Model = Kevlar.Model.extend( {} );
-				
-				Y.Assert.isUndefined( Model.__Kevlar_modelTypeId, "Initial condition: The Model subclass should not yet have a __Kevlar_modelTypeId property" );
-				var instance1 = new Model();
-				Y.Assert.isNumber( Model.__Kevlar_modelTypeId, "The Model should now have a static __Kevlar_modelTypeId property" );
-			},
-			
-			
-			"constructing the second instance of a new Model subclass should not change the __Kevlar_modelTypeId property that was set from instantiating the first instance" : function() {
-				var Model = Kevlar.Model.extend( {} );
-				var instance1 = new Model();
-				
-				var __Kevlar_modelTypeId = Model.__Kevlar_modelTypeId;
-				Y.Assert.isNumber( Model.__Kevlar_modelTypeId, "Initial Condition: The Model should now have a static __Kevlar_modelTypeId property, which is a number" );
-				
-				var instance2 = new Model();
-				Y.Assert.areSame( __Kevlar_modelTypeId, Model.__Kevlar_modelTypeId, "The Model's __Kevlar_modelTypeId should not have been changed from instantiating a second instance" );
-			}
-		},
-		
-		
-		
+	items : [		
 		{
 			/*
 			 * Duplicate models should not be able to be instantiated
@@ -107,9 +76,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				Y.Assert.areSame( "Shmo", model1.get( 'lastName' ) ); 
 			}
 		}
-		
 	]
-	
-	
+		
 
 } ) );
