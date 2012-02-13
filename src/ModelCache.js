@@ -30,6 +30,7 @@ Kevlar.ModelCache = {
 	 * @method get
 	 * @param {Kevlar.Model} model
 	 * @param {String} [id]
+	 * @return {Kevlar.Model}
 	 */
 	get : function( model, id ) {
 		var modelClass = model.constructor,
@@ -40,7 +41,7 @@ Kevlar.ModelCache = {
 		if( !this.models[ modelTypeId ] ) {
 			this.models[ modelTypeId ] = {};
 		}
-				
+		
 		// If the model has an id provided with it, pull the cached model with that id (if it exists), or otherwise cache it
 		if( typeof id !== 'undefined' ) {
 			cachedModel = this.models[ modelTypeId ][ id ];
