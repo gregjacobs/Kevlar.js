@@ -927,3 +927,19 @@ Kevlar.Model.prototype.fetch = Kevlar.Model.prototype.load;
  * @method toJSON
  */
 Kevlar.Model.prototype.toJSON = Kevlar.Model.prototype.getData;
+
+
+/**
+ * For compatibility with Backbone's Collection, when it is called from Collection's `_onModelEvent()`
+ * method. `_onModelEvent()` asks for the previous `id` of the Model when the id attribute changes,
+ * such as when a Model is created on the server. This method simply returns undefined for this purpose,
+ * but if more compatibility is needed, it could return the original data for a given attribute (which is
+ * a little different than Backbone's notion of "previous" data, which is the previous data from before any
+ * current 'change' event).
+ * 
+ * @method previous
+ * @param {String} attributeName
+ */
+Kevlar.Model.prototype.previous = function( attributeName ) {
+	return undefined;
+};
