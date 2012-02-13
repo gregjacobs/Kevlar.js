@@ -51,7 +51,6 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * config, which does the same thing (defines attributes), but better conveys that attributes in subclasses are being *added* to the
 	 * attributes of the superclass, rather than *overriding* attributes of the superclass.
 	 */
-	attributes : [],
 	
 	/**
 	 * @cfg {String[]/Object[]} addAttributes
@@ -153,6 +152,54 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		onClassExtended : function( newModelClass ) {
 			// Assign a unique id to this class, which is used in hashmaps that hold the class
 			newModelClass.__Kevlar_modelTypeId = Kevlar.newId();
+			
+			
+			// Now handle initializing the Attributes, merging this subclass's attributes with the superclass's attributes
+			var classPrototype = newModelClass.prototype,
+			    superclassPrototype = newModelClass.superclass,
+			    superclassAttributes = superclassPrototype.attributes || {},    // will be an object (hashmap) of attributeName -> Attribute instances
+			    newAttributes = {}, 
+			    attributeDefs = [],  // will be an array of Attribute configs (definitions) on the new subclass 
+			    attributeObj,   // for holding each of the attributeDefs, one at a time
+			    i, len;
+			
+			// Grab the 'attributes' or 'addAttributes' property from the new subclass's prototype. If neither of these are present,
+			// will use the empty array instead.
+			if( classPrototype.hasOwnProperty( 'attributes' ) ) {
+				attributeDefs = classPrototype.attributes;
+			} else if( classPrototype.hasOwnProperty( 'addAttributes' ) ) {
+				attributeDefs = classPrototype.addAttributes;
+			}
+			
+			// Instantiate each of the new subclass's Attributes, and then merge them with the superclass's attributes
+			for( i = 0, len = attributeDefs.length; i < len; i++ ) {
+				attributeObj = attributeDefs[ i ];
+				
+				// Normalize to a Kevlar.Attribute configuration object if it is a string
+				if( typeof attributeObj === 'string' ) {
+					attributeObj = { name: attributeObj };
+				}
+				
+				var attribute = newModelClass.createAttribute( attributeObj );
+				newAttributes[ attribute.getName() ] = attribute;
+			}
+			
+			newModelClass.prototype.attributes = Kevlar.apply( {}, newAttributes, superclassAttributes );  // newAttributes take precedence; superclassAttributes are used in the case that a newAttribute doesn't exist for a given attributeName
+		},
+		
+	
+		/**
+		 * Factory method which by default creates a {@link Kevlar.Attribute}, but may be overridden by subclasses
+		 * to create different {@link Kevlar.Attribute} subclasses. 
+		 * 
+		 * @static
+		 * @method createAttribute
+		 * @param {Object} attributeObj The attribute object provided on the prototype. If it was a string, it will have been
+		 *   normalized to the object `{ name: attributeName }`.
+		 * @return {Kevlar.Attribute}
+		 */
+		createAttribute : function( attributeObj ) {
+			return new Kevlar.Attribute( attributeObj );
 		}
 	},
 	
@@ -250,9 +297,6 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			'destroy'
 		);
 		
-		// Initialize the 'attributes' array, which gets turned into an object (hash)
-		me.initAttributes();
-		
 		
 		// Create a client ID for the Model, and set it to the property 'cid' as well to maintain compatibility with Backbone's Collection
 		me.clientId = me.cid = 'c' + Kevlar.newId();
@@ -304,63 +348,6 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @method initialize
 	 */
 	initialize : Kevlar.emptyFn,
-	
-	
-	
-	/**
-	 * Initializes the Model's {@link #attributes} by walking up the prototype change from the current Model subclass
-	 * up to this (the base) class, collecting their `attributes` arrays, and combining them into one single attributes hash. 
-	 * See {@link attributes} for more information.
-	 * 
-	 * @private
-	 * @method initAttributes
-	 */
-	initAttributes : function() {
-		this.attributes = {};
-		
-		// Define concatenated attributes array from all subclasses
-		var attributesObjects = [],
-		    currentConstructor = this.constructor,
-		    currentProto = currentConstructor.prototype;
-		
-		// Walk up the prototype chain from the current object, collecting 'attributes' and 'addAttributes' objects as we go along
-		do {
-			// skip over any prototype that doesn't define `attributes` or `addAttributes` itself
-			if( currentProto.hasOwnProperty( 'attributes' ) && Kevlar.isArray( currentProto.attributes ) ) {    
-				attributesObjects = attributesObjects.concat( currentProto.attributes );
-			} else if( currentProto.hasOwnProperty( 'addAttributes' ) && Kevlar.isArray( currentProto.addAttributes ) ) {
-				attributesObjects = attributesObjects.concat( currentProto.addAttributes );
-			}
-		} while( ( currentConstructor = ( currentProto = currentConstructor.superclass ) && currentProto.constructor ) );
-		
-		// After we have the array of attributes, go backwards through them, which allows attributes from subclasses to override those in superclasses
-		for( var i = attributesObjects.length; i--; ) {
-			var attributeObj = attributesObjects[ i ];
-			
-			// Normalize to a Kevlar.Attribute configuration object if it is a string
-			if( typeof attributeObj === 'string' ) {
-				attributeObj = { name: attributeObj };
-			}
-			
-			var attribute = this.createAttribute( attributeObj );
-			this.attributes[ attribute.getName() ] = attribute;
-		}
-	},
-	
-	
-	/**
-	 * Factory method which by default creates a {@link Kevlar.Attribute}, but may be overridden by subclasses
-	 * to create different {@link Kevlar.Attribute} subclasses. 
-	 * 
-	 * @protected
-	 * @method createAttribute
-	 * @param {Object} attributeObj The attribute object provided on the prototype. If it was a string, it will have been
-	 *   normalized to the object `{ name: attributeName }`.
-	 * @return {Kevlar.Attribute}
-	 */
-	createAttribute : function( attributeObj ) {
-		return new Kevlar.Attribute( attributeObj );
-	},
 	
 	
 	/**
