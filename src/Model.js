@@ -180,26 +180,12 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 					attributeObj = { name: attributeObj };
 				}
 				
-				var attribute = newModelClass.createAttribute( attributeObj );
+				// Create the actual Attribute instance
+				var attribute = Kevlar.attribute.Attribute.create( attributeObj );
 				newAttributes[ attribute.getName() ] = attribute;
 			}
 			
 			newModelClass.prototype.attributes = Kevlar.apply( {}, newAttributes, superclassAttributes );  // newAttributes take precedence; superclassAttributes are used in the case that a newAttribute doesn't exist for a given attributeName
-		},
-		
-	
-		/**
-		 * Factory method which by default creates a {@link Kevlar.attribute.Attribute}, but may be overridden by subclasses
-		 * to create different {@link Kevlar.attribute.Attribute} subclasses. 
-		 * 
-		 * @static
-		 * @method createAttribute
-		 * @param {Object} attributeObj The attribute object provided on the prototype. If it was a string, it will have been
-		 *   normalized to the object `{ name: attributeName }`.
-		 * @return {Kevlar.attribute.Attribute}
-		 */
-		createAttribute : function( attributeObj ) {
-			return new Kevlar.attribute.Attribute( attributeObj );
 		}
 	},
 	

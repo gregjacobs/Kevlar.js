@@ -1,8 +1,9 @@
 /**
+ * @abstract
  * @class Kevlar.attribute.Attribute
  * @extends Object
  * 
- * Attribute definition object for a {@link Kevlar.Model Model}. The Attribute itself does not store data, but instead simply
+ * Base attribute definition class for {@link Kevlar.Model Models}. The Attribute itself does not store data, but instead simply
  * defines the behaviors of a {@link Kevlar.Model Model's} attributes. A {@link Kevlar.Model Model} is made up of Attributes. 
  * 
  * Note: You will most likely not instantiate Attribute objects directly. This is used by {@link Kevlar.Model} with its
@@ -154,6 +155,103 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * {@link Kevlar.Model#idProperty id} of the embedded model be persisted, rather than all of the Model data.
 	 */
 	persistIdOnly : false,
+	
+	
+	
+	
+	statics : {
+		/**
+		 * An object (hashmap) which stores the registered Attribute types. It maps type names to Attribute subclasses.
+		 * 
+		 * @private
+		 * @static
+		 * @property {Object} attributeTypes
+		 */
+		attributeTypes : {},
+		
+		
+		/**
+		 * Static method to instantiate the appropriate Attribute subclass based on a configuration object, based on its `type` property.
+		 * 
+		 * @static
+		 * @method create
+		 * @param {Object} config The configuration object for the Attribute. Config objects should have the property `type`, 
+		 *   which determines which type of Attribute will be instantiated. If the object does not have a `type` property, it will default 
+		 *   to `mixed`, which accepts any data type, but does not provide any type checking / data consistency. Note that already-instantiated 
+		 *   Attributes will simply be returned unchanged. 
+		 * @return {Kevlar.attribute.Attribute} The instantiated Attribute.
+		 */
+		create : function( config ) {
+			var type = config.type ? config.type.toLowerCase() : undefined;
+		
+			if( config instanceof Kevlar.attribute.Attribute ) {
+				// Already an Attribute instance, return it
+				return config;
+				
+			} else if( this.hasType( type || "mixed" ) ) {
+				//return new this.attributeTypes[ type || "mixed" ]( config );
+				
+				// FOR NOW, just return a MixedAttribute, until other Attribute subclasses exist
+				return new Kevlar.attribute.MixedAttribute( config );
+				
+			} else {
+				// No registered type with the given config's `type`, throw an error
+				throw new Error( "Kevlar.attribute.Attribute: Unknown Attribute type: '" + type + "'" );
+			}
+		},
+		
+		
+		/**
+		 * Static method used to register implementation Attribute subclass types. When creating an Attribute subclass, it 
+		 * should be registered with the Attribute superclass (this class), so that it can be instantiated by a string `type` 
+		 * name in an anonymous configuration object. Note that type names are case-insensitive.
+		 * 
+		 * This method will throw an error if a type name is already registered, to assist in making sure that we don't get
+		 * unexpected behavior from a type name being overwritten.
+		 * 
+		 * @static
+		 * @method registerType
+		 * @param {String} typeName The type name of the registered class. Note that this is case-insensitive.
+		 * @param {Function} jsClass The Attribute subclass (constructor function) to register.
+		 */
+		registerType : function( type, jsClass ) {
+			type = type.toLowerCase();
+			
+			if( !this.attributeTypes[ type ] ) { 
+				this.attributeTypes[ type ] = jsClass;
+			} else {
+				throw new Error( "Error: Attribute type '" + type + "' already exists" );
+			}
+		},
+		
+		
+		/**
+		 * Retrieves the Component class (constructor function) that has been registered by the supplied `type` name. 
+		 * 
+		 * @method getType
+		 * @param {String} type The type name of the registered class.
+		 * @return {Function} The class (constructor function) that has been registered under the given type name.
+		 */
+		getType : function( type ) {
+			return this.attributeTypes[ type.toLowerCase() ];
+		},
+		
+		
+		/**
+		 * Determines if there is a registered Attribute type with the given `typeName`.
+		 * 
+		 * @method hasType
+		 * @param {String} typeName
+		 * @return {Boolean}
+		 */
+		hasType : function( typeName ) {
+			if( !typeName ) {  // any falsy type value given, return false
+				return false;
+			} else {
+				return !!this.attributeTypes[ typeName.toLowerCase() ];
+			}
+		}
+	},
 	
 	
 	
