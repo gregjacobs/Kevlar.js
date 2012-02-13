@@ -21,11 +21,16 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	
 	/**
 	 * @cfg {Function} type
-	 * Specifies the type of the Attribute, in which a conversion of the raw data will be performed. 
-	 * Currently, this config accepts a constructor function for the type. If a {@link Kevlar.Model}
-	 * subclass is provided, any raw data object will be fed to the constructor function.
+	 * Specifies the type of the Attribute, in which a conversion of the raw data will be performed.
+	 * This accepts the following general types, but custom types may be added using the {@link Kevlar.attribute.Attribute#registerType} method.
 	 * 
-	 * In the future, this may be implemented for other custom types.
+	 * - **mixed**: Performs no conversions, and no special processing of given values. This is the default Attribute type.
+	 * - **string**
+	 * - **int**
+	 * - **float** (really a "double")
+	 * - **boolean** / **bool**
+	 * - **date**
+	 * - **model**
 	 */
 	
 	/**
@@ -130,31 +135,6 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * Set to false to prevent the attribute from being persisted.
 	 */
 	persist : true,
-	
-	/**
-	 * @cfg {Boolean} embedded
-	 * If a {@link Kevlar.Model Model} is set to the attribute, setting this config to true has the parent {@link Kevlar.Model Model} treat the child 
-	 * {@link Kevlar.Model Model} as if it is a part of itself. Normally, a child Model that is not embedded is treated as a "relation", where it is
-	 * considered as independent from the parent Model.
-	 * 
-	 * So what this means is that, when true:
-	 * 
-	 * - The parent Model is considered as "changed" when an attribute in the child Model is changed. The attribute that holds the child
-	 *   model is the "change".
-	 * - The parent Model's {@link Kevlar.Model#change change} event is fired when an attribute on the child Model is changed.
-	 * - The child Model's data is persisted with the parent Model's data, unless the {@link #persistIdOnly} config is set to true,
-	 *   in which case just the child Model's {@link Kevlar.Model#idAttribute id} is persisted with the parent Model.
-	 * 
-	 * Note that this configuration may be a part of a special "ModelAttribute" subclass in the future.
-	 */
-	embedded : false,
-	
-	/**
-	 * @cfg {Boolean} persistIdOnly
-	 * In the case that an {@link #embedded} {@link Kevlar.Model Model} is set to the attribute, set this to true to only have the 
-	 * {@link Kevlar.Model#idProperty id} of the embedded model be persisted, rather than all of the Model data.
-	 */
-	persistIdOnly : false,
 	
 	
 	

@@ -1597,140 +1597,6 @@ KevlarUTIL.Event.prototype = {
 
 /**
  * @abstract
- * @class Kevlar.persistence.Proxy
- * @extends Kevlar.util.Observable
- * 
- * Proxy is the base class for subclasses that perform CRUD (Create, Read, Update, and Delete) operations on the server.
- * 
- * @param {Object} config The configuration options for this class, specified in an object (hash).
- */
-/*global Kevlar */
-Kevlar.persistence.Proxy = Kevlar.extend( Kevlar.util.Observable, {
-	
-	constructor : function( config ) {
-		// Apply the config
-		Kevlar.apply( this, config );
-	},
-	
-	
-	/**
-	 * Creates a Model on the server.
-	 * 
-	 * @abstract
-	 * @method create
-	 * @param {Kevlar.Model} model The Model instance to create on the server.
-	 */
-	create : Kevlar.abstractFn,
-	
-	
-	/**
-	 * Reads a Model from the server.
-	 * 
-	 * @abstract
-	 * @method read
-	 * @param {Kevlar.Model} model The Model instance to read from the server.
-	 */
-	read : Kevlar.abstractFn,
-	
-	
-	/**
-	 * Updates the Model on the server, using the provided `data`.  
-	 * 
-	 * @abstract
-	 * @method update
-	 * @param {Kevlar.Model} model The model to persist to the server. 
-	 */
-	update : Kevlar.abstractFn,
-	
-	
-	/**
-	 * Destroys (deletes) the Model on the server. This method is not named "delete" as "delete" is a JavaScript reserved word.
-	 * 
-	 * @abstract
-	 * @method destroy
-	 * @param {Kevlar.Model} model The Model instance to delete on the server.
-	 */
-	destroy : Kevlar.abstractFn
-	
-} );
-
-
-// Apply Static Properties
-Kevlar.apply( Kevlar.persistence.Proxy, {
-	
-	/**
-	 * An object (hashmap) of persistence proxy name -> Proxy class key/value pairs, used to look up
-	 * a Proxy subclass by name.
-	 * 
-	 * @private
-	 * @static
-	 * @property {Object} proxies
-	 */
-	proxies : {},
-	
-	/**
-	 * Registers a Proxy subclass by name, so that it may be created by an anonymous object
-	 * with a `type` attribute when set to the prototype of a {@link Kevlar.Model}.
-	 *
-	 * @static  
-	 * @method register
-	 * @param {String} type The type name of the persistence proxy.
-	 * @param {Function} proxyClass The class (constructor function) to register.
-	 */
-	register : function( type, proxyClass ) {
-		var Proxy = Kevlar.persistence.Proxy;  // quick reference to this class's constructor
-		
-		type = type.toLowerCase();
-		if( typeof proxyClass !== 'function' ) {
-			throw new Error( "A Proxy subclass constructor function must be provided to registerProxy()" );
-		}
-		
-		if( !Proxy.proxies[ type ] ) { 
-			Proxy.proxies[ type ] = proxyClass;
-		} else {
-			throw new Error( "Error: Proxy type '" + type + "' already registered." );
-		}
-	},
-	
-	
-	/**
-	 * Creates (instantiates) a {@link Kevlar.persistence.Proxy} based on its type name, given
-	 * a configuration object that has a `type` property. If an already-instantiated 
-	 * {@link Kevlar.persistence.Proxy Proxy} is provided, it will simply be returned unchanged.
-	 * 
-	 * @static
-	 * @method create
-	 * @param {Object} config The configuration object for the Proxy. Config objects should have the property `type`, 
-	 *   which determines which type of {@link Kevlar.persistence.Proxy} will be instantiated. If the object does not
-	 *   have a `type` property, an error will be thrown. Note that already-instantiated {@link Kevlar.persistence.Proxy Proxies} 
-	 *   will simply be returned unchanged. 
-	 * @return {Kevlar.persistence.Proxy} The instantiated Proxy.
-	 */
-	create : function( config ) {
-		var Proxy = Kevlar.persistence.Proxy;  // quick reference to this class's constructor
-		var type = config.type ? config.type.toLowerCase() : undefined;
-		
-		if( config instanceof Kevlar.persistence.Proxy ) {
-			// Already a Proxy instance, return it
-			return config;
-			
-		} else if( Proxy.proxies[ type ] ) {
-			return new Proxy.proxies[ type ]( config );
-			
-		} else if( !( 'type' in config ) ) {
-			// No `type` property provided on config object
-			throw new Error( "Kevlar.persistence.Proxy.create(): No `type` property provided on persistenceProxy config object" );
-			 
-		} else {
-			// No registered Proxy type with the given type, throw an error
-			throw new Error( "Kevlar.persistence.Proxy.create(): Unknown Proxy type: '" + type + "'" );
-		}
-	}
-
-} );
-
-/**
- * @abstract
  * @class Kevlar.attribute.Attribute
  * @extends Object
  * 
@@ -1752,11 +1618,16 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	
 	/**
 	 * @cfg {Function} type
-	 * Specifies the type of the Attribute, in which a conversion of the raw data will be performed. 
-	 * Currently, this config accepts a constructor function for the type. If a {@link Kevlar.Model}
-	 * subclass is provided, any raw data object will be fed to the constructor function.
+	 * Specifies the type of the Attribute, in which a conversion of the raw data will be performed.
+	 * This accepts the following general types, but custom types may be added using the {@link Kevlar.attribute.Attribute#registerType} method.
 	 * 
-	 * In the future, this may be implemented for other custom types.
+	 * - **mixed**: Performs no conversions, and no special processing of given values. This is the default Attribute type.
+	 * - **string**
+	 * - **int**
+	 * - **float** (really a "double")
+	 * - **boolean** / **bool**
+	 * - **date**
+	 * - **model**
 	 */
 	
 	/**
@@ -1861,31 +1732,6 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * Set to false to prevent the attribute from being persisted.
 	 */
 	persist : true,
-	
-	/**
-	 * @cfg {Boolean} embedded
-	 * If a {@link Kevlar.Model Model} is set to the attribute, setting this config to true has the parent {@link Kevlar.Model Model} treat the child 
-	 * {@link Kevlar.Model Model} as if it is a part of itself. Normally, a child Model that is not embedded is treated as a "relation", where it is
-	 * considered as independent from the parent Model.
-	 * 
-	 * So what this means is that, when true:
-	 * 
-	 * - The parent Model is considered as "changed" when an attribute in the child Model is changed. The attribute that holds the child
-	 *   model is the "change".
-	 * - The parent Model's {@link Kevlar.Model#change change} event is fired when an attribute on the child Model is changed.
-	 * - The child Model's data is persisted with the parent Model's data, unless the {@link #persistIdOnly} config is set to true,
-	 *   in which case just the child Model's {@link Kevlar.Model#idAttribute id} is persisted with the parent Model.
-	 * 
-	 * Note that this configuration may be a part of a special "ModelAttribute" subclass in the future.
-	 */
-	embedded : false,
-	
-	/**
-	 * @cfg {Boolean} persistIdOnly
-	 * In the case that an {@link #embedded} {@link Kevlar.Model Model} is set to the attribute, set this to true to only have the 
-	 * {@link Kevlar.Model#idProperty id} of the embedded model be persisted, rather than all of the Model data.
-	 */
-	persistIdOnly : false,
 	
 	
 	
@@ -2064,6 +1910,209 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 } );
 
 /**
+ * @abstract
+ * @class Kevlar.persistence.Proxy
+ * @extends Kevlar.util.Observable
+ * 
+ * Proxy is the base class for subclasses that perform CRUD (Create, Read, Update, and Delete) operations on the server.
+ * 
+ * @param {Object} config The configuration options for this class, specified in an object (hash).
+ */
+/*global Kevlar */
+Kevlar.persistence.Proxy = Kevlar.extend( Kevlar.util.Observable, {
+	
+	constructor : function( config ) {
+		// Apply the config
+		Kevlar.apply( this, config );
+	},
+	
+	
+	/**
+	 * Creates a Model on the server.
+	 * 
+	 * @abstract
+	 * @method create
+	 * @param {Kevlar.Model} model The Model instance to create on the server.
+	 */
+	create : Kevlar.abstractFn,
+	
+	
+	/**
+	 * Reads a Model from the server.
+	 * 
+	 * @abstract
+	 * @method read
+	 * @param {Kevlar.Model} model The Model instance to read from the server.
+	 */
+	read : Kevlar.abstractFn,
+	
+	
+	/**
+	 * Updates the Model on the server, using the provided `data`.  
+	 * 
+	 * @abstract
+	 * @method update
+	 * @param {Kevlar.Model} model The model to persist to the server. 
+	 */
+	update : Kevlar.abstractFn,
+	
+	
+	/**
+	 * Destroys (deletes) the Model on the server. This method is not named "delete" as "delete" is a JavaScript reserved word.
+	 * 
+	 * @abstract
+	 * @method destroy
+	 * @param {Kevlar.Model} model The Model instance to delete on the server.
+	 */
+	destroy : Kevlar.abstractFn
+	
+} );
+
+
+// Apply Static Properties
+Kevlar.apply( Kevlar.persistence.Proxy, {
+	
+	/**
+	 * An object (hashmap) of persistence proxy name -> Proxy class key/value pairs, used to look up
+	 * a Proxy subclass by name.
+	 * 
+	 * @private
+	 * @static
+	 * @property {Object} proxies
+	 */
+	proxies : {},
+	
+	/**
+	 * Registers a Proxy subclass by name, so that it may be created by an anonymous object
+	 * with a `type` attribute when set to the prototype of a {@link Kevlar.Model}.
+	 *
+	 * @static  
+	 * @method register
+	 * @param {String} type The type name of the persistence proxy.
+	 * @param {Function} proxyClass The class (constructor function) to register.
+	 */
+	register : function( type, proxyClass ) {
+		var Proxy = Kevlar.persistence.Proxy;  // quick reference to this class's constructor
+		
+		type = type.toLowerCase();
+		if( typeof proxyClass !== 'function' ) {
+			throw new Error( "A Proxy subclass constructor function must be provided to registerProxy()" );
+		}
+		
+		if( !Proxy.proxies[ type ] ) { 
+			Proxy.proxies[ type ] = proxyClass;
+		} else {
+			throw new Error( "Error: Proxy type '" + type + "' already registered." );
+		}
+	},
+	
+	
+	/**
+	 * Creates (instantiates) a {@link Kevlar.persistence.Proxy} based on its type name, given
+	 * a configuration object that has a `type` property. If an already-instantiated 
+	 * {@link Kevlar.persistence.Proxy Proxy} is provided, it will simply be returned unchanged.
+	 * 
+	 * @static
+	 * @method create
+	 * @param {Object} config The configuration object for the Proxy. Config objects should have the property `type`, 
+	 *   which determines which type of {@link Kevlar.persistence.Proxy} will be instantiated. If the object does not
+	 *   have a `type` property, an error will be thrown. Note that already-instantiated {@link Kevlar.persistence.Proxy Proxies} 
+	 *   will simply be returned unchanged. 
+	 * @return {Kevlar.persistence.Proxy} The instantiated Proxy.
+	 */
+	create : function( config ) {
+		var Proxy = Kevlar.persistence.Proxy;  // quick reference to this class's constructor
+		var type = config.type ? config.type.toLowerCase() : undefined;
+		
+		if( config instanceof Kevlar.persistence.Proxy ) {
+			// Already a Proxy instance, return it
+			return config;
+			
+		} else if( Proxy.proxies[ type ] ) {
+			return new Proxy.proxies[ type ]( config );
+			
+		} else if( !( 'type' in config ) ) {
+			// No `type` property provided on config object
+			throw new Error( "Kevlar.persistence.Proxy.create(): No `type` property provided on persistenceProxy config object" );
+			 
+		} else {
+			// No registered Proxy type with the given type, throw an error
+			throw new Error( "Kevlar.persistence.Proxy.create(): Unknown Proxy type: '" + type + "'" );
+		}
+	}
+
+} );
+
+/**
+ * @class Kevlar.attribute.BooleanAttribute
+ * @extends Kevlar.attribute.Attribute
+ * 
+ * Attribute definition class for an Attribute that takes a boolean (i.e. true/false) data value.
+ */
+/*global Kevlar */
+Kevlar.attribute.BooleanAttribute = Kevlar.attribute.Attribute.extend( {
+		
+	
+	
+} );
+
+
+// Register the Attribute type
+Kevlar.attribute.Attribute.registerType( 'boolean', Kevlar.attribute.BooleanAttribute );
+Kevlar.attribute.Attribute.registerType( 'bool', Kevlar.attribute.BooleanAttribute );
+
+/**
+ * @class Kevlar.attribute.DateAttribute
+ * @extends Kevlar.attribute.Attribute
+ * 
+ * Attribute definition class for an Attribute that takes a Date data value.
+ */
+/*global Kevlar */
+Kevlar.attribute.DateAttribute = Kevlar.attribute.Attribute.extend( {
+		
+	
+	
+} );
+
+
+// Register the Attribute type
+Kevlar.attribute.Attribute.registerType( 'date', Kevlar.attribute.DateAttribute );
+
+/**
+ * @class Kevlar.attribute.FloatAttribute
+ * @extends Kevlar.attribute.Attribute
+ * 
+ * Attribute definition class for an Attribute that takes a float (i.e. decimal, or "real") data value.
+ */
+/*global Kevlar */
+Kevlar.attribute.FloatAttribute = Kevlar.attribute.Attribute.extend( {
+		
+	
+	
+} );
+
+
+// Register the Attribute type
+Kevlar.attribute.Attribute.registerType( 'float', Kevlar.attribute.FloatAttribute );
+
+/**
+ * @class Kevlar.attribute.IntAttribute
+ * @extends Kevlar.attribute.Attribute
+ * 
+ * Attribute definition class for an Attribute that takes an integer data value.
+ */
+/*global Kevlar */
+Kevlar.attribute.IntAttribute = Kevlar.attribute.Attribute.extend( {
+		
+	
+	
+} );
+
+
+// Register the Attribute type
+Kevlar.attribute.Attribute.registerType( 'int', Kevlar.attribute.IntAttribute );
+
+/**
  * @class Kevlar.attribute.MixedAttribute
  * @extends Kevlar.attribute.Attribute
  * 
@@ -2079,6 +2128,61 @@ Kevlar.attribute.MixedAttribute = Kevlar.attribute.Attribute.extend( {
 
 // Register the Attribute type
 Kevlar.attribute.Attribute.registerType( 'mixed', Kevlar.attribute.MixedAttribute );
+
+/**
+ * @class Kevlar.attribute.ModelAttribute
+ * @extends Kevlar.attribute.Attribute
+ * 
+ * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.Model} value.
+ */
+/*global Kevlar */
+Kevlar.attribute.ModelAttribute = Kevlar.attribute.Attribute.extend( {
+		
+	/**
+	 * @cfg {Boolean} embedded
+	 * Setting this config to true has the parent {@link Kevlar.Model Model} treat the child {@link Kevlar.Model Model} as if it is a part of itself. 
+	 * Normally, a child Model that is not embedded is treated as a "relation", where it is considered as independent from the parent Model.
+	 * 
+	 * What this means is that, when true:
+	 * 
+	 * - The parent Model is considered as "changed" when an attribute in the child Model is changed. This Attribute (the attribute that holds the child
+	 *   model) is the "change".
+	 * - The parent Model's {@link Kevlar.Model#change change} event is fired when an attribute on the child Model has changed.
+	 * - The child Model's data is persisted with the parent Model's data, unless the {@link #persistIdOnly} config is set to true,
+	 *   in which case just the child Model's {@link Kevlar.Model#idAttribute id} is persisted with the parent Model.
+	 */
+	embedded : false,
+	
+	/**
+	 * @cfg {Boolean} persistIdOnly
+	 * In the case that the {@link #embedded} config is true, set this to true to only have the {@link Kevlar.Model#idProperty id} of the embedded 
+	 * model be persisted, rather than all of the Model data. Normally, when {@link #embedded} is false (the default), the child {@link Kevlar.Model Model}
+	 * is treated as a relation, and only its {@link Kevlar.Model#idAttribute id} is persisted.
+	 */
+	persistIdOnly : false
+	
+} );
+
+
+// Register the Attribute type
+Kevlar.attribute.Attribute.registerType( 'model', Kevlar.attribute.ModelAttribute );
+
+/**
+ * @class Kevlar.attribute.StringAttribute
+ * @extends Kevlar.attribute.Attribute
+ * 
+ * Attribute definition class for an Attribute that takes a string data value.
+ */
+/*global Kevlar */
+Kevlar.attribute.StringAttribute = Kevlar.attribute.Attribute.extend( {
+		
+	
+	
+} );
+
+
+// Register the Attribute type
+Kevlar.attribute.Attribute.registerType( 'string', Kevlar.attribute.StringAttribute );
 
 /**
  * @private

@@ -13,6 +13,8 @@
 				
 				{ file: "../src/util/Observable.js" },
 				
+				{ file: "../src/attribute/Attribute.js" },
+				
 				{ file: "../src/persistence/Proxy.js" },
 				
 				{ tree: "../src/" }
