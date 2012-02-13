@@ -1,5 +1,5 @@
 /**
- * @class Kevlar.Attribute
+ * @class Kevlar.attribute.Attribute
  * @extends Object
  * 
  * Attribute definition object for a {@link Kevlar.Model Model}. The Attribute itself does not store data, but instead simply
@@ -10,7 +10,7 @@
  * will be passed to the Attribute constructor.
  */
 /*global Kevlar */
-Kevlar.Attribute = Kevlar.extend( Object, {
+Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	
 	/**
 	 * @cfg {String} name (required)
@@ -179,7 +179,7 @@ Kevlar.Attribute = Kevlar.extend( Object, {
 		// Each Attribute must have a name.
 		var name = this.name;
 		if( name === undefined || name === null || name === "" ) {
-			throw new Error( "no 'name' property provided to Kevlar.Attribute constructor" );
+			throw new Error( "no 'name' property provided to Kevlar.attribute.Attribute constructor" );
 			
 		} else if( typeof this.name === 'number' ) {  // convert to a string if it is a number
 			this.name = name.toString();

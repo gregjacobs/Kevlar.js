@@ -5,7 +5,7 @@
  * Generalized data storage class, which has a number of data-related features, including the ability to persist the data to a backend server.
  * Basically, a Model represents some object of data that your application uses. For example, in an online store, one might define two Models: 
  * one for Users, and the other for Products. These would be `User` and `Product` models, respectively. Each of these Models would in turn,
- * have the {@link Kevlar.Attribute Attributes} (data values) that each Model is made up of. Ex: A User model may have: `userId`, `firstName`, and 
+ * have the {@link Kevlar.attribute.Attribute Attributes} (data values) that each Model is made up of. Ex: A User model may have: `userId`, `firstName`, and 
  * `lastName` Attributes.
  */
 /*global window, Kevlar */
@@ -20,11 +20,11 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	/**
 	 * @cfg {String[]/Object[]} attributes
-	 * Array of {@link Kevlar.Attribute Attribute} declarations. These are objects with any number of properties, but they
-	 * must have the property 'name'. See the configuration options of {@link Kevlar.Attribute} for more information. 
+	 * Array of {@link Kevlar.attribute.Attribute Attribute} declarations. These are objects with any number of properties, but they
+	 * must have the property 'name'. See the configuration options of {@link Kevlar.attribute.Attribute} for more information. 
 	 * 
-	 * Anonymous config objects defined here will become instantiated {@link Kevlar.Attribute} objects. An item in the array may also simply 
-	 * be a string, which will specify the name of the {@link Kevlar.Attribute Attribute}, with no other {@link Kevlar.Attribute Attribute} 
+	 * Anonymous config objects defined here will become instantiated {@link Kevlar.attribute.Attribute} objects. An item in the array may also simply 
+	 * be a string, which will specify the name of the {@link Kevlar.attribute.Attribute Attribute}, with no other {@link Kevlar.attribute.Attribute Attribute} 
 	 * configuration options.
 	 * 
 	 * Attributes defined on the prototype of a Model, and its superclasses, are concatenated together come
@@ -36,7 +36,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * Example:
 	 * 
 	 *     attributes : [
-	 *         'id',    // name-only; no other configs for this attribute (not recommended! should declare the {@link Kevlar.Attribute#type type})
+	 *         'id',    // name-only; no other configs for this attribute (not recommended! should declare the {@link Kevlar.attribute.Attribute#type type})
 	 *         { name: 'firstName', type: 'string' },
 	 *         { name: 'lastName', type: 'string' },
 	 *         {
@@ -81,7 +81,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @private
 	 * @property {Object} data
 	 * 
-	 * A hash that holds the current data for the {@link Kevlar.Attribute Attributes}. The property names in this object match 
+	 * A hash that holds the current data for the {@link Kevlar.attribute.Attribute Attributes}. The property names in this object match 
 	 * the attribute names.  This hash holds the current data as it is modified by {@link #set}.
 	 */
 	
@@ -97,7 +97,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @private 
 	 * @property {Object} modifiedData
 	 * A hash that serves two functions:<br> 
-	 * 1) Properties are set to it when an attribute is modified. The property name is the attribute {@link Kevlar.Attribute#name}. 
+	 * 1) Properties are set to it when an attribute is modified. The property name is the attribute {@link Kevlar.attribute.Attribute#name}. 
 	 * This allows it to be used to determine which attributes have been modified. 
 	 * 2) The <b>original</b> (non-committed) data of the attribute (before it was {@link #set}) is stored as the value of the 
 	 * property. When rolling back changes (via {@link #rollback}), these values are copied back onto the {@link #data} object
@@ -175,7 +175,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			for( i = 0, len = attributeDefs.length; i < len; i++ ) {
 				attributeObj = attributeDefs[ i ];
 				
-				// Normalize to a Kevlar.Attribute configuration object if it is a string
+				// Normalize to a Kevlar.attribute.Attribute configuration object if it is a string
 				if( typeof attributeObj === 'string' ) {
 					attributeObj = { name: attributeObj };
 				}
@@ -189,17 +189,17 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 	
 		/**
-		 * Factory method which by default creates a {@link Kevlar.Attribute}, but may be overridden by subclasses
-		 * to create different {@link Kevlar.Attribute} subclasses. 
+		 * Factory method which by default creates a {@link Kevlar.attribute.Attribute}, but may be overridden by subclasses
+		 * to create different {@link Kevlar.attribute.Attribute} subclasses. 
 		 * 
 		 * @static
 		 * @method createAttribute
 		 * @param {Object} attributeObj The attribute object provided on the prototype. If it was a string, it will have been
 		 *   normalized to the object `{ name: attributeName }`.
-		 * @return {Kevlar.Attribute}
+		 * @return {Kevlar.attribute.Attribute}
 		 */
 		createAttribute : function( attributeObj ) {
-			return new Kevlar.Attribute( attributeObj );
+			return new Kevlar.attribute.Attribute( attributeObj );
 		}
 	},
 	
@@ -247,7 +247,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		me.addEvents(
 			/**
-			 * Fires when a {@link Kevlar.Attribute} in the Model has changed its value. This is a 
+			 * Fires when a {@link Kevlar.attribute.Attribute} in the Model has changed its value. This is a 
 			 * convenience event to respond to just a single attribute's change. Ex: if you want to
 			 * just respond to the `title` attribute's change, you could subscribe to `change:title`. Ex:
 			 * 
@@ -255,18 +255,18 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			 * 
 			 * @event change:[attributeName]
 			 * @param {Kevlar.Model} model This Model instance.
-			 * @param {Mixed} newValue The new value, processed by the attribute's {@link Kevlar.Attribute#get get} function if one exists. 
-			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.Attribute#get get} function if one exists. 
+			 * @param {Mixed} newValue The new value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
+			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
 			 */
 			
 			/**
-			 * Fires when a {@link Kevlar.Attribute} in the Model has changed its value.
+			 * Fires when a {@link Kevlar.attribute.Attribute} in the Model has changed its value.
 			 * 
 			 * @event change
 			 * @param {Kevlar.Model} model This Model instance.
 			 * @param {String} attributeName The attribute name for the Attribute that was changed.
-			 * @param {Mixed} newValue The new value, processed by the attribute's {@link Kevlar.Attribute#get get} function if one exists. 
-			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.Attribute#get get} function if one exists. 
+			 * @param {Mixed} newValue The new value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
+			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
 			 */
 			'change',
 			
@@ -352,7 +352,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	/**
 	 * Retrieves the Attribute objects that are present for the Model, in an object (hashmap) where the keys
-	 * are the Attribute names, and the values are the {@link Kevlar.Attribute} objects themselves.
+	 * are the Attribute names, and the values are the {@link Kevlar.attribute.Attribute} objects themselves.
 	 * 
 	 * @method getAttributes
 	 * @return {Object} 
@@ -396,7 +396,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Sets the value for a {@link Kevlar.Attribute Attribute} given its `name`, and a `value`. For example, a call could be made as this:
+	 * Sets the value for a {@link Kevlar.attribute.Attribute Attribute} given its `name`, and a `value`. For example, a call could be made as this:
 	 * 
 	 *     model.set( 'attribute1', 'value1' );
 	 * 
@@ -406,7 +406,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * 
 	 * Note that in this form, the method will ignore any property in the object (hash) that don't have associated Attributes.<br><br>
 	 * 
-	 * When attributes are set, their {@link Kevlar.Attribute#set} method is run, if they have one defined.
+	 * When attributes are set, their {@link Kevlar.attribute.Attribute#set} method is run, if they have one defined.
 	 * 
 	 * @method set
 	 * @param {String/Object} attributeName The attribute name for the Attribute to set, or an object (hash) of name/value pairs.
@@ -488,14 +488,14 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Retrieves the value for the attribute given by `attributeName`. If the {@link Kevlar.Attribute Attribute} has a
-	 * {@link Kevlar.Attribute#get get} function defined, that function will be called, and its return value
+	 * Retrieves the value for the attribute given by `attributeName`. If the {@link Kevlar.attribute.Attribute Attribute} has a
+	 * {@link Kevlar.attribute.Attribute#get get} function defined, that function will be called, and its return value
 	 * will be used as the return of this method.
 	 * 
 	 * @method get
 	 * @param {String} attributeName The name of the Attribute whose value to retieve.
-	 * @return {Mixed} The value of the attribute returned by the Attribute's {@link Kevlar.Attribute#get get} function (if
-	 * one exists), or the underlying value of the attribute. Will return undefined if there is no {@link Kevlar.Attribute#get get}
+	 * @return {Mixed} The value of the attribute returned by the Attribute's {@link Kevlar.attribute.Attribute#get get} function (if
+	 * one exists), or the underlying value of the attribute. Will return undefined if there is no {@link Kevlar.attribute.Attribute#get get}
 	 * function, and the value has never been set.  
 	 */
 	get : function( attributeName ) {
@@ -516,15 +516,15 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Retrieves the *raw* value for the attribute given by `attributeName`. If the {@link Kevlar.Attribute Attributes} has a
-	 * {@link Kevlar.Attribute#raw raw} function defined, that function will be called, and its return value will be used
+	 * Retrieves the *raw* value for the attribute given by `attributeName`. If the {@link Kevlar.attribute.Attribute Attributes} has a
+	 * {@link Kevlar.attribute.Attribute#raw raw} function defined, that function will be called, and its return value will be used
 	 * by the return of this method. If not, the underlying data that is currently stored will be returned, bypassing any
-	 * {@link Kevlar.Attribute#get get} function defined on the {@link Kevlar.Attribute Attribute}.
+	 * {@link Kevlar.attribute.Attribute#get get} function defined on the {@link Kevlar.attribute.Attribute Attribute}.
 	 * 
 	 * @method raw
 	 * @param {String} attributeName The name of the Attribute whose raw value to retieve.
-	 * @return {Mixed} The value of the attribute returned by the Attribute's {@link Kevlar.Attribute#raw raw} function (if
-	 * one exists), or the underlying value of the attribute. Will return undefined if there is no {@link Kevlar.Attribute#raw raw}
+	 * @return {Mixed} The value of the attribute returned by the Attribute's {@link Kevlar.attribute.Attribute#raw raw} function (if
+	 * one exists), or the underlying value of the attribute. Will return undefined if there is no {@link Kevlar.attribute.Attribute#raw raw}
 	 * function, and the value has never been set.
 	 */
 	raw : function( attributeName ) {
@@ -609,7 +609,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This object is sent to
 	 *   the {@link Kevlar.data.NativeObjectConverter#convert NativeObjectConverter's convert method}, and accepts all of the options
 	 *   that the {@link Kevlar.data.NativeObjectConverter#convert} method does. See that method for details.
-	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.Attribute Attribute} values.
+	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.attribute.Attribute Attribute} values.
 	 */
 	getData : function( options ) {
 		return Kevlar.data.NativeObjectConverter.convert( this, options );
@@ -617,7 +617,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Retrieves the values for all of the {@link Kevlar.Attribute attributes} in the Model whose values have been changed since
+	 * Retrieves the values for all of the {@link Kevlar.attribute.Attribute attributes} in the Model whose values have been changed since
 	 * the last {@link #method-commit} or {@link #method-rollback}. 
 	 * 
 	 * The Model attributes are retrieved via the {@link #get} method, to pre-process the data before it is returned in the final hash, 
