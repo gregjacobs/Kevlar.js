@@ -308,6 +308,26 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 */
 	isPersisted : function() {
 		return this.persist;
+	},
+	
+	
+	/**
+	 * Allows the Attribute to determine if two values of its data type are equal, and the model
+	 * should consider itself as "changed". This method is passed the "old" value and the "new" value
+	 * when a value is {@link Kevlar.Model#set set} to the Model, and if this method returns `false`, the
+	 * new value is taken as a "change".
+	 * 
+	 * This may be overridden by subclasses to provide custom comparisons, but the default implementation is
+	 * to directly compare primitives, and deep compare arrays and objects.
+	 * 
+	 * @method valuesAreEqual
+	 * @param {Mixed} oldValue
+	 * @param {Mixed} newValue
+	 * @return {Boolean} True if the values are equal, and the Model should *not* consider the new value as a 
+	 *   change of the old value, or false if the values are different, and the new value should be taken as a change.
+	 */
+	valuesAreEqual : function( oldValue, newValue ) {
+		return Kevlar.util.Object.isEqual( oldValue, newValue );
 	}
 	
 } );

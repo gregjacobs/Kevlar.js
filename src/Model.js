@@ -446,7 +446,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			
 			
 			// Only change if there is no current value for the attribute, or if newValue is different from the current
-			if( !( attributeName in this.data ) || !Kevlar.util.Object.isEqual( currentValue, newValue ) ) {
+			if( !( attributeName in this.data ) || !attribute.valuesAreEqual( currentValue, newValue ) ) {   // let the Attribute itself determine if two values of its datatype are equal
 				// Store the attribute's *current* value (not the newValue) into the "modifiedData" attributes hash.
 				// This should only happen the first time the attribute is set, so that the attribute can be rolled back even if there are multiple
 				// set() calls to change it.
