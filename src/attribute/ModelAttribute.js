@@ -1,19 +1,12 @@
 /**
  * @class Kevlar.attribute.ModelAttribute
- * @extends Kevlar.attribute.Attribute
+ * @extends Kevlar.attribute.ObjectAttribute
  * 
  * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.Model} value.
  */
 /*global window, Kevlar */
-Kevlar.attribute.ModelAttribute = Kevlar.attribute.Attribute.extend( {
-	
-	/**
-	 * @cfg {Kevlar.Model} defaultValue
-	 * @inheritdoc
-	 */
-	defaultValue : null,
-	
-	
+Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
+		
 	/**
 	 * @cfg {Kevlar.Model/String/Function} modelClass
 	 * The specific {@link Kevlar.Model} subclass that will be used in the ModelAttribute. This config can be provided
@@ -74,19 +67,22 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.Attribute.extend( {
 	 * @inheritdoc
 	 */
 	preSet : function( model, value ) {
-		var modelClass = this.modelClass;
+		// First, normalize the value to an object, or null
+		value = Kevlar.attribute.ModelAttribute.superclass.preSet.apply( this, arguments );
 		
-		// Normalize the modelClass
-		if( typeof modelClass === 'string' ) {
-			this.modelClass = modelClass = window[ modelClass ];
-		} else if( typeof modelClass === 'function' && modelClass.constructor === Function ) {  // it's an anonymous function, run it, so it returns the Model reference we need
-			this.modelClass = modelClass = modelClass();
-		}
-		
-		if( !value || typeof value !== 'object' ) {
-			value = null;  // convert all falsy values to null, and all other non-object data types
-		} else if( value && typeof value === 'object' && typeof modelClass === 'function' && !( value instanceof modelClass ) ) {
-			value = new modelClass( value );
+		if( value !== null ) {
+			var modelClass = this.modelClass;
+			
+			// Normalize the modelClass
+			if( typeof modelClass === 'string' ) {
+				this.modelClass = modelClass = window[ modelClass ];
+			} else if( typeof modelClass === 'function' && modelClass.constructor === Function ) {  // it's an anonymous function, run it, so it returns the Model reference we need
+				this.modelClass = modelClass = modelClass();
+			}
+			
+			if( value && typeof modelClass === 'function' && !( value instanceof modelClass ) ) {
+				value = new modelClass( value );
+			}
 		}
 		
 		return value;

@@ -589,35 +589,36 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			
 			
 			"preSet() should return null when provided any falsy value, or non-object" : function() {
-				var value;
+				var attribute = new Kevlar.attribute.ObjectAttribute( { name: 'attr' } ),
+				    value;
 				
-				value = this.attribute.preSet( null, 0 );
+				value = attribute.preSet( null, 0 );
 				Y.Assert.areSame( null, value );
 				
-				value = this.attribute.preSet( null, 1 );
+				value = attribute.preSet( null, 1 );
 				Y.Assert.areSame( null, value );
 				
-				value = this.attribute.preSet( null, "" );
+				value = attribute.preSet( null, "" );
 				Y.Assert.areSame( null, value );
 				
-				value = this.attribute.preSet( null, "hi" );
+				value = attribute.preSet( null, "hi" );
 				Y.Assert.areSame( null, value );
 				
-				value = this.attribute.preSet( null, false );
+				value = attribute.preSet( null, false );
 				Y.Assert.areSame( null, value );
 				
-				value = this.attribute.preSet( null, true );
+				value = attribute.preSet( null, true );
 				Y.Assert.areSame( null, value );
 				
-				value = this.attribute.preSet( null, undefined );
+				value = attribute.preSet( null, undefined );
 				Y.Assert.areSame( null, value );
 				
-				value = this.attribute.preSet( null, null );
+				value = attribute.preSet( null, null );
 				Y.Assert.areSame( null, value );
 			},
 			
 			
-			"preSet() should convert an anonymous data object to the provided modelClass" : function() {
+			"preSet() should convert an anonymous data object to the provided modelClass, when modelClass is a direct reference to the Model subclass" : function() {
 				var data = { attr1: 1, attr2: 2 };
 				var value = this.attribute.preSet( null, data );
 				
@@ -667,7 +668,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			},
 			
 			
-			"preSet() should return a Model instance unchanged" : function() {
+			"preSet() should return an actual Model instance unchanged" : function() {
 				var data = new this.Model( { attr1 : 1, attr2: 2 } );
 				var value = this.attribute.preSet( null, data );
 				
@@ -677,11 +678,85 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			},
 			
 			
+			// --------------------
+			
 			
 			"if no modelClass was provided, preSet() should return an anonymous data object unchanged" : function() {
 				var attribute = new Kevlar.attribute.ModelAttribute( { 
 					name: 'attr'
 				} );
+				
+				var data = { attr1: 1, attr2: 2 };
+				var value = attribute.preSet( null, data );
+				
+				Y.Assert.areSame( data, value );
+			}
+		}
+		
+	]
+	
+} ) );
+
+/*global window, Ext, Y, Kevlar, tests */
+tests.unit.attribute.add( new Ext.test.TestSuite( {
+	
+	name: 'Kevlar.attribute.ObjectAttribute',
+	
+	
+	items : [
+	
+		/*
+		 * Test the defaultValue
+		 */
+		{
+			name : "Test the defaultValue",
+			
+			"The default defaultValue for ObjectAttribute should be null" : function() {
+				Y.Assert.isNull( Kevlar.attribute.ObjectAttribute.prototype.defaultValue );
+			}
+		},
+	
+		
+		/*
+		 * Test preSet()
+		 */
+		{
+			name : "Test preSet()",
+			
+			
+			"preSet() should return null when provided any falsy value, or non-object" : function() {
+				var attribute = new Kevlar.attribute.ObjectAttribute( { name: 'attr' } ),
+				    value;
+				
+				value = attribute.preSet( null, 0 );
+				Y.Assert.areSame( null, value );
+				
+				value = attribute.preSet( null, 1 );
+				Y.Assert.areSame( null, value );
+				
+				value = attribute.preSet( null, "" );
+				Y.Assert.areSame( null, value );
+				
+				value = attribute.preSet( null, "hi" );
+				Y.Assert.areSame( null, value );
+				
+				value = attribute.preSet( null, false );
+				Y.Assert.areSame( null, value );
+				
+				value = attribute.preSet( null, true );
+				Y.Assert.areSame( null, value );
+				
+				value = attribute.preSet( null, undefined );
+				Y.Assert.areSame( null, value );
+				
+				value = attribute.preSet( null, null );
+				Y.Assert.areSame( null, value );
+			},
+			
+			
+			
+			"preSet() should return an object unchanged" : function() {
+				var attribute = new Kevlar.attribute.ObjectAttribute( { name: 'attr' } );
 				
 				var data = { attr1: 1, attr2: 2 };
 				var value = attribute.preSet( null, data );
@@ -4578,4 +4653,36 @@ tests.integration.add( new Ext.test.TestSuite( {
 	
 } ) );
 	
+
+/*global window, Ext, Y, JsMockito, tests, Kevlar */
+tests.integration.add( new Ext.test.TestSuite( {
+	
+	name: 'Model with ObjectAttribute',
+	
+	
+	items : [
+		{
+			/*
+			 * Test defaultValue of ObjectAttribute
+			 */
+			name : "Test defaultValue of ObjectAttribute",
+			
+			
+			"The defaultValue for an ObjectAttribute should be null" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [
+						{
+							name : 'attr',
+							type : 'object'
+						}
+					]
+				} );
+				
+				var model = new Model();
+				Y.Assert.isNull( model.get( 'attr' ) );
+			}
+		}
+	]
+	
+} ) );
 

@@ -6,8 +6,29 @@
  */
 /*global Kevlar */
 Kevlar.attribute.ObjectAttribute = Kevlar.attribute.Attribute.extend( {
-		
 	
+	/**
+	 * @cfg {Kevlar.Model} defaultValue
+	 * @inheritdoc
+	 */
+	defaultValue : null,
+	
+	
+	/**
+	 * Overridden `preSet` method used to normalize the value provided. All non-object values are converted to null,
+	 * while object values are returned unchanged.
+	 * 
+	 * @override
+	 * @method preSet
+	 * @inheritdoc
+	 */
+	preSet : function( model, value ) {
+		if( typeof value !== 'object' ) {
+			value = null;  // convert all non-object values to null
+		}
+		
+		return value;
+	}
 	
 } );
 

@@ -14,6 +14,7 @@
 				{ file: "../src/util/Observable.js" },
 				
 				{ file: "../src/attribute/Attribute.js" },
+				{ file: "../src/attribute/ObjectAttribute.js" },
 				
 				{ file: "../src/persistence/Proxy.js" },
 				

@@ -53,35 +53,36 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			
 			
 			"preSet() should return null when provided any falsy value, or non-object" : function() {
-				var value;
+				var attribute = new Kevlar.attribute.ObjectAttribute( { name: 'attr' } ),
+				    value;
 				
-				value = this.attribute.preSet( null, 0 );
+				value = attribute.preSet( null, 0 );
 				Y.Assert.areSame( null, value );
 				
-				value = this.attribute.preSet( null, 1 );
+				value = attribute.preSet( null, 1 );
 				Y.Assert.areSame( null, value );
 				
-				value = this.attribute.preSet( null, "" );
+				value = attribute.preSet( null, "" );
 				Y.Assert.areSame( null, value );
 				
-				value = this.attribute.preSet( null, "hi" );
+				value = attribute.preSet( null, "hi" );
 				Y.Assert.areSame( null, value );
 				
-				value = this.attribute.preSet( null, false );
+				value = attribute.preSet( null, false );
 				Y.Assert.areSame( null, value );
 				
-				value = this.attribute.preSet( null, true );
+				value = attribute.preSet( null, true );
 				Y.Assert.areSame( null, value );
 				
-				value = this.attribute.preSet( null, undefined );
+				value = attribute.preSet( null, undefined );
 				Y.Assert.areSame( null, value );
 				
-				value = this.attribute.preSet( null, null );
+				value = attribute.preSet( null, null );
 				Y.Assert.areSame( null, value );
 			},
 			
 			
-			"preSet() should convert an anonymous data object to the provided modelClass" : function() {
+			"preSet() should convert an anonymous data object to the provided modelClass, when modelClass is a direct reference to the Model subclass" : function() {
 				var data = { attr1: 1, attr2: 2 };
 				var value = this.attribute.preSet( null, data );
 				
@@ -131,7 +132,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			},
 			
 			
-			"preSet() should return a Model instance unchanged" : function() {
+			"preSet() should return an actual Model instance unchanged" : function() {
 				var data = new this.Model( { attr1 : 1, attr2: 2 } );
 				var value = this.attribute.preSet( null, data );
 				
@@ -140,6 +141,8 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				Y.Assert.areSame( 2, value.get( 'attr2' ), "The data should remain set to the new model" );
 			},
 			
+			
+			// --------------------
 			
 			
 			"if no modelClass was provided, preSet() should return an anonymous data object unchanged" : function() {
