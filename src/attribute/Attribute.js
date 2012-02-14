@@ -311,6 +311,9 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	},
 	
 	
+	// ---------------------------
+	
+	
 	/**
 	 * Allows the Attribute to determine if two values of its data type are equal, and the model
 	 * should consider itself as "changed". This method is passed the "old" value and the "new" value
@@ -328,6 +331,46 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 */
 	valuesAreEqual : function( oldValue, newValue ) {
 		return Kevlar.util.Object.isEqual( oldValue, newValue );
+	},
+	
+	
+	// ---------------------------
+		
+	
+	/**
+	 * Method that allows pre-processing for the value that is to be set to a {@link Kevlar.Model}.
+	 * After this method has processed the value, it is provided to the {@link #set} function (if
+	 * one exists), and then finally, the return value from the {@link #set} function will be provided
+	 * to {@link #postSet}, and then set as the data on the {@link Kevlar.Model Model}.
+	 * 
+	 * Note that the default implementation simply returns the raw value unchanged, but this may be overridden
+	 * in subclasses to provide a conversion.
+	 * 
+	 * @method preSet
+	 * @param {Mixed} rawValue The raw value provided to the {@link Kevlar.Model#set} method.
+	 * @return {Mixed} The converted value.
+	 */
+	preSet : function( rawValue ) {
+		return rawValue;
+	},
+		
+	
+	/**
+	 * Method that allows post-processing for the value that is to be set to a {@link Kevlar.Model}.
+	 * This method is executed after the {@link #preSet} method, and the {@link #set} function (if one is provided), and is given 
+	 * the value that the {@link #set} function returns. If no {@link #set} function exists, this will simply be executed 
+	 * immediately after {@link #preSet}, after which the return from this method will be set as the data on the {@link Kevlar.Model Model}.
+	 * 
+	 * Note that the default implementation simply returns the value unchanged, but this may be overridden
+	 * in subclasses to provide a conversion.
+	 * 
+	 * @method preSet
+	 * @param {Mixed} value The value provided to the {@link Kevlar.Model#set} method, after it has been processed by the
+	 *   {@link #preSet} method, and any provided {@link #set} function.
+	 * @return {Mixed} The converted value.
+	 */
+	postSet : function( value ) {
+		return value;
 	}
 	
 } );
