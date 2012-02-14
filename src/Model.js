@@ -785,7 +785,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		// and then data is manually modified, but this is also the correct time to run the commit() operation, as we still want to see the changes if the request fails. 
 		// So, if a persistence request fails, we should have all of the data still marked as dirty, both the data that was to be persisted, and any new data that was set 
 		// while the persistence operation was being attempted.
-		var persistedData = Kevlar.util.Object.clone( this.data );
+		var persistedData = Kevlar.util.Object.clone( this.getData() );
 		
 		var successCallback = function() {
 			// The request to persist the data was successful, commit the Model
