@@ -6,7 +6,14 @@
  */
 /*global Kevlar */
 Kevlar.attribute.ModelAttribute = Kevlar.attribute.Attribute.extend( {
-		
+	
+	/**
+	 * @cfg {Kevlar.Model} defaultValue
+	 * @inheritdoc
+	 */
+	defaultValue : null,
+	
+	
 	/**
 	 * @cfg {Boolean} embedded
 	 * Setting this config to true has the parent {@link Kevlar.Model Model} treat the child {@link Kevlar.Model Model} as if it is a part of itself. 
