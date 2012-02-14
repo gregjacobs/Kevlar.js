@@ -534,6 +534,89 @@ tests.unit.attribute.add( new Ext.test.TestCase( {
 	
 } ) );
 
+/*global Ext, Y, Kevlar, tests */
+tests.unit.attribute.add( new Ext.test.TestSuite( {
+	
+	name: 'Kevlar.attribute.ModelAttribute',
+	
+	
+	items : [
+	
+		/*
+		 * Test preSet()
+		 */
+		{
+			name : "Test preSet()",
+			
+			
+			setUp : function() {
+				this.Model = Kevlar.Model.extend( {
+					attributes : [ 'attr1', 'attr2' ]
+				} );
+				
+				this.attribute = new Kevlar.attribute.ModelAttribute( { 
+					name: 'attr',
+					modelClass: this.Model
+				} );
+			},
+			
+			
+			"preSet() should return null when provided any falsy value, or non-object" : function() {
+				var value;
+				
+				value = this.attribute.preSet( null, 0 );
+				Y.Assert.areSame( null, value );
+				
+				value = this.attribute.preSet( null, 1 );
+				Y.Assert.areSame( null, value );
+				
+				value = this.attribute.preSet( null, "" );
+				Y.Assert.areSame( null, value );
+				
+				value = this.attribute.preSet( null, "hi" );
+				Y.Assert.areSame( null, value );
+				
+				value = this.attribute.preSet( null, false );
+				Y.Assert.areSame( null, value );
+				
+				value = this.attribute.preSet( null, true );
+				Y.Assert.areSame( null, value );
+				
+				value = this.attribute.preSet( null, undefined );
+				Y.Assert.areSame( null, value );
+				
+				value = this.attribute.preSet( null, null );
+				Y.Assert.areSame( null, value );
+			},
+			
+			
+			"preSet() should convert an anonymous data object to the provided modelClass" : function() {
+				var data = { attr1: 1, attr2: 2 };
+				var value = this.attribute.preSet( null, data );
+				
+				Y.Assert.isInstanceOf( this.Model, value, "The return value from preSet should have been an instance of the Model" );
+				Y.Assert.areSame( 1, value.get( 'attr1' ), "The data should have been set to the new model" );
+				Y.Assert.areSame( 2, value.get( 'attr2' ), "The data should have been set to the new model" );
+			},
+			
+			
+			
+			"if no modelClass was provided, preSet() should return an anonymous data object unchanged" : function() {
+				var attribute = new Kevlar.attribute.ModelAttribute( { 
+					name: 'attr'
+				} );
+				
+				var data = { attr1: 1, attr2: 2 };
+				var value = attribute.preSet( null, data );
+				
+				Y.Assert.areSame( data, value );
+			}
+		}
+		
+	]
+	
+} ) );
+
 /*global jQuery, Ext, Y, Kevlar, tests */
 tests.unit.data.add( new Ext.test.TestSuite( {
 	name : 'Kevlar.data.NativeObjectConverter',
@@ -1413,6 +1496,45 @@ tests.unit.add( new Ext.test.TestSuite( {
 				
 				Y.Assert.areSame( "newattribute2value attribute1val", model.get( 'attribute2' ), "attribute2 should be the concatenation of its own value, a space, and attribute2" );
 			},
+			
+			
+			// ------------------------
+			
+			
+			// Test delegation to the Attribute's preSet() and postSet() methods
+			
+			"set() should delegate to the Attribute's preSet() and postSet() methods to do any pre and post processing needed for the value" : function() {
+				var preSetValue, 
+				    postSetValue;
+				
+				var TestAttribute = Kevlar.attribute.Attribute.extend( {
+					preSet : function( model, value ) {
+						return ( preSetValue = value + 1 );
+					},
+					postSet : function( model, value ) {
+						return ( postSetValue = value + 20 );
+					}
+				} );
+				
+				var TestModel = Kevlar.Model.extend( {
+					attributes : [
+						new TestAttribute( {
+							name : 'attr1',
+							
+							// A custom 'set' function that should be executed in between the preSet() and postSet() methods
+							set : function( value ) {
+								return value + 5;
+							}
+						} )
+					]
+				} );
+				
+				var model = new TestModel( { attr1: 0 } );
+				
+				Y.Assert.areSame( 1, preSetValue );
+				Y.Assert.areSame( 26, postSetValue );
+			},
+			
 			
 			
 			// ------------------------

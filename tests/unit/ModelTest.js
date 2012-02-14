@@ -630,6 +630,45 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			// ------------------------
 			
+			
+			// Test delegation to the Attribute's preSet() and postSet() methods
+			
+			"set() should delegate to the Attribute's preSet() and postSet() methods to do any pre and post processing needed for the value" : function() {
+				var preSetValue, 
+				    postSetValue;
+				
+				var TestAttribute = Kevlar.attribute.Attribute.extend( {
+					preSet : function( model, value ) {
+						return ( preSetValue = value + 1 );
+					},
+					postSet : function( model, value ) {
+						return ( postSetValue = value + 20 );
+					}
+				} );
+				
+				var TestModel = Kevlar.Model.extend( {
+					attributes : [
+						new TestAttribute( {
+							name : 'attr1',
+							
+							// A custom 'set' function that should be executed in between the preSet() and postSet() methods
+							set : function( value ) {
+								return value + 5;
+							}
+						} )
+					]
+				} );
+				
+				var model = new TestModel( { attr1: 0 } );
+				
+				Y.Assert.areSame( 1, preSetValue );
+				Y.Assert.areSame( 26, postSetValue );
+			},
+			
+			
+			
+			// ------------------------
+			
 			// Test the 'change' event
 			
 			"When an attribute is set, a generalized 'change' event should be fired" : function() {

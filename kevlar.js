@@ -1621,13 +1621,13 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * Specifies the type of the Attribute, in which a conversion of the raw data will be performed.
 	 * This accepts the following general types, but custom types may be added using the {@link Kevlar.attribute.Attribute#registerType} method.
 	 * 
-	 * - **mixed**: Performs no conversions, and no special processing of given values. This is the default Attribute type.
-	 * - **string**
-	 * - **int**
-	 * - **float** (really a "double")
-	 * - **boolean** / **bool**
-	 * - **date**
-	 * - **model**
+	 * - {@link Kevlar.attribute.MixedAttribute mixed}: Performs no conversions, and no special processing of given values. This is the default Attribute type (not recommended).
+	 * - {@link Kevlar.attribute.StringAttribute string}
+	 * - {@link Kevlar.attribute.IntegerAttribute int} / {@link Kevlar.attribute.IntegerAttribute integer}
+	 * - {@link Kevlar.attribute.FloatAttribute float} (really a "double")
+	 * - {@link Kevlar.attribute.BooleanAttribute boolean} / {@link Kevlar.attribute.BooleanAttribute bool}
+	 * - {@link Kevlar.attribute.DateAttribute date}
+	 * - {@link Kevlar.attribute.ModelAttribute model}
 	 */
 	
 	/**
@@ -1831,6 +1831,10 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	},
 	
 	
+	// End Statics
+	
+	// -------------------------------
+	
 	
 	
 	/**
@@ -1908,6 +1912,9 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	},
 	
 	
+	// ---------------------------
+	
+	
 	/**
 	 * Allows the Attribute to determine if two values of its data type are equal, and the model
 	 * should consider itself as "changed". This method is passed the "old" value and the "new" value
@@ -1925,6 +1932,50 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 */
 	valuesAreEqual : function( oldValue, newValue ) {
 		return Kevlar.util.Object.isEqual( oldValue, newValue );
+	},
+	
+	
+	// ---------------------------
+	
+	
+	/**
+	 * Method that allows pre-processing for the value that is to be set to a {@link Kevlar.Model}.
+	 * After this method has processed the value, it is provided to the {@link #set} function (if
+	 * one exists), and then finally, the return value from the {@link #set} function will be provided
+	 * to {@link #postSet}, and then set as the data on the {@link Kevlar.Model Model}.
+	 * 
+	 * Note that the default implementation simply returns the raw value unchanged, but this may be overridden
+	 * in subclasses to provide a conversion.
+	 * 
+	 * @method preSet
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} value The value provided to the {@link Kevlar.Model#set} method.
+	 * @return {Mixed} The converted value.
+	 */
+	preSet : function( model, value ) {
+		return value;
+	},
+	
+	
+	/**
+	 * Method that allows post-processing for the value that is to be set to a {@link Kevlar.Model}.
+	 * This method is executed after the {@link #preSet} method, and the {@link #set} function (if one is provided), and is given 
+	 * the value that the {@link #set} function returns. If no {@link #set} function exists, this will simply be executed 
+	 * immediately after {@link #preSet}, after which the return from this method will be set as the data on the {@link Kevlar.Model Model}.
+	 * 
+	 * Note that the default implementation simply returns the value unchanged, but this may be overridden
+	 * in subclasses to provide a conversion.
+	 * 
+	 * @method preSet
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} value The value provided to the {@link Kevlar.Model#set} method, after it has been processed by the
+	 *   {@link #preSet} method, and any provided {@link #set} function.
+	 * @return {Mixed} The converted value.
+	 */
+	postSet : function( model, value ) {
+		return value;
 	}
 	
 } );
@@ -2116,13 +2167,13 @@ Kevlar.attribute.FloatAttribute = Kevlar.attribute.Attribute.extend( {
 Kevlar.attribute.Attribute.registerType( 'float', Kevlar.attribute.FloatAttribute );
 
 /**
- * @class Kevlar.attribute.IntAttribute
+ * @class Kevlar.attribute.IntegerAttribute
  * @extends Kevlar.attribute.Attribute
  * 
  * Attribute definition class for an Attribute that takes an integer data value.
  */
 /*global Kevlar */
-Kevlar.attribute.IntAttribute = Kevlar.attribute.Attribute.extend( {
+Kevlar.attribute.IntegerAttribute = Kevlar.attribute.Attribute.extend( {
 		
 	
 	
@@ -2130,7 +2181,7 @@ Kevlar.attribute.IntAttribute = Kevlar.attribute.Attribute.extend( {
 
 
 // Register the Attribute type
-Kevlar.attribute.Attribute.registerType( 'int', Kevlar.attribute.IntAttribute );
+Kevlar.attribute.Attribute.registerType( 'int', Kevlar.attribute.IntegerAttribute );
 
 /**
  * @class Kevlar.attribute.MixedAttribute
@@ -2155,9 +2206,28 @@ Kevlar.attribute.Attribute.registerType( 'mixed', Kevlar.attribute.MixedAttribut
  * 
  * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.Model} value.
  */
-/*global Kevlar */
+/*global window, Kevlar */
 Kevlar.attribute.ModelAttribute = Kevlar.attribute.Attribute.extend( {
-		
+	
+	/**
+	 * @cfg {Kevlar.Model} defaultValue
+	 * @inheritdoc
+	 */
+	defaultValue : null,
+	
+	
+	/**
+	 * @cfg {Kevlar.Model/String/Function} modelClass
+	 * The specific {@link Kevlar.Model} subclass that will be used in the ModelAttribute. This config can be provided
+	 * to perform automatic conversion of anonymous data objects into the approperiate Model subclass.
+	 * 
+	 * This config may be provided as a reference to a Model, a String which specifies the object path to the Model (which
+	 * must be able to be referenced from the global scope, ex: 'myApp.MyModel'), or a function, which will return a reference
+	 * to the Model that should be used. The reason that this config may be specified as a String or a Function is to allow
+	 * for late binding to the Model class that is used, where the Model class that is to be used does not have to exist in the
+	 * source code until a value is actually set to the Attribute. This allows for the handling of circular dependencies as well.
+	 */
+	
 	/**
 	 * @cfg {Boolean} embedded
 	 * Setting this config to true has the parent {@link Kevlar.Model Model} treat the child {@link Kevlar.Model Model} as if it is a part of itself. 
@@ -2179,7 +2249,38 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.Attribute.extend( {
 	 * model be persisted, rather than all of the Model data. Normally, when {@link #embedded} is false (the default), the child {@link Kevlar.Model Model}
 	 * is treated as a relation, and only its {@link Kevlar.Model#idAttribute id} is persisted.
 	 */
-	persistIdOnly : false
+	persistIdOnly : false,
+	
+	
+	// -------------------------------
+	
+	
+	/**
+	 * Overridden `preSet` method used to convert any anonymous objects into the specified {@link #modelClass}. The anonymous object
+	 * will be provided to the {@link #modelClass modelClass's} constructor.
+	 * 
+	 * @override
+	 * @method preSet
+	 * @inheritdoc
+	 */
+	preSet : function( model, value ) {
+		var modelClass = this.modelClass;
+		
+		if( !value || typeof value !== 'object' ) {
+			value = null;  // convert all falsy values to null, and all other non-object data types
+		
+		} else if( value && typeof value === 'object' && modelClass && !( value instanceof modelClass ) ) {
+			if( typeof modelClass === 'string' ) {
+				this.modelClass = modelClass = window[ modelClass ];
+			} else if( typeof modelClass === 'function' && modelClass.constructor === Function ) {  // it's an anonymous function, run it, so it returns the Model reference we need
+				this.modelClass = modelClass = modelClass();
+			}
+			
+			value = new modelClass( value );
+		}
+		
+		return value;
+	}
 	
 } );
 
@@ -2706,10 +2807,13 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 				throw new Error( "Kevlar.Model.set(): An attribute with the attributeName '" + attributeName + "' was not found." );
 			}
 			
-			// Get the current value of the attribute, and its current "getter" value (to provide to the 'change' event as the oldValue)
-			var currentValue = this.data[ attributeName ],
-			    currentGetterValue = this.get( attributeName );
+			// Get the current (old) value of the attribute, and its current "getter" value (to provide to the 'change' event as the oldValue)
+			var oldValue = this.data[ attributeName ],
+			    oldGetterValue = this.get( attributeName );
 			
+			
+			// Allow the Attribute to pre-process the newValue
+			newValue = attribute.preSet( this, newValue );
 			
 			// If the attribute has a 'set' function defined, call it to convert the data
 			if( typeof attribute.set === 'function' ) {
@@ -2730,19 +2834,22 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 					newValue = this.get( attributeName );
 					
 					// Now manually fire the events
-					this.fireEvent( 'change:' + attributeName, this, newValue, currentGetterValue );  // model, newValue, oldValue
-					this.fireEvent( 'change', this, attributeName, newValue, currentGetterValue );    // model, attributeName, newValue, oldValue
+					this.fireEvent( 'change:' + attributeName, this, newValue, oldGetterValue );  // model, newValue, oldValue
+					this.fireEvent( 'change', this, attributeName, newValue, oldGetterValue );    // model, attributeName, newValue, oldValue
 				}
 			}
 			
+			// Allow the Attribute to post-process the newValue
+			newValue = attribute.postSet( this, newValue );
+			
 			
 			// Only change if there is no current value for the attribute, or if newValue is different from the current
-			if( !( attributeName in this.data ) || !attribute.valuesAreEqual( currentValue, newValue ) ) {   // let the Attribute itself determine if two values of its datatype are equal
+			if( !( attributeName in this.data ) || !attribute.valuesAreEqual( oldValue, newValue ) ) {   // let the Attribute itself determine if two values of its datatype are equal
 				// Store the attribute's *current* value (not the newValue) into the "modifiedData" attributes hash.
 				// This should only happen the first time the attribute is set, so that the attribute can be rolled back even if there are multiple
 				// set() calls to change it.
 				if( !( attributeName in this.modifiedData ) ) {
-					this.modifiedData[ attributeName ] = currentValue;
+					this.modifiedData[ attributeName ] = oldValue;
 				}
 				this.data[ attributeName ] = newValue;
 				this.dirty = true;
@@ -2757,8 +2864,8 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 					this.id = newValue;
 				}
 				
-				this.fireEvent( 'change:' + attributeName, this, newValue, currentGetterValue );  // model, newValue, oldValue
-				this.fireEvent( 'change', this, attributeName, newValue, currentGetterValue );    // model, attributeName, newValue, oldValue
+				this.fireEvent( 'change:' + attributeName, this, newValue, oldGetterValue );  // model, newValue, oldValue
+				this.fireEvent( 'change', this, attributeName, newValue, oldGetterValue );    // model, attributeName, newValue, oldValue
 			}
 		}
 	},

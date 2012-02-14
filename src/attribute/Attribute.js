@@ -24,13 +24,13 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * Specifies the type of the Attribute, in which a conversion of the raw data will be performed.
 	 * This accepts the following general types, but custom types may be added using the {@link Kevlar.attribute.Attribute#registerType} method.
 	 * 
-	 * - **mixed**: Performs no conversions, and no special processing of given values. This is the default Attribute type.
-	 * - **string**
-	 * - **int**
-	 * - **float** (really a "double")
-	 * - **boolean** / **bool**
-	 * - **date**
-	 * - **model**
+	 * - {@link Kevlar.attribute.MixedAttribute mixed}: Performs no conversions, and no special processing of given values. This is the default Attribute type (not recommended).
+	 * - {@link Kevlar.attribute.StringAttribute string}
+	 * - {@link Kevlar.attribute.IntegerAttribute int} / {@link Kevlar.attribute.IntegerAttribute integer}
+	 * - {@link Kevlar.attribute.FloatAttribute float} (really a "double")
+	 * - {@link Kevlar.attribute.BooleanAttribute boolean} / {@link Kevlar.attribute.BooleanAttribute bool}
+	 * - {@link Kevlar.attribute.DateAttribute date}
+	 * - {@link Kevlar.attribute.ModelAttribute model}
 	 */
 	
 	/**
@@ -234,6 +234,10 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	},
 	
 	
+	// End Statics
+	
+	// -------------------------------
+	
 	
 	
 	/**
@@ -335,7 +339,7 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	
 	
 	// ---------------------------
-		
+	
 	
 	/**
 	 * Method that allows pre-processing for the value that is to be set to a {@link Kevlar.Model}.
@@ -347,13 +351,15 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * in subclasses to provide a conversion.
 	 * 
 	 * @method preSet
-	 * @param {Mixed} rawValue The raw value provided to the {@link Kevlar.Model#set} method.
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} value The value provided to the {@link Kevlar.Model#set} method.
 	 * @return {Mixed} The converted value.
 	 */
-	preSet : function( rawValue ) {
-		return rawValue;
+	preSet : function( model, value ) {
+		return value;
 	},
-		
+	
 	
 	/**
 	 * Method that allows post-processing for the value that is to be set to a {@link Kevlar.Model}.
@@ -365,11 +371,13 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * in subclasses to provide a conversion.
 	 * 
 	 * @method preSet
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
 	 * @param {Mixed} value The value provided to the {@link Kevlar.Model#set} method, after it has been processed by the
 	 *   {@link #preSet} method, and any provided {@link #set} function.
 	 * @return {Mixed} The converted value.
 	 */
-	postSet : function( value ) {
+	postSet : function( model, value ) {
 		return value;
 	}
 	

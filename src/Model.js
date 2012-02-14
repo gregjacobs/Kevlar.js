@@ -415,10 +415,13 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 				throw new Error( "Kevlar.Model.set(): An attribute with the attributeName '" + attributeName + "' was not found." );
 			}
 			
-			// Get the current value of the attribute, and its current "getter" value (to provide to the 'change' event as the oldValue)
-			var currentValue = this.data[ attributeName ],
-			    currentGetterValue = this.get( attributeName );
+			// Get the current (old) value of the attribute, and its current "getter" value (to provide to the 'change' event as the oldValue)
+			var oldValue = this.data[ attributeName ],
+			    oldGetterValue = this.get( attributeName );
 			
+			
+			// Allow the Attribute to pre-process the newValue
+			newValue = attribute.preSet( this, newValue );
 			
 			// If the attribute has a 'set' function defined, call it to convert the data
 			if( typeof attribute.set === 'function' ) {
@@ -439,19 +442,22 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 					newValue = this.get( attributeName );
 					
 					// Now manually fire the events
-					this.fireEvent( 'change:' + attributeName, this, newValue, currentGetterValue );  // model, newValue, oldValue
-					this.fireEvent( 'change', this, attributeName, newValue, currentGetterValue );    // model, attributeName, newValue, oldValue
+					this.fireEvent( 'change:' + attributeName, this, newValue, oldGetterValue );  // model, newValue, oldValue
+					this.fireEvent( 'change', this, attributeName, newValue, oldGetterValue );    // model, attributeName, newValue, oldValue
 				}
 			}
 			
+			// Allow the Attribute to post-process the newValue
+			newValue = attribute.postSet( this, newValue );
+			
 			
 			// Only change if there is no current value for the attribute, or if newValue is different from the current
-			if( !( attributeName in this.data ) || !attribute.valuesAreEqual( currentValue, newValue ) ) {   // let the Attribute itself determine if two values of its datatype are equal
+			if( !( attributeName in this.data ) || !attribute.valuesAreEqual( oldValue, newValue ) ) {   // let the Attribute itself determine if two values of its datatype are equal
 				// Store the attribute's *current* value (not the newValue) into the "modifiedData" attributes hash.
 				// This should only happen the first time the attribute is set, so that the attribute can be rolled back even if there are multiple
 				// set() calls to change it.
 				if( !( attributeName in this.modifiedData ) ) {
-					this.modifiedData[ attributeName ] = currentValue;
+					this.modifiedData[ attributeName ] = oldValue;
 				}
 				this.data[ attributeName ] = newValue;
 				this.dirty = true;
@@ -466,8 +472,8 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 					this.id = newValue;
 				}
 				
-				this.fireEvent( 'change:' + attributeName, this, newValue, currentGetterValue );  // model, newValue, oldValue
-				this.fireEvent( 'change', this, attributeName, newValue, currentGetterValue );    // model, attributeName, newValue, oldValue
+				this.fireEvent( 'change:' + attributeName, this, newValue, oldGetterValue );  // model, newValue, oldValue
+				this.fireEvent( 'change', this, attributeName, newValue, oldGetterValue );    // model, attributeName, newValue, oldValue
 			}
 		}
 	},
