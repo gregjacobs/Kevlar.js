@@ -4,7 +4,7 @@
  * 
  * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.Model} value.
  */
-/*global Kevlar */
+/*global window, Kevlar */
 Kevlar.attribute.ModelAttribute = Kevlar.attribute.Attribute.extend( {
 	
 	/**
@@ -13,6 +13,18 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.Attribute.extend( {
 	 */
 	defaultValue : null,
 	
+	
+	/**
+	 * @cfg {Kevlar.Model/String/Function} modelClass
+	 * The specific {@link Kevlar.Model} subclass that will be used in the ModelAttribute. This config can be provided
+	 * to perform automatic conversion of anonymous data objects into the approperiate Model subclass.
+	 * 
+	 * This config may be provided as a reference to a Model, a String which specifies the object path to the Model (which
+	 * must be able to be referenced from the global scope, ex: 'myApp.MyModel'), or a function, which will return a reference
+	 * to the Model that should be used. The reason that this config may be specified as a String or a Function is to allow
+	 * for late binding to the Model class that is used, where the Model class that is to be used does not have to exist in the
+	 * source code until a value is actually set to the Attribute. This allows for the handling of circular dependencies as well.
+	 */
 	
 	/**
 	 * @cfg {Boolean} embedded
@@ -35,7 +47,38 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.Attribute.extend( {
 	 * model be persisted, rather than all of the Model data. Normally, when {@link #embedded} is false (the default), the child {@link Kevlar.Model Model}
 	 * is treated as a relation, and only its {@link Kevlar.Model#idAttribute id} is persisted.
 	 */
-	persistIdOnly : false
+	persistIdOnly : false,
+	
+	
+	// -------------------------------
+	
+	
+	/**
+	 * Overridden `preSet` method used to convert any anonymous objects into the specified {@link #modelClass}. The anonymous object
+	 * will be provided to the {@link #modelClass modelClass's} constructor.
+	 * 
+	 * @override
+	 * @method preSet
+	 * @inheritdoc
+	 */
+	preSet : function( model, value ) {
+		var modelClass = this.modelClass;
+		
+		if( !value || typeof value !== 'object' ) {
+			value = null;  // convert all falsy values to null, and all other non-object data types
+		
+		} else if( value && typeof value === 'object' && modelClass && !( value instanceof modelClass ) ) {
+			if( typeof modelClass === 'string' ) {
+				this.modelClass = modelClass = window[ modelClass ];
+			} else if( typeof modelClass === 'function' && modelClass.constructor === Function ) {  // it's an anonymous function, run it, so it returns the Model reference we need
+				this.modelClass = modelClass = modelClass();
+			}
+			
+			value = new modelClass( value );
+		}
+		
+		return value;
+	}
 	
 } );
 
