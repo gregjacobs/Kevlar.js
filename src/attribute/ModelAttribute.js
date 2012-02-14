@@ -53,6 +53,18 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.Attribute.extend( {
 	// -------------------------------
 	
 	
+	constructor : function() {
+		Kevlar.attribute.ModelAttribute.superclass.constructor.apply( this, arguments );
+		
+		// Check if the user provided a modelClass, but the value is undefined. This means that they specified
+		// a class that either doesn't exist, or doesn't exist yet, and we should give them a warning.
+		if( 'modelClass' in this && this.modelClass === undefined ) {
+			throw new Error( "The 'modelClass' config provided to an Attribute with the name '" + this.name + "' either doesn't exist, or doesn't " +
+			                 "exist just yet. Consider using the String or Function form of the modelClass config for very late binding, if needed" );
+		}
+	},
+	
+	
 	/**
 	 * Overridden `preSet` method used to convert any anonymous objects into the specified {@link #modelClass}. The anonymous object
 	 * will be provided to the {@link #modelClass modelClass's} constructor.
