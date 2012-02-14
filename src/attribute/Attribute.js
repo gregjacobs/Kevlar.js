@@ -169,10 +169,7 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 				return config;
 				
 			} else if( this.hasType( type || "mixed" ) ) {
-				//return new this.attributeTypes[ type || "mixed" ]( config );
-				
-				// FOR NOW, just return a MixedAttribute, until other Attribute subclasses exist
-				return new Kevlar.attribute.MixedAttribute( config );
+				return new this.attributeTypes[ type || "mixed" ]( config );
 				
 			} else {
 				// No registered type with the given config's `type`, throw an error

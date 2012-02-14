@@ -1766,10 +1766,7 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 				return config;
 				
 			} else if( this.hasType( type || "mixed" ) ) {
-				//return new this.attributeTypes[ type || "mixed" ]( config );
-				
-				// FOR NOW, just return a MixedAttribute, until other Attribute subclasses exist
-				return new Kevlar.attribute.MixedAttribute( config );
+				return new this.attributeTypes[ type || "mixed" ]( config );
 				
 			} else {
 				// No registered type with the given config's `type`, throw an error
@@ -2278,16 +2275,16 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.Attribute.extend( {
 	preSet : function( model, value ) {
 		var modelClass = this.modelClass;
 		
+		// Normalize the modelClass
+		if( typeof modelClass === 'string' ) {
+			this.modelClass = modelClass = window[ modelClass ];
+		} else if( typeof modelClass === 'function' && modelClass.constructor === Function ) {  // it's an anonymous function, run it, so it returns the Model reference we need
+			this.modelClass = modelClass = modelClass();
+		}
+		
 		if( !value || typeof value !== 'object' ) {
 			value = null;  // convert all falsy values to null, and all other non-object data types
-		
-		} else if( value && typeof value === 'object' && modelClass && !( value instanceof modelClass ) ) {
-			if( typeof modelClass === 'string' ) {
-				this.modelClass = modelClass = window[ modelClass ];
-			} else if( typeof modelClass === 'function' && modelClass.constructor === Function ) {  // it's an anonymous function, run it, so it returns the Model reference we need
-				this.modelClass = modelClass = modelClass();
-			}
-			
+		} else if( value && typeof value === 'object' && typeof modelClass === 'function' && !( value instanceof modelClass ) ) {
 			value = new modelClass( value );
 		}
 		

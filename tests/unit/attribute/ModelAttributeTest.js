@@ -1,4 +1,4 @@
-/*global Ext, Y, Kevlar, tests */
+/*global window, Ext, Y, Kevlar, tests */
 tests.unit.attribute.add( new Ext.test.TestSuite( {
 	
 	name: 'Kevlar.attribute.ModelAttribute',
@@ -86,6 +86,46 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				var value = this.attribute.preSet( null, data );
 				
 				Y.Assert.isInstanceOf( this.Model, value, "The return value from preSet should have been an instance of the Model" );
+				Y.Assert.areSame( 1, value.get( 'attr1' ), "The data should have been set to the new model" );
+				Y.Assert.areSame( 2, value.get( 'attr2' ), "The data should have been set to the new model" );
+			},
+			
+			
+			"preSet() should convert an anonymous data object to the provided modelClass, when modelClass is a string" : function() {
+				window.__Kevlar_ModelAttributeTest_Model = Kevlar.Model.extend( {
+					attributes : [ 'attr1', 'attr2' ]
+				} );
+				
+				var attribute = new Kevlar.attribute.ModelAttribute( { 
+					name: 'attr',
+					modelClass: '__Kevlar_ModelAttributeTest_Model'
+				} );
+				
+				var data = { attr1: 1, attr2: 2 };
+				var value = attribute.preSet( null, data );
+				
+				Y.Assert.isInstanceOf( window.__Kevlar_ModelAttributeTest_Model, value, "The return value from preSet should have been an instance of the Model" );
+				Y.Assert.areSame( 1, value.get( 'attr1' ), "The data should have been set to the new model" );
+				Y.Assert.areSame( 2, value.get( 'attr2' ), "The data should have been set to the new model" );
+			},
+			
+			
+			"preSet() should convert an anonymous data object to the provided modelClass, when modelClass is a function" : function() {
+				var TestModel = Kevlar.Model.extend( {
+					attributes : [ 'attr1', 'attr2' ]
+				} );
+				
+				var attribute = new Kevlar.attribute.ModelAttribute( { 
+					name: 'attr',
+					modelClass: function() {
+						return TestModel;   // for late binding
+					}
+				} );
+				
+				var data = { attr1: 1, attr2: 2 };
+				var value = attribute.preSet( null, data );
+				
+				Y.Assert.isInstanceOf( TestModel, value, "The return value from preSet should have been an instance of the Model" );
 				Y.Assert.areSame( 1, value.get( 'attr1' ), "The data should have been set to the new model" );
 				Y.Assert.areSame( 2, value.get( 'attr2' ), "The data should have been set to the new model" );
 			},

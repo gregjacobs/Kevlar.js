@@ -534,7 +534,7 @@ tests.unit.attribute.add( new Ext.test.TestCase( {
 	
 } ) );
 
-/*global Ext, Y, Kevlar, tests */
+/*global window, Ext, Y, Kevlar, tests */
 tests.unit.attribute.add( new Ext.test.TestSuite( {
 	
 	name: 'Kevlar.attribute.ModelAttribute',
@@ -622,6 +622,46 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				var value = this.attribute.preSet( null, data );
 				
 				Y.Assert.isInstanceOf( this.Model, value, "The return value from preSet should have been an instance of the Model" );
+				Y.Assert.areSame( 1, value.get( 'attr1' ), "The data should have been set to the new model" );
+				Y.Assert.areSame( 2, value.get( 'attr2' ), "The data should have been set to the new model" );
+			},
+			
+			
+			"preSet() should convert an anonymous data object to the provided modelClass, when modelClass is a string" : function() {
+				window.__Kevlar_ModelAttributeTest_Model = Kevlar.Model.extend( {
+					attributes : [ 'attr1', 'attr2' ]
+				} );
+				
+				var attribute = new Kevlar.attribute.ModelAttribute( { 
+					name: 'attr',
+					modelClass: '__Kevlar_ModelAttributeTest_Model'
+				} );
+				
+				var data = { attr1: 1, attr2: 2 };
+				var value = attribute.preSet( null, data );
+				
+				Y.Assert.isInstanceOf( window.__Kevlar_ModelAttributeTest_Model, value, "The return value from preSet should have been an instance of the Model" );
+				Y.Assert.areSame( 1, value.get( 'attr1' ), "The data should have been set to the new model" );
+				Y.Assert.areSame( 2, value.get( 'attr2' ), "The data should have been set to the new model" );
+			},
+			
+			
+			"preSet() should convert an anonymous data object to the provided modelClass, when modelClass is a function" : function() {
+				var TestModel = Kevlar.Model.extend( {
+					attributes : [ 'attr1', 'attr2' ]
+				} );
+				
+				var attribute = new Kevlar.attribute.ModelAttribute( { 
+					name: 'attr',
+					modelClass: function() {
+						return TestModel;   // for late binding
+					}
+				} );
+				
+				var data = { attr1: 1, attr2: 2 };
+				var value = attribute.preSet( null, data );
+				
+				Y.Assert.isInstanceOf( TestModel, value, "The return value from preSet should have been an instance of the Model" );
 				Y.Assert.areSame( 1, value.get( 'attr1' ), "The data should have been set to the new model" );
 				Y.Assert.areSame( 2, value.get( 'attr2' ), "The data should have been set to the new model" );
 			},
@@ -4213,6 +4253,52 @@ tests.unit.util.add( new Ext.test.TestSuite( {
 	
 	Ext.test.Session.addSuite( tests.integration );
 })();
+
+/*global window, Ext, Y, JsMockito, tests, Kevlar */
+tests.integration.add( new Ext.test.TestSuite( {
+	
+	name: 'Model with ModelAttribute',
+	
+	
+	items : [
+		{
+			/*
+			 * Test provided set() function
+			 */
+			name : "Test provided set() function",
+			
+			
+			"The set() function provided to a ModelAttribute should be passed the instantiated Model if a 'modelClass' config is provided" : function() {
+				var setValue;
+				
+				var InnerModel = Kevlar.Model.extend( {
+					attributes : [ 'someAttr' ]
+				} );
+				
+				var Model = Kevlar.Model.extend( {
+					attributes : [
+						{
+							name : 'attr',
+							type : 'model',
+							modelClass : InnerModel,
+							
+							set : function( value ) {
+								setValue = value;
+								return value;
+							}
+						}
+					]
+				} );
+				
+				var model = new Model( {
+					attr : { someAttr: 1 }
+				} );
+				Y.Assert.isInstanceOf( InnerModel, setValue );
+			}
+		}
+	]
+	
+} ) );
 
 /*global window, Ext, Y, JsMockito, tests, Kevlar */
 tests.integration.add( new Ext.test.TestSuite( {
