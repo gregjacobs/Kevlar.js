@@ -59,6 +59,26 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 	
 	
 	/**
+	 * Overridden method used to determine if two models are equal.
+	 * @inheritdoc
+	 * 
+	 * @override
+	 * @method valuesAreEqual
+	 * @param {Mixed} oldValue
+	 * @param {Mixed} newValue
+	 * @return {Boolean} True if the values are equal, and the Model should *not* consider the new value as a 
+	 *   change of the old value, or false if the values are different, and the new value should be taken as a change.
+	 */
+	valuesAreEqual : function( oldValue, newValue ) {
+		// We can't instantiate two different Models with the same id that have different references, so if the references are the same, they are equal
+		if( oldValue === newValue ) {
+			return true;
+		}
+		return false;
+	},
+	
+	
+	/**
 	 * Overridden `preSet` method used to convert any anonymous objects into the specified {@link #modelClass}. The anonymous object
 	 * will be provided to the {@link #modelClass modelClass's} constructor.
 	 * 

@@ -5,7 +5,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 	
 	
 	items : [
-	
+		
 		/*
 		 * Test constructor
 		 */
@@ -31,8 +31,62 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				Y.Assert.fail( "The constructor should have thrown an error if the modelClass config was provided but was undefined. This is to help with debugging when late binding for the modelClass is needed." );
 			}
 		},
-	
-	
+		
+		
+		/*
+		 * Test valuesAreEqual()
+		 */
+		{
+			name : "Test valuesAreEqual()",
+			
+			setUp : function() {
+				this.attribute = new Kevlar.attribute.ModelAttribute( { name: 'attr' } );
+			},
+			
+			
+			"valuesAreEqual() should return true for two null values" : function() {
+				var result = this.attribute.valuesAreEqual( null, null );
+				Y.Assert.isTrue( result );
+			},
+			
+			
+			"valuesAreEqual() should return false for one null and one object" : function() {
+				var result = this.attribute.valuesAreEqual( null, {} );
+				Y.Assert.isFalse( result );
+				
+				var result = this.attribute.valuesAreEqual( {}, null );
+				Y.Assert.isFalse( result );
+			},
+			
+			
+			"valuesAreEqual() should return true for comparing the same model" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'id' ]
+				} );
+				
+				// NOTE: These should refer to the same object, as only one Model will be instantiated for two Models with the same ID 
+				var model1 = new Model( { id: 1 } ),
+				    model2 = new Model( { id: 1 } );
+				
+				var result = this.attribute.valuesAreEqual( model1, model2 );
+				Y.Assert.isTrue( result );
+			},
+			
+			
+			"valuesAreEqual() should return false for two different models" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'id' ]
+				} );
+				
+				var model1 = new Model( { id: 1 } ),
+				    model2 = new Model( { id: 2 } );
+				
+				var result = this.attribute.valuesAreEqual( model1, model2 );
+				Y.Assert.isFalse( result );
+			}
+		},
+		
+		
 		/*
 		 * Test preSet()
 		 */
