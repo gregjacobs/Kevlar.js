@@ -1939,39 +1939,40 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * Method that allows pre-processing for the value that is to be set to a {@link Kevlar.Model}.
 	 * After this method has processed the value, it is provided to the {@link #set} function (if
 	 * one exists), and then finally, the return value from the {@link #set} function will be provided
-	 * to {@link #postSet}, and then set as the data on the {@link Kevlar.Model Model}.
+	 * to {@link #afterSet}, and then set as the data on the {@link Kevlar.Model Model}.
 	 * 
 	 * Note that the default implementation simply returns the raw value unchanged, but this may be overridden
 	 * in subclasses to provide a conversion.
 	 * 
-	 * @method preSet
+	 * @method beforeSet
 	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
 	 *   but is provided in case any model processing is needed.
-	 * @param {Mixed} value The value provided to the {@link Kevlar.Model#set} method.
+	 * @param {Mixed} oldValue The old (previous) value that the model held.
+	 * @param {Mixed} newValue The value provided to the {@link Kevlar.Model#set} method.
 	 * @return {Mixed} The converted value.
 	 */
-	preSet : function( model, value ) {
-		return value;
+	beforeSet : function( model, oldValue, newValue ) {
+		return newValue;
 	},
 	
 	
 	/**
 	 * Method that allows post-processing for the value that is to be set to a {@link Kevlar.Model}.
-	 * This method is executed after the {@link #preSet} method, and the {@link #set} function (if one is provided), and is given 
+	 * This method is executed after the {@link #beforeSet} method, and the {@link #set} function (if one is provided), and is given 
 	 * the value that the {@link #set} function returns. If no {@link #set} function exists, this will simply be executed 
-	 * immediately after {@link #preSet}, after which the return from this method will be set as the data on the {@link Kevlar.Model Model}.
+	 * immediately after {@link #beforeSet}, after which the return from this method will be set as the data on the {@link Kevlar.Model Model}.
 	 * 
 	 * Note that the default implementation simply returns the value unchanged, but this may be overridden
 	 * in subclasses to provide a conversion.
 	 * 
-	 * @method preSet
+	 * @method beforeSet
 	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
 	 *   but is provided in case any model processing is needed.
 	 * @param {Mixed} value The value provided to the {@link Kevlar.Model#set} method, after it has been processed by the
-	 *   {@link #preSet} method, and any provided {@link #set} function.
+	 *   {@link #beforeSet} method, and any provided {@link #set} function.
 	 * @return {Mixed} The converted value.
 	 */
-	postSet : function( model, value ) {
+	afterSet : function( model, value ) {
 		return value;
 	}
 	
@@ -1994,19 +1995,19 @@ Kevlar.attribute.ObjectAttribute = Kevlar.attribute.Attribute.extend( {
 	
 	
 	/**
-	 * Overridden `preSet` method used to normalize the value provided. All non-object values are converted to null,
+	 * Overridden `beforeSet` method used to normalize the value provided. All non-object values are converted to null,
 	 * while object values are returned unchanged.
 	 * 
 	 * @override
-	 * @method preSet
+	 * @method beforeSet
 	 * @inheritdoc
 	 */
-	preSet : function( model, value ) {
-		if( typeof value !== 'object' ) {
-			value = null;  // convert all non-object values to null
+	beforeSet : function( model, oldValue, newValue ) {
+		if( typeof newValue !== 'object' ) {
+			newValue = null;  // convert all non-object values to null
 		}
 		
-		return value;
+		return newValue;
 	}
 	
 } );
@@ -2240,6 +2241,13 @@ Kevlar.attribute.Attribute.registerType( 'mixed', Kevlar.attribute.MixedAttribut
  * @extends Kevlar.attribute.ObjectAttribute
  * 
  * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.Model} value.
+ * 
+ * This class enforces that the Attribute hold a {@link Kevlar.Model Model} value, or null. However, it will
+ * automatically convert an anonymous data object into the appropriate {@link Kevlar.Model Model} subclass, using
+ * the Model provided to the {@link #modelClass} config. 
+ * 
+ * Otherwise, you must either provide a {@link Kevlar.Model} subclass as the value, or use a custom {@link #set} 
+ * function to convert any anonymous object to a Model in the appropriate way. 
  */
 /*global window, Kevlar */
 Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
@@ -2316,18 +2324,23 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 	
 	
 	/**
-	 * Overridden `preSet` method used to convert any anonymous objects into the specified {@link #modelClass}. The anonymous object
+	 * Overridden `beforeSet` method used to convert any anonymous objects into the specified {@link #modelClass}. The anonymous object
 	 * will be provided to the {@link #modelClass modelClass's} constructor.
 	 * 
 	 * @override
-	 * @method preSet
+	 * @method beforeSet
 	 * @inheritdoc
 	 */
-	preSet : function( model, value ) {
-		// First, normalize the value to an object, or null
-		value = Kevlar.attribute.ModelAttribute.superclass.preSet.apply( this, arguments );
+	beforeSet : function( model, oldValue, newValue ) {
+		// First, if the oldValue was a Model, and this attribute is an "embedded" model, we need to unsubscribe it from its parent model
+		if( this.embedded && oldValue instanceof Kevlar.Model ) {
+			model.unsubscribeEmbeddedModel( oldValue );
+		}
 		
-		if( value !== null ) {
+		// Now, normalize the newValue to an object, or null
+		newValue = Kevlar.attribute.ModelAttribute.superclass.beforeSet.apply( this, arguments );
+		
+		if( newValue !== null ) {
 			var modelClass = this.modelClass;
 			
 			// Normalize the modelClass
@@ -2337,12 +2350,31 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 				this.modelClass = modelClass = modelClass();
 			}
 			
-			if( value && typeof modelClass === 'function' && !( value instanceof modelClass ) ) {
-				value = new modelClass( value );
+			if( newValue && typeof modelClass === 'function' && !( newValue instanceof modelClass ) ) {
+				newValue = new modelClass( newValue );
 			}
 		}
 		
-		return value;
+		return newValue;
+	},
+	
+	
+	/**
+	 * Overridden `afterSet` method used to subscribe to change events on a set child {@link Kevlar.Model Model}, if {@link #embedded} is true.
+	 * 
+	 * @override
+	 * @method afterSet
+	 * @inheritdoc
+	 */
+	afterSet : function( model, value ) {
+		// Enforce that the value is either null, or a Kevlar.Model
+		if( value !== null && !( value instanceof Kevlar.Model ) ) {
+			throw new Error( "A value set to the attribute '" + this.name + "' was not a Kevlar.Model subclass" );
+		}
+		
+		if( this.embedded && value instanceof Kevlar.Model ) {
+			model.subscribeEmbeddedModel( value );
+		}
 	}
 	
 } );
@@ -2876,7 +2908,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			
 			
 			// Allow the Attribute to pre-process the newValue
-			newValue = attribute.preSet( this, newValue );
+			newValue = attribute.beforeSet( this, oldValue, newValue );
 			
 			// If the attribute has a 'set' function defined, call it to convert the data
 			if( typeof attribute.set === 'function' ) {
@@ -2903,7 +2935,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			}
 			
 			// Allow the Attribute to post-process the newValue
-			newValue = attribute.postSet( this, newValue );
+			newValue = attribute.afterSet( this, newValue );
 			
 			
 			// Only change if there is no current value for the attribute, or if newValue is different from the current
@@ -3121,6 +3153,38 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		this.dirty = false;
 		
 		this.fireEvent( 'rollback', this );
+	},
+	
+	
+	// --------------------------------
+	
+	// Embedded Model / Collection related functionality
+	
+	/**
+	 * Used internally by the framework, this method subscribes to the change event of the given (child) model, in order to relay
+	 * its events through this (parent) model. This supports a form of "event bubbling" for {@link Kevlar.attribute.ModelAttribute#embedded embedded} 
+	 * child models, and is called from {@link Kevlar.attribute.ModelAttribute ModelAttribute}. For non-embedded Models (i.e. simply "related"
+	 * models), this method is not called.
+	 * 
+	 * @hide
+	 * @method subscribeEmbeddedModel
+	 * @param {Kevlar.Model} childModel
+	 */
+	subscribeEmbeddedModel : function( childModel ) {
+		
+	},
+	
+	
+	/**
+	 * Used internally by the framework, this method unsubscribes the change event from the given (child) model. Used in conjunction with 
+	 * {@link #subscribeEmbeddedModel}, when a child model is un-set from its parent model.
+	 * 
+	 * @hide
+	 * @method unsubscribeEmbeddedModel
+	 * @param {Kevlar.Model} childModel
+	 */
+	unsubscribeEmbeddedModel : function( childModel ) {
+		
 	},
 	
 	

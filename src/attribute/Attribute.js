@@ -342,39 +342,40 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * Method that allows pre-processing for the value that is to be set to a {@link Kevlar.Model}.
 	 * After this method has processed the value, it is provided to the {@link #set} function (if
 	 * one exists), and then finally, the return value from the {@link #set} function will be provided
-	 * to {@link #postSet}, and then set as the data on the {@link Kevlar.Model Model}.
+	 * to {@link #afterSet}, and then set as the data on the {@link Kevlar.Model Model}.
 	 * 
 	 * Note that the default implementation simply returns the raw value unchanged, but this may be overridden
 	 * in subclasses to provide a conversion.
 	 * 
-	 * @method preSet
+	 * @method beforeSet
 	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
 	 *   but is provided in case any model processing is needed.
-	 * @param {Mixed} value The value provided to the {@link Kevlar.Model#set} method.
+	 * @param {Mixed} oldValue The old (previous) value that the model held.
+	 * @param {Mixed} newValue The value provided to the {@link Kevlar.Model#set} method.
 	 * @return {Mixed} The converted value.
 	 */
-	preSet : function( model, value ) {
-		return value;
+	beforeSet : function( model, oldValue, newValue ) {
+		return newValue;
 	},
 	
 	
 	/**
 	 * Method that allows post-processing for the value that is to be set to a {@link Kevlar.Model}.
-	 * This method is executed after the {@link #preSet} method, and the {@link #set} function (if one is provided), and is given 
+	 * This method is executed after the {@link #beforeSet} method, and the {@link #set} function (if one is provided), and is given 
 	 * the value that the {@link #set} function returns. If no {@link #set} function exists, this will simply be executed 
-	 * immediately after {@link #preSet}, after which the return from this method will be set as the data on the {@link Kevlar.Model Model}.
+	 * immediately after {@link #beforeSet}, after which the return from this method will be set as the data on the {@link Kevlar.Model Model}.
 	 * 
 	 * Note that the default implementation simply returns the value unchanged, but this may be overridden
 	 * in subclasses to provide a conversion.
 	 * 
-	 * @method preSet
+	 * @method beforeSet
 	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
 	 *   but is provided in case any model processing is needed.
 	 * @param {Mixed} value The value provided to the {@link Kevlar.Model#set} method, after it has been processed by the
-	 *   {@link #preSet} method, and any provided {@link #set} function.
+	 *   {@link #beforeSet} method, and any provided {@link #set} function.
 	 * @return {Mixed} The converted value.
 	 */
-	postSet : function( model, value ) {
+	afterSet : function( model, value ) {
 		return value;
 	}
 	

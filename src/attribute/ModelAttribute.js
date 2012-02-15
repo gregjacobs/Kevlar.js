@@ -3,6 +3,13 @@
  * @extends Kevlar.attribute.ObjectAttribute
  * 
  * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.Model} value.
+ * 
+ * This class enforces that the Attribute hold a {@link Kevlar.Model Model} value, or null. However, it will
+ * automatically convert an anonymous data object into the appropriate {@link Kevlar.Model Model} subclass, using
+ * the Model provided to the {@link #modelClass} config. 
+ * 
+ * Otherwise, you must either provide a {@link Kevlar.Model} subclass as the value, or use a custom {@link #set} 
+ * function to convert any anonymous object to a Model in the appropriate way. 
  */
 /*global window, Kevlar */
 Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
@@ -79,18 +86,23 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 	
 	
 	/**
-	 * Overridden `preSet` method used to convert any anonymous objects into the specified {@link #modelClass}. The anonymous object
+	 * Overridden `beforeSet` method used to convert any anonymous objects into the specified {@link #modelClass}. The anonymous object
 	 * will be provided to the {@link #modelClass modelClass's} constructor.
 	 * 
 	 * @override
-	 * @method preSet
+	 * @method beforeSet
 	 * @inheritdoc
 	 */
-	preSet : function( model, value ) {
-		// First, normalize the value to an object, or null
-		value = Kevlar.attribute.ModelAttribute.superclass.preSet.apply( this, arguments );
+	beforeSet : function( model, oldValue, newValue ) {
+		// First, if the oldValue was a Model, and this attribute is an "embedded" model, we need to unsubscribe it from its parent model
+		if( this.embedded && oldValue instanceof Kevlar.Model ) {
+			model.unsubscribeEmbeddedModel( oldValue );
+		}
 		
-		if( value !== null ) {
+		// Now, normalize the newValue to an object, or null
+		newValue = Kevlar.attribute.ModelAttribute.superclass.beforeSet.apply( this, arguments );
+		
+		if( newValue !== null ) {
 			var modelClass = this.modelClass;
 			
 			// Normalize the modelClass
@@ -100,12 +112,31 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 				this.modelClass = modelClass = modelClass();
 			}
 			
-			if( value && typeof modelClass === 'function' && !( value instanceof modelClass ) ) {
-				value = new modelClass( value );
+			if( newValue && typeof modelClass === 'function' && !( newValue instanceof modelClass ) ) {
+				newValue = new modelClass( newValue );
 			}
 		}
 		
-		return value;
+		return newValue;
+	},
+	
+	
+	/**
+	 * Overridden `afterSet` method used to subscribe to change events on a set child {@link Kevlar.Model Model}, if {@link #embedded} is true.
+	 * 
+	 * @override
+	 * @method afterSet
+	 * @inheritdoc
+	 */
+	afterSet : function( model, value ) {
+		// Enforce that the value is either null, or a Kevlar.Model
+		if( value !== null && !( value instanceof Kevlar.Model ) ) {
+			throw new Error( "A value set to the attribute '" + this.name + "' was not a Kevlar.Model subclass" );
+		}
+		
+		if( this.embedded && value instanceof Kevlar.Model ) {
+			model.subscribeEmbeddedModel( value );
+		}
 	}
 	
 } );

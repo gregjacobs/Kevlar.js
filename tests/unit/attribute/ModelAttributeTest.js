@@ -1,4 +1,4 @@
-/*global window, Ext, Y, Kevlar, tests */
+/*global window, Ext, Y, JsMockito, Kevlar, tests */
 tests.unit.attribute.add( new Ext.test.TestSuite( {
 	
 	name: 'Kevlar.attribute.ModelAttribute',
@@ -88,10 +88,10 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 		
 		
 		/*
-		 * Test preSet()
+		 * Test beforeSet()
 		 */
 		{
-			name : "Test preSet()",
+			name : "Test beforeSet()",
 			
 			
 			setUp : function() {
@@ -106,50 +106,57 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			},
 			
 			
-			"preSet() should return null when provided any falsy value, or non-object" : function() {
-				var attribute = new Kevlar.attribute.ObjectAttribute( { name: 'attr' } ),
+			"beforeSet() should return null when provided any falsy value, or non-object" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    attribute = new Kevlar.attribute.ObjectAttribute( { name: 'attr' } ),
+				    oldValue,  // undefined
 				    value;
 				
-				value = attribute.preSet( null, 0 );
+				value = attribute.beforeSet( mockModel, oldValue, 0 );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.preSet( null, 1 );
+				value = attribute.beforeSet( mockModel, oldValue, 1 );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.preSet( null, "" );
+				value = attribute.beforeSet( mockModel, oldValue, "" );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.preSet( null, "hi" );
+				value = attribute.beforeSet( mockModel, oldValue, "hi" );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.preSet( null, false );
+				value = attribute.beforeSet( mockModel, oldValue, false );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.preSet( null, true );
+				value = attribute.beforeSet( mockModel, oldValue, true );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.preSet( null, undefined );
+				value = attribute.beforeSet( mockModel, oldValue, undefined );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.preSet( null, null );
+				value = attribute.beforeSet( mockModel, oldValue, null );
 				Y.Assert.areSame( null, value );
 			},
 			
 			
-			"preSet() should convert an anonymous data object to the provided modelClass, when modelClass is a direct reference to the Model subclass" : function() {
-				var data = { attr1: 1, attr2: 2 };
-				var value = this.attribute.preSet( null, data );
+			"beforeSet() should convert an anonymous data object to the provided modelClass, when modelClass is a direct reference to the Model subclass" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    data = { attr1: 1, attr2: 2 },
+				    oldValue,  // undefined
+				    value = this.attribute.beforeSet( mockModel, oldValue, data );
 				
-				Y.Assert.isInstanceOf( this.Model, value, "The return value from preSet should have been an instance of the Model" );
+				Y.Assert.isInstanceOf( this.Model, value, "The return value from beforeSet should have been an instance of the Model" );
 				Y.Assert.areSame( 1, value.get( 'attr1' ), "The data should have been set to the new model" );
 				Y.Assert.areSame( 2, value.get( 'attr2' ), "The data should have been set to the new model" );
 			},
 			
 			
-			"preSet() should convert an anonymous data object to the provided modelClass, when modelClass is a string" : function() {
+			"beforeSet() should convert an anonymous data object to the provided modelClass, when modelClass is a string" : function() {
 				window.__Kevlar_ModelAttributeTest_Model = Kevlar.Model.extend( {
 					attributes : [ 'attr1', 'attr2' ]
 				} );
+				
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    oldValue;  // undefined
 				
 				var attribute = new Kevlar.attribute.ModelAttribute( { 
 					name: 'attr',
@@ -157,18 +164,21 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				} );
 				
 				var data = { attr1: 1, attr2: 2 };
-				var value = attribute.preSet( null, data );
+				var value = attribute.beforeSet( mockModel, oldValue, data );
 				
-				Y.Assert.isInstanceOf( window.__Kevlar_ModelAttributeTest_Model, value, "The return value from preSet should have been an instance of the Model" );
+				Y.Assert.isInstanceOf( window.__Kevlar_ModelAttributeTest_Model, value, "The return value from beforeSet should have been an instance of the Model" );
 				Y.Assert.areSame( 1, value.get( 'attr1' ), "The data should have been set to the new model" );
 				Y.Assert.areSame( 2, value.get( 'attr2' ), "The data should have been set to the new model" );
 			},
 			
 			
-			"preSet() should convert an anonymous data object to the provided modelClass, when modelClass is a function" : function() {
+			"beforeSet() should convert an anonymous data object to the provided modelClass, when modelClass is a function" : function() {
 				var TestModel = Kevlar.Model.extend( {
 					attributes : [ 'attr1', 'attr2' ]
 				} );
+				
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    oldValue;  // undefined
 				
 				var attribute = new Kevlar.attribute.ModelAttribute( { 
 					name: 'attr',
@@ -178,19 +188,21 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				} );
 				
 				var data = { attr1: 1, attr2: 2 };
-				var value = attribute.preSet( null, data );
+				var value = attribute.beforeSet( mockModel, oldValue, data );
 				
-				Y.Assert.isInstanceOf( TestModel, value, "The return value from preSet should have been an instance of the Model" );
+				Y.Assert.isInstanceOf( TestModel, value, "The return value from beforeSet should have been an instance of the Model" );
 				Y.Assert.areSame( 1, value.get( 'attr1' ), "The data should have been set to the new model" );
 				Y.Assert.areSame( 2, value.get( 'attr2' ), "The data should have been set to the new model" );
 			},
 			
 			
-			"preSet() should return an actual Model instance unchanged" : function() {
-				var data = new this.Model( { attr1 : 1, attr2: 2 } );
-				var value = this.attribute.preSet( null, data );
+			"beforeSet() should return an actual Model instance unchanged" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    oldValue,  // undefined
+				    data = new this.Model( { attr1 : 1, attr2: 2 } ),
+				    value = this.attribute.beforeSet( mockModel, oldValue, data );
 				
-				Y.Assert.areSame( data, value, "The return value from preSet should have been the same model instance" );
+				Y.Assert.areSame( data, value, "The return value from beforeSet should have been the same model instance" );
 				Y.Assert.areSame( 1, value.get( 'attr1' ), "The data should remain set to the new model" );
 				Y.Assert.areSame( 2, value.get( 'attr2' ), "The data should remain set to the new model" );
 			},
@@ -199,13 +211,16 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			// --------------------
 			
 			
-			"if no modelClass was provided, preSet() should return an anonymous data object unchanged" : function() {
+			"if no modelClass was provided, beforeSet() should return an anonymous data object unchanged" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    oldValue;
+				
 				var attribute = new Kevlar.attribute.ModelAttribute( { 
 					name: 'attr'
 				} );
 				
 				var data = { attr1: 1, attr2: 2 };
-				var value = attribute.preSet( null, data );
+				var value = attribute.beforeSet( mockModel, oldValue, data );
 				
 				Y.Assert.areSame( data, value );
 			}

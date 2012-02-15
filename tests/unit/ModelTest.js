@@ -631,18 +631,18 @@ tests.unit.add( new Ext.test.TestSuite( {
 			// ------------------------
 			
 			
-			// Test delegation to the Attribute's preSet() and postSet() methods
+			// Test delegation to the Attribute's beforeSet() and afterSet() methods
 			
-			"set() should delegate to the Attribute's preSet() and postSet() methods to do any pre and post processing needed for the value" : function() {
-				var preSetValue, 
-				    postSetValue;
+			"set() should delegate to the Attribute's beforeSet() and afterSet() methods to do any pre and post processing needed for the value" : function() {
+				var beforeSetValue, 
+				    afterSetValue;
 				
 				var TestAttribute = Kevlar.attribute.Attribute.extend( {
-					preSet : function( model, value ) {
-						return ( preSetValue = value + 1 );
+					beforeSet : function( model, oldValue, value ) {
+						return ( beforeSetValue = value + 1 );
 					},
-					postSet : function( model, value ) {
-						return ( postSetValue = value + 20 );
+					afterSet : function( model, value ) {
+						return ( afterSetValue = value + 20 );
 					}
 				} );
 				
@@ -651,7 +651,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 						new TestAttribute( {
 							name : 'attr1',
 							
-							// A custom 'set' function that should be executed in between the preSet() and postSet() methods
+							// A custom 'set' function that should be executed in between the beforeSet() and afterSet() methods
 							set : function( value ) {
 								return value + 5;
 							}
@@ -661,8 +661,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 				
 				var model = new TestModel( { attr1: 0 } );
 				
-				Y.Assert.areSame( 1, preSetValue );
-				Y.Assert.areSame( 26, postSetValue );
+				Y.Assert.areSame( 1, beforeSetValue );
+				Y.Assert.areSame( 26, afterSetValue );
 			},
 			
 			
@@ -859,6 +859,115 @@ tests.unit.add( new Ext.test.TestSuite( {
 				Y.Assert.areSame( 20, changeEventOldValue, "The oldValue provided with the change event should have come from computedAttribute's `get()` function" );
 				Y.Assert.areSame( 52, attributeSpecificChangeEventNewValue, "The newValue provided with the attribute-specific change event should have come from computedAttribute's `get()` function" );
 				Y.Assert.areSame( 20, attributeSpecificChangeEventOldValue, "The oldValue provided with the attribute-specific change event should have come from computedAttribute's `get()` function" );
+			},
+			
+			
+			// ------------------------
+			
+			// Test the 'change' event for embedded models
+			
+			"When an attribute has changed in an embedded model, its parent model should fire a 'change' event" : function() {
+				var ParentModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'child', type: 'model', embedded: true }
+					]
+				} );
+				
+				var ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'attr', type: 'string' }
+					]
+				} );
+				
+				var childModel = new ChildModel();
+				var parentModel = new ParentModel( {
+					child: childModel
+				} );
+				
+				var changedModel,
+				    changedAttribute,
+				    changedValue;
+				    
+				parentModel.on( 'change', function( model, attributeName, value ) {
+					changedModel = model;
+					changedAttribute = attributeName;
+					changedValue = value;
+				} );
+				
+				// Now set the value of the attribute in the child model
+				childModel.set( 'attr', 'asdf' );
+				
+				Y.Assert.areSame( parentModel, changedModel, "The change event should have fired with the parent model" );
+				Y.Assert.areSame( 'child.attr', changedAttribute, "The change event should have fired with the parent model" );
+				Y.Assert.areSame( 'asdf', changedValue, "The change event should have fired with the parent model" );
+			},
+			
+			
+			"When an attribute has changed in a non-embedded model, its parent model should *not* fire a 'change' event" : function() {
+				var ParentModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'child', type: 'model', embedded: false }
+					]
+				} );
+				
+				var ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'attr', type: 'string' }
+					]
+				} );
+				
+				var childModel = new ChildModel();
+				var parentModel = new ParentModel( {
+					child: childModel
+				} );
+				
+				var changeEventFired = false;    
+				parentModel.on( 'change', function() {
+					changeEventFired = true;
+				} );
+				
+				// Now set the value of the attribute in the child model
+				childModel.set( 'attr', 'asdf' );
+				
+				Y.Assert.isFalse( changeEventFired );
+			},
+			
+			
+			"The parent model should no longer fire events from the child model after the child model has been un-set from the parent" : function() {
+				var ParentModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'child', type: 'model', embedded: true }
+					]
+				} );
+				
+				var ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'attr', type: 'string' }
+					]
+				} );
+				
+				var childModel = new ChildModel();
+				var parentModel = new ParentModel( {
+					child: childModel
+				} );
+				
+				var changeEventCount = 0;
+				parentModel.on( 'change', function() {
+					changeEventCount++;
+				} );
+				
+				
+				// Set a value in the child model. We should get a change event.
+				childModel.set( 'attr', 'asdf' );
+				
+				Y.Assert.areSame( 1, changeEventCount, "while the child model is attached, the change event count should have increased by 1" );
+				
+				
+				// Now, unset the child model, and then set another attribute in it. We should not get another change event.
+				parentModel.set( 'child', null );
+				childModel.set( 'attr', 'asdf2' );
+				
+				Y.Assert.areSame( 1, changeEventCount, "We should still only have 1 for the event firing count, as we un-set the child model from the parent" );
 			},
 			
 			

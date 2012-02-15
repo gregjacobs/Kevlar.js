@@ -15,19 +15,19 @@ Kevlar.attribute.ObjectAttribute = Kevlar.attribute.Attribute.extend( {
 	
 	
 	/**
-	 * Overridden `preSet` method used to normalize the value provided. All non-object values are converted to null,
+	 * Overridden `beforeSet` method used to normalize the value provided. All non-object values are converted to null,
 	 * while object values are returned unchanged.
 	 * 
 	 * @override
-	 * @method preSet
+	 * @method beforeSet
 	 * @inheritdoc
 	 */
-	preSet : function( model, value ) {
-		if( typeof value !== 'object' ) {
-			value = null;  // convert all non-object values to null
+	beforeSet : function( model, oldValue, newValue ) {
+		if( typeof newValue !== 'object' ) {
+			newValue = null;  // convert all non-object values to null
 		}
 		
-		return value;
+		return newValue;
 	}
 	
 } );

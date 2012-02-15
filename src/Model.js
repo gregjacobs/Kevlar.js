@@ -421,7 +421,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			
 			
 			// Allow the Attribute to pre-process the newValue
-			newValue = attribute.preSet( this, newValue );
+			newValue = attribute.beforeSet( this, oldValue, newValue );
 			
 			// If the attribute has a 'set' function defined, call it to convert the data
 			if( typeof attribute.set === 'function' ) {
@@ -448,7 +448,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			}
 			
 			// Allow the Attribute to post-process the newValue
-			newValue = attribute.postSet( this, newValue );
+			newValue = attribute.afterSet( this, newValue );
 			
 			
 			// Only change if there is no current value for the attribute, or if newValue is different from the current
@@ -666,6 +666,38 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		this.dirty = false;
 		
 		this.fireEvent( 'rollback', this );
+	},
+	
+	
+	// --------------------------------
+	
+	// Embedded Model / Collection related functionality
+	
+	/**
+	 * Used internally by the framework, this method subscribes to the change event of the given (child) model, in order to relay
+	 * its events through this (parent) model. This supports a form of "event bubbling" for {@link Kevlar.attribute.ModelAttribute#embedded embedded} 
+	 * child models, and is called from {@link Kevlar.attribute.ModelAttribute ModelAttribute}. For non-embedded Models (i.e. simply "related"
+	 * models), this method is not called.
+	 * 
+	 * @hide
+	 * @method subscribeEmbeddedModel
+	 * @param {Kevlar.Model} childModel
+	 */
+	subscribeEmbeddedModel : function( childModel ) {
+		
+	},
+	
+	
+	/**
+	 * Used internally by the framework, this method unsubscribes the change event from the given (child) model. Used in conjunction with 
+	 * {@link #subscribeEmbeddedModel}, when a child model is un-set from its parent model.
+	 * 
+	 * @hide
+	 * @method unsubscribeEmbeddedModel
+	 * @param {Kevlar.Model} childModel
+	 */
+	unsubscribeEmbeddedModel : function( childModel ) {
+		
 	},
 	
 	
