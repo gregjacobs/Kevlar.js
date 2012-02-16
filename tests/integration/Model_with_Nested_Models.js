@@ -233,65 +233,74 @@ tests.integration.add( new Ext.test.TestSuite( {
 			"When an attribute has changed in a deeply nested embedded model, its parent model should fire a 'change' event, with the parentAttr.childAttr.childAttr attributeName" : function() {
 				var ParentModel = Kevlar.Model.extend( {
 					attributes : [
+						{ name: 'name', defaultValue: 'Parent' }, // for debugging
+						{ name: 'intermediate', type: 'model', embedded: true }
+					]
+				} );
+				
+				var IntermediateModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'name', defaultValue: 'Intermediate' }, // for debugging
 						{ name: 'child', type: 'model', embedded: true }
 					]
 				} );
 				
 				var ChildModel = Kevlar.Model.extend( {
 					attributes : [
+						{ name: 'name', defaultValue: 'Child' }, // for debugging
 						{ name : 'attr', type: 'string' }
 					]
 				} );
 				
-				var childModel = new ChildModel();
-				var intermediateModel = new ParentModel( {
-					child: childModel
-				} );
-				var parentModel = new ParentModel( {
-					child: intermediateModel
-				} );
 				
+				// Create the models 
+				var parentModel = new ParentModel(),
+				    intermediateModel = new IntermediateModel(),
+				    childModel = new ChildModel();
+				    
+				parentModel.set( 'intermediate', intermediateModel );
+				intermediateModel.set( 'child', childModel );
 				
 				
 				// Subscribe to the general 'change' event
-				var parentGeneralChangeEventCount = 0,
-				    parentGeneralChangedModel,
-				    parentGeneralChangedAttribute,
-				    parentGeneralChangedValue;
+				var generalChangeEventCount = 0,
+				    generalChangedModel,
+				    generalChangedAttribute,
+				    generalChangedValue;
 				    
 				parentModel.on( 'change', function( model, attributeName, value ) {
-					parentGeneralChangeEventCount++;
-					parentGeneralChangedModel = model;
-					parentGeneralChangedAttribute = attributeName;
-					parentGeneralChangedValue = value;
+					generalChangeEventCount++;
+					generalChangedModel = model;
+					generalChangedAttribute = attributeName;
+					generalChangedValue = value;
 				} );
 				
 				
-				// We should also be able to subscribe to the general (but child model-specific) 'change' event for the embedded model itself
-				var generalModelSpecificChangeEventCount = 0,
-				    generalModelSpecificChangedModel,
-				    generalModelSpecificChangedAttribute,
-				    generalModelSpecificChangedValue;
-				    
-				parentModel.on( 'change:child', function( model, attributeName, value ) {
-					generalModelSpecificChangeEventCount++;
-					generalModelSpecificChangedModel = model;
-					generalModelSpecificChangedAttribute = attributeName;
-					generalModelSpecificChangedValue = value;
+				// We should also be able to subscribe to the general (but intermediate model-specific) 'change' event for the embedded model itself
+				var intermediateModelChangeEventCount = 0,
+				    intermediateModelChangedModel,
+				    intermediateModelChangedAttribute,
+				    intermediateModelChangedValue;
+				
+				parentModel.on( 'change:intermediate', function( model, attributeName, value ) {
+					intermediateModelChangeEventCount++;
+					intermediateModelChangedModel = model;
+					intermediateModelChangedAttribute = attributeName;
+					intermediateModelChangedValue = value;
 				} );
 				
 				
 				// We should be able to subscribe to the deeply nested (but childModel-specific) 'change' event
-				var deepChildModelSpecificChangeEventCount = 0,
-				    deepChildModelSpecificChangedModel,
-				    deepChildModelSpecificChangedAttribute,
-				    deepChildModelSpecificChangedValue;
+				var childModelChangeEventCount = 0,
+				    childModelChangedModel,
+				    childModelChangedAttribute,
+				    childModelChangedValue;
 				
-				parentModel.on( 'change:child.child', function( model, attributeName, value ) {
-					deepChildModelSpecificChangeEventCount++;
-					deepChildModelSpecificChangedModel = model;
-					deepChildModelSpecificChangedAttribute = attributeName;
-					deepChildModelSpecificChangedValue = value;
+				parentModel.on( 'change:intermediate.child', function( model, attributeName, value ) {
+					childModelChangeEventCount++;
+					childModelChangedModel = model;
+					childModelChangedAttribute = attributeName;
+					childModelChangedValue = value;
 				} );
 				
 				
@@ -300,7 +309,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				    attrSpecificChangedModel,
 				    attrSpecificChangedValue;
 				    
-				parentModel.on( 'change:child.attr', function( model, value ) {
+				parentModel.on( 'change:intermediate.child.attr', function( model, value ) {
 					attrSpecificChangeEventCount++;
 					attrSpecificChangedModel = model;
 					attrSpecificChangedValue = value;
@@ -313,25 +322,25 @@ tests.integration.add( new Ext.test.TestSuite( {
 				childModel.set( 'attr', 'asdf' );
 				window.a = false;
 				
-				Y.Assert.areSame( 1, parentGeneralChangeEventCount, "The parent's general change event should have fired exactly once" );
-				Y.Assert.areSame( parentModel, parentGeneralChangedModel, "The parent's general change event should have fired with the parent model" );
-				Y.Assert.areSame( 'child.child.attr', parentGeneralChangedAttribute, "The parent's general change event should have fired with attributeName as the path to the nested model" );
-				Y.Assert.areSame( 'asdf', parentGeneralChangedValue, "The parent's general change event should have fired with the new value" );
+				Y.Assert.areSame( 1, generalChangeEventCount, "The general change event should have fired exactly once" );
+				Y.Assert.areSame( parentModel, generalChangedModel, "The general change event should have fired with the parent model" );
+				Y.Assert.areSame( 'intermediate.child.attr', generalChangedAttribute, "The general change event should have fired with the attributeName as the path to the child model's attribute" );
+				Y.Assert.areSame( 'asdf', generalChangedValue, "The general change event should have fired with the new value" );
 				
-				Y.Assert.areSame( 1, generalModelSpecificChangeEventCount, "The first level childModel-specific change event should have fired exactly once" );
-				Y.Assert.areSame( intermediateModel, generalModelSpecificChangedModel, "The first level childModel-specific change event should have fired with the intermediate model" );
-				Y.Assert.areSame( 'child.attr', generalModelSpecificChangedAttribute, "The first level childModel-specific change event should have fired with path to the changed attribute in the deeper child model" );
-				Y.Assert.areSame( 'asdf', generalModelSpecificChangedValue, "The first level childModel-specific change event should have fired with the new value" );
+				Y.Assert.areSame( 1, intermediateModelChangeEventCount, "The intermediateModel-specific change event should have fired exactly once" );
+				Y.Assert.areSame( intermediateModel, intermediateModelChangedModel, "The intermediateModel-specific change event should have fired with the intermediate model" );
+				Y.Assert.areSame( 'child.attr', intermediateModelChangedAttribute, "The intermediateModel-specific change event should have fired with path to the changed attribute in the deeper child model" );
+				Y.Assert.areSame( 'asdf', intermediateModelChangedValue, "The intermediateModel-specific change event should have fired with the new value" );
 				
-				Y.Assert.areSame( 1, deepChildModelSpecificChangeEventCount, "The second level childModel-specific change event should have fired exactly once" );
-				Y.Assert.areSame( childModel, deepChildModelSpecificChangedModel, "The second level childModel-specific change event should have fired with the child model" );
-				Y.Assert.areSame( 'attr', deepChildModelSpecificChangedAttribute, "The second level childModel-specific change event should have fired with path to the changed attribute in the deeper child model" );
-				Y.Assert.areSame( 'asdf', deepChildModelSpecificChangedValue, "The second level childModel-specific change event should have fired with the new value" );
+				Y.Assert.areSame( 1, childModelChangeEventCount, "The childModel-specific change event should have fired exactly once" );
+				Y.Assert.areSame( childModel, childModelChangedModel, "The childModel-specific change event should have fired with the child model" );
+				Y.Assert.areSame( 'attr', childModelChangedAttribute, "The childModel-specific change event should have fired with the attributeName that was changed" );
+				Y.Assert.areSame( 'asdf', childModelChangedValue, "The childModel-specific change event should have fired with the new value" );
 				
-				Y.Assert.areSame( 1, attrSpecificChangeEventCount, "The attribute-specific change event should have fired exactly once" );
-				Y.Assert.areSame( childModel, attrSpecificChangedModel, "The attribute-specific change event should have fired with the child model" );
-				Y.Assert.areSame( 'asdf', attrSpecificChangedValue, "The attribute-specific change event should have fired with the new value" );
-			}			
+				Y.Assert.areSame( 1, attrSpecificChangeEventCount, "The childModel attribute-specific change event should have fired exactly once" );
+				Y.Assert.areSame( childModel, attrSpecificChangedModel, "The childModel attribute-specific change event should have fired with the child model" );
+				Y.Assert.areSame( 'asdf', attrSpecificChangedValue, "The childModel attribute-specific change event should have fired with the new value" );
+			}
 		}
 	]
 	

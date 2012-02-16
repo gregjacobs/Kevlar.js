@@ -3080,8 +3080,8 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @param {Kevlar.Model} childModel
 	 */
 	subscribeEmbeddedModel : function( attributeName, childModel ) {
-		var changeHandler = function( model, attrName, newValue, oldValue ) {
-			this.onEmbeddedModelChange( attributeName, model, attrName, newValue, oldValue );
+		var changeHandler = function( model, attrName, newValue, oldValue, nestedModels ) {  // note: 'nestedModels' arg is needed for the bubbling of deep model/collection events
+			this.onEmbeddedModelChange( attributeName, model, attrName, newValue, oldValue, nestedModels );
 		};
 		
 		this.embeddedModelHandlers[ attributeName ] = changeHandler;
@@ -3111,26 +3111,41 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @method onEmbeddedModelChange
 	 * @param {String} attributeName The attribute name in *this* model that stores the embedded model.
 	 * @param {Kevlar.Model} childModel The embedded child model.
-	 * @param {String} attr The attribute name of the changed attribute in the embedded model.
+	 * @param {String} childModelAttr The attribute name of the changed attribute in the embedded model. When fired "up the chain"
+	 *   from deeply nested models, this will accumulate into a dot-delimited path to the child model. Ex: "parent.intermediate.child".
 	 * @param {Mixed} newValue
 	 * @param {Mixed} oldValue
+	 * @param {Kevlar.Model[]} [nestedModels] An array of the nested models that have fired an event below this Model's
+	 *   event. This is a "private" argument, which is only used for this feature.
 	 */
-	onEmbeddedModelChange : function( attributeName, childModel, attr, newValue, oldValue ) {
-		if( window.a ) {
-			console.log( 'attributeName / attr passed to onEmbeddedModelChange: ', attributeName, attr );
+	onEmbeddedModelChange : function( attributeName, childModel, childModelAttr, newValue, oldValue, nestedModels ) {
+		nestedModels = nestedModels || [ childModel ];
+		nestedModels.unshift( this );  // prepend this model to the list
+		
+				
+		var pathToChangedAttr = attributeName + '.' + childModelAttr,
+		    pathsToChangedAttr = pathToChangedAttr.split( '.' );   // array of the parts of the full dot-delimited path
+		
+		// First, an event with the full path
+		this.fireEvent( 'change:' + pathToChangedAttr, nestedModels[ nestedModels.length - 1 ], newValue, oldValue );
+		
+		// Next, fire an event for each of the "paths" leading up to the changed attribute, but not including the attribute itself (we fired an event for that just above).
+		// This loop will fire them backwards, from longest path, to shortest.
+		// Example of events while looping, if the full path to the changed attr is 'parent.intermediate.child.attr':
+		//   - change:parent.intermediate.child  attr = "attr"                     model = child
+		//   - change:parent.intermediate        attr = "child.attr"               model = intermediate
+		//   - change:parent                     attr = "intermediate.child.attr"  model = parent
+		// Note: The 'model' arg that the event is fired with is always the 
+		for( var i = pathsToChangedAttr.length - 2; i >= 0; i-- ) {
+			var currentPath = pathsToChangedAttr.slice( 0, i + 1 ).join( '.' ),
+			    changedAttr = pathsToChangedAttr.slice( i + 1 ).join( '.' ),
+			    modelForPath = nestedModels[ i + 1 ];
+			
+			this.fireEvent( 'change:' + currentPath, modelForPath, changedAttr, newValue, oldValue );
 		}
 		
-		// Fire an event for the generalized 'change' event on the *child model*
-		this.fireEvent( 'change:' + attributeName, childModel, attr, newValue, oldValue );     // child model, attributeName in child, newValue, oldValue
-		
-		// Now fire an event for the path to the child attribute from the parent model (ex: parentAttr.childAttr)
-		var pathToAttr = attributeName + '.' + attr; // makes something like: "parentAttr.childAttr", or if coming from a more deeply nested model: "parentAttr.intermediateAttr.childAttr"
-		this.fireEvent( 'change:' + pathToAttr, childModel, newValue, oldValue );  // child model, newValue, oldValue
-		this.fireEvent( 'change', this, pathToAttr, newValue, oldValue );          // this model, attributeName, newValue, oldValue
-		
-		if( window.a ) {
-			console.log( 'pathToAttr in onEmbeddedModelChange: ', pathToAttr );
-		}
+		// Now fire the general 'change' event from this model
+		this.fireEvent( 'change', this, pathToChangedAttr, newValue, oldValue, nestedModels );          // this model, attributeName, newValue, oldValue, the nestedModels so far for this event from the deep child
 	},
 	
 	
