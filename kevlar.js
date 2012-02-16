@@ -2297,7 +2297,7 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 		// Check if the user provided a modelClass, but the value is undefined. This means that they specified
 		// a class that either doesn't exist, or doesn't exist yet, and we should give them a warning.
 		if( 'modelClass' in this && this.modelClass === undefined ) {
-			throw new Error( "The 'modelClass' config provided to an Attribute with the name '" + this.name + "' either doesn't exist, or doesn't " +
+			throw new Error( "The 'modelClass' config provided to an Attribute with the name '" + this.getName() + "' either doesn't exist, or doesn't " +
 			                 "exist just yet. Consider using the String or Function form of the modelClass config for very late binding, if needed" );
 		}
 	},
@@ -2334,7 +2334,7 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 	beforeSet : function( model, oldValue, newValue ) {
 		// First, if the oldValue was a Model, and this attribute is an "embedded" model, we need to unsubscribe it from its parent model
 		if( this.embedded && oldValue instanceof Kevlar.Model ) {
-			model.unsubscribeEmbeddedModel( oldValue );
+			model.unsubscribeEmbeddedModel( this.getName(), oldValue );
 		}
 		
 		// Now, normalize the newValue to an object, or null
@@ -2369,12 +2369,14 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 	afterSet : function( model, value ) {
 		// Enforce that the value is either null, or a Kevlar.Model
 		if( value !== null && !( value instanceof Kevlar.Model ) ) {
-			throw new Error( "A value set to the attribute '" + this.name + "' was not a Kevlar.Model subclass" );
+			throw new Error( "A value set to the attribute '" + this.getName() + "' was not a Kevlar.Model subclass" );
 		}
 		
 		if( this.embedded && value instanceof Kevlar.Model ) {
-			model.subscribeEmbeddedModel( value );
+			model.subscribeEmbeddedModel( this.getName(), value );
 		}
+		
+		return value;
 	}
 	
 } );
@@ -2603,6 +2605,17 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 */
 	
 	/**
+	 * @private
+	 * @property {Object} embeddedModelHandlers
+	 * 
+	 * A hashmap of {@link #change} handlers for any embedded models (which are defined by a {@link Kevlar.attribute.ModelAttribute} with
+	 * {@link Kevlar.attribute.ModelAttribute#embedded} set to `true`).
+	 * 
+	 * This hashmap is keyed by the Attribute's name, and stores a Function reference as its value, which is the handler for a change
+	 * event in the embedded model.
+	 */
+	
+	/**
 	 * @hide
 	 * @property {String} id (readonly)
 	 * The id for the Model. This property is set when the attribute specified by the {@link #idAttribute} config
@@ -2789,6 +2802,9 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		// Initialize the data hash for storing attribute names of modified data, and their original values (see property description)
 		me.modifiedData = {};
+		
+		// Initialize the embeddedModelHandlers hashmap
+		me.embeddedModelHandlers = {};
 		
 		// Set the initial data / defaults, if we have any
 		me.set( data );
@@ -3050,6 +3066,77 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	// --------------------------------
 	
 	
+	// Embedded Model / Collection related functionality
+	
+	/**
+	 * Used internally by the framework, this method subscribes to the change event of the given (child) model, in order to relay
+	 * its events through this (parent) model. This supports a form of "event bubbling" for {@link Kevlar.attribute.ModelAttribute#embedded embedded} 
+	 * child models, and is called from {@link Kevlar.attribute.ModelAttribute ModelAttribute}. For non-embedded Models (i.e. simply "related"
+	 * models), this method is not called.
+	 * 
+	 * @hide
+	 * @method subscribeEmbeddedModel
+	 * @param {String} attributeName The name of the Attribute that is subscribing a Model.
+	 * @param {Kevlar.Model} childModel
+	 */
+	subscribeEmbeddedModel : function( attributeName, childModel ) {
+		var changeHandler = function( model, attrName, newValue, oldValue ) {
+			this.onEmbeddedModelChange( attributeName, model, attrName, newValue, oldValue );
+		};
+		
+		this.embeddedModelHandlers[ attributeName ] = changeHandler;
+		childModel.on( 'change', changeHandler, this );
+	},
+	
+	
+	/**
+	 * Used internally by the framework, this method unsubscribes the change event from the given (child) model. Used in conjunction with 
+	 * {@link #subscribeEmbeddedModel}, when a child model is un-set from its parent model.
+	 * 
+	 * @hide
+	 * @method unsubscribeEmbeddedModel
+	 * @param {String} attributeName The name of the Attribute that is unsubscribing a Model.
+	 * @param {Kevlar.Model} childModel
+	 */
+	unsubscribeEmbeddedModel : function( attributeName, childModel ) {
+		var changeHandler = this.embeddedModelHandlers[ attributeName ];
+		childModel.un( 'change', changeHandler, this );
+	},
+	
+	
+	/**
+	 * Handler for a change in an embedded model. Relays the embedded model's {@link #change} events through this model.
+	 * 
+	 * @private
+	 * @method onEmbeddedModelChange
+	 * @param {String} attributeName The attribute name in *this* model that stores the embedded model.
+	 * @param {Kevlar.Model} childModel The embedded child model.
+	 * @param {String} attr The attribute name of the changed attribute in the embedded model.
+	 * @param {Mixed} newValue
+	 * @param {Mixed} oldValue
+	 */
+	onEmbeddedModelChange : function( attributeName, childModel, attr, newValue, oldValue ) {
+		if( window.a ) {
+			console.log( 'attributeName / attr passed to onEmbeddedModelChange: ', attributeName, attr );
+		}
+		
+		// Fire an event for the generalized 'change' event on the *child model*
+		this.fireEvent( 'change:' + attributeName, childModel, attr, newValue, oldValue );     // child model, attributeName in child, newValue, oldValue
+		
+		// Now fire an event for the path to the child attribute from the parent model (ex: parentAttr.childAttr)
+		var pathToAttr = attributeName + '.' + attr; // makes something like: "parentAttr.childAttr", or if coming from a more deeply nested model: "parentAttr.intermediateAttr.childAttr"
+		this.fireEvent( 'change:' + pathToAttr, childModel, newValue, oldValue );  // child model, newValue, oldValue
+		this.fireEvent( 'change', this, pathToAttr, newValue, oldValue );          // this model, attributeName, newValue, oldValue
+		
+		if( window.a ) {
+			console.log( 'pathToAttr in onEmbeddedModelChange: ', pathToAttr );
+		}
+	},
+	
+	
+	// --------------------------------
+	
+	
 	/**
 	 * Determines if the Model currently has un-committed (i.e. changed) data.
 	 * 
@@ -3153,38 +3240,6 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		this.dirty = false;
 		
 		this.fireEvent( 'rollback', this );
-	},
-	
-	
-	// --------------------------------
-	
-	// Embedded Model / Collection related functionality
-	
-	/**
-	 * Used internally by the framework, this method subscribes to the change event of the given (child) model, in order to relay
-	 * its events through this (parent) model. This supports a form of "event bubbling" for {@link Kevlar.attribute.ModelAttribute#embedded embedded} 
-	 * child models, and is called from {@link Kevlar.attribute.ModelAttribute ModelAttribute}. For non-embedded Models (i.e. simply "related"
-	 * models), this method is not called.
-	 * 
-	 * @hide
-	 * @method subscribeEmbeddedModel
-	 * @param {Kevlar.Model} childModel
-	 */
-	subscribeEmbeddedModel : function( childModel ) {
-		
-	},
-	
-	
-	/**
-	 * Used internally by the framework, this method unsubscribes the change event from the given (child) model. Used in conjunction with 
-	 * {@link #subscribeEmbeddedModel}, when a child model is un-set from its parent model.
-	 * 
-	 * @hide
-	 * @method unsubscribeEmbeddedModel
-	 * @param {Kevlar.Model} childModel
-	 */
-	unsubscribeEmbeddedModel : function( childModel ) {
-		
 	},
 	
 	

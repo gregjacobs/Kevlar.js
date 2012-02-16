@@ -59,7 +59,7 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 		// Check if the user provided a modelClass, but the value is undefined. This means that they specified
 		// a class that either doesn't exist, or doesn't exist yet, and we should give them a warning.
 		if( 'modelClass' in this && this.modelClass === undefined ) {
-			throw new Error( "The 'modelClass' config provided to an Attribute with the name '" + this.name + "' either doesn't exist, or doesn't " +
+			throw new Error( "The 'modelClass' config provided to an Attribute with the name '" + this.getName() + "' either doesn't exist, or doesn't " +
 			                 "exist just yet. Consider using the String or Function form of the modelClass config for very late binding, if needed" );
 		}
 	},
@@ -96,7 +96,7 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 	beforeSet : function( model, oldValue, newValue ) {
 		// First, if the oldValue was a Model, and this attribute is an "embedded" model, we need to unsubscribe it from its parent model
 		if( this.embedded && oldValue instanceof Kevlar.Model ) {
-			model.unsubscribeEmbeddedModel( oldValue );
+			model.unsubscribeEmbeddedModel( this.getName(), oldValue );
 		}
 		
 		// Now, normalize the newValue to an object, or null
@@ -131,12 +131,14 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 	afterSet : function( model, value ) {
 		// Enforce that the value is either null, or a Kevlar.Model
 		if( value !== null && !( value instanceof Kevlar.Model ) ) {
-			throw new Error( "A value set to the attribute '" + this.name + "' was not a Kevlar.Model subclass" );
+			throw new Error( "A value set to the attribute '" + this.getName() + "' was not a Kevlar.Model subclass" );
 		}
 		
 		if( this.embedded && value instanceof Kevlar.Model ) {
-			model.subscribeEmbeddedModel( value );
+			model.subscribeEmbeddedModel( this.getName(), value );
 		}
+		
+		return value;
 	}
 	
 } );

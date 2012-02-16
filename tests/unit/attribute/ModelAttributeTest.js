@@ -224,7 +224,30 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				
 				Y.Assert.areSame( data, value );
 			}
+		},		
+		
+		
+		
+		/*
+		 * Test afterSet()
+		 */
+		{
+			name : "Test afterSet()",
+			
+			
+			"afterSet() should return the model (i.e. it doesn't forget the return statement!)" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model );
+				
+				var attribute = new Kevlar.attribute.ModelAttribute( { 
+					name: 'attr'
+				} );
+				
+				var value = attribute.afterSet( mockModel, mockModel );  // just pass itself for the value, doesn't matter
+				Y.Assert.areSame( mockModel, value );
+			}
+			
 		}
+			
 		
 	]
 	

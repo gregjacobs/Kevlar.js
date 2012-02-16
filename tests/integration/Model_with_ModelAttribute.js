@@ -39,6 +39,38 @@ tests.integration.add( new Ext.test.TestSuite( {
 				} );
 				Y.Assert.isInstanceOf( InnerModel, setValue );
 			}
+		},
+		
+		
+		{
+			/*
+			 * Test retrieving the inner model from the outer model after it is set
+			 */
+			name : "Test retrieving the inner model from the outer model after it is set",
+			
+			
+			"The get() method should be able to retrieve the Model after it has been set" : function() {
+				var InnerModel = Kevlar.Model.extend( {
+					attributes : [ 'someValue' ]
+				} );
+				
+				var Model = Kevlar.Model.extend( {
+					attributes : [
+						{
+							name : 'innerModel',
+							type : 'model',
+							modelClass : InnerModel
+						}
+					]
+				} );
+				
+				var model = new Model( {
+					innerModel : { someValue: 1 }
+				} );
+				var innerModel = model.get( 'innerModel' );
+				
+				Y.Assert.isInstanceOf( InnerModel, innerModel );
+			}
 		}
 	]
 	
