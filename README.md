@@ -6,6 +6,10 @@ This is currently a work in progress, and is alpha.
 
 ## Changelog:
 
+### 0.2
+
+* Implemented "embedded" models, where change events on nested embedded models "bubble" to parent models.
+
 ### 0.1.1
 
 * Provide the old (previous) values of attributes to the Model's `change` event.

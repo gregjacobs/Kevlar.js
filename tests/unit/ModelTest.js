@@ -630,6 +630,45 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			// ------------------------
 			
+			
+			// Test delegation to the Attribute's beforeSet() and afterSet() methods
+			
+			"set() should delegate to the Attribute's beforeSet() and afterSet() methods to do any pre and post processing needed for the value" : function() {
+				var beforeSetValue, 
+				    afterSetValue;
+				
+				var TestAttribute = Kevlar.attribute.Attribute.extend( {
+					beforeSet : function( model, oldValue, value ) {
+						return ( beforeSetValue = value + 1 );
+					},
+					afterSet : function( model, value ) {
+						return ( afterSetValue = value + 20 );
+					}
+				} );
+				
+				var TestModel = Kevlar.Model.extend( {
+					attributes : [
+						new TestAttribute( {
+							name : 'attr1',
+							
+							// A custom 'set' function that should be executed in between the beforeSet() and afterSet() methods
+							set : function( value ) {
+								return value + 5;
+							}
+						} )
+					]
+				} );
+				
+				var model = new TestModel( { attr1: 0 } );
+				
+				Y.Assert.areSame( 1, beforeSetValue );
+				Y.Assert.areSame( 26, afterSetValue );
+			},
+			
+			
+			
+			// ------------------------
+			
 			// Test the 'change' event
 			
 			"When an attribute is set, a generalized 'change' event should be fired" : function() {
@@ -825,62 +864,6 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			// ------------------------
 			
-			// Test setting nested Models
-			/*
-			"set() should only change the attribute that a nested Model is being set to if it is a different model than it already has" : function() {
-				var Model = Kevlar.Model.extend( {
-					attributes : [ 'nestedModel' ]
-				} );
-				var NestedModel = Kevlar.Model.extend( {
-					attributes : [ 'attr1', 'attr2' ]
-				} );
-				
-				var model = new Model();
-				var nestedModel1 = new NestedModel();
-				var nestedModel2 = new NestedModel();
-				
-				
-				// Add event handlers to determine when actual "sets" have been done
-				var setCount = 0;
-				model.addListener( 'change:nestedModel', function() { setCount++; } );
-				
-				// Add random subscriptions to nestedModel events, just to make sure this doesn't cause an issue.
-				// (Using the old method of simply deep comparing the old object and the new object, which was unaware of 
-				// nested Models, this would cause a "maximum call stack size exceeded" error on set())
-				nestedModel1.on( 'change:attr1', function(){} );
-				nestedModel2.on( 'change:attr1', function(){} );
-				
-				
-				// Set for the first time
-				model.set( 'nestedModel', nestedModel1 );
-				Y.Assert.areSame( 1, setCount, "The model should have been set for the first time" );
-				
-				// Now set the model the second time. Should *not* fire a change event
-				model.set( 'nestedModel', nestedModel1 );
-				Y.Assert.areSame( 1, setCount, "The model should not have been re-set, because it is the same model that is already there" );
-				
-				
-				// Set the second nestedModel now
-				model.set( 'nestedModel', nestedModel2 );
-				Y.Assert.areSame( 2, setCount, "The new model (nestedModel2) should have been set" );
-				
-				// Now set the second model the second time. Should *not* fire a change event
-				model.set( 'nestedModel', nestedModel2 );
-				Y.Assert.areSame( 2, setCount, "The new model (nestedModel2) should not have been re-set, because it is the same model that is already there" );
-				
-				
-				// Set to null, to make sure we accept models again afterwards
-				model.set( 'nestedModel', null );
-				Y.Assert.areSame( 3, setCount, "The attribute should have been set to null" );
-				
-				// Now set to a model again
-				model.set( 'nestedModel', nestedModel1 );
-				Y.Assert.areSame( 4, setCount, "The attribute should have been set to nestedModel1 after it had been null" );
-			},
-			*/
-			
-			// ------------------------
-			
 			// Test Backbone Collection compatibility
 			
 			"for compatibility with Backbone's Collection, set() should set the id property to the Model object itself with the idAttribute is changed" : function() {
@@ -903,6 +886,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				Y.Assert.areSame( 'newValue', model.id, "The model's `id` property should have been set to attribute1's value after another set(), as that is the idAttribute." );
 			}
 		},
+		
 		
 		
 		{
