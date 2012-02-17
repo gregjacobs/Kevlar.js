@@ -10,7 +10,7 @@
  */
 /*global window, Kevlar */
 /*jslint forin:true */
-Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
+Kevlar.Model = Kevlar.util.Observable.extend( {
 	
 	/**
 	 * @cfg {Kevlar.persistence.Proxy} persistenceProxy
@@ -327,11 +327,11 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Hook methods for subclasses to initialize themselves. This method should be overridden in subclasses to 
+	 * Hook method for subclasses to initialize themselves. This method should be overridden in subclasses to 
 	 * provide any model-specific initialization.
 	 * 
 	 * Note that it is good practice to always call the superclass `initialize` method from within yours (even if
-	 * your class simply extends Kevlar.Model, which has no `initialize` implementation). This is to future proof it
+	 * your class simply extends Kevlar.Model, which has no `initialize` implementation itself). This is to future proof it
 	 * from being moved under another superclass, or if there is ever an implementation made in this class.
 	 * 
 	 * Ex:
