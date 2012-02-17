@@ -894,112 +894,77 @@ var KevlarUTIL = Kevlar.util,
 	
 /**
  * @class Kevlar.util.Observable
+ * 
  * Base class that provides a common interface for publishing events. Subclasses are expected to
  * to have a property "events" with all the events defined, and, optionally, a property "listeners"
- * with configured listeners defined.<br>
+ * with configured listeners defined.
+ * 
  * For example:
- * <pre><code>
-Employee = Kevlar.extend(Kevlar.util.Observable, {
-	constructor: function(config){
-		this.name = config.name;
-		this.addEvents({
-			"fired" : true,
-			"quit" : true
-		});
-
-		// Copy configured listeners into *this* object so that the base class&#39;s
-		// constructor will add them.
-		this.listeners = config.listeners;
-
-		// Call our superclass constructor to complete construction process.
-		Employee.superclass.constructor.call(config)
-	}
-});
-</code></pre>
- * This could then be used like this:<pre><code>
-var newEmployee = new Employee({
-	name: employeeName,
-	listeners: {
-		quit: function() {
-			// By default, "this" will be the object that fired the event.
-			alert(this.name + " has quit!");
-		}
-	}
-});
-</code></pre>
+ * 
+ *     Employee = Kevlar.extend(Kevlar.util.Observable, {
+ *         constructor: function( config ) {
+ *             this.name = config.name;
+ *             this.addEvents( {
+ *                 "fired" : true,
+ *                 "quit" : true
+ *             } );
+ *     
+ *             // Copy configured listeners into *this* object so that the base class&#39;s
+ *             // constructor will add them.
+ *             this.listeners = config.listeners;
+ *     
+ *             // Call our superclass constructor to complete construction process.
+ *             Employee.superclass.constructor.call( config )
+ *         }
+ *     });
+ * 
+ * 
+ * This could then be used like this:
+ * 
+ *     var newEmployee = new Employee({
+ *         name: employeeName,
+ *         listeners: {
+ *             'quit': function() {
+ *                 // By default, "this" will be the object that fired the event.
+ *                 alert( this.name + " has quit!" );
+ *             }
+ *         }
+ *     });
  */
-KevlarUTIL.Observable = function(){
+/*global Class, Kevlar */
+KevlarUTIL.Observable = Class.extend( Object, {
 	/**
-	 * @cfg {Object} listeners (optional) <p>A config object containing one or more event handlers to be added to this
-	 * object during initialization.  This should be a valid listeners config object as specified in the
-	 * {@link #addListener} example for attaching multiple handlers at once.</p>
-	 * To access DOM events directly from a Component's HTMLElement, listeners must be added to the <i>{@link ui.Component#getEl Element}</i> 
-	 * after the Component has been rendered. A plugin can simplify this step:<pre><code>
-// Plugin is configured with a listeners config object.
-// The Component is appended to the argument list of all handler functions.
-DomObserver = Kevlar.extend(Object, {
-	constructor: function(config) {
-		this.listeners = config.listeners ? config.listeners : config;
-	},
-
-	// Component passes itself into plugin&#39;s init method
-	initPlugin: function(c) {
-		var p, l = this.listeners;
-		for (p in l) {
-			if (Kevlar.isFunction(l[p])) {
-				l[p] = this.createHandler(l[p], c);
-			} else {
-				l[p].fn = this.createHandler(l[p].fn, c);
-			}
-		}
-
-		// Add the listeners to the Element immediately following the render call
-		c.render = c.render.{@link Function#createSequence createSequence}(function() {
-			var e = c.getEl();
-			if (e) {
-				e.on(l);
-			}
-		});
-	},
-
-	createHandler: function(fn, c) {
-		return function(e) {
-			fn.call(this, e, c);
-		};
-	}
-});
-
-var combo = new Kevlar.form.ComboBox({
-
-	// Collapse combo when its element is clicked on
-	plugins: [ new DomObserver({
-		click: function(evt, comp) {
-			comp.collapse();
-		}
-	})],
-	store: myStore,
-	typeAhead: true,
-	mode: 'local',
-	triggerAction: 'all'
-});
-	 * </code></pre></p>
+	 * @cfg {Object} listeners (optional) 
+	 * A config object containing one or more event handlers to be added to this object during initialization.  
+	 * This should be a valid listeners config object as specified in the {@link #addListener} example for attaching 
+	 * multiple handlers at once.
 	 */
-	var me = this, e = me.events;
-	me.events = e || {};
-	if(me.listeners){
-		me.on(me.listeners);
-		delete me.listeners;
-	}
-};
+	
+	
+	/**
+	 * @constructor
+	 */
+	constructor : function() {
+		var me = this, e = me.events;
+		me.events = e || {};
+		if( me.listeners ) {
+			me.on( me.listeners );
+			delete me.listeners;
+		}
+	},
 
-KevlarUTIL.Observable.prototype = {
+
+
 	// private
 	filterOptRe : /^(?:scope|delay|buffer|single)$/,
 
 	/**
-	 * <p>Fires the specified event with the passed parameters (minus the event name).</p>
-	 * <p>An event may be set to bubble up an Observable parent hierarchy (See {@link ui.Component#getBubbleTarget})
-	 * by calling {@link #enableBubble}.</p>
+	 * Fires the specified event with the passed parameters (minus the event name).
+	 * 
+	 * An event may be set to bubble up an Observable parent hierarchy (See {@link ui.Component#getBubbleTarget})
+	 * by calling {@link #enableBubble}.
+	 * 
+	 * @method fireEvent
 	 * @param {String} eventName The name of the event to fire.
 	 * @param {Object...} args Variable number of parameters are passed to handlers.
 	 * @return {Boolean} returns false if any of the handlers return false otherwise it returns true.
@@ -1066,67 +1031,66 @@ KevlarUTIL.Observable.prototype = {
 		
 		return ret;
 	},
+	
+	
 
 	/**
 	 * Appends an event handler to this object.
-	 * @param {String}   eventName The name of the event to listen for.
+	 * 
+	 * @method addListener
+	 * @param {String} eventName The name of the event to listen for.
 	 * @param {Function} handler The method the event invokes.
-	 * @param {Object}   scope (optional) The scope (<code><b>this</b></code> reference) in which the handler function is executed.
-	 * <b>If omitted, defaults to the object which fired the event.</b>
-	 * @param {Object}   options (optional) An object containing handler configuration.
-	 * properties. This may contain any of the following properties:<ul>
-	 * <li><b>scope</b> : Object<div class="sub-desc">The scope (<code><b>this</b></code> reference) in which the handler function is executed.
-	 * <b>If omitted, defaults to the object which fired the event.</b></div></li>
-	 * <li><b>delay</b> : Number<div class="sub-desc">The number of milliseconds to delay the invocation of the handler after the event fires.</div></li>
-	 * <li><b>single</b> : Boolean<div class="sub-desc">True to add a handler to handle just the next firing of the event, and then remove itself.</div></li>
-	 * <li><b>buffer</b> : Number<div class="sub-desc">Causes the handler to be scheduled to run in an {@link Kevlar.util.DelayedTask} delayed
-	 * by the specified number of milliseconds. If the event fires again within that time, the original
-	 * handler is <em>not</em> invoked, but the new handler is scheduled in its place.</div></li>
-	 * <li><b>target</b> : Observable<div class="sub-desc">Only call the handler if the event was fired on the target Observable, <i>not</i>
-	 * if the event was bubbled up from a child Observable.</div></li>
-	 * </ul><br>
-	 * <p>
-	 * <b>Combining Options</b><br>
-	 * Using the options argument, it is possible to combine different types of listeners:<br>
-	 * <br>
+	 * @param {Object} [scope] The scope (`this` reference) in which the handler function is executed. **If omitted, defaults to the object which fired the event.**
+	 * 
+	 * Alternatively, a single options object may be provided:
+	 * @param {Object} [options] An object containing handler configuration properties. This may contain any of the following properties:
+	 * @param {Object} [options.scope] The scope (`this` reference) in which the handler function is executed. **If omitted, defaults to the object which fired the event.**
+	 * @param {Number} [options.delay] The number of milliseconds to delay the invocation of the handler after the event fires.
+	 * @param {Boolean} [options.single] True to add a handler to handle just the next firing of the event, and then remove itself.
+	 * @param {Number} [options.buffer] Causes the handler to be scheduled to run in an {@link Kevlar.util.DelayedTask} delayed by the specified number of milliseconds. 
+	 *   If the event fires again within that time, the original handler is *not* invoked, but the new handler is scheduled in its place.
+	 * @param {Kevlar.util.Observable} [options.target] Only call the handler if the event was fired on the target Observable, *not* if the event was bubbled up from a child 
+	 *   Observable.
+	 * 
+	 * 
+	 * **Combining Options**
+	 * Using the options argument, it is possible to combine different types of listeners:
+	 * 
 	 * A delayed, one-time listener.
-	 * <pre><code>
-	 * myDataView.on('click', this.onClick, this, {
-single: true,
-delay: 100
-});</code></pre>
-	 * <p>
-	 * <b>Attaching multiple handlers in 1 call</b><br>
+	 *     myDataView.on('click', this.onClick, this, {
+	 *         single: true,
+	 *         delay: 100
+	 *     });
+	 * 
+	 * **Attaching multiple handlers in 1 call**
 	 * The method also allows for a single argument to be passed which is a config object containing properties
 	 * which specify multiple handlers.
-	 * <p>
-	 * <pre><code>
-myGridPanel.on({
-'click' : {
-	fn: this.onClick,
-	scope: this,
-	delay: 100
-},
-'mouseover' : {
-	fn: this.onMouseOver,
-	scope: this
-},
-'mouseout' : {
-	fn: this.onMouseOut,
-	scope: this
-}
-});</code></pre>
- * <p>
- * Or a shorthand syntax:<br>
- * <pre><code>
-myGridPanel.on({
-'click' : this.onClick,
-'mouseover' : this.onMouseOver,
-'mouseout' : this.onMouseOut,
- scope: this
-});</code></pre>
+	 * 
+	 *     myGridPanel.on({
+	 *         'click' : {
+	 *             fn: this.onClick,
+	 *             scope: this,
+	 *             delay: 100
+	 *         },
+	 *         'mouseover' : {
+	 *             fn: this.onMouseOver,
+	 *             scope: this
+	 *         },
+	 *         'mouseout' : {
+	 *             fn: this.onMouseOut,
+	 *             scope: this
+	 *         }
+	 *     });
+	 * 
+	 * Or a shorthand syntax:
+	 *     myGridPanel.on( {
+	 *         'click' : this.onClick,
+	 *         'mouseover' : this.onMouseOver,
+	 *         'mouseout' : this.onMouseOut,
+	 *         scope: this
+	 *     } );
 	 */
-	addListener : function(eventName, fn, scope, o){
+	addListener : function( eventName, fn, scope, o ) {
 		var me = this,
 		    e,
 		    oe,
@@ -1195,14 +1159,17 @@ myGridPanel.on({
 
 	/**
 	 * Adds the specified events to the list of events which this Observable may fire.
+	 * Usage:
+	 * 
+	 *     this.addEvents( 'storeloaded', 'storecleared' );
+	 * 
+	 * 
+	 * @method addEvents
 	 * @param {Object/String} o Either an object with event names as properties with a value of <code>true</code>
 	 * or the first event name string if multiple event names are being passed as separate parameters.
 	 * @param {String} Optional. Event name if multiple event names are being passed as separate parameters.
-	 * Usage:<pre><code>
-this.addEvents('storeloaded', 'storecleared');
-</code></pre>
 	 */
-	addEvents : function(o){
+	addEvents : function( o ) {
 		var me = this;
 		me.events = me.events || {};
 		if (Kevlar.isString(o)) {
@@ -1216,12 +1183,15 @@ this.addEvents('storeloaded', 'storecleared');
 		}
 	},
 
+
 	/**
 	 * Checks to see if this object has any listeners for a specified event
+	 * 
+	 * @method hasListener
 	 * @param {String} eventName The name of the event to check for
 	 * @return {Boolean} True if the event is being listened for, else false
 	 */
-	hasListener : function(eventName){
+	hasListener : function( eventName ){
 		var e = this.events[eventName];
 		return ISOBJECT(e) && e.listeners.length > 0;
 	},
@@ -1229,8 +1199,10 @@ this.addEvents('storeloaded', 'storecleared');
 
 	/**
 	 * Suspend the firing of all events. (see {@link #resumeEvents})
+	 * 
+	 * @method suspendEvents
 	 * @param {Boolean} queueSuspended Pass as true to queue up suspended events to be fired
-	 * after the {@link #resumeEvents} call instead of discarding all suspended events;
+	 *   after the {@link #resumeEvents} call instead of discarding all suspended events;
 	 */
 	suspendEvents : function(queueSuspended){
 		this.eventsSuspended = TRUE;
@@ -1239,12 +1211,15 @@ this.addEvents('storeloaded', 'storecleared');
 		}
 	},
 
+
 	/**
 	 * Resume firing events. (see {@link #suspendEvents})
 	 * If events were suspended using the `<b>queueSuspended</b>` parameter, then all
 	 * events fired during event suspension will be sent to any listeners now.
+	 * 
+	 * @method resumeEvents
 	 */
-	resumeEvents : function(){
+	resumeEvents : function() {
 		var me = this,
 		    queued = me.eventQueue || [];
 		me.eventsSuspended = FALSE;
@@ -1260,7 +1235,9 @@ this.addEvents('storeloaded', 'storecleared');
 	
 	
 	/**
-	 * Relays selected events from the specified Observable as if the events were fired by `<b>this</b>`.
+	 * Relays selected events from the specified Observable as if the events were fired by `this`.
+	 * 
+	 * @method relayEvents
 	 * @param {Object} o The Observable whose events this object is to relay.
 	 * @param {Array} events Array of event names to relay.
 	 */
@@ -1279,13 +1256,16 @@ this.addEvents('storeloaded', 'storecleared');
 	},
 	
 	
+	
 	/**
-	 * <p>Enables events fired by this Observable to bubble up an owner hierarchy by calling {@link #getBubbleTarget} to determine
+	 * Enables events fired by this Observable to bubble up an owner hierarchy by calling {@link #getBubbleTarget} to determine
 	 * the object's owner. The default implementation of {@link #getBubbleTarget} in this class is just to return null, which specifies no owner.
-	 * This method should be overridden by subclasses to provide this if applicable.</p>
-	 * <p>This is commonly used by {@link ui.Component ui.Components} to bubble events to owner {@link ui.Container iu.Containers}. 
+	 * This method should be overridden by subclasses to provide this if applicable.
+	 * 
+	 * This is commonly used by {@link ui.Component ui.Components} to bubble events to owner {@link ui.Container iu.Containers}. 
 	 * See {@link ui.Component#getBubbleTarget}. The default implementation in {@link ui.Component} returns the Component's immediate owner, 
-	 * but if a known target is required, this can be overridden to access that target more quickly.</p>
+	 * but if a known target is required, this can be overridden to access that target more quickly.
+	 * 
 	 * <p>Example:</p><pre><code>
 MyClass = Kevlar.extend( Kevlar.util.Observable, {
 
@@ -1372,46 +1352,58 @@ MyClass = Kevlar.extend( Kevlar.util.Observable, {
 		return null;
 	}
 	
-};
+} );
+
+
 
 var OBSERVABLE = KevlarUTIL.Observable.prototype;
+
 /**
  * Appends an event handler to this object (shorthand for {@link #addListener}.)
- * @param {String}   eventName	 The type of event to listen for
- * @param {Function} handler	   The method the event invokes
- * @param {Object}   scope		 (optional) The scope (<code><b>this</b></code> reference) in which the handler function is executed.
- * <b>If omitted, defaults to the object which fired the event.</b>
- * @param {Object}   options	   (optional) An object containing handler configuration.
+ * 
  * @method on
+ * @param {String} eventName The type of event to listen for
+ * @param {Function} handler The method the event invokes
+ * @param {Object} scope (optional) The scope (`this` reference) in which the handler function is executed.
+ *   **If omitted, defaults to the object which fired the event.**
+ * @param {Object} options (optional) An object containing handler configuration.
  */
 OBSERVABLE.on = OBSERVABLE.addListener;
+
 /**
  * Removes an event handler (shorthand for {@link #removeListener}.)
- * @param {String}   eventName	 The type of event the handler was associated with.
- * @param {Function} handler	   The handler to remove. <b>This must be a reference to the function passed into the {@link #addListener} call.</b>
- * @param {Object}   scope		 (optional) The scope originally specified for the handler.
+ * 
  * @method un
+ * @param {String} eventName The type of event the handler was associated with.
+ * @param {Function} handler The handler to remove. **This must be a reference to the function passed into the {@link #addListener} call.**
+ * @param {Object} scope (optional) The scope originally specified for the handler.
  */
 OBSERVABLE.un = OBSERVABLE.removeListener;
 
+
 /**
  * Appends an event handler to this object (shorthand for {@link #addListener}.)
- * @param {String}   eventName	 The type of event to listen for
- * @param {Function} handler	   The method the event invokes
- * @param {Object}   scope		 (optional) The scope (<code><b>this</b></code> reference) in which the handler function is executed.
- * <b>If omitted, defaults to the object which fired the event.</b>
- * @param {Object}   options	   (optional) An object containing handler configuration.
+ * 
  * @method bind
+ * @param {String} eventName The type of event to listen for
+ * @param {Function} handler The method the event invokes
+ * @param {Object} scope (optional) The scope (`this` reference) in which the handler function is executed.
+ *   **If omitted, defaults to the object which fired the event.**
+ * @param {Object} options (optional) An object containing handler configuration.
  */
 OBSERVABLE.bind = OBSERVABLE.addListener;
+
 /**
  * Removes an event handler (shorthand for {@link #removeListener}.)
- * @param {String}   eventName	 The type of event the handler was associated with.
- * @param {Function} handler	   The handler to remove. <b>This must be a reference to the function passed into the {@link #addListener} call.</b>
- * @param {Object}   scope		 (optional) The scope originally specified for the handler.
+ * 
  * @method unbind
+ * @param {String} eventName The type of event the handler was associated with.
+ * @param {Function} handler The handler to remove. **This must be a reference to the function passed into the {@link #addListener} call.**
+ * @param {Object} scope (optional) The scope originally specified for the handler.
  */
 OBSERVABLE.unbind = OBSERVABLE.removeListener;
+
+
 /**
  * Alias of {@link #fireEvent}
  * 
@@ -1420,9 +1412,11 @@ OBSERVABLE.unbind = OBSERVABLE.removeListener;
 OBSERVABLE.trigger = OBSERVABLE.fireEvent;
 
 /**
- * Removes <b>all</b> added captures from the Observable.
- * @param {Kevlar.util.Observable} o The Observable to release
+ * Removes **all** added captures from the Observable.
+ * 
  * @static
+ * @method releaseCapture
+ * @param {Kevlar.util.Observable} o The Observable to release
  */
 KevlarUTIL.Observable.releaseCapture = function(o){
 	o.fireEvent = OBSERVABLE.fireEvent;
@@ -2403,6 +2397,219 @@ Kevlar.attribute.StringAttribute = Kevlar.attribute.Attribute.extend( {
 Kevlar.attribute.Attribute.registerType( 'string', Kevlar.attribute.StringAttribute );
 
 /**
+ * @class Kevlar.Collection
+ * @extends Kevlar.util.Observable
+ * 
+ * Manages an ordered set of {@link Kevlar.Model Models}. This class itself is not meant to be used directly, 
+ * but rather extended and configured for the different collections in your application.
+ * 
+ * Ex:
+ *     
+ *     myApp.Todos = Kevlar.Collection.extend( {
+ *         
+ *         modelClass: myApp.Todo
+ *         
+ *     } );
+ * 
+ * 
+ * Note: Configuration options should be placed on the prototype of a Collection subclass.
+ */
+/*global Kevlar */
+Kevlar.Collection = Kevlar.util.Observable.extend( {
+	
+	/**
+	 * @cfg {Function} modelClass
+	 * 
+	 * A Kevlar.Model subclass which will be used to convert any anonymous data objects into
+	 * its appropriate Model instance for the Collection. 
+	 * 
+	 * Note that if a factory method is required for the creation of models, where custom processing may be needed,
+	 * override the {@link #createModel} method in a subclass.
+	 */
+	
+	
+	/**
+	 * @protected
+	 * @property {Kevlar.Model[]} models
+	 * 
+	 * The array that holds the Models, in order.
+	 */
+	
+	/**
+	 * @protected
+	 * @property {Object} modelsByClientId
+	 * 
+	 * An object (hashmap) of the models that the Collection is currently holding, keyed by the models' {@link Kevlar.Model#clientId clientId}.
+	 */
+	
+	/**
+	 * @protected
+	 * @property {Object} modelsById
+	 * 
+	 * An object (hashmap) of the models that the Collection is currently holding, keyed by the models' {@link Kevlar.Model#id id}, if the model has one.
+	 */
+	
+	
+	
+	/**
+	 * Creates a new Collection instance.
+	 * 
+	 * @constructor
+	 * @param {Object[]/Kevlar.Model[]} models An initial set of Models to provide to the Collection.
+	 */
+	constructor : function( models ) {
+		Kevlar.Collection.superclass.constructor.call( this );
+		
+		
+		this.addEvents(
+			/**
+			 * Fires when one or more models has been added to the Collection.
+			 * 
+			 * @event add
+			 * @param {Kevlar.Collection} collection This Collection instance.
+			 * @param {Kevlar.Model[]} The model instances that were added.
+			 * @param {Number} index The index at which the models were inserted. 
+			 */
+			'add',
+			
+			/**
+			 * Fires when one or more models have been removed from the Collection.
+			 * 
+			 * @event remove
+			 * @param {Kevlar.Collection} collection This Collection instance.
+			 * @param {Kevlar.Model[]} The model instances that were removed.
+			 */
+			'remove'
+		);
+		
+		
+		this.models = [];
+		this.modelsByClientId = {};
+		this.modelsById = {};
+		
+		// Call hook method for subclasses
+		this.initialize();
+	},
+	
+	
+	/**
+	 * Hook method for subclasses to initialize themselves. This method should be overridden in subclasses to 
+	 * provide any model-specific initialization.
+	 * 
+	 * Note that it is good practice to always call the superclass `initialize` method from within yours (even if
+	 * your class simply extends Kevlar.Collection, which has no `initialize` implementation itself). This is to future proof it
+	 * from being moved under another superclass, or if there is ever an implementation made in this class.
+	 * 
+	 * Ex:
+	 * 
+	 *     MyCollection = Kevlar.Collection.extend( {
+	 *         initialize : function() {
+	 *             MyCollection.superclass.initialize.apply( this, arguments );   // or could be MyCollection.__super__.initialize.apply( this, arguments );
+	 *             
+	 *             // my initialization logic goes here
+	 *         }
+	 *     }
+	 * 
+	 * @protected
+	 * @method initialize
+	 */
+	initialize : Kevlar.emptyFn,
+	
+	
+	
+	// -----------------------------
+	
+	
+	/**
+	 * If a model is provided as an anonymous data object, this method will be called to transform the data into 
+	 * the appropriate {@link Kevlar.Model model} class, using the {@link #modelClass} config.
+	 * 
+	 * This may be overridden in subclasses to allow for custom processing, or to create a factory method for Model creation.
+	 * 
+	 * @protected
+	 * @method createModel
+	 * @param {Object} modelData
+	 * @return {Kevlar.Model} The instantiated model.
+	 */
+	createModel : function( modelData ) {
+		if( !this.modelClass ) {
+			throw new Error( "Cannot instantiate model from anonymous data, 'modelClass' config not provided to Collection." );
+		}
+		
+		return new this.modelClass( modelData );
+	},
+	
+	
+	
+	/**
+	 * Adds one or more models to the Collection.
+	 * 
+	 * @method add
+	 * @param {Kevlar.Model/Kevlar.Model[]/Object/Object[]} models One or more models to add to the Collection. This may also
+	 *   be one or more anonymous objects, which will be converted into models based on the {@link #modelClass} config.
+	 */
+	add : function( models ) {
+		var i, len, model, modelId;
+		
+		// Normalize the argument to an array
+		if( !Kevlar.isArray( models ) ) {
+			models = [ models ];
+		}
+		
+		for( i = 0, len = models.length; i < len; i++ ) {
+			model = models[ i ];
+			if( !( models[ i ] instanceof Kevlar.Model ) ) {
+				model = this.createModel( models[ i ] );
+			}
+			
+			this.models.push( model );
+			this.modelsByClientId[ model.getClientId() ] = model;
+			
+			modelId = model.getId();
+			if( modelId !== undefined && modelId !== null ) {
+				this.modelsById[ modelId ] = model;
+			}
+		}
+	},
+	
+	
+	/**
+	 * Removes one or more models from the Collection.
+	 * 
+	 * @method remove
+	 * @param {Kevlar.Model/Kevlar.Model[]} models One or more models to remove from the Collection.
+	 */
+	remove : function( models ) {
+		
+	},
+	
+	
+	/**
+	 * @method getAt
+	 */
+	getAt : function() {
+		
+	},
+	
+	
+	/**
+	 * @method getById
+	 */
+	getById : function() {
+		
+	},
+	
+	
+	/**
+	 * @method getByClientId
+	 */
+	getByClientId : function() {
+		
+	}
+
+} );
+
+/**
  * @private
  * @class Kevlar.data.NativeObjectConverter
  * @singleton
@@ -2499,7 +2706,7 @@ Kevlar.data.NativeObjectConverter = {
  */
 /*global window, Kevlar */
 /*jslint forin:true */
-Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
+Kevlar.Model = Kevlar.util.Observable.extend( {
 	
 	/**
 	 * @cfg {Kevlar.persistence.Proxy} persistenceProxy
@@ -2816,11 +3023,11 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 	/**
-	 * Hook methods for subclasses to initialize themselves. This method should be overridden in subclasses to 
+	 * Hook method for subclasses to initialize themselves. This method should be overridden in subclasses to 
 	 * provide any model-specific initialization.
 	 * 
 	 * Note that it is good practice to always call the superclass `initialize` method from within yours (even if
-	 * your class simply extends Kevlar.Model, which has no `initialize` implementation). This is to future proof it
+	 * your class simply extends Kevlar.Model, which has no `initialize` implementation itself). This is to future proof it
 	 * from being moved under another superclass, or if there is ever an implementation made in this class.
 	 * 
 	 * Ex:

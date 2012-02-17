@@ -62,6 +62,29 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	constructor : function( models ) {
 		Kevlar.Collection.superclass.constructor.call( this );
 		
+		
+		this.addEvents(
+			/**
+			 * Fires when one or more models has been added to the Collection.
+			 * 
+			 * @event add
+			 * @param {Kevlar.Collection} collection This Collection instance.
+			 * @param {Kevlar.Model[]} The model instances that were added.
+			 * @param {Number} index The index at which the models were inserted. 
+			 */
+			'add',
+			
+			/**
+			 * Fires when one or more models have been removed from the Collection.
+			 * 
+			 * @event remove
+			 * @param {Kevlar.Collection} collection This Collection instance.
+			 * @param {Kevlar.Model[]} The model instances that were removed.
+			 */
+			'remove'
+		);
+		
+		
 		this.models = [];
 		this.modelsByClientId = {};
 		this.modelsById = {};
@@ -124,46 +147,121 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	 * Adds one or more models to the Collection.
 	 * 
 	 * @method add
-	 * @param {Kevlar.Model/Kevlar.Model[]/Object/Object[]} model One or more models to add to the Collection. This may also
+	 * @param {Kevlar.Model/Kevlar.Model[]/Object/Object[]} models One or more models to add to the Collection. This may also
 	 *   be one or more anonymous objects, which will be converted into models based on the {@link #modelClass} config.
 	 */
-	add : function( model ) {
+	add : function( models ) {
+		var insertPos = this.models.length,
+		    i, len, model, modelId;
 		
+		// Normalize the argument to an array
+		if( !Kevlar.isArray( models ) ) {
+			models = [ models ];
+		}
+		
+		// No models to insert, return
+		if( models.length === 0 ) {
+			return;
+		}
+		
+		for( i = 0, len = models.length; i < len; i++ ) {
+			model = models[ i ];
+			if( !( models[ i ] instanceof Kevlar.Model ) ) {
+				model = models[ i ] = this.createModel( models[ i ] );
+			}
+			
+			this.models.push( model );
+			this.modelsByClientId[ model.getClientId() ] = model;
+			
+			modelId = model.getId();
+			if( modelId !== undefined && modelId !== null ) {
+				this.modelsById[ modelId ] = model;
+			}
+		}
+		
+		this.fireEvent( 'add', this, models, insertPos );
 	},
 	
 	
 	/**
-	 * Removes one or more models from the Collection.
+	 * Removes one or more models from the Collection. Fires the {@link #event-remove} event with the
+	 * models that were actually removed.
 	 * 
 	 * @method remove
-	 * @param {Kevlar.Model/Kevlar.Model[]} model One or more models to remove from the Collection.
+	 * @param {Kevlar.Model/Kevlar.Model[]} models One or more models to remove from the Collection.
 	 */
-	remove : function( model ) {
+	remove : function( models ) {
+		var collectionModels = this.models,
+		    removedModels = [],
+		    i, len, j, model, modelClientId;
 		
+		// Normalize the argument to an array
+		if( !Kevlar.isArray( models ) ) {
+			models = [ models ];
+		}
+		
+		for( i = 0, len = models.length; i < len; i++ ) {
+			model = models[ i ];
+			modelClientId = model.getClientId();
+			
+			// Don't bother searching to remove the model if we know it doesn't exist in the Collection
+			if( this.modelsByClientId[ modelClientId ] ) {
+				delete this.modelsByClientId[ modelClientId ];
+				delete this.modelsById[ model.getId() ];
+								
+				for( j = collectionModels.length - 1; j >= 0; j-- ) {
+					if( collectionModels[ j ] === model ) {
+						collectionModels.splice( j, 1 );
+						removedModels.push( model );
+						
+						break;
+					}
+				}
+			}
+		}
+		
+		if( removedModels.length > 0 ) {
+			this.fireEvent( 'remove', this, removedModels );
+		}
 	},
 	
 	
 	/**
+	 * Retrieves the Model at a given index.
+	 * 
 	 * @method getAt
+	 * @param {Number} index The index to to retrieve the model at.
+	 * @return {Kevlar.Model} The Model at the given index, or null if the index was out of range.
 	 */
-	getAt : function() {
-		
+	getAt : function( index ) {
+		return this.models[ index ] || null;
 	},
 	
 	
 	/**
-	 * @method getById
-	 */
-	getById : function() {
-		
-	},
-	
-	
-	/**
+	 * Retrieves a Model by its {@link Kevlar.Model#clientId clientId}.
+	 * 
 	 * @method getByClientId
+	 * @param {Number} clientId
+	 * @return {Kevlar.Model} The Model with the given {@link Kevlar.Model#clientId clientId}, or null if there is 
+	 *   no Model in the Collection with that {@link Kevlar.Model#clientId clientId}.
 	 */
-	getByClientId : function() {
-		
+	getByClientId : function( clientId ) {
+		return this.modelsByClientId[ clientId ] || null;
+	},
+	
+	
+	/**
+	 * Retrieves a Model by its {@link Kevlar.Model#id id}. Note: if the Model does not yet have an id, it will not
+	 * be able to be retrieved by this method.
+	 * 
+	 * @method getById
+	 * @param {Mixed} id The id value for the {@link Kevlar.Model Model}.
+	 * @return {Kevlar.Model} The Model with the given {@link Kevlar.Model#id id}, or `null` if no Model was found 
+	 *   with that {@link Kevlar.Model#id id}.
+	 */
+	getById : function( id ) {
+		return this.modelsById[ id ] || null;
 	}
 
 } );

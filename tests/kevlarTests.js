@@ -863,6 +863,66 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 	
 } ) );
 
+/*global window, Ext, Y, JsMockito, tests, Kevlar */
+tests.unit.add( new Ext.test.TestSuite( {
+	name: 'Kevlar.Collection',
+	
+	
+	items : [
+	
+		/*
+		 * Test add()
+		 */
+		{
+			name : "Test add()",
+			
+			"add() should be able to add a single Model instance to the Collection" : function() {
+				
+			},
+			
+			
+			"add() should be able to add an array of Model instances to the Collection" : function() {
+				
+			},
+			
+			
+			// -------------------------
+			
+			
+			"add() should transform anonymous data objects to Model instances, based on the modelClass config" : function() {
+				
+			} 
+			
+		},
+		
+		
+		
+		/*
+		 * Test createModel()
+		 */
+		{
+			name : "Test createModel()",
+			
+			"createModel() should take an anonymous config object, and transform it into a Model instance, based on the modelClass config" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'attr' ]
+				} );
+				
+				var Collection = Kevlar.Collection.extend( {
+					modelClass : Model
+				} );
+				
+				var collection = new Collection();
+				var model = collection.createModel( { attr: 'testValue' } );
+				
+				Y.Assert.isInstanceOf( Model, model );
+				Y.Assert.areSame( 'testValue', model.get( 'attr' ) );
+			}
+		}
+	]
+	
+} ) );
+
 /*global jQuery, Ext, Y, Kevlar, tests */
 tests.unit.data.add( new Ext.test.TestSuite( {
 	name : 'Kevlar.data.NativeObjectConverter',
