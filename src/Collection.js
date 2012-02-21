@@ -173,9 +173,11 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 			this.models.push( model );
 			this.modelsByClientId[ model.getClientId() ] = model;
 			
-			modelId = model.getId();
-			if( modelId !== undefined && modelId !== null ) {
-				this.modelsById[ modelId ] = model;
+			if( model.hasIdAttribute() ) {  // make sure the model actually has a valid idAttribute first, before trying to call getId()
+				modelId = model.getId();
+				if( modelId !== undefined && modelId !== null ) {
+					this.modelsById[ modelId ] = model;
+				}
 			}
 		}
 		
@@ -207,7 +209,9 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 			// Don't bother searching to remove the model if we know it doesn't exist in the Collection
 			if( this.modelsByClientId[ modelClientId ] ) {
 				delete this.modelsByClientId[ modelClientId ];
-				delete this.modelsById[ model.getId() ];
+				if( model.hasIdAttribute() ) {   // make sure the model actually has a valid idAttribute first, before trying to call getId()
+					delete this.modelsById[ model.getId() ];
+				}
 								
 				for( j = collectionModels.length - 1; j >= 0; j-- ) {
 					if( collectionModels[ j ] === model ) {
@@ -262,6 +266,29 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	 */
 	getById : function( id ) {
 		return this.modelsById[ id ] || null;
+	},
+	
+	
+	/**
+	 * Retrieves all of the models that the Collection has, in order.
+	 * 
+	 * @method getModels
+	 * @return {Kevlar.Model[]} An array of the models that this Collection holds.
+	 */
+	getModels : function() {
+		return Kevlar.util.Object.clone( this.models, /* deep = */ false );  // shallow copy the array, so it isn't modified by outside code
+	},
+	
+	
+	/**
+	 * Determines if the Collection has a given {@link Kevlar.Model model}.
+	 * 
+	 * @method has
+	 * @param {Kevlar.Model} model
+	 * @return {Boolean} True if the Collection has the given `model`, false otherwise.
+	 */
+	has : function( model ) {
+		return !!this.getByClientId( model.getClientId() );
 	}
 
 } );

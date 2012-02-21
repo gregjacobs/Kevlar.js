@@ -9,7 +9,7 @@
  */
 /*!
  * Class.js
- * Version 0.1.2
+ * Version 0.1.3
  * 
  * Copyright(c) 2012 Gregory Jacobs.
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php
@@ -87,10 +87,7 @@
 /*jslint forin:true */
 var Class = (function() {
 	
-	// Utility functions / variables
-	
-	var version = "0.1.2";
-	
+	// Utility functions / variables	
 	
 	/**
 	 * Determines if a value is an object.
@@ -176,16 +173,23 @@ var Class = (function() {
 	
 	
 	/**
-	 * @static
-	 * @property {String} version
+	 * Alias of using the Class constructor function itself. Ex:
 	 * 
-	 * Readonly property that gives the version number of Class.js that is being used.
+	 *     var Animal = Class.create( {
+	 *         // class definition here
+	 *     } );
+	 * 
+	 * @static
+	 * @method create
+	 * @param {Object} classDefinition The class definition. See the `overrides` parameter of {@link #extend}.
 	 */
-	Class.version = version;
+	Class.create = function( classDefinition ) {
+		return Class.extend( Object, classDefinition );
+	};
 	
 	
 	/**
-	 * Copies all the properties of `config` to `obj`.
+	 * Utility to copy all the properties of `config` to `obj`.
 	 *
 	 * @static
 	 * @method apply
@@ -208,7 +212,7 @@ var Class = (function() {
 	
 	
 	/**
-	 * Copies all the properties of config to obj if they don't already exist.
+	 * Utility to copy all the properties of `config` to `obj`, if they don't already exist on `obj`.
 	 *
 	 * @static
 	 * @method applyIf
@@ -321,7 +325,8 @@ var Class = (function() {
 	 */
 	Class.extend = (function() {
 		// Set up some private vars that will be used with the extend() method
-		var objectConstructor = Object.prototype.constructor;
+		var objectConstructor = Object.prototype.constructor,
+		    superclassMethodCallRegex = /xyz/.test( function(){var xyz;} ) ? /\b_super\b/ : /.*/;  // a regex to see if the _super() method is called within a function, for JS implementations that allow a function's text to be converted to a string 
 		
 		// inline override function
 		var inlineOverride = function( o ) {
@@ -329,14 +334,23 @@ var Class = (function() {
 				this[ m ] = o[ m ];
 			}
 		};
+			
 	
 		// extend() method itself
-		return function( superclass, overrides ) {
+		return function( superclass, overrides ) {			
 			// The first argument may be omitted, making Object the superclass
 			if( arguments.length === 1 ) {
 				overrides = superclass;
 				superclass = Object;
 			}
+			
+			
+			var subclass, 
+			    F = function(){}, 
+			    subclassPrototype,
+			    superclassPrototype = superclass.prototype,
+			    prop;
+			
 			
 			// Grab any special properties from the overrides
 			var statics = overrides.statics,
@@ -347,11 +361,52 @@ var Class = (function() {
 			delete overrides.inheritedStatics;
 			delete overrides.mixins;
 			
+			// --------------------------
 			
-			var subclass = overrides.constructor !== objectConstructor ? overrides.constructor : ( superclass === Object ? function(){} : function() { return superclass.apply( this, arguments ); } ),
-			    F = function(){},
-			    subclassPrototype,
-			    superclassPrototype = superclass.prototype;
+			// Before creating the new subclass pre-process the methods of the subclass (defined in "overrides") to add the this._super()
+			// method for methods that can call their associated superclass method. This should happen before defining the new subclass,
+			// so that the constructor function can be wrapped as well.
+			
+			// A function which wraps methods of the new subclass that can call their superclass method
+			var createSuperclassCallingMethod = function( fnName, fn ) {
+				return function() {
+					var tmpSuper = this._super,  // store any current _super reference, so we can "pop it off the stack" when the method returns
+					    scope = this;
+					
+					// Add the new _super() method that points to the superclass's method
+					this._super = function( args ) {  // args is an array (or arguments object) of arguments
+						superclassPrototype[ fnName ].apply( scope, args || [] );
+					};
+					
+					// Now call the target method
+					var returnVal = fn.apply( this, arguments );
+					
+					// And finally, restore the old _super reference, as we leave the stack context
+					this._super = tmpSuper;
+					
+					return returnVal;
+				};
+			};
+			
+			for( prop in overrides ) {
+				if( overrides.hasOwnProperty( prop ) &&                     // Make sure the property is on the overrides object itself
+				    typeof overrides[ prop ] === 'function' &&              // Make sure the override property is a function (method)
+				    typeof superclassPrototype[ prop ] === 'function' &&    // Make sure the superclass has the same named function (method)
+				    superclassMethodCallRegex.test( overrides[ prop ] )     // And check to see if the string "_super" exists within the override function
+				) {
+					overrides[ prop ] = createSuperclassCallingMethod( prop, overrides[ prop ] );
+				}
+			}
+			
+			// --------------------------
+			
+			
+			// Now that preprocessing is complete, define the new subclass
+			if( overrides.constructor !== objectConstructor ) {
+				subclass = overrides.constructor;
+			} else {
+				subclass = ( superclass === Object ) ? function(){} : function() { return superclass.apply( this, arguments ); };   // create a "default constructor" that automatically calls the superclass's constructor, unless the superclass is Object (in which case we don't need to, as we already have a new object)
+			}
 			
 			F.prototype = superclassPrototype;
 			subclassPrototype = subclass.prototype = new F();  // set up prototype chain
@@ -374,9 +429,8 @@ var Class = (function() {
 			subclassPrototype.hasMixin = function( mixin ) { return Class.hasMixin( this.constructor, mixin ); };   // inlineOverride function defined above
 			
 			// Finally, add the properties/methods defined in the "overrides" config (which is basically the subclass's 
-			// properties/methods) onto the subclass prototype now
+			// properties/methods) onto the subclass prototype now.
 			Class.override( subclass, overrides );
-			
 			
 			// Expose the constructor property on the class itself (as opposed to only on its prototype, which is normally only
 			// available to instances of the class)
@@ -406,7 +460,7 @@ var Class = (function() {
 			if( mixins ) {
 				for( var i = mixins.length-1; i >= 0; i-- ) {
 					var mixinPrototype = mixins[ i ].prototype;
-					for( var prop in mixinPrototype ) {
+					for( prop in mixinPrototype ) {
 						// Do not overwrite properties that already exist on the prototype
 						if( typeof subclassPrototype[ prop ] === 'undefined' ) {
 							subclassPrototype[ prop ] = mixinPrototype[ prop ];
@@ -2549,7 +2603,51 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	 *   be one or more anonymous objects, which will be converted into models based on the {@link #modelClass} config.
 	 */
 	add : function( models ) {
-		var i, len, model, modelId;
+		var insertPos = this.models.length,
+		    i, len, model, modelId;
+		
+		// Normalize the argument to an array
+		if( !Kevlar.isArray( models ) ) {
+			models = [ models ];
+		}
+		
+		// No models to insert, return
+		if( models.length === 0 ) {
+			return;
+		}
+		
+		for( i = 0, len = models.length; i < len; i++ ) {
+			model = models[ i ];
+			if( !( models[ i ] instanceof Kevlar.Model ) ) {
+				model = models[ i ] = this.createModel( models[ i ] );
+			}
+			
+			this.models.push( model );
+			this.modelsByClientId[ model.getClientId() ] = model;
+			
+			if( model.hasIdAttribute() ) {  // make sure the model actually has a valid idAttribute first, before trying to call getId()
+				modelId = model.getId();
+				if( modelId !== undefined && modelId !== null ) {
+					this.modelsById[ modelId ] = model;
+				}
+			}
+		}
+		
+		this.fireEvent( 'add', this, models, insertPos );
+	},
+	
+	
+	/**
+	 * Removes one or more models from the Collection. Fires the {@link #event-remove} event with the
+	 * models that were actually removed.
+	 * 
+	 * @method remove
+	 * @param {Kevlar.Model/Kevlar.Model[]} models One or more models to remove from the Collection.
+	 */
+	remove : function( models ) {
+		var collectionModels = this.models,
+		    removedModels = [],
+		    i, len, j, model, modelClientId;
 		
 		// Normalize the argument to an array
 		if( !Kevlar.isArray( models ) ) {
@@ -2558,53 +2656,91 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 		
 		for( i = 0, len = models.length; i < len; i++ ) {
 			model = models[ i ];
-			if( !( models[ i ] instanceof Kevlar.Model ) ) {
-				model = this.createModel( models[ i ] );
-			}
+			modelClientId = model.getClientId();
 			
-			this.models.push( model );
-			this.modelsByClientId[ model.getClientId() ] = model;
-			
-			modelId = model.getId();
-			if( modelId !== undefined && modelId !== null ) {
-				this.modelsById[ modelId ] = model;
+			// Don't bother searching to remove the model if we know it doesn't exist in the Collection
+			if( this.modelsByClientId[ modelClientId ] ) {
+				delete this.modelsByClientId[ modelClientId ];
+				if( model.hasIdAttribute() ) {   // make sure the model actually has a valid idAttribute first, before trying to call getId()
+					delete this.modelsById[ model.getId() ];
+				}
+								
+				for( j = collectionModels.length - 1; j >= 0; j-- ) {
+					if( collectionModels[ j ] === model ) {
+						collectionModels.splice( j, 1 );
+						removedModels.push( model );
+						
+						break;
+					}
+				}
 			}
+		}
+		
+		if( removedModels.length > 0 ) {
+			this.fireEvent( 'remove', this, removedModels );
 		}
 	},
 	
 	
 	/**
-	 * Removes one or more models from the Collection.
+	 * Retrieves the Model at a given index.
 	 * 
-	 * @method remove
-	 * @param {Kevlar.Model/Kevlar.Model[]} models One or more models to remove from the Collection.
-	 */
-	remove : function( models ) {
-		
-	},
-	
-	
-	/**
 	 * @method getAt
+	 * @param {Number} index The index to to retrieve the model at.
+	 * @return {Kevlar.Model} The Model at the given index, or null if the index was out of range.
 	 */
-	getAt : function() {
-		
+	getAt : function( index ) {
+		return this.models[ index ] || null;
 	},
 	
 	
 	/**
-	 * @method getById
-	 */
-	getById : function() {
-		
-	},
-	
-	
-	/**
+	 * Retrieves a Model by its {@link Kevlar.Model#clientId clientId}.
+	 * 
 	 * @method getByClientId
+	 * @param {Number} clientId
+	 * @return {Kevlar.Model} The Model with the given {@link Kevlar.Model#clientId clientId}, or null if there is 
+	 *   no Model in the Collection with that {@link Kevlar.Model#clientId clientId}.
 	 */
-	getByClientId : function() {
-		
+	getByClientId : function( clientId ) {
+		return this.modelsByClientId[ clientId ] || null;
+	},
+	
+	
+	/**
+	 * Retrieves a Model by its {@link Kevlar.Model#id id}. Note: if the Model does not yet have an id, it will not
+	 * be able to be retrieved by this method.
+	 * 
+	 * @method getById
+	 * @param {Mixed} id The id value for the {@link Kevlar.Model Model}.
+	 * @return {Kevlar.Model} The Model with the given {@link Kevlar.Model#id id}, or `null` if no Model was found 
+	 *   with that {@link Kevlar.Model#id id}.
+	 */
+	getById : function( id ) {
+		return this.modelsById[ id ] || null;
+	},
+	
+	
+	/**
+	 * Retrieves all of the models that the Collection has, in order.
+	 * 
+	 * @method getModels
+	 * @return {Kevlar.Model[]} An array of the models that this Collection holds.
+	 */
+	getModels : function() {
+		return Kevlar.util.Object.clone( this.models, /* deep = */ false );  // shallow copy the array, so it isn't modified by outside code
+	},
+	
+	
+	/**
+	 * Determines if the Collection has a given {@link Kevlar.Model model}.
+	 * 
+	 * @method has
+	 * @param {Kevlar.Model} model
+	 * @return {Boolean} True if the Collection has the given `model`, false otherwise.
+	 */
+	has : function( model ) {
+		return !!this.getByClientId( model.getClientId() );
 	}
 
 } );
@@ -3085,6 +3221,18 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 			throw new Error( "Error: The `idAttribute` (currently set to an attribute named '" + this.idAttribute + "') was not found on the Model. Set the `idAttribute` config to the name of the id attribute in the Model. The model can't be saved or destroyed without it." );
 		}
 		return this.get( this.idAttribute );
+	},
+	
+	
+	/**
+	 * Determines if the Model has a valid {@link #idAttribute}. Will return true if there is an {@link #attributes attribute}
+	 * that is referenced by the {@link #idAttribute}, or false otherwise.
+	 * 
+	 * @method hasIdAttribute
+	 * @return {Boolean}
+	 */
+	hasIdAttribute : function() {
+		return !!this.attributes[ this.idAttribute ];
 	},
 
 	

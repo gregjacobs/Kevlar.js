@@ -390,6 +390,18 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 		}
 		return this.get( this.idAttribute );
 	},
+	
+	
+	/**
+	 * Determines if the Model has a valid {@link #idAttribute}. Will return true if there is an {@link #attributes attribute}
+	 * that is referenced by the {@link #idAttribute}, or false otherwise.
+	 * 
+	 * @method hasIdAttribute
+	 * @return {Boolean}
+	 */
+	hasIdAttribute : function() {
+		return !!this.attributes[ this.idAttribute ];
+	},
 
 	
 	// --------------------------------

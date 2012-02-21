@@ -437,6 +437,35 @@ tests.unit.add( new Ext.test.TestSuite( {
 		
 		{
 			/*
+			 * Test hasIdAttribute()
+			 */
+			name : "Test hasIdAttribute()",
+			
+			
+			"hasIdAttribute should return false when the idAttribute config does not reference a valid Attribute" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes  : [ 'attr' ],  // note: no "id" attribute
+					idAttribute : 'id'
+				} );
+				
+				var model = new Model();
+				Y.Assert.isFalse( model.hasIdAttribute() );
+			},
+			
+			
+			"hasIdAttribute should return truue when the idAttribute config does reference a valid Attribute" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes  : [ 'id', 'attr' ],
+					idAttribute : 'id'
+				} );
+				
+				var model = new Model();
+				Y.Assert.isTrue( model.hasIdAttribute() );
+			}
+		},
+		
+		{
+			/*
 			 * Test set()
 			 */
 			name: 'Test set()',
