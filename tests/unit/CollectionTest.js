@@ -6,6 +6,44 @@ tests.unit.add( new Ext.test.TestSuite( {
 	items : [
 		
 		/*
+		 * Test the constructor
+		 */
+		{
+			name : "Test the constructor",
+			
+			setUp : function() {
+				this.Model = Kevlar.Model.extend( {
+					attributes : [ 'attr' ]
+				} );
+				
+				this.Collection = Kevlar.Collection.extend( {
+					modelClass : this.Model
+				} );
+			},
+			
+			"The constructor should accept a Model to initialize the Collection with" : function() {
+				var model = new this.Model( { attr: 'value1' } ),
+				    collection = new this.Collection( model );
+				
+				var models = collection.getModels();
+				Y.Assert.areSame( 1, models.length, "There should now be one model1 in the collection" );
+				Y.Assert.areSame( model, models[ 0 ], "The model in the collection should be the one provided to the constructor" );
+			},
+			
+			"The constructor should accept an array of Models to initialize the Collection with" : function() {
+				var model1 = new this.Model( { attr: 'value1' } ),
+				    model2 = new this.Model( { attr: 'value2' } ),
+				    collection = new this.Collection( [ model1, model2 ] );
+				
+				var models = collection.getModels();
+				Y.Assert.areSame( 2, models.length, "There should now be two models in the collection" );
+				Y.Assert.areSame( model1, models[ 0 ], "The first model should be the first model provided to the constructor" );
+				Y.Assert.areSame( model2, models[ 1 ], "The second model should be the second model provided to the constructor" );
+			}
+		},
+		
+		
+		/*
 		 * Test createModel()
 		 */
 		{
@@ -164,6 +202,26 @@ tests.unit.add( new Ext.test.TestSuite( {
 		},
 		
 		
+		
+		{
+			/*
+			 * Test getFirst()
+			 */
+			name : "Test getFirst()"
+			
+		},
+		
+		
+		
+		{
+			/*
+			 * Test getLast()
+			 */
+			name : "Test getLast()"
+			
+		},
+		
+		
 		{
 			/*
 			 * Test has()
@@ -190,6 +248,139 @@ tests.unit.add( new Ext.test.TestSuite( {
 				// Now remove model1, and test again
 				collection.remove( model1 );
 				Y.Assert.isFalse( collection.has( model1 ), "The collection should not have model1 anymore, as it has been removed" );
+			}
+		},
+		
+		
+		/*
+		 * Test find()
+		 */
+		{
+			name : "Test find()",
+			
+			
+			setUp : function() {
+				this.Model = Kevlar.Model.extend( {
+					attributes : [ 'boolAttr', 'numberAttr', 'stringAttr' ]
+				} );
+				
+				this.Collection = Kevlar.Collection.extend( {
+					modelClass : this.Model
+				} );
+			},
+			
+			"find() should find a Model by attribute and value" : function() {
+				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
+				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } );
+				    
+				var collection = new this.Collection( [ model1, model2 ] ),
+				    foundModel;
+				
+				foundModel = collection.find( 'boolAttr', false );
+				Y.Assert.areSame( model1, foundModel, "did not find model by boolean false" );
+				
+				foundModel = collection.find( 'boolAttr', true );
+				Y.Assert.areSame( model2, foundModel, "did not find model by boolean true" );
+				
+				foundModel = collection.find( 'numberAttr', 0 );
+				Y.Assert.areSame( model1, foundModel, "did not find model by number 0" );
+				
+				foundModel = collection.find( 'numberAttr', 1 );
+				Y.Assert.areSame( model2, foundModel, "did not find model by number 1" );
+				
+				foundModel = collection.find( 'stringAttr', "" );
+				Y.Assert.areSame( model1, foundModel, "did not find model by empty string" );
+				
+				foundModel = collection.find( 'stringAttr', "value" );
+				Y.Assert.areSame( model2, foundModel, "did not find model by string value" );
+				
+				// Try finding a model by a value that doesn't exist
+				foundModel = collection.find( 'stringAttr', "ooglyBoogly" );
+				Y.Assert.isNull( foundModel, "Finding a model by an attribute that doesn't exist should return null" );
+			},
+			
+			
+			"find() should start at a given startIndex when provided" : function() {
+				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
+				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } ),
+				    model3 = new this.Model( { boolAttr: false, numberAttr: 2, stringAttr: "value2" } );
+				    
+				var collection = new this.Collection( [ model1, model2, model3 ] ),
+				    foundModel;
+				
+				// Start at index 1 (position 2), which should match model3 instead of model1
+				foundModel = collection.find( 'boolAttr', false, { startIndex: 1 } );
+				Y.Assert.areSame( model3, foundModel, "The model that was found should have been model3, because it is the only one that matched the criteria past the given startIndex" );
+			}
+			
+		},
+		
+		
+		
+		/*
+		 * Test findBy()
+		 */
+		{
+			name : "Test findBy()",
+			
+			
+			setUp : function() {
+				this.Model = Kevlar.Model.extend( {
+					attributes : [ 'boolAttr', 'numberAttr', 'stringAttr' ]
+				} );
+				
+				this.Collection = Kevlar.Collection.extend( {
+					modelClass : this.Model
+				} );
+			},
+			
+			
+			"findBy should accept a function that when it returns true, it considers the Model the match" : function() {
+				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
+				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } ),
+				    model3 = new this.Model( { boolAttr: false, numberAttr: 2, stringAttr: "value2" } );
+				    
+				var collection = new this.Collection( [ model1, model2, model3 ] ),
+				    foundModel;
+				
+				foundModel = collection.findBy( function( model, index ) {
+					if( model.get( 'boolAttr' ) === true ) {
+						return true;
+					}
+				} );
+				Y.Assert.areSame( model2, foundModel );
+			},
+			
+			
+			"findBy should return null when there is no match" : function() {
+				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
+				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } ),
+				    model3 = new this.Model( { boolAttr: false, numberAttr: 2, stringAttr: "value2" } );
+				    
+				var collection = new this.Collection( [ model1, model2, model3 ] ),
+				    foundModel;
+				
+				foundModel = collection.findBy( function( model, index ) {
+					// Simulate no match with empty function that never returns `true`
+				} );
+				Y.Assert.isNull( foundModel );
+			},			
+			
+			
+			"findBy should start at the given startIndex" : function() {
+				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
+				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } ),
+				    model3 = new this.Model( { boolAttr: false, numberAttr: 2, stringAttr: "value2" } );
+				    
+				var collection = new this.Collection( [ model1, model2, model3 ] ),
+				    foundModel;
+				
+				foundModel = collection.findBy( function( model, index ) {
+					if( model.get( 'boolAttr' ) === false ) {
+						return true;
+					}
+				}, { startIndex: 1 } );
+				Y.Assert.areSame( model3, foundModel );
 			}
 		}
 	]

@@ -2468,7 +2468,7 @@ Kevlar.attribute.Attribute.registerType( 'string', Kevlar.attribute.StringAttrib
  * 
  * Note: Configuration options should be placed on the prototype of a Collection subclass.
  */
-/*global Kevlar */
+/*global window, Kevlar */
 Kevlar.Collection = Kevlar.util.Observable.extend( {
 	
 	/**
@@ -2540,6 +2540,10 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 		this.models = [];
 		this.modelsByClientId = {};
 		this.modelsById = {};
+		
+		if( models ) {
+			this.add( models );
+		}
 		
 		// Call hook method for subclasses
 		this.initialize();
@@ -2695,6 +2699,32 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	
 	
 	/**
+	 * Convenience method for retrieving the first {@link Kevlar.Model model} in the Collection.
+	 * If the Collection does not have any models, returns null.
+	 * 
+	 * @method getFirst
+	 * @return {Kevlar.Model} The first model in the Collection, or null if the Collection does not have
+	 *   any models.
+	 */
+	getFirst : function() {
+		return this.models[ 0 ] || null;
+	},
+	
+	
+	/**
+	 * Convenience method for retrieving the last {@link Kevlar.Model model} in the Collection.
+	 * If the Collection does not have any models, returns null.
+	 * 
+	 * @method getLast
+	 * @return {Kevlar.Model} The last model in the Collection, or null if the Collection does not have
+	 *   any models.
+	 */
+	getLast : function() {
+		return this.models[ this.models.length - 1 ] || null;
+	},
+	
+	
+	/**
 	 * Retrieves a Model by its {@link Kevlar.Model#clientId clientId}.
 	 * 
 	 * @method getByClientId
@@ -2741,6 +2771,70 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	 */
 	has : function( model ) {
 		return !!this.getByClientId( model.getClientId() );
+	},
+	
+	
+	// ----------------------------
+	
+	// Searching methods
+	
+	/**
+	 * Finds the first {@link Kevlar.Model Model} in the Collection by {@link Kevlar.Attribute Attribute} name, and a given value.
+	 * Uses `===` to compare the value. If a more custom find is required, use {@link #findBy} instead.
+	 * 
+	 * Note that this method is more efficient than using {@link #findBy}, so if it can be used, it should.
+	 * 
+	 * @method find
+	 * @param {String} attributeName The name of the attribute to test the value against.
+	 * @param {Mixed} value The value to look for.
+	 * @param {Object} [options] Optional arguments for this method, provided in an object (hashmap). Accepts the following:
+	 * @param {Number} [options.startIndex] The index in the Collection to start searching from.
+	 * @return {Kevlar.Model} The model where the attribute name === the value, or `null` if no matching model was not found.
+	 */
+	find : function( attributeName, value, options ) {
+		options = options || {};
+		
+		var models = this.models,
+		    startIndex = options.startIndex || 0;
+		for( var i = startIndex, len = models.length; i < len; i++ ) {
+			if( models[ i ].get( attributeName ) === value ) {
+				return models[ i ];
+			}
+		}
+		return null;
+	},
+	
+	
+	/**
+	 * Finds the first {@link Kevlar.Model Model} in the Collection, using a custom function. When the function returns true,
+	 * the model is returned. If the function does not return true for any models, `null` is returned.
+	 * 
+	 * @method findBy
+	 * 
+	 * @param {Function} fn The function used to find the Model. Should return an explicit boolean `true` when there is a match. 
+	 *   This function is passed the following arguments:
+	 * @param {Kevlar.Model} fn.model The current Model that is being processed in the Collection.
+	 * @param {Number} fn.index The index of the Model in the Collection.
+	 * 
+	 * @param {Object} [options]
+	 * @param {Object} [options.scope] The scope to run the function in.
+	 * @param {Number} [options.startIndex] The index in the Collection to start searching from.
+	 * 
+	 * @return {Kevlar.Model} The model that the function returned `true` for, or `null` if no match was found.
+	 */
+	findBy : function( fn, options ) {
+		options = options || {};
+		
+		var models = this.models,
+		    scope = options.scope || window,
+		    startIndex = options.startIndex || 0;
+		    
+		for( var i = startIndex, len = models.length; i < len; i++ ) {
+			if( fn.call( scope, models[ i ], i ) === true ) {
+				return models[ i ];
+			}
+		}
+		return null;
 	}
 
 } );
