@@ -29,6 +29,25 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	 * override the {@link #createModel} method in a subclass.
 	 */
 	
+	/**
+	 * @cfg {Function} sortBy
+	 * A function that is used to keep the Collection in a sorted ordering. Without one, the Collection will
+	 * simply keep models in insertion order.
+	 * 
+	 * This function takes two arguments: each a {@link Kevlar.Model Model}, and should return `-1` if the 
+	 * first model should be placed before the second, `0` if the models are equal, and `1` if the 
+	 * first model should come after the second.
+	 * 
+	 * Ex:
+	 *     
+	 *     sortBy : function( model1, model2 ) { 
+	 *         var name1 = model1.get( 'name' ),
+	 *             name2 = model2.get( 'name' );
+	 *         
+	 *         return ( name1 < name2 ) ? -1 : ( name1 > name2 ) ? 1 : 0;
+	 *     }
+	 */
+	
 	
 	/**
 	 * @protected
@@ -88,10 +107,16 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 			'remove'
 		);
 		
+		// If a 'sortBy' exists, create a bound function to bind it to the Collection, for when it is passed into Array.prototype.sort()
+		if( this.sortBy ) {
+			Kevlar.bind( this.sortBy, this );
+		} 
+		
 		
 		this.models = [];
 		this.modelsByClientId = {};
 		this.modelsById = {};
+		
 		
 		if( models ) {
 			this.add( models );
@@ -188,6 +213,11 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 				}
 			}
 		}
+		
+		// If there is a 'sortBy' config, use that now
+		if( this.sortBy ) {
+			this.models.sort( this.sortBy );  // note: the sortBy function has already been bound to the correct scope
+		} 
 		
 		this.fireEvent( 'add', this, models, insertPos );
 	},

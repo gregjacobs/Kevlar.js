@@ -193,7 +193,48 @@ tests.unit.add( new Ext.test.TestSuite( {
 				Y.Assert.areSame( 2, addedModels.length, "2 models should have been provided to the 'add' event" );
 				Y.Assert.areSame( 'value1', addedModels[ 0 ].get( 'attr' ), "The first model added in the array should have the data provided from modelData1" );
 				Y.Assert.areSame( 'value2', addedModels[ 1 ].get( 'attr' ), "The second model added in the array should have the data provided from modelData2" );
+			},
+			
+			
+			// -------------------------
+			
+			// Test sorting functionality with the `sortBy` config
+			
+			
+			"add() should insert models in the order specified by the sortBy config, if one is provided" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'name' ]
+				} );
+				
+				var Collection = Kevlar.Collection.extend( {
+					sortBy : function( model1, model2 ) {
+						var name1 = model1.get( 'name' ),
+						    name2 = model2.get( 'name' );
+						    
+						return ( name1 < name2 ) ? -1 : ( name1 > name2 ) ? 1 : 0;
+					}
+				} );
+				
+				
+				var model1 = new Model( { name : "A" } ),
+				    model2 = new Model( { name : "B" } ),
+				    model4 = new Model( { name : "D" } ),  // intentionally model4. Adding model3 later
+				    models;
+				
+				var collection = new Collection();
+				collection.add( [ model2, model4, model1 ] );  // Insert models in incorrect order
+				
+				models = collection.getModels();
+				Y.ArrayAssert.itemsAreSame( [ model1, model2, model4 ], models, "The models should have been re-ordered based on the 'name' attribute" );
+				
+				
+				// Now create a new model, and see if it gets inserted in the correct position
+				var model3 = new Model( { name : "C" } );
+				collection.add( model3 );
+				models = collection.getModels();
+				Y.ArrayAssert.itemsAreSame( [ model1, model2, model3, model4 ], models, "The models should have been re-ordered based on the 'name' attribute with the new model" );
 			}
+			
 		},
 		
 		
@@ -303,8 +344,23 @@ tests.unit.add( new Ext.test.TestSuite( {
 				
 				collection.remove( [ model1, model2 ] );
 				Y.ArrayAssert.itemsAreSame( [ model1, model2 ], removedModels );
-			}
+			},
 			
+			
+			"remove() should *not* fire the 'remove' event if no models are actually removed" : function() {
+				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
+				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } );
+				    
+				var collection = new this.Collection( [ model1 ] );
+				
+				var removeEventCallCount = 0;
+				collection.on( 'remove', function( collection, models ) {
+					removeEventCallCount++;
+				} );
+				
+				collection.remove( model2 );  // model2 doesn't exist on the Collection
+				Y.Assert.areSame( 0, removeEventCallCount );
+			}			
 		},
 		
 		

@@ -707,6 +707,24 @@ Kevlar.prototype = {
 	
 	
 	/**
+	 * A simple bind implementation for binding a function to a scope (context object).
+	 * 
+	 * @method bind
+	 * @param {Function} fn The function to bind to a context object.
+	 * @param {Object} scope The scope (context object) to bind the function to.
+	 */ 
+	bind : function( fn, scope ) {
+		return function() {
+			return fn.apply( scope, arguments );
+		};
+	},
+	
+	
+	// --------------------------------
+	
+	
+	
+	/**
 	 * Creates namespaces to be used for scoping variables and classes so that they are not global.
 	 * Specifying the last node of a namespace implicitly creates all other nodes. Usage:
 	 * 
@@ -2628,6 +2646,25 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	 * override the {@link #createModel} method in a subclass.
 	 */
 	
+	/**
+	 * @cfg {Function} sortBy
+	 * A function that is used to keep the Collection in a sorted ordering. Without one, the Collection will
+	 * simply keep models in insertion order.
+	 * 
+	 * This function takes two arguments: each a {@link Kevlar.Model Model}, and should return `-1` if the 
+	 * first model should be placed before the second, `0` if the models are equal, and `1` if the 
+	 * first model should come after the second.
+	 * 
+	 * Ex:
+	 *     
+	 *     sortBy : function( model1, model2 ) { 
+	 *         var name1 = model1.get( 'name' ),
+	 *             name2 = model2.get( 'name' );
+	 *         
+	 *         return ( name1 < name2 ) ? -1 : ( name1 > name2 ) ? 1 : 0;
+	 *     }
+	 */
+	
 	
 	/**
 	 * @protected
@@ -2687,10 +2724,16 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 			'remove'
 		);
 		
+		// If a 'sortBy' exists, create a bound function to bind it to the Collection, for when it is passed into Array.prototype.sort()
+		if( this.sortBy ) {
+			Kevlar.bind( this.sortBy, this );
+		} 
+		
 		
 		this.models = [];
 		this.modelsByClientId = {};
 		this.modelsById = {};
+		
 		
 		if( models ) {
 			this.add( models );
@@ -2787,6 +2830,11 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 				}
 			}
 		}
+		
+		// If there is a 'sortBy' config, use that now
+		if( this.sortBy ) {
+			this.models.sort( this.sortBy );
+		} 
 		
 		this.fireEvent( 'add', this, models, insertPos );
 	},
