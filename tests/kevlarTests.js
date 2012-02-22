@@ -982,6 +982,11 @@ tests.unit.add( new Ext.test.TestSuite( {
 			},
 			
 			
+			// -------------------------
+			
+			// Test the 'add' event
+			
+			
 			"add() should fire the 'add' event with the array of inserted models" : function() {
 				var collection = new this.Collection(),
 				    model1 = new this.Model( { attr: 'value1' } ),
@@ -1018,8 +1023,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			// -------------------------
 			
-			
 			// Test converting anonymous configs to Model instances
+			
 			
 			"add() should transform anonymous data objects to Model instances, based on the modelClass config" : function() {
 				var collection = new this.Collection(),  // note: this.Collection is configured with this.Model as the modelClass
@@ -1062,8 +1067,181 @@ tests.unit.add( new Ext.test.TestSuite( {
 			/*
 			 * Test remove()
 			 */
-			name : "Test remove()"
+			name : "Test remove()",
 			
+			
+			setUp : function() {
+				this.Model = Kevlar.Model.extend( {
+					attributes : [ 'boolAttr', 'numberAttr', 'stringAttr' ]
+				} );
+				
+				this.Collection = Kevlar.Collection.extend( {
+					modelClass : this.Model
+				} );
+			},
+			
+			
+			"remove() should be able to remove a single Model from the Collection" : function() {
+				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
+				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } ),
+				    model3 = new this.Model( { boolAttr: false, numberAttr: 2, stringAttr: "value2" } ),
+				    model4 = new this.Model( { boolAttr: true, numberAttr: 3, stringAttr: "value3" } );
+				    
+				var collection = new this.Collection( [ model1, model2, model3, model4 ] ),
+				    models;
+				
+				// Test initial condition
+				models = collection.getModels();
+				Y.ArrayAssert.itemsAreSame( [ model1, model2, model3, model4 ], models, "Initial condition: the Collection should have 4 models" );
+				
+				collection.remove( model2 );
+				models = collection.getModels();
+				Y.ArrayAssert.doesNotContain( model2, models, "model2 should no longer exist in the Collection" );
+				Y.ArrayAssert.itemsAreSame( [ model1, model3, model4 ], models, "The remaining 3 models should all exist, and be in the correct order" );
+				
+				collection.remove( model4 );
+				models = collection.getModels();
+				Y.ArrayAssert.doesNotContain( model4, models, "model4 should no longer exist in the Collection" );
+				Y.ArrayAssert.itemsAreSame( [ model1, model3 ], models, "The remaining 2 models should all exist, and be in the correct order" );
+				
+				collection.remove( model1 );
+				models = collection.getModels();
+				Y.ArrayAssert.doesNotContain( model1, models, "model1 should no longer exist in the Collection" );
+				Y.ArrayAssert.itemsAreSame( [ model3 ], models, "The remaining model should exist" );
+				
+				collection.remove( model3 );
+				models = collection.getModels();
+				Y.ArrayAssert.isEmpty( models, "There should be no more models left" );   
+			},
+			
+			
+			"remove() should be able to remove an array of Models from the Collection" : function() {
+				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
+				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } ),
+				    model3 = new this.Model( { boolAttr: false, numberAttr: 2, stringAttr: "value2" } ),
+				    model4 = new this.Model( { boolAttr: true, numberAttr: 3, stringAttr: "value3" } );
+				    
+				var collection = new this.Collection( [ model1, model2, model3, model4 ] ),
+				    models;
+				
+				// Test initial condition
+				models = collection.getModels();
+				Y.ArrayAssert.itemsAreSame( [ model1, model2, model3, model4 ], models, "Initial condition: the Collection should have 4 models" );
+				
+				collection.remove( [ model2, model4 ] );
+				models = collection.getModels();
+				Y.ArrayAssert.itemsAreSame( [ model1, model3 ], models, "Only model1 and model3 should remain" );
+			},
+			
+			
+			// -------------------------
+			
+			// Test converting anonymous configs to Model instances
+			
+			
+			"remove() should fire the 'remove' event with the array of removed models, even if only one model has been removed" : function() {
+				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
+				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } );
+				    
+				var collection = new this.Collection( [ model1, model2 ] );
+				
+				var removedModels;
+				collection.on( 'remove', function( collection, models ) {
+					removedModels = models;
+				} );
+				
+				collection.remove( model2 );
+				Y.ArrayAssert.itemsAreSame( [ model2 ], removedModels );
+			},
+			
+			
+			"remove() should fire the 'remove' event with the array of removed models when multiple models are removed" : function() {
+				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
+				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } );
+				    
+				var collection = new this.Collection( [ model1, model2 ] );
+				
+				var removedModels;
+				collection.on( 'remove', function( collection, models ) {
+					removedModels = models;
+				} );
+				
+				collection.remove( [ model1, model2 ] );
+				Y.ArrayAssert.itemsAreSame( [ model1, model2 ], removedModels );
+			}
+			
+		},
+		
+		
+		
+		{
+			/*
+			 * Test getFirst()
+			 */
+			name : "Test getFirst()",
+			
+			
+			setUp : function() {
+				this.Model = Kevlar.Model.extend( {
+					attributes : [ 'boolAttr', 'numberAttr', 'stringAttr' ]
+				} );
+				
+				this.Collection = Kevlar.Collection.extend( {
+					modelClass : this.Model
+				} );
+			},
+			
+			
+			"getFirst() should retrieve the first Model in the Collection" : function() {
+				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
+				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } ),
+				    collection = new this.Collection( [ model1, model2 ] );
+				    
+				Y.Assert.areSame( model1, collection.getFirst() );
+			},
+			
+			
+			"getFirst() should return null if there are no models in the Collection" : function() {
+				var collection = new this.Collection();
+				
+				Y.Assert.isNull( collection.getFirst() );
+			}
+			
+		},
+		
+		
+		
+		{
+			/*
+			 * Test getLast()
+			 */
+			name : "Test getLast()",
+			
+			
+			setUp : function() {
+				this.Model = Kevlar.Model.extend( {
+					attributes : [ 'boolAttr', 'numberAttr', 'stringAttr' ]
+				} );
+				
+				this.Collection = Kevlar.Collection.extend( {
+					modelClass : this.Model
+				} );
+			},
+			
+			"getLast() should retrieve the first Model in the Collection" : function() {
+				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
+				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } ),
+				    collection = new this.Collection( [ model1, model2 ] );
+				    
+				Y.Assert.areSame( model2, collection.getLast() );
+			},
+			
+			
+			"getLast() should return null if there are no models in the Collection" : function() {
+				var collection = new this.Collection();
+				
+				Y.Assert.isNull( collection.getLast() );
+			}			
 		},
 		
 		
@@ -1206,10 +1384,10 @@ tests.unit.add( new Ext.test.TestSuite( {
 				    foundModel;
 				
 				foundModel = collection.findBy( function( model, index ) {
-					// Simulate no match with empty function that never returns `true`
+					// Simulate no match with an empty function that never returns `true`
 				} );
 				Y.Assert.isNull( foundModel );
-			},			
+			},
 			
 			
 			"findBy should start at the given startIndex" : function() {
@@ -1227,8 +1405,6 @@ tests.unit.add( new Ext.test.TestSuite( {
 				}, { startIndex: 1 } );
 				Y.Assert.areSame( model3, foundModel );
 			}
-		
-		
 		}
 	]
 	

@@ -2521,7 +2521,9 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 			 * 
 			 * @event add
 			 * @param {Kevlar.Collection} collection This Collection instance.
-			 * @param {Kevlar.Model[]} The model instances that were added.
+			 * @param {Kevlar.Model[]} The array of model instances that were added. This will be an
+			 *   array even in the case that a single model is added, so that handlers can consistently
+			 *   handle both cases of single/multiple model addition.
 			 * @param {Number} index The index at which the models were inserted. 
 			 */
 			'add',
@@ -2531,7 +2533,9 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 			 * 
 			 * @event remove
 			 * @param {Kevlar.Collection} collection This Collection instance.
-			 * @param {Kevlar.Model[]} The model instances that were removed.
+			 * @param {Kevlar.Model[]} The array of model instances that were removed. This will be an
+			 *   array even in the case that a single model is removed, so that handlers can consistently
+			 *   handle both cases of single/multiple model removal.
 			 */
 			'remove'
 		);
