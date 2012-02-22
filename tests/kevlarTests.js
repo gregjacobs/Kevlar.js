@@ -1347,8 +1347,21 @@ tests.unit.add( new Ext.test.TestSuite( {
 				collection.add( model3 );
 				models = collection.getModels();
 				Y.ArrayAssert.itemsAreSame( [ model1, model2, model3, model4 ], models, "The models should have been re-ordered based on the 'name' attribute with the new model" );
-			}
+			},
 			
+			
+			// -------------------------
+			
+			// Test duplicates functionality
+			
+			
+			"add() should not allow duplicate models (at this time. config option to come)" : function() {
+				var model = new this.Model(),
+				    collection = new this.Collection();
+				
+				collection.add( [ model, model ] );  // try to add the model twice
+				Y.ArrayAssert.itemsAreSame( [ model ], collection.getModels(), "There should only be the one model in the collection at this time" );
+			}
 		},
 		
 		

@@ -2802,7 +2802,7 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	 */
 	add : function( models ) {
 		var insertPos = this.models.length,
-		    i, len, model, modelId;
+		    i, len, model, modelClientId, modelId;
 		
 		// Normalize the argument to an array
 		if( !Kevlar.isArray( models ) ) {
@@ -2820,20 +2820,25 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 				model = models[ i ] = this.createModel( models[ i ] );
 			}
 			
-			this.models.push( model );
-			this.modelsByClientId[ model.getClientId() ] = model;
+			modelClientId = model.getClientId();
 			
-			if( model.hasIdAttribute() ) {  // make sure the model actually has a valid idAttribute first, before trying to call getId()
-				modelId = model.getId();
-				if( modelId !== undefined && modelId !== null ) {
-					this.modelsById[ modelId ] = model;
+			// Only add if the model does not already exist in the collection
+			if( !this.modelsByClientId[ modelClientId ] ) {
+				this.models.push( model );
+				this.modelsByClientId[ modelClientId ] = model;
+				
+				if( model.hasIdAttribute() ) {  // make sure the model actually has a valid idAttribute first, before trying to call getId()
+					modelId = model.getId();
+					if( modelId !== undefined && modelId !== null ) {
+						this.modelsById[ modelId ] = model;
+					}
 				}
 			}
 		}
 		
 		// If there is a 'sortBy' config, use that now
 		if( this.sortBy ) {
-			this.models.sort( this.sortBy );
+			this.models.sort( this.sortBy );  // note: the sortBy function has already been bound to the correct scope
 		} 
 		
 		this.fireEvent( 'add', this, models, insertPos );
