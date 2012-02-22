@@ -54,13 +54,13 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 	
 	
 	constructor : function() {
-		Kevlar.attribute.ModelAttribute.superclass.constructor.apply( this, arguments );
+		this._super( arguments );
 		
 		// Check if the user provided a modelClass, but the value is undefined. This means that they specified
 		// a class that either doesn't exist, or doesn't exist yet, and we should give them a warning.
 		if( 'modelClass' in this && this.modelClass === undefined ) {
 			throw new Error( "The 'modelClass' config provided to an Attribute with the name '" + this.getName() + "' either doesn't exist, or doesn't " +
-			                 "exist just yet. Consider using the String or Function form of the modelClass config for very late binding, if needed" );
+			                 "exist just yet. Consider using the String or Function form of the modelClass config for late binding, if needed" );
 		}
 	},
 	
@@ -78,10 +78,7 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 	 */
 	valuesAreEqual : function( oldValue, newValue ) {
 		// We can't instantiate two different Models with the same id that have different references, so if the references are the same, they are equal
-		if( oldValue === newValue ) {
-			return true;
-		}
-		return false;
+		return oldValue === newValue;
 	},
 	
 	
