@@ -100,6 +100,24 @@ Kevlar.prototype = {
 	
 	
 	/**
+	 * A simple bind implementation for binding a function to a scope (context object).
+	 * 
+	 * @method bind
+	 * @param {Function} fn The function to bind to a context object.
+	 * @param {Object} scope The scope (context object) to bind the function to.
+	 */ 
+	bind : function( fn, scope ) {
+		return function() {
+			return fn.apply( scope, arguments );
+		};
+	},
+	
+	
+	// --------------------------------
+	
+	
+	
+	/**
 	 * Creates namespaces to be used for scoping variables and classes so that they are not global.
 	 * Specifying the last node of a namespace implicitly creates all other nodes. Usage:
 	 * 
