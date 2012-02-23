@@ -2244,7 +2244,7 @@ Kevlar.attribute.Attribute.registerType( 'bool', Kevlar.attribute.BooleanAttribu
  * automatically convert an array of {@link Kevlar.Model models} or anonymous data objects into the appropriate 
  * {@link Kevlar.Collection Collection} subclass, using the Collection provided to the {@link #collectionClass} config.
  * Anonymous data objects in this array will be converted to the model type provided to the collection's 
- * {@link Kevlar.Collection#modelClass}. 
+ * {@link Kevlar.Collection#model}. 
  * 
  * Otherwise, you must either provide a {@link Kevlar.Collection} subclass as the value, or use a custom {@link #set} 
  * function to convert any anonymous array to a Collection in the appropriate way. 
@@ -2625,9 +2625,7 @@ Kevlar.attribute.Attribute.registerType( 'string', Kevlar.attribute.StringAttrib
  * Ex:
  *     
  *     myApp.Todos = Kevlar.Collection.extend( {
- *         
- *         modelClass: myApp.Todo
- *         
+ *         model: myApp.Todo
  *     } );
  * 
  * 
@@ -2637,9 +2635,9 @@ Kevlar.attribute.Attribute.registerType( 'string', Kevlar.attribute.StringAttrib
 Kevlar.Collection = Kevlar.util.Observable.extend( {
 	
 	/**
-	 * @cfg {Function} modelClass
+	 * @cfg {Function} model
 	 * 
-	 * A Kevlar.Model subclass which will be used to convert any anonymous data objects into
+	 * The Kevlar.Model (sub)class which will be used to convert any anonymous data objects into
 	 * its appropriate Model instance for the Collection. 
 	 * 
 	 * Note that if a factory method is required for the creation of models, where custom processing may be needed,
@@ -2774,7 +2772,7 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	
 	/**
 	 * If a model is provided as an anonymous data object, this method will be called to transform the data into 
-	 * the appropriate {@link Kevlar.Model model} class, using the {@link #modelClass} config.
+	 * the appropriate {@link Kevlar.Model model} class, using the {@link #model} config.
 	 * 
 	 * This may be overridden in subclasses to allow for custom processing, or to create a factory method for Model creation.
 	 * 
@@ -2784,11 +2782,11 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	 * @return {Kevlar.Model} The instantiated model.
 	 */
 	createModel : function( modelData ) {
-		if( !this.modelClass ) {
-			throw new Error( "Cannot instantiate model from anonymous data, 'modelClass' config not provided to Collection." );
+		if( !this.model ) {
+			throw new Error( "Cannot instantiate model from anonymous data, 'model' config not provided to Collection." );
 		}
 		
-		return new this.modelClass( modelData );
+		return new this.model( modelData );
 	},
 	
 	
@@ -2798,7 +2796,7 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	 * 
 	 * @method add
 	 * @param {Kevlar.Model/Kevlar.Model[]/Object/Object[]} models One or more models to add to the Collection. This may also
-	 *   be one or more anonymous objects, which will be converted into models based on the {@link #modelClass} config.
+	 *   be one or more anonymous objects, which will be converted into models based on the {@link #model} config.
 	 */
 	add : function( models ) {
 		var insertPos = this.models.length,
@@ -2890,6 +2888,9 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	},
 	
 	
+	// ----------------------------
+	
+	
 	/**
 	 * Retrieves the Model at a given index.
 	 * 
@@ -2965,6 +2966,17 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	 */
 	getModels : function() {
 		return this.getRange();  // gets all models
+	},
+	
+	
+	/**
+	 * Retrieves the number of models that the Collection currently holds.
+	 * 
+	 * @method getCount
+	 * @return {Number} The number of models that the Collection currently holds.
+	 */
+	getCount : function() {
+		return this.models.length;
 	},
 	
 	

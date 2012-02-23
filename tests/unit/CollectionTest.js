@@ -17,7 +17,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				} );
 				
 				this.Collection = Kevlar.Collection.extend( {
-					modelClass : this.Model
+					model : this.Model
 				} );
 			},
 			
@@ -49,13 +49,13 @@ tests.unit.add( new Ext.test.TestSuite( {
 		{
 			name : "Test createModel()",
 			
-			"createModel() should take an anonymous config object, and transform it into a Model instance, based on the modelClass config" : function() {
+			"createModel() should take an anonymous config object, and transform it into a Model instance, based on the 'model' config" : function() {
 				var Model = Kevlar.Model.extend( {
 					attributes : [ 'attr' ]
 				} );
 				
 				var Collection = Kevlar.Collection.extend( {
-					modelClass : Model
+					model : Model
 				} );
 				
 				var collection = new Collection();
@@ -79,7 +79,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				} );
 				
 				this.Collection = Kevlar.Collection.extend( {
-					modelClass : this.Model
+					model : this.Model
 				} );
 			},
 			
@@ -161,8 +161,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 			// Test converting anonymous configs to Model instances
 			
 			
-			"add() should transform anonymous data objects to Model instances, based on the modelClass config" : function() {
-				var collection = new this.Collection(),  // note: this.Collection is configured with this.Model as the modelClass
+			"add() should transform anonymous data objects to Model instances, based on the 'model' config" : function() {
+				var collection = new this.Collection(),  // note: this.Collection is configured with this.Model as the 'model'
 				    modelData1 = { attr: 'value1' },
 				    modelData2 = { attr: 'value2' },
 				    models;
@@ -180,7 +180,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			
 			"add() should fire the 'add' event with instantiated models for any anonymous config objects" : function() {
-				var collection = new this.Collection(),  // note: this.Collection is configured with this.Model as the modelClass
+				var collection = new this.Collection(),  // note: this.Collection is configured with this.Model as the 'model'
 				    modelData1 = { attr: 'value1' },
 				    modelData2 = { attr: 'value2' };
 				
@@ -265,7 +265,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				} );
 				
 				this.Collection = Kevlar.Collection.extend( {
-					modelClass : this.Model
+					model : this.Model
 				} );
 			},
 			
@@ -391,7 +391,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				} );
 				
 				this.Collection = Kevlar.Collection.extend( {
-					modelClass : this.Model
+					model : this.Model
 				} );
 			},
 			
@@ -428,7 +428,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				} );
 				
 				this.Collection = Kevlar.Collection.extend( {
-					modelClass : this.Model
+					model : this.Model
 				} );
 			},
 			
@@ -462,7 +462,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				} );
 				
 				this.Collection = Kevlar.Collection.extend( {
-					modelClass : this.Model
+					model : this.Model
 				} );
 			},
 			
@@ -529,7 +529,60 @@ tests.unit.add( new Ext.test.TestSuite( {
 				models = collection.getRange( -10000, 10000 );
 				Y.ArrayAssert.itemsAreSame( [ model1, model2, model3 ], models, "Out of range -10000, 10000 args did not work correctly. All models should have been retrieved" );
 			}
-		},		
+		},
+		
+		
+		{
+			/*
+			 * Test getModels()
+			 */		
+			name : "Test getModels()",
+			
+			"getModels() should return the array of models, but in a new array so that the array can be changed" : function() {
+				var Model = Kevlar.Model.extend( { attributes: [ 'attr' ] } ),
+				    model1 = new Model( { attr: 1 } ),
+				    model2 = new Model( { attr: 2 } ),
+				    model3 = new Model( { attr: 3 } ),
+				    collection = new Kevlar.Collection( [ model1, model2, model3 ] );
+				
+				var modelsArray = collection.getModels();
+				
+				// Try removing a model from the array, and make sure that it does not affect the Collection
+				modelsArray.splice( 0, 1 );
+				Y.Assert.areSame( 2, modelsArray.length, "The models array should have been reduced to 2 elements" );
+				Y.Assert.areSame( 3, collection.getCount(), "The number of models in the collection should still be 3" );
+			}
+		},
+		
+		
+		{
+			/*
+			 * Test getCount()
+			 */
+			name : "Test getCount()",
+			
+			"getCount() should return 0 for a brand new Collection" : function() {
+				var collection = new Kevlar.Collection();
+				
+				Y.Assert.areSame( 0, collection.getCount() );
+			},
+			
+			"getCount() should return the number of models inserted at any given time" : function() {
+				var Model = Kevlar.Model.extend( { attributes: [ 'attr' ] } ),
+				    model1 = new Model( { attr: 1 } ),
+				    model2 = new Model( { attr: 2 } ),
+				    model3 = new Model( { attr: 3 } ),
+				    collection = new Kevlar.Collection( [ model1, model2 ] );
+				
+				Y.Assert.areSame( 2, collection.getCount(), "initially, the collection should have 2 models" );
+				
+				collection.remove( model1 );
+				Y.Assert.areSame( 1, collection.getCount(), "After removal of model1, the collection should have 1 model" );
+				
+				collection.add( [ model1, model3 ] );
+				Y.Assert.areSame( 3, collection.getCount(), "After adding model1 and model3, the collection should have 3 models" );
+			}
+		},
 		
 		
 		{
@@ -575,7 +628,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				} );
 				
 				this.Collection = Kevlar.Collection.extend( {
-					modelClass : this.Model
+					model : this.Model
 				} );
 			},
 			
@@ -640,7 +693,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				} );
 				
 				this.Collection = Kevlar.Collection.extend( {
-					modelClass : this.Model
+					model : this.Model
 				} );
 			},
 			

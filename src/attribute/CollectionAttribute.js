@@ -8,7 +8,7 @@
  * automatically convert an array of {@link Kevlar.Model models} or anonymous data objects into the appropriate 
  * {@link Kevlar.Collection Collection} subclass, using the Collection provided to the {@link #collectionClass} config.
  * Anonymous data objects in this array will be converted to the model type provided to the collection's 
- * {@link Kevlar.Collection#modelClass}. 
+ * {@link Kevlar.Collection#model}. 
  * 
  * Otherwise, you must either provide a {@link Kevlar.Collection} subclass as the value, or use a custom {@link #set} 
  * function to convert any anonymous array to a Collection in the appropriate way. 
