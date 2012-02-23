@@ -214,6 +214,9 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 					if( modelId !== undefined && modelId !== null ) {
 						this.modelsById[ modelId ] = model;
 					}
+					
+					// Respond to any changes on the idAttribute
+					model.on( 'change:' + model.getIdAttribute().getName(), this.onModelIdChange, this );
 				}
 			}
 		}
@@ -237,14 +240,14 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	remove : function( models ) {
 		var collectionModels = this.models,
 		    removedModels = [],
-		    i, len, j, model, modelClientId;
+		    i, ilen, j, jlen, model, modelClientId;
 		
 		// Normalize the argument to an array
 		if( !Kevlar.isArray( models ) ) {
 			models = [ models ];
 		}
 		
-		for( i = 0, len = models.length; i < len; i++ ) {
+		for( i = 0, ilen = models.length; i < ilen; i++ ) {
 			model = models[ i ];
 			modelClientId = model.getClientId();
 			
@@ -253,9 +256,12 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 				delete this.modelsByClientId[ modelClientId ];
 				if( model.hasIdAttribute() ) {   // make sure the model actually has a valid idAttribute first, before trying to call getId()
 					delete this.modelsById[ model.getId() ];
+					
+					// Remove the listener for changes on the idAttribute
+					model.un( 'change:' + model.getIdAttribute().getName(), this.onModelIdChange, this );
 				}
 								
-				for( j = collectionModels.length - 1; j >= 0; j-- ) {
+				for( j = 0, jlen = collectionModels.length; j < jlen; j++ ) {
 					if( collectionModels[ j ] === model ) {
 						collectionModels.splice( j, 1 );
 						removedModels.push( model );
@@ -268,6 +274,36 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 		
 		if( removedModels.length > 0 ) {
 			this.fireEvent( 'remove', this, removedModels );
+		}
+	},
+	
+	
+	/**
+	 * Removes all models from the Collection. Fires the {@link #event-remove} event with the models
+	 * that were removed.
+	 * 
+	 * @method removeAll
+	 */
+	removeAll : function() {
+		this.remove( Kevlar.util.Object.clone( this.models, /* deep = */ false ) );  // make a shallow copy of the array to send to this.remove()
+	},
+	
+	
+	/**
+	 * Handles a change to a model's {@link Kevlar.Model#idAttribute}, so that the Collection's 
+	 * {@link #modelsById} hashmap can be updated.
+	 * 
+	 * @protected
+	 * @method onModelIdChange
+	 * @param {Kevlar.Model} model The model that fired the change event.
+	 * @param {Mixed} newValue The new value.
+	 * @param {Mixed} oldValue The old value. 
+	 */
+	onModelIdChange : function( model, newValue, oldValue ) {
+		delete this.modelsById[ oldValue ];
+		
+		if( newValue !== undefined && newValue !== null ) {
+			this.modelsById[ newValue ] = model;
 		}
 	},
 	

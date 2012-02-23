@@ -393,6 +393,18 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 	
 	
 	/**
+	 * Retrieves the "ID attribute" for the Model, if there is a valid id attribute. The Model has a valid ID attribute if there exists
+	 * an attribute which is referenced by the {@link #idAttribute} config. Otherwise, returns null.
+	 * 
+	 * @method getIdAttribute
+	 * @return {Kevlar.attribute.Attribute} The Attribute that represents the ID attribute, or null if there is no valid ID attribute.
+	 */
+	getIdAttribute : function() {
+		return this.attributes[ this.idAttribute ] || null;
+	},
+	
+	
+	/**
 	 * Determines if the Model has a valid {@link #idAttribute}. Will return true if there is an {@link #attributes attribute}
 	 * that is referenced by the {@link #idAttribute}, or false otherwise.
 	 * 

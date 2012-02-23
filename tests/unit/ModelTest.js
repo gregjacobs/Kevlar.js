@@ -437,6 +437,36 @@ tests.unit.add( new Ext.test.TestSuite( {
 		
 		{
 			/*
+			 * Test getIdAttribute()
+			 */
+			name : "Test getIdAttribute()",
+			
+			
+			"getIdAttribute should return the Kevlar.attribute.Attribute referenced by the 'idAttribute' config" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes: [ 'id' ],
+					idAttribute: 'id'
+				} );
+				
+				var model = new Model();
+				Y.Assert.isInstanceOf( Kevlar.attribute.Attribute, model.getIdAttribute() );
+			},
+			
+			
+			"getIdAttribute should return null if there is no attribute referenced by the 'idAttribute' config" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes: [ 'id' ],
+					idAttribute: 'ooglyBoogly'
+				} );
+				
+				var model = new Model();
+				Y.Assert.isNull( model.getIdAttribute() );
+			}
+		},
+		
+		
+		{
+			/*
 			 * Test hasIdAttribute()
 			 */
 			name : "Test hasIdAttribute()",

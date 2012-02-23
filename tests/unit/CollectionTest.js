@@ -278,6 +278,56 @@ tests.unit.add( new Ext.test.TestSuite( {
 				
 				collection.add( [ model, model ] );  // try to add the model twice
 				Y.ArrayAssert.itemsAreSame( [ model ], collection.getModels(), "There should only be the one model in the collection at this time" );
+			},
+			
+			
+			// -------------------------
+			
+			// Test adding the "id" change listener
+			
+			
+			"add() should attach a 'change' listener for changes to the 'idAttribute' of a model, so that its internal modelsById hashmap can be updated if it changes" : function() {
+				var onModelIdChangeCallCount = 0,
+				    newIdValue, oldIdValue;
+				
+				var Model = Kevlar.Model.extend( {
+					attributes: [ 'id' ],
+					idAttribute: 'id'
+				} );
+				
+				var Collection = Kevlar.Collection.extend( {
+					// extend onModelIdChange to test if it's being called the correct number of times, and with the correct arguments
+					onModelIdChange : function( model, newValue, oldValue ) {
+						onModelIdChangeCallCount++;
+						newIdValue = newValue;
+						oldIdValue = oldValue;
+						
+						// Now call original method
+						this._super( arguments );
+					}
+				} );
+				
+				var model = new Model();
+				var collection = new Collection( [ model ] );
+				
+				model.set( 'id', 1 );
+				Y.Assert.areSame( 1, onModelIdChangeCallCount, "The onModelIdChange method should have been called exactly once" );
+				Y.Assert.areSame( 1, newIdValue, "The newIdValue should be 1" );
+				Y.Assert.isUndefined( oldIdValue, "The oldIdValue should be undefined" );
+				
+				// As a check, make sure that the model can be retrieved by its ID
+				Y.Assert.areSame( model, collection.getById( 1 ), "The model should have been able to be retrieved by its ID" );
+				
+				
+				// Now set again, to make sure that the modelsById collection was updated correctly
+				model.set( 'id', 2 );
+				Y.Assert.areSame( 2, onModelIdChangeCallCount, "The onModelIdChange method should have been called exactly twice at this point" );
+				Y.Assert.areSame( 2, newIdValue, "The newIdValue should be 2" );
+				Y.Assert.areSame( 1, oldIdValue, "The oldIdValue should be 1" );
+				
+				// As a check, try to access the model by its old ID, and its new one
+				Y.Assert.isNull( collection.getById( 1 ), "The model should no longer be retrievable by its old ID" );
+				Y.Assert.areSame( model, collection.getById( 2 ), "The model should now be retrievable by its new ID" );
 			}
 		},
 		
@@ -404,7 +454,224 @@ tests.unit.add( new Ext.test.TestSuite( {
 				
 				collection.remove( model2 );  // model2 doesn't exist on the Collection
 				Y.Assert.areSame( 0, removeEventCallCount );
-			}			
+			},
+			
+			
+			// -------------------------
+			
+			// Test that the modelsById and modelsByClientId hashmaps are maintained properly
+			
+			
+			"remove() should remove the model from the modelsById hashmap, so it is no longer retrievable by getById" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes: [ 'id' ],
+					idAttribute: 'id'
+				} );
+				
+				var model = new Model( { id : 1 } ); 
+				var collection = new Kevlar.Collection( [ model ] );
+				
+				Y.Assert.areSame( model, collection.getById( 1 ), "Initial condition: the model should be available to getById()" );
+				
+				collection.remove( model );
+				Y.Assert.isNull( collection.getById( 1 ), "The model should no longer be retrievable by getById() after removal" );
+			},
+			
+			
+			"remove() should remove the model from the modelsByClientId hashmap, so it is no longer retrievable by getById" : function() {
+				var Model = Kevlar.Model.extend( {} ),
+				    model = new Model(),
+				    modelClientId = model.getClientId(),
+				    collection = new Kevlar.Collection( [ model ] );
+				
+				Y.Assert.areSame( model, collection.getByClientId( modelClientId ), "Initial condition: the model should be available to getByClientId()" );
+				
+				collection.remove( model );
+				Y.Assert.isNull( collection.getByClientId( modelClientId ), "The model should no longer be retrievable by getByClientId() after removal" );
+			},
+			
+			
+			// -------------------------
+			
+			// Test removing the "id" change listener
+			
+			
+			"remove() should remove the 'change' listener for changes to the 'idAttribute' of a model, so that its internal modelsById hashmap can be updated if it changes" : function() {
+				var onModelIdChangeCallCount = 0,
+				    newIdValue, oldIdValue;
+				
+				var Model = Kevlar.Model.extend( {
+					attributes: [ 'id' ],
+					idAttribute: 'id'
+				} );
+				
+				var Collection = Kevlar.Collection.extend( {
+					// extend onModelIdChange to test if it's being called the correct number of times, and with the correct arguments
+					onModelIdChange : function( model, newValue, oldValue ) {
+						onModelIdChangeCallCount++;
+						newIdValue = newValue;
+						oldIdValue = oldValue;
+						
+						// Now call original method
+						this._super( arguments );
+					}
+				} );
+				
+				var model = new Model();
+				var collection = new Collection( [ model ] );
+				
+				model.set( 'id', 1 );
+				Y.Assert.areSame( 1, onModelIdChangeCallCount, "The onModelIdChange method should have been called exactly once" );
+				Y.Assert.areSame( 1, newIdValue, "The newIdValue should be 1" );
+				Y.Assert.isUndefined( oldIdValue, "The oldIdValue should be undefined" );
+				
+				// As a check, make sure that the model can be retrieved by its ID
+				Y.Assert.areSame( model, collection.getById( 1 ), "The model should have been able to be retrieved by its ID" );
+				
+				
+				// Now remove the model, and make sure that onModelIdChange does *not* get called subsequently
+				collection.remove( model );
+				
+				
+				// Now set again, to make sure that the onModelIdChange method does *not* get called
+				model.set( 'id', 2 );
+				Y.Assert.areSame( 1, onModelIdChangeCallCount, "The onModelIdChange method should *not* have been called again at this point" );
+			}
+		},
+		
+		
+		{
+			/*
+			 * Test removeAll()
+			 */
+			name : "Test removeAll()",
+			
+			
+			setUp : function() {
+				this.Model = Kevlar.Model.extend( {
+					attributes  : [ 'id' ],
+					idAttribute : 'id'
+				} );
+				
+				this.Collection = Kevlar.Collection.extend( {
+					model : this.Model
+				} );
+			},
+			
+			
+			"removeAll() should be able to remove all Models from the Collection" : function() {
+				var model1 = new this.Model(),
+				    model2 = new this.Model(),
+				    model3 = new this.Model(),
+				    model4 = new this.Model();
+				    
+				var collection = new this.Collection( [ model1, model2, model3, model4 ] ),
+				    models;
+				
+				// Test initial condition
+				models = collection.getModels();
+				Y.ArrayAssert.itemsAreSame( [ model1, model2, model3, model4 ], models, "Initial condition: the Collection should have 4 models" );
+				
+				collection.removeAll();
+				models = collection.getModels();
+				Y.ArrayAssert.isEmpty( models, "There should be no models left in the collection" );
+			},
+			
+			
+			
+			"removeAll() should fire the 'remove' event with the array of removed models when multiple models are removed" : function() {
+				var model1 = new this.Model(),
+				    model2 = new this.Model(),
+				    model3 = new this.Model(),
+				    model4 = new this.Model();
+				    
+				var collection = new this.Collection( [ model1, model2, model3, model4 ] );
+				
+				var removedModels;
+				collection.on( 'remove', function( collection, models ) {
+					removedModels = models;
+				} );
+				
+				collection.removeAll();
+				Y.ArrayAssert.itemsAreSame( [ model1, model2, model3, model4 ], removedModels );
+			},
+			
+			
+			
+			"removeAll() should *not* fire the 'remove' event if no models are actually removed" : function() {
+				var collection = new this.Collection();  // no models
+				
+				var removeEventCallCount = 0;
+				collection.on( 'remove', function( collection, models ) {
+					removeEventCallCount++;
+				} );
+				
+				collection.removeAll();  // model2 doesn't exist on the Collection
+				Y.Assert.areSame( 0, removeEventCallCount );
+			},
+			
+			
+			"removeAll() should clear the `modelsByClientId` and `modelsById` hashmaps" : function() {
+				var model1 = new this.Model( { id: 1 } ),
+				    model2 = new this.Model( { id: 2 } );
+				var collection = new this.Collection( [ model1, model2 ] );
+				
+				Y.Assert.areSame( model1, collection.getByClientId( model1.getClientId() ), "Initial condition: should be able to retrieve model1 by clientId" );
+				Y.Assert.areSame( model1, collection.getById( model1.getId() ), "Initial condition: should be able to retrieve model1 by id" );
+				Y.Assert.areSame( model2, collection.getByClientId( model2.getClientId() ), "Initial condition: should be able to retrieve model2 by clientId" );
+				Y.Assert.areSame( model2, collection.getById( model2.getId() ), "Initial condition: should be able to retrieve model2 by id" );
+				
+				collection.removeAll();
+				
+				Y.Assert.isNull( collection.getByClientId( model1.getClientId() ), "should no longer be able to retrieve model1 by clientId" );
+				Y.Assert.isNull( collection.getById( model1.getId() ), "should no longer be able to retrieve model1 by id" );
+				Y.Assert.isNull( collection.getByClientId( model2.getClientId() ), "should no longer be able to retrieve model2 by clientId" );
+				Y.Assert.isNull( collection.getById( model2.getId() ), "should no longer be able to retrieve model2 by id" );
+			}
+		},
+		
+		
+		
+		
+		
+		// ------------------------
+		
+		{
+			/*
+			 * Test getAt()
+			 */
+			name : "Test getAt()",
+			
+			setUp : function() {
+				this.Model = Kevlar.Model.extend( {
+					attributes: [ 'id' ],
+					idAttribute: 'id'
+				} );
+				
+				this.Collection = Kevlar.Collection.extend( {
+					model : this.Model
+				} );
+			},
+			
+			"getAt() should return the model at a given index" : function() {
+				var model1 = new this.Model(),
+				    model2 = new this.Model();
+				    
+				var collection = new this.Collection( [ model1, model2 ] );
+				
+				Y.Assert.areSame( model1, collection.getAt( 0 ), "model1 should be at index 0" );
+				Y.Assert.areSame( model2, collection.getAt( 1 ), "model2 should be at index 1" );
+			},
+			
+			"getAt() should return null for an index that is out of bounds" : function() {
+				var model1 = new this.Model(),
+				    model2 = new this.Model();
+				    
+				var collection = new this.Collection( [ model1, model2 ] );
+				
+				Y.Assert.isNull( collection.getAt( -1 ), "Should be null for a negative index" );
+				Y.Assert.isNull( collection.getAt( 2 ), "Should be null for an index greater than the number of models" );
+			}
 		},
 		
 		
@@ -614,6 +881,87 @@ tests.unit.add( new Ext.test.TestSuite( {
 				Y.Assert.areSame( 3, collection.getCount(), "After adding model1 and model3, the collection should have 3 models" );
 			}
 		},
+		
+		
+		{
+			/*
+			 * Test getByClientId()
+			 */
+			name : "Test getByClientId()",
+			
+			
+			"getByClientId() should retrieve a model by its clientId" : function() {
+				var Model = Kevlar.Model.extend( {} ),
+				    model1 = new Model(),
+				    model2 = new Model();
+				
+				var collection = new Kevlar.Collection( [ model1, model2 ] );
+				
+				Y.Assert.areSame( model1, collection.getByClientId( model1.getClientId() ), "model1 should have been able to be retrieved by its clientId" );
+				Y.Assert.areSame( model2, collection.getByClientId( model2.getClientId() ), "model2 should have been able to be retrieved by its clientId" );
+			},
+			
+			
+			"getByClientId() should return null if the collection doesn't have the model whose clientId is requested" : function() {
+				var Model = Kevlar.Model.extend( {} ),
+				    model = new Model();
+				
+				var collection = new Kevlar.Collection();  // note: not adding model
+				
+				Y.Assert.isNull( collection.getByClientId( model.getClientId() ) );
+			}
+			
+		},
+		
+		
+		{
+			/*
+			 * Test getById
+			 */
+			name : "Test getById()",
+			
+			setUp : function() {
+				this.Model = Kevlar.Model.extend( { attributes: [ 'id' ], idAttribute: 'id' } );
+			},
+			
+			
+			"getById() should retrieve a model by its id attribute" : function() {
+				var model1 = new this.Model( { id: 1 } ),
+				    model2 = new this.Model( { id: 2 } );
+				
+				var collection = new Kevlar.Collection( [ model1, model2 ] );
+				
+				Y.Assert.areSame( model1, collection.getById( 1 ), "model1 should have been able to be retrieved by its id" );
+				Y.Assert.areSame( model2, collection.getById( 2 ), "model2 should have been able to be retrieved by its id" );
+			},
+			
+			
+			"getById() should return null for a model id that doesn't exist within its collection" : function() {
+				var model1 = new this.Model( { id: 1 } ),
+				    model2 = new this.Model( { id: 2 } );
+				
+				var collection = new Kevlar.Collection();
+				
+				Y.Assert.isNull( collection.getById( 1 ), "Test with no models in the collection at all" );
+				
+				collection.add( model1 );
+				Y.Assert.isNull( collection.getById( 2 ), "Test with a model in the collection" );
+				
+				Y.Assert.areSame( model1, collection.getById( 1 ), "Sanity check, model1 should be able to be retrieved by its id at this point" );
+			},
+			
+			
+			"getById() should retreive a model by its id attribute, even if it doesn't yet have an id when it is added to the collection (the id is added later)" : function() {
+				var model = new this.Model(),  // no id yet
+				    collection = new Kevlar.Collection( [ model ] );  // add the model
+				
+				// Now change the model's id
+				model.set( 'id', 1 );
+				
+				Y.Assert.areSame( model, collection.getById( 1 ) );
+			}
+		},
+		
 		
 		
 		{
