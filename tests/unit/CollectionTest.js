@@ -21,13 +21,20 @@ tests.unit.add( new Ext.test.TestSuite( {
 				} );
 			},
 			
-			"The constructor should accept a Model to initialize the Collection with" : function() {
-				var model = new this.Model( { attr: 'value1' } ),
-				    collection = new this.Collection( model );
+			"The constructor should accept a configuration object to initialize the Collection with an initial set of models and any other custom configs" : function() {
+				var model = new this.Model( { attr: 'value1' } );
+				
+				var collection = new this.Collection( {
+					models: model,
+					customConfig: 1
+				} );
 				
 				var models = collection.getModels();
-				Y.Assert.areSame( 1, models.length, "There should now be one model1 in the collection" );
-				Y.Assert.areSame( model, models[ 0 ], "The model in the collection should be the one provided to the constructor" );
+				Y.Assert.areSame( 1, models.length, "There should now be one model in the collection" );
+				Y.Assert.areSame( model, models[ 0 ], "The model in the collection should be the one provided to the 'models' config" );
+				
+				// Check that the custom config was applied to the collection
+				Y.Assert.areSame( 1, collection.customConfig, "The customConfig should have been applied to the collection" );
 			},
 			
 			"The constructor should accept an array of Models to initialize the Collection with" : function() {

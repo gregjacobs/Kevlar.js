@@ -25,6 +25,13 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	 * 
 	 * Note that if a factory method is required for the creation of models, where custom processing may be needed,
 	 * override the {@link #createModel} method in a subclass.
+	 * 
+	 * It is recommended that you subclass Kevlar.Collection, and add this configuration as part of the definition of the 
+	 * subclass. Ex:
+	 * 
+	 *     myApp.MyCollection = Kevlar.Collection.extend( {
+	 *         model : myApp.MyModel
+	 *     } );
 	 */
 	
 	/**
@@ -44,7 +51,38 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	 *         
 	 *         return ( name1 < name2 ) ? -1 : ( name1 > name2 ) ? 1 : 0;
 	 *     }
+	 * 
+	 * It is recommended that you subclass Kevlar.Collection, and add the sortBy function in the definition of the subclass. Ex:
+	 * 
+	 *     myApp.MyCollection = Kevlar.Collection.extend( {
+	 *         sortBy : function( model1, model2 ) {
+	 *             // ...
+	 *         }
+	 *     } );
+	 *     
+	 *     
+	 *     // And instantiating:
+	 *     var myCollection = new myApp.MyCollection();
 	 */
+	
+	/**
+	 * @cfg {Object/Kevlar.Model/Object[]/Kevlar.Model[]} models
+	 * If providing a configuration object to the Kevlar.Collection constructor instead of an array of initial models, the initial 
+	 * model(s) may be specified using this configuration option. Can be a single model or an array of models (or object / array of
+	 * objects that will be converted to models).
+	 * 
+	 * Ex:
+	 * 
+	 *     // Assuming you have created a myApp.MyModel subclass of {@link Kevlar.Model},
+	 *     // and a myApp.MyCollection subclass of Kevlar.Collection
+	 *     var model1 = new myApp.MyModel(),
+	 *         model2 = new myApp.MyModel();
+	 *     
+	 *     var collection = new myApp.MyCollection( {
+	 *         models: [ model1, model2 ]
+	 *     } );
+	 */
+	
 	
 	
 	/**
@@ -74,11 +112,12 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	 * Creates a new Collection instance.
 	 * 
 	 * @constructor
-	 * @param {Object[]/Kevlar.Model[]} models An initial set of Models to provide to the Collection.
+	 * @param {Object/Object[]/Kevlar.Model[]} config This can either be a configuration object (in which the options listed
+	 *   under "configuration options" can be provided), or an initial set of Models to provide to the Collection. If providing
+	 *   an initial set of models, they must be wrapped in an array.
 	 */
-	constructor : function( models ) {
+	constructor : function( config ) {
 		Kevlar.Collection.superclass.constructor.call( this );
-		
 		
 		this.addEvents(
 			/**
@@ -105,6 +144,20 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 			'remove'
 		);
 		
+		
+		var initialModels;
+		
+		// If the "config" is an array, it must be an array of initial models
+		if( Kevlar.isArray( config ) ) {
+			initialModels = config;
+			
+		} else if( typeof config === 'object' ) {
+			Kevlar.apply( this, config );
+			
+			initialModels = this.models;  // grab any initial models in the config
+		}
+		
+		
 		// If a 'sortBy' exists, and it is a function, create a bound function to bind it to this Collection instance
 		//  for when it is passed into Array.prototype.sort()
 		if( typeof this.sortBy === 'function' ) {
@@ -117,8 +170,8 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 		this.modelsById = {};
 		
 		
-		if( models ) {
-			this.add( models );
+		if( initialModels ) {
+			this.add( initialModels );
 		}
 		
 		// Call hook method for subclasses
