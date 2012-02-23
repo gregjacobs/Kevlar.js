@@ -2929,6 +2929,46 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	
 	
 	/**
+	 * Retrieves a range of {@link Kevlar.Model Models}, specified by the `startIndex` and `endIndex`. These values are inclusive.
+	 * For example, if the Collection has 4 Models, and `getRange( 1, 3 )` is called, the 2nd, 3rd, and 4th models will be returned.
+	 * 
+	 * @method getRange
+	 * @param {Number} [startIndex=0] The starting index.
+	 * @param {Number} [endIndex] The ending index. Defaults to the last Model in the Collection.
+	 * @return {Kevlar.Model[]} The array of models from the `startIndex` to the `endIndex`, inclusively.
+	 */
+	getRange : function( startIndex, endIndex ) {
+		var models = this.models,
+		    numModels = models.length,
+		    range = [],
+		    i;
+		
+		if( numModels === 0 ) {
+			return range;
+		}
+		
+		startIndex = Math.max( startIndex || 0, 0 ); // don't allow negative indexes
+		endIndex = Math.min( typeof endIndex === 'undefined' ? numModels - 1 : endIndex, numModels - 1 );
+		
+		for( i = startIndex; i <= endIndex; i++ ) {
+			range.push( models[ i ] );
+		}
+		return range; 
+	},
+	
+	
+	/**
+	 * Retrieves all of the models that the Collection has, in order.
+	 * 
+	 * @method getModels
+	 * @return {Kevlar.Model[]} An array of the models that this Collection holds.
+	 */
+	getModels : function() {
+		return this.getRange();  // gets all models
+	},
+	
+	
+	/**
 	 * Retrieves a Model by its {@link Kevlar.Model#clientId clientId}.
 	 * 
 	 * @method getByClientId
@@ -2952,17 +2992,6 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	 */
 	getById : function( id ) {
 		return this.modelsById[ id ] || null;
-	},
-	
-	
-	/**
-	 * Retrieves all of the models that the Collection has, in order.
-	 * 
-	 * @method getModels
-	 * @return {Kevlar.Model[]} An array of the models that this Collection holds.
-	 */
-	getModels : function() {
-		return Kevlar.util.Object.clone( this.models, /* deep = */ false );  // shallow copy the array, so it isn't modified by outside code
 	},
 	
 	

@@ -451,6 +451,89 @@ tests.unit.add( new Ext.test.TestSuite( {
 		
 		{
 			/*
+			 * Test getRange()
+			 */
+			name : "Test getRange()",
+			
+			
+			setUp : function() {
+				this.Model = Kevlar.Model.extend( {
+					attributes : [ 'attr' ]
+				} );
+				
+				this.Collection = Kevlar.Collection.extend( {
+					modelClass : this.Model
+				} );
+			},
+			
+			
+			"getRange() should retrieve all models when no arguments are provided" : function() {
+				var model1 = new this.Model(),
+				    model2 = new this.Model(),
+				    model3 = new this.Model();
+				
+				var collection = new this.Collection( [ model1, model2, model3 ] ),
+				    models = collection.getRange();
+				
+				Y.ArrayAssert.itemsAreSame( [ model1, model2, model3 ], models );
+			},
+			
+			
+			"getRange() should retrieve models based on just the startIndex argument, defaulting endIndex to the last model in the Collection" : function() {
+				var model1 = new this.Model(),
+				    model2 = new this.Model(),
+				    model3 = new this.Model();
+				
+				var collection = new this.Collection( [ model1, model2, model3 ] ),
+				    models;
+				
+				models = collection.getRange( 0 );  // attempt to get all models starting at position 0
+				Y.ArrayAssert.itemsAreSame( [ model1, model2, model3 ], models, "All models should have been retrieved" );
+				
+				models = collection.getRange( 1 );  // attempt to get all models starting at position 1
+				Y.ArrayAssert.itemsAreSame( [ model2, model3 ], models, "The second and third models should have been retrieved" );
+				
+				models = collection.getRange( 2 );  // attempt to get all models starting at position 2
+				Y.ArrayAssert.itemsAreSame( [ model3 ], models, "The third model should have been retrieved" );
+				
+				// Try an out-of-range startIndex
+				models = collection.getRange( 3 );  // attempt to get all models starting at position 3 (out-of-range)
+				Y.ArrayAssert.isEmpty( models, "No models should have been retrieved" );
+			},
+			
+			
+			"getRange() should retrieve models based on the startIndex and endIndex arguments" : function() {
+				var model1 = new this.Model(),
+				    model2 = new this.Model(),
+				    model3 = new this.Model();
+				
+				var collection = new this.Collection( [ model1, model2, model3 ] ),
+				    models;
+				
+				models = collection.getRange( 0, 0 );
+				Y.ArrayAssert.itemsAreSame( [ model1 ], models, "0, 0 args did not work correctly. First model should have been retrieved" );
+				
+				models = collection.getRange( 0, 1 );
+				Y.ArrayAssert.itemsAreSame( [ model1, model2 ], models, "0, 1 args did not work correctly. First and second model should have been retrieved" );
+				
+				models = collection.getRange( 1, 1 );
+				Y.ArrayAssert.itemsAreSame( [ model2 ], models, "1, 1 args did not work correctly. Second model should have been retrieved" );
+				
+				models = collection.getRange( 1, 2 );
+				Y.ArrayAssert.itemsAreSame( [ model2, model3 ], models, "1, 2 args did not work correctly. Second and third models should have been retrieved" );
+				
+				models = collection.getRange( 0, 2 );
+				Y.ArrayAssert.itemsAreSame( [ model1, model2, model3 ], models, "0, 2 args did not work correctly. Second and third models should have been retrieved" );
+				
+				// Test out-of-range indexes
+				models = collection.getRange( -10000, 10000 );
+				Y.ArrayAssert.itemsAreSame( [ model1, model2, model3 ], models, "Out of range -10000, 10000 args did not work correctly. All models should have been retrieved" );
+			}
+		},		
+		
+		
+		{
+			/*
 			 * Test has()
 			 */
 			name : "Test has()",
