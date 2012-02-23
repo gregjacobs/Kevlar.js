@@ -439,6 +439,50 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	},
 	
 	
+	/**
+	 * Retrieves the index of the given {@link Kevlar.Model model} within the Collection. 
+	 * Returns -1 if the `model` is not found.
+	 * 
+	 * @method indexOf
+	 * @param {Kevlar.Model} model
+	 * @return {Number} The index of the provided `model`, or of -1 if the `model` was not found.
+	 */
+	indexOf : function( model ) {
+		var models = this.models,
+		    i, len;
+		
+		if( !this.has( model ) ) {
+			// If the model isn't in the Collection, return -1 immediately
+			return -1;
+			
+		} else {
+			for( i = 0, len = models.length; i < len; i++ ) {
+				if( models[ i ] === model ) {
+					return i;
+				}
+			}
+		}
+	},
+	
+	
+	/**
+	 * Retrieves the index of a given {@link Kevlar.Model model} within the Collection by its
+	 * {@link Kevlar.Model#idAttribute id}. Returns -1 if the `model` is not found.
+	 * 
+	 * @method indexOfId
+	 * @param {Mixed} id The id value for the model.
+	 * @return {Number} The index of the model with the provided `id`, or of -1 if the model was not found.
+	 */
+	indexOfId : function( id ) {
+		var model = this.getById( id );
+		if( model ) {
+			return this.indexOf( model );
+		}
+		return -1;
+	},
+	
+	
+	
 	// ----------------------------
 	
 	// Searching methods

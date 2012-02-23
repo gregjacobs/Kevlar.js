@@ -2086,11 +2086,10 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			"has() should return true if a model has been added to the collection, and false if a model has not been added to the collection" : function() {
 				var Model = Kevlar.Model.extend( { attributes: [ 'attr' ] } );
-				var Collection = Kevlar.Collection.extend( {} );
 				
 				var model1 = new Model(),
 				    model2 = new Model(),
-				    collection = new Collection();
+				    collection = new Kevlar.Collection();
 				
 				Y.Assert.isFalse( collection.has( model1 ), "Initial condition: the collection should not have model1" );
 				Y.Assert.isFalse( collection.has( model2 ), "Initial condition: the collection should not have model2" );
@@ -2106,6 +2105,71 @@ tests.unit.add( new Ext.test.TestSuite( {
 				Y.Assert.isFalse( collection.has( model1 ), "The collection should not have model1 anymore, as it has been removed" );
 			}
 		},
+		
+		
+		
+		{
+			/*
+			 * Test indexOf()
+			 */
+			name : "Test indexOf()",
+			
+			
+			"indexOf() should return the index of a model in the collection" : function() {
+				var Model = Kevlar.Model.extend( { attributes: [ 'attr' ] } ),
+				    model1 = new Model(),
+				    model2 = new Model(),
+				    collection = new Kevlar.Collection( [ model1, model2 ] );
+				
+				Y.Assert.areSame( 0, collection.indexOf( model1 ), "model1 should be at index 0" );
+				Y.Assert.areSame( 1, collection.indexOf( model2 ), "model2 should be at index 1" );				
+			},
+			
+			
+			"indexOf() should return -1 for a model that does not exist within the collection" : function() {
+				var Model = Kevlar.Model.extend( { attributes: [ 'attr' ] } ),
+				    model1 = new Model(),
+				    model2 = new Model(),
+				    collection = new Kevlar.Collection( [ model1 ] );  // not adding model2
+				
+				Y.Assert.areSame( -1, collection.indexOf( model2 ), "model2 is not in the collection, so indexOf() should return -1" );
+			}
+		},
+		
+		
+		
+		{
+			/*
+			 * Test indexOfId()
+			 */
+			name : "Test indexOfId()",
+			
+			
+			"indexOfId() should return the index of a model by its id in the collection" : function() {
+				var Model = Kevlar.Model.extend( { attributes: [ 'id' ], idAttribute: 'id' } ),
+				    model1 = new Model( { id: 1 } ),
+				    model2 = new Model( { id: 2 } ),
+				    collection = new Kevlar.Collection( [ model1, model2 ] );
+				
+				Y.Assert.areSame( 0, collection.indexOfId( 1 ), "model1 should be at index 0" );
+				Y.Assert.areSame( 1, collection.indexOfId( 2 ), "model2 should be at index 1" );				
+			},
+			
+			
+			"indexOfId() should return -1 for a model by its id that does not exist within the collection" : function() {
+				var Model = Kevlar.Model.extend( { attributes: [ 'id' ], idAttribute: 'id' } ),
+				    model1 = new Model( { id: 1 } ),
+				    model2 = new Model( { id: 2 } ),
+				    collection = new Kevlar.Collection( [ model1 ] );  // not adding model2
+				
+				Y.Assert.areSame( -1, collection.indexOfId( 2 ), "model2 is not in the collection, so indexOfId() should return -1" );
+			}
+		},
+		
+		
+		
+		// -------------------------------
+		
 		
 		
 		/*
