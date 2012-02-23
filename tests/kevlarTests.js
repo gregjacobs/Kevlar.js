@@ -1350,6 +1350,37 @@ tests.unit.add( new Ext.test.TestSuite( {
 			},
 			
 			
+			"the sortBy() function should be called in the scope of the Collection" : function() {
+				var attributeNameToSortBy = "";
+				
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'name' ]
+				} );
+				
+				var Collection = Kevlar.Collection.extend( {
+					// A method, just to make sure sortBy() is called in the correct scope
+					getAttributeNameToSortBy : function() {
+						return 'name';
+					},
+					
+					sortBy : function( model1, model2 ) {
+						attributeNameToSortBy = this.getAttributeNameToSortBy();  // If sortBy() is not called in the correct scope, this method call will fail
+						
+						return 0;
+					}
+				} );
+				
+				var model1 = new Model( { name : "A" } ),
+				    model2 = new Model( { name : "B" } ),
+				    model3 = new Model( { name : "C" } );
+				    
+				var collection = new Collection();
+				collection.add( [ model2, model3, model1 ] );  // Insert models in incorrect order
+				
+				Y.Assert.areSame( 'name', attributeNameToSortBy, "The attributeNameToSortBy variable should have been set by sortBy() being called in the correct scope, able to access its helper method" );
+			},
+			
+			
 			// -------------------------
 			
 			// Test duplicates functionality

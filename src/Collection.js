@@ -105,9 +105,10 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 			'remove'
 		);
 		
-		// If a 'sortBy' exists, create a bound function to bind it to the Collection, for when it is passed into Array.prototype.sort()
-		if( this.sortBy ) {
-			Kevlar.bind( this.sortBy, this );
+		// If a 'sortBy' exists, and it is a function, create a bound function to bind it to this Collection instance
+		//  for when it is passed into Array.prototype.sort()
+		if( typeof this.sortBy === 'function' ) {
+			this.sortBy = Kevlar.bind( this.sortBy, this );
 		} 
 		
 		
@@ -220,7 +221,7 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 		// If there is a 'sortBy' config, use that now
 		if( this.sortBy ) {
 			this.models.sort( this.sortBy );  // note: the sortBy function has already been bound to the correct scope
-		} 
+		}
 		
 		this.fireEvent( 'add', this, models, insertPos );
 	},
