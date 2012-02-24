@@ -97,7 +97,7 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 		}
 		
 		// Now, normalize the newValue to an object, or null
-		newValue = Kevlar.attribute.ModelAttribute.superclass.beforeSet.apply( this, arguments );
+		newValue = this._super( arguments );
 		
 		if( newValue !== null ) {
 			var modelClass = this.modelClass;

@@ -375,7 +375,7 @@ var Class = (function() {
 					
 					// Add the new _super() method that points to the superclass's method
 					this._super = function( args ) {  // args is an array (or arguments object) of arguments
-						superclassPrototype[ fnName ].apply( scope, args || [] );
+						return superclassPrototype[ fnName ].apply( scope, args || [] );
 					};
 					
 					// Now call the target method
@@ -2319,64 +2319,65 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.ObjectAttribute.extend( 
 	valuesAreEqual : function( oldValue, newValue ) {
 		// If the references are the same, they are equal. Many collections can be made to hold the same models.
 		return oldValue === newValue;
-	}//,
+	},
 	
 	
 	/**
-	 * Overridden `beforeSet` method used to convert any anonymous objects into the specified {@link #modelClass}. The anonymous object
-	 * will be provided to the {@link #modelClass modelClass's} constructor.
+	 * Overridden `beforeSet` method used to convert any arrays into the specified {@link #collectionClass}. The array
+	 * will be provided to the {@link #collectionClass collectionClass's} constructor.
 	 * 
 	 * @override
 	 * @method beforeSet
 	 * @inheritdoc
 	 */
-	/*beforeSet : function( model, oldValue, newValue ) {
-		// First, if the oldValue was a Model, and this attribute is an "embedded" model, we need to unsubscribe it from its parent model
-		if( this.embedded && oldValue instanceof Kevlar.Model ) {
-			model.unsubscribeEmbeddedModel( this.getName(), oldValue );
+	beforeSet : function( model, oldValue, newValue ) {
+		// First, if the oldValue was a Model, and this attribute is an "embedded" collection, we need to unsubscribe it from its parent model
+		if( this.embedded && oldValue instanceof Kevlar.Collection ) {
+			model.unsubscribeEmbeddedCollection( this.getName(), oldValue );
 		}
 		
 		// Now, normalize the newValue to an object, or null
-		newValue = Kevlar.attribute.ModelAttribute.superclass.beforeSet.apply( this, arguments );
+		newValue = this._super( arguments );
 		
 		if( newValue !== null ) {
-			var modelClass = this.modelClass;
+			var collectionClass = this.collectionClass;
 			
-			// Normalize the modelClass
-			if( typeof modelClass === 'string' ) {
-				this.modelClass = modelClass = window[ modelClass ];
-			} else if( typeof modelClass === 'function' && modelClass.constructor === Function ) {  // it's an anonymous function, run it, so it returns the Model reference we need
-				this.modelClass = modelClass = modelClass();
+			// Normalize the collectionClass
+			if( typeof collectionClass === 'string' ) {
+				this.collectionClass = collectionClass = window[ collectionClass ];
+			} else if( typeof collectionClass === 'function' && collectionClass.constructor === Function ) {  // it's an anonymous function, run it, so it returns the Model reference we need
+				this.collectionClass = collectionClass = collectionClass();
 			}
 			
-			if( newValue && typeof modelClass === 'function' && !( newValue instanceof modelClass ) ) {
-				newValue = new modelClass( newValue );
+			if( newValue && typeof collectionClass === 'function' && !( newValue instanceof collectionClass ) ) {
+				newValue = new collectionClass( newValue );
 			}
 		}
 		
 		return newValue;
-	},*/
+	},
 	
 	
 	/**
-	 * Overridden `afterSet` method used to subscribe to change events on a set child {@link Kevlar.Model Model}, if {@link #embedded} is true.
+	 * Overridden `afterSet` method used to subscribe to add/remove/change events on a set child {@link Kevlar.Collection Collection}, 
+	 * if {@link #embedded} is true.
 	 * 
 	 * @override
 	 * @method afterSet
 	 * @inheritdoc
 	 */
-	/*afterSet : function( model, value ) {
-		// Enforce that the value is either null, or a Kevlar.Model
-		if( value !== null && !( value instanceof Kevlar.Model ) ) {
-			throw new Error( "A value set to the attribute '" + this.getName() + "' was not a Kevlar.Model subclass" );
+	afterSet : function( model, value ) {
+		// Enforce that the value is either null, or a Kevlar.Collection
+		if( value !== null && !( value instanceof Kevlar.Collection ) ) {
+			throw new Error( "A value set to the attribute '" + this.getName() + "' was not a Kevlar.Collection subclass" );
 		}
 		
-		if( this.embedded && value instanceof Kevlar.Model ) {
-			model.subscribeEmbeddedModel( this.getName(), value );
+		if( this.embedded && value instanceof Kevlar.Collection ) {
+			model.subscribeEmbeddedCollection( this.getName(), value );
 		}
 		
 		return value;
-	}*/
+	}
 	
 } );
 
@@ -2551,7 +2552,7 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 		}
 		
 		// Now, normalize the newValue to an object, or null
-		newValue = Kevlar.attribute.ModelAttribute.superclass.beforeSet.apply( this, arguments );
+		newValue = this._super( arguments );
 		
 		if( newValue !== null ) {
 			var modelClass = this.modelClass;
@@ -3987,6 +3988,11 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 		// Now fire the general 'change' event from this model
 		this.fireEvent( 'change', this, pathToChangedAttr, newValue, oldValue, nestedModels );          // this model, attributeName, newValue, oldValue, the nestedModels so far for this event from the deep child
 	},
+	
+	
+	
+	subscribeEmbeddedCollection : function() {},
+	unsubscribeEmbeddedCollection : function() {},
 	
 	
 	// --------------------------------

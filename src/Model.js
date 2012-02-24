@@ -684,6 +684,11 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 	},
 	
 	
+	
+	subscribeEmbeddedCollection : function() {},
+	unsubscribeEmbeddedCollection : function() {},
+	
+	
 	// --------------------------------
 	
 	

@@ -108,7 +108,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			
 			"beforeSet() should return null when provided any falsy value, or non-object" : function() {
 				var mockModel = JsMockito.mock( Kevlar.Model ),
-				    attribute = new Kevlar.attribute.ObjectAttribute( { name: 'attr' } ),
+				    attribute = new Kevlar.attribute.ModelAttribute( { name: 'attr' } ),
 				    oldValue,  // undefined
 				    value;
 				
