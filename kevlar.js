@@ -2333,7 +2333,7 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.ObjectAttribute.extend( 
 	beforeSet : function( model, oldValue, newValue ) {
 		// First, if the oldValue was a Model, and this attribute is an "embedded" collection, we need to unsubscribe it from its parent model
 		if( this.embedded && oldValue instanceof Kevlar.Collection ) {
-			model.unsubscribeEmbeddedCollection( this.getName(), oldValue );
+			model.unsubscribeEmbeddedModel( this.getName(), oldValue );
 		}
 		
 		// Now, normalize the newValue to an object, or null
@@ -2373,7 +2373,7 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.ObjectAttribute.extend( 
 		}
 		
 		if( this.embedded && value instanceof Kevlar.Collection ) {
-			model.subscribeEmbeddedCollection( this.getName(), value );
+			model.subscribeEmbeddedModel( this.getName(), value );
 		}
 		
 		return value;
@@ -2759,7 +2759,34 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 			 *   array even in the case that a single model is removed, so that handlers can consistently
 			 *   handle both cases of single/multiple model removal.
 			 */
-			'remove'
+			'remove',
+			
+			/**
+			 * Fires when a {@link Kevlar.attribute.Attribute} in a Model that the Collection holds has changed 
+			 * its value. This is a convenience event to respond to just a single attribute's change. Ex: if you 
+			 * want to just respond to the `title` attribute's change, you could subscribe to `change:title`. Ex:
+			 * 
+			 *     model.addListener( 'change:myAttribute', function( collection, model, newValue ) { ... } );
+			 * 
+			 * @event change:[attributeName]
+			 * @param {Kevlar.Collection} collection This Collection instance.
+			 * @param {Kevlar.Model} model This Model instance.
+			 * @param {Mixed} newValue The new value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
+			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
+			 */
+			
+			/**
+			 * Fires when one of the models in the Collection fires a {@link Kevlar.Model#change} event of 
+			 * its own. This event "relays" the model's event so that it can be listened to from the collection.
+			 * 
+			 * @event change
+			 * @param {Kevlar.Collection} collection This Collection instance.
+			 * @param {Kevlar.Model} model The model that was changed.
+			 * @param {String} attributeName The name of the attribute that was changed.
+			 * @param {Mixed} newValue The new value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
+			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
+			 */
+			'change'
 		);
 		
 		
@@ -2889,6 +2916,9 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 					// Respond to any changes on the idAttribute
 					model.on( 'change:' + model.getIdAttribute().getName(), this.onModelIdChange, this );
 				}
+				
+				// Subscribe to 'change' events on the model, so that the Collection can relay them
+				model.on( 'change', this.onModelChange, this );
 			}
 		}
 		
@@ -2925,21 +2955,26 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 			// Don't bother searching to remove the model if we know it doesn't exist in the Collection
 			if( this.modelsByClientId[ modelClientId ] ) {
 				delete this.modelsByClientId[ modelClientId ];
+				
 				if( model.hasIdAttribute() ) {   // make sure the model actually has a valid idAttribute first, before trying to call getId()
 					delete this.modelsById[ model.getId() ];
 					
 					// Remove the listener for changes on the idAttribute
 					model.un( 'change:' + model.getIdAttribute().getName(), this.onModelIdChange, this );
 				}
-								
+				
+				// Unsubscribe the 'change' event listener from the model
+				model.un( 'change', this.onModelChange, this );
+				
+				// Remove the model from the models array
 				for( j = 0, jlen = collectionModels.length; j < jlen; j++ ) {
 					if( collectionModels[ j ] === model ) {
-						collectionModels.splice( j, 1 );
-						removedModels.push( model );
-						
+						collectionModels.splice( j, 1 );						
 						break;
 					}
 				}
+				
+				removedModels.push( model );
 			}
 		}
 		
@@ -2964,6 +2999,8 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	 * Handles a change to a model's {@link Kevlar.Model#idAttribute}, so that the Collection's 
 	 * {@link #modelsById} hashmap can be updated.
 	 * 
+	 * Note that {@link #onModelChange} is still called even when this method executes.
+	 * 
 	 * @protected
 	 * @method onModelIdChange
 	 * @param {Kevlar.Model} model The model that fired the change event.
@@ -2976,6 +3013,24 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 		if( newValue !== undefined && newValue !== null ) {
 			this.modelsById[ newValue ] = model;
 		}
+	},
+	
+	
+	/**
+	 * Handles a change to a Model in the Collection by firing the {@link #change} event.
+	 * 
+	 * @protected
+	 * @method onModelChange
+	 * @param {Kevlar.Model} model
+	 * @param {String} attributeName
+	 * @param {Mixed} newValue
+	 * @param {Mixed} oldValue
+	 */
+	onModelChange : function( model, attributeName, newValue, oldValue ) {
+		// Fire a specific event for the attribute that changed
+		this.fireEvent( 'change:' + attributeName, this, model, newValue, oldValue );
+		
+		this.fireEvent( 'change', this, model, attributeName, newValue, oldValue );
 	},
 	
 	
@@ -3567,7 +3622,7 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 			 * 
 			 * @event change
 			 * @param {Kevlar.Model} model This Model instance.
-			 * @param {String} attributeName The attribute name for the Attribute that was changed.
+			 * @param {String} attributeName The name of the attribute that was changed.
 			 * @param {Mixed} newValue The new value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
 			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
 			 */
@@ -3911,7 +3966,7 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 	
 	/**
 	 * Used internally by the framework, this method subscribes to the change event of the given (child) model, in order to relay
-	 * its events through this (parent) model. This supports a form of "event bubbling" for {@link Kevlar.attribute.ModelAttribute#embedded embedded} 
+	 * its events through this (i.e. the parent) model. This supports a form of "event bubbling" for {@link Kevlar.attribute.ModelAttribute#embedded embedded} 
 	 * child models, and is called from {@link Kevlar.attribute.ModelAttribute ModelAttribute}. For non-embedded Models (i.e. simply "related"
 	 * models), this method is not called.
 	 * 
@@ -3988,11 +4043,6 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 		// Now fire the general 'change' event from this model
 		this.fireEvent( 'change', this, pathToChangedAttr, newValue, oldValue, nestedModels );          // this model, attributeName, newValue, oldValue, the nestedModels so far for this event from the deep child
 	},
-	
-	
-	
-	subscribeEmbeddedCollection : function() {},
-	unsubscribeEmbeddedCollection : function() {},
 	
 	
 	// --------------------------------

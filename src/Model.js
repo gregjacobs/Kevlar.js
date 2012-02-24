@@ -261,7 +261,7 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 			 * 
 			 * @event change
 			 * @param {Kevlar.Model} model This Model instance.
-			 * @param {String} attributeName The attribute name for the Attribute that was changed.
+			 * @param {String} attributeName The name of the attribute that was changed.
 			 * @param {Mixed} newValue The new value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
 			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
 			 */
@@ -605,7 +605,7 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 	
 	/**
 	 * Used internally by the framework, this method subscribes to the change event of the given (child) model, in order to relay
-	 * its events through this (parent) model. This supports a form of "event bubbling" for {@link Kevlar.attribute.ModelAttribute#embedded embedded} 
+	 * its events through this (i.e. the parent) model. This supports a form of "event bubbling" for {@link Kevlar.attribute.ModelAttribute#embedded embedded} 
 	 * child models, and is called from {@link Kevlar.attribute.ModelAttribute ModelAttribute}. For non-embedded Models (i.e. simply "related"
 	 * models), this method is not called.
 	 * 
@@ -682,11 +682,6 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 		// Now fire the general 'change' event from this model
 		this.fireEvent( 'change', this, pathToChangedAttr, newValue, oldValue, nestedModels );          // this model, attributeName, newValue, oldValue, the nestedModels so far for this event from the deep child
 	},
-	
-	
-	
-	subscribeEmbeddedCollection : function() {},
-	unsubscribeEmbeddedCollection : function() {},
 	
 	
 	// --------------------------------
