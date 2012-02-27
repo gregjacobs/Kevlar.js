@@ -1,6 +1,6 @@
 /**
  * @class Kevlar.Collection
- * @extends Kevlar.util.Observable
+ * @extends Kevlar.DataContainer
  * 
  * Manages an ordered set of {@link Kevlar.Model Models}. This class itself is not meant to be used directly, 
  * but rather extended and configured for the different collections in your application.
@@ -15,7 +15,7 @@
  * Note: Configuration options should be placed on the prototype of a Collection subclass.
  */
 /*global window, Kevlar */
-Kevlar.Collection = Kevlar.util.Observable.extend( {
+Kevlar.Collection = Kevlar.DataContainer.extend( {
 	
 	/**
 	 * @cfg {Function} model
@@ -114,10 +114,11 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	 * @constructor
 	 * @param {Object/Object[]/Kevlar.Model[]} config This can either be a configuration object (in which the options listed
 	 *   under "configuration options" can be provided), or an initial set of Models to provide to the Collection. If providing
-	 *   an initial set of models, they must be wrapped in an array.
+	 *   an initial set of models, they must be wrapped in an array. Note that an initial set of models can be provided when using
+	 *   a configuration object with the {@link #models} config.
 	 */
 	constructor : function( config ) {
-		Kevlar.Collection.superclass.constructor.call( this );
+		this._super( arguments );
 		
 		this.addEvents(
 			/**

@@ -5,10 +5,10 @@ tests.unit.data.add( new Ext.test.TestSuite( {
 	items : [
 	
 		/*
-		 * Test convert()
+		 * Test convert() with a model
 		 */
 		{
-			name : "Test convert()",
+			name : "Test convert() with a model",
 			
 			"convert() should return a key for each of the Attributes in the Model, whether or not any data has been set to them" : function() {
 				var Model = Kevlar.Model.extend( {
@@ -165,6 +165,66 @@ tests.unit.data.add( new Ext.test.TestSuite( {
 				
 				// Make sure that references really do point to the same object
 				Y.Assert.areSame( data.relatedModel.relatedModel, data.relatedModel.relatedModel.relatedModel.relatedModel, "The outer -> inner -> outer should point to the outer reference" );
+			}
+		},
+		
+		
+		/*
+		 * Test convert() with a Collection
+		 */
+		{
+			name : "Test convert() with a Collection",
+			
+			"convert() should convert a Collection of Models into an Array of Objects" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'attr1', 'attr2' ]
+				} );
+				var Collection = Kevlar.Collection.extend( {
+					model : Model
+				} );
+				
+				var collection = new Collection( [ { attr1: 1, attr2: 2 }, { attr1: 3, attr2: 4 } ] );
+				var data = Kevlar.data.NativeObjectConverter.convert( collection );
+				
+				Y.Assert.isArray( data, "the data should be an array" );
+				Y.Assert.areSame( 2, data.length, "There should be 2 items in the array" );
+				Y.Assert.areSame( 1, data[ 0 ].attr1, "The first array item's attr1 should be 1" );
+				Y.Assert.areSame( 2, data[ 0 ].attr2, "The first array item's attr2 should be 2" );
+				Y.Assert.areSame( 3, data[ 1 ].attr1, "The second array item's attr1 should be 3" );
+				Y.Assert.areSame( 4, data[ 1 ].attr2, "The second array item's attr2 should be 4" );
+			},
+			
+			
+			
+			// -------------------------------
+			
+			// Test with nested models/collections that have circular references
+			
+			"convert() should deep convert nested models/collections, while handing circular references" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'nestedCollection' ]
+				} );
+				var Collection = Kevlar.Collection.extend( {
+					model : Model
+				} );
+				
+				var model = new Model();
+				var collection = new Collection();
+				
+				// Set up the model to hold the collection, while the collection holds the model
+				model.set( 'nestedCollection', collection );
+				collection.add( model );
+				
+				var data = Kevlar.data.NativeObjectConverter.convert( collection );
+				
+				Y.Assert.isArray( data, "the data should be an array" );
+				Y.Assert.areSame( 1, data.length, "There should be 1 item in the array" );
+				Y.Assert.isObject( data[ 0 ], "The data's first element should be an object" );
+				Y.Assert.isArray( data[ 0 ].nestedCollection, "The data's first element's nestedCollection should be an array" );
+				Y.Assert.areSame( data, data[ 0 ].nestedCollection, "The nested collection's array should refer back to the same array created for 'data'" );
+				
+				// Make sure we can reference through the nested collections
+				Y.Assert.areSame( data, data[ 0 ].nestedCollection[ 0 ].nestedCollection[ 0 ].nestedCollection, "Nesty nesty nesty should work..." );
 			}
 		}
 	]

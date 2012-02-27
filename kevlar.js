@@ -2217,6 +2217,54 @@ Kevlar.apply( Kevlar.persistence.Proxy, {
 } );
 
 /**
+ * @private
+ * @abstract
+ * @class Kevlar.DataContainer
+ * 
+ * Base class for data-holding classes ({@link Kevlar.Model} and {@link Kevlar.Collection}), that abstracts out some
+ * of the commonalities between them.
+ * 
+ * This class is used internally by the framework, and shouldn't be used directly.
+ */
+/*global Kevlar */
+Kevlar.DataContainer = Kevlar.util.Observable.extend( {
+	
+	/**
+	 * @protected
+	 * @property {String} clientId (readonly)
+	 * 
+	 * A unique ID for the Model on the client side. This is used to uniquely identify each Model instance.
+	 * Retrieve with {@link #getClientId}.
+	 */
+	
+	
+	/**
+	 * @constructor
+	 */
+	constructor : function() {
+		var me = this;
+		
+		// Call the superclass's constructor (Observable)
+		this._super( arguments );
+		
+		// Create a client ID for the DataContainer
+		me.clientId = 'c' + Kevlar.newId();
+	},
+	
+	
+	/**
+	 * Retrieves the DataContainer's unique {@link #clientId}.
+	 * 
+	 * @method getClientId
+	 * @return {String} The DataContainer's unique {@link #clientId}. 
+	 */
+	getClientId : function() {
+		return this.clientId;
+	}
+	
+} );
+
+/**
  * @class Kevlar.attribute.BooleanAttribute
  * @extends Kevlar.attribute.Attribute
  * 
@@ -2356,7 +2404,7 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.ObjectAttribute.extend( 
 				if( !collectionClass ) {
 					throw new Error( "The string value 'collectionClass' config did not resolve to a Collection class for attribute '" + this.getName() + "'" );
 				}
-			} else if( typeof collectionClass === 'function' && collectionClass.constructor === Function ) {  // it's an anonymous function, run it, so it returns the Model reference we need
+			} else if( typeof collectionClass === 'function' && collectionClass.constructor === Function ) {  // it's an anonymous function, run it, so it returns the Collection reference we need
 				this.collectionClass = collectionClass = collectionClass();
 				if( !collectionClass ) {
 					throw new Error( "The function value 'collectionClass' config did not resolve to a Collection class for attribute '" + this.getName() + "'" );
@@ -2646,7 +2694,7 @@ Kevlar.attribute.Attribute.registerType( 'string', Kevlar.attribute.StringAttrib
 
 /**
  * @class Kevlar.Collection
- * @extends Kevlar.util.Observable
+ * @extends Kevlar.DataContainer
  * 
  * Manages an ordered set of {@link Kevlar.Model Models}. This class itself is not meant to be used directly, 
  * but rather extended and configured for the different collections in your application.
@@ -2661,7 +2709,7 @@ Kevlar.attribute.Attribute.registerType( 'string', Kevlar.attribute.StringAttrib
  * Note: Configuration options should be placed on the prototype of a Collection subclass.
  */
 /*global window, Kevlar */
-Kevlar.Collection = Kevlar.util.Observable.extend( {
+Kevlar.Collection = Kevlar.DataContainer.extend( {
 	
 	/**
 	 * @cfg {Function} model
@@ -2760,10 +2808,11 @@ Kevlar.Collection = Kevlar.util.Observable.extend( {
 	 * @constructor
 	 * @param {Object/Object[]/Kevlar.Model[]} config This can either be a configuration object (in which the options listed
 	 *   under "configuration options" can be provided), or an initial set of Models to provide to the Collection. If providing
-	 *   an initial set of models, they must be wrapped in an array.
+	 *   an initial set of models, they must be wrapped in an array. Note that an initial set of models can be provided when using
+	 *   a configuration object with the {@link #models} config.
 	 */
 	constructor : function( config ) {
-		Kevlar.Collection.superclass.constructor.call( this );
+		this._super( arguments );
 		
 		this.addEvents(
 			/**
@@ -3333,54 +3382,75 @@ Kevlar.data.NativeObjectConverter = {
 	 * @return {Object[]/Object} An array of objects (for the case of a Collection}, or an Object (for the case of a Model)
 	 *   with the internal attributes converted to their native equivalent.
 	 */
-	convert : function( obj, options ) {
+	convert : function( dataContainer, options ) {
 		options = options || {};
 		var cache = {},  // keyed by models' clientId, and used for handling circular dependencies
 		    persistedOnly = !!options.persistedOnly,
 		    raw = !!options.raw,
-		    data = {};
+		    data = ( dataContainer instanceof Kevlar.Collection ) ? [] : {};  // Collection is an Array, Model is an Object
 		
-		// Prime the cache with the Model provided to this method, so that if a circular reference points back to this
-		// model, the data object is not duplicated as an internal object (i.e. it should refer right back to the converted Model's 
-		// data object)
-		cache[ obj.getClientId() ] = data;
+		// Prime the cache with the Model/Collection provided to this method, so that if a circular reference points back to this
+		// model, the data object is not duplicated as an internal object (i.e. it should refer right back to the converted
+		// Model's/Collection's data object)
+		cache[ dataContainer.getClientId() ] = data;
 		
-		// Recursively goes through the data structure, and convert models to objects
-		Kevlar.apply( data, (function convert( obj ) {
-			var attributes = obj.getAttributes(),
-			    attributeNames = options.attributeNames || Kevlar.util.Object.keysToArray( attributes ),
-			    data = {},
-			    i, len, attributeName, currentValue,
-			    modelClientId, cachedModel;
-			    
-			// Slight hack, but delete options.attributeNames now, so that it is not used again for inner Models (should only affect the first 
-			// Model that gets converted, i.e. the Model provided to this method)
-			delete options.attributeNames;
-			
-			for( i = 0, len = attributeNames.length; i < len; i++ ) {
-				attributeName = attributeNames[ i ];
-				if( !persistedOnly || attributes[ attributeName ].isPersisted() === true ) {
-					currentValue = data[ attributeName ] = ( raw ) ? obj.raw( attributeName ) : obj.get( attributeName );
-					
-					// Process nested models
-					if( currentValue instanceof Kevlar.Model ) {
-						modelClientId = currentValue.getClientId();
+		// Recursively goes through the data structure, and convert models to objects, and collections to arrays
+		Kevlar.apply( data, (function convert( dataContainer ) {
+			var clientId, 
+			    cachedDataContainer,
+			    data,
+			    i, len;
 						
-						if( ( cachedModel = cache[ modelClientId ] ) ) {
-							data[ attributeName ] = cachedModel;
-						} else {
-							// first, set up an object for the cache (so it exists when checking for it in the next call to convert()), 
-							// and set that object to the return data as well
-							data[ attributeName ] = cache[ modelClientId ] = {};
+			if( dataContainer instanceof Kevlar.Model ) {
+				var attributes = dataContainer.getAttributes(),
+				    attributeNames = options.attributeNames || Kevlar.util.Object.keysToArray( attributes ),
+				    attributeName, currentValue;
+				
+				data = {};  // data is an object for a Model
+				
+				// Slight hack, but delete options.attributeNames now, so that it is not used again for inner Models (should only affect the first 
+				// Model that gets converted, i.e. the Model provided to this method)
+				delete options.attributeNames;
+				
+				for( i = 0, len = attributeNames.length; i < len; i++ ) {
+					attributeName = attributeNames[ i ];
+					if( !persistedOnly || attributes[ attributeName ].isPersisted() === true ) {
+						currentValue = data[ attributeName ] = ( raw ) ? dataContainer.raw( attributeName ) : dataContainer.get( attributeName );
+						
+						// Process Nested DataContainers
+						if( currentValue instanceof Kevlar.DataContainer ) {
+							clientId = currentValue.getClientId();
 							
-							// now, populate that object with the properties of the inner object
-							Kevlar.apply( cache[ modelClientId ], convert( currentValue ) );  
+							if( ( cachedDataContainer = cache[ clientId ] ) ) {
+								data[ attributeName ] = cachedDataContainer;
+							} else {
+								// first, set up an array/object for the cache (so it exists when checking for it in the next call to convert()), 
+								// and set that array/object to the return data as well
+								cache[ clientId ] = data[ attributeName ] = ( currentValue instanceof Kevlar.Collection ) ? [] : {};  // Collection is an Array, Model is an Object
+								
+								// now, populate that object with the properties of the inner object
+								Kevlar.apply( cache[ clientId ], convert( currentValue ) );  
+							}
 						}
 					}
 				}
+				
+			} else if( dataContainer instanceof Kevlar.Collection ) {
+				var models = dataContainer.getModels(),
+				    model;
+				
+				data = [];  // data is an array for a Container
+				
+				for( i = 0, len = models.length; i < len; i++ ) {
+					model = models[ i ];
+					clientId = model.getClientId();
+					
+					data[ i ] = cache[ clientId ] || convert( model );
+				}
 			}
+			
 			return data;
-		})( obj ) );
+		})( dataContainer ) );
 		
 		return data;
 	}
@@ -3389,9 +3459,9 @@ Kevlar.data.NativeObjectConverter = {
 
 /**
  * @class Kevlar.Model
- * @extends Kevlar.util.Observable
+ * @extends Kevlar.DataContainer
  * 
- * Generalized data storage class, which has a number of data-related features, including the ability to persist the data to a backend server.
+ * Generalized key/value data storage class, which has a number of data-related features, including the ability to persist its data to a backend server.
  * Basically, a Model represents some object of data that your application uses. For example, in an online store, one might define two Models: 
  * one for Users, and the other for Products. These would be `User` and `Product` models, respectively. Each of these Models would in turn,
  * have the {@link Kevlar.attribute.Attribute Attributes} (data values) that each Model is made up of. Ex: A User model may have: `userId`, `firstName`, and 
@@ -3399,7 +3469,7 @@ Kevlar.data.NativeObjectConverter = {
  */
 /*global window, Kevlar */
 /*jslint forin:true */
-Kevlar.Model = Kevlar.util.Observable.extend( {
+Kevlar.Model = Kevlar.DataContainer.extend( {
 	
 	/**
 	 * @cfg {Kevlar.persistence.Proxy} persistenceProxy
@@ -3497,14 +3567,6 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 	 */
 	
 	/**
-	 * @protected
-	 * @property {String} clientId (readonly)
-	 * 
-	 * A unique ID for the Model on the client side. This is used to uniquely identify each Model instance.
-	 * Retrieve with {@link #getClientId}.
-	 */
-	
-	/**
 	 * @private
 	 * @property {Object} embeddedModelHandlers
 	 * 
@@ -3520,15 +3582,6 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 	 * @property {String} id (readonly)
 	 * The id for the Model. This property is set when the attribute specified by the {@link #idAttribute} config
 	 * is {@link #set}. 
-	 * 
-	 * *** Note: This property is here solely to maintain compatibility with Backbone's Collection, and should
-	 * not be accessed or used, as it will most likely be removed in the future.
-	 */
-	
-	/**
-	 * @hide
-	 * @property {String} cid (readonly)
-	 * A "client id" for the Model. This is a uniquely generated identifier assigned to the Model.
 	 * 
 	 * *** Note: This property is here solely to maintain compatibility with Backbone's Collection, and should
 	 * not be accessed or used, as it will most likely be removed in the future.
@@ -3621,8 +3674,8 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 		// --------------------------
 		
 		
-		// Call superclass constructor (Observable)
-		Kevlar.Model.superclass.constructor.call( me );
+		// Call superclass constructor
+		this._super( arguments );
 		
 		// If this class has a persistenceProxy definition that is an object literal, instantiate it *onto the prototype*
 		// (so one Proxy instance can be shared for every model)
@@ -3682,11 +3735,7 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 			 */
 			'destroy'
 		);
-		
-		
-		// Create a client ID for the Model, and set it to the property 'cid' as well to maintain compatibility with Backbone's Collection
-		me.clientId = me.cid = 'c' + Kevlar.newId();
-		
+				
 		
 		// Set the default values for attributes that don't have an initial value.
 		var attributes = me.attributes,  // me.attributes is a hash of the Attribute objects, keyed by their name
@@ -3748,17 +3797,6 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 	 */
 	getAttributes : function() {
 		return this.attributes;
-	},
-	
-	
-	/**
-	 * Retrieves the Model instance's unique {@link #clientId}.
-	 * 
-	 * @method getClientId
-	 * @return {String} The Model instance's unique {@link #clientId}. 
-	 */
-	getClientId : function() {
-		return this.clientId;
 	},
 	
 	

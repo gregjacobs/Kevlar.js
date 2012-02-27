@@ -18,6 +18,8 @@
 				
 				{ file: "../src/persistence/Proxy.js" },
 				
+				{ file: "../src/DataContainer.js" },
+				
 				{ tree: "../src/" }
 			]
 		}

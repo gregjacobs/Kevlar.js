@@ -29,54 +29,75 @@ Kevlar.data.NativeObjectConverter = {
 	 * @return {Object[]/Object} An array of objects (for the case of a Collection}, or an Object (for the case of a Model)
 	 *   with the internal attributes converted to their native equivalent.
 	 */
-	convert : function( obj, options ) {
+	convert : function( dataContainer, options ) {
 		options = options || {};
 		var cache = {},  // keyed by models' clientId, and used for handling circular dependencies
 		    persistedOnly = !!options.persistedOnly,
 		    raw = !!options.raw,
-		    data = {};
+		    data = ( dataContainer instanceof Kevlar.Collection ) ? [] : {};  // Collection is an Array, Model is an Object
 		
-		// Prime the cache with the Model provided to this method, so that if a circular reference points back to this
-		// model, the data object is not duplicated as an internal object (i.e. it should refer right back to the converted Model's 
-		// data object)
-		cache[ obj.getClientId() ] = data;
+		// Prime the cache with the Model/Collection provided to this method, so that if a circular reference points back to this
+		// model, the data object is not duplicated as an internal object (i.e. it should refer right back to the converted
+		// Model's/Collection's data object)
+		cache[ dataContainer.getClientId() ] = data;
 		
-		// Recursively goes through the data structure, and convert models to objects
-		Kevlar.apply( data, (function convert( obj ) {
-			var attributes = obj.getAttributes(),
-			    attributeNames = options.attributeNames || Kevlar.util.Object.keysToArray( attributes ),
-			    data = {},
-			    i, len, attributeName, currentValue,
-			    modelClientId, cachedModel;
-			    
-			// Slight hack, but delete options.attributeNames now, so that it is not used again for inner Models (should only affect the first 
-			// Model that gets converted, i.e. the Model provided to this method)
-			delete options.attributeNames;
-			
-			for( i = 0, len = attributeNames.length; i < len; i++ ) {
-				attributeName = attributeNames[ i ];
-				if( !persistedOnly || attributes[ attributeName ].isPersisted() === true ) {
-					currentValue = data[ attributeName ] = ( raw ) ? obj.raw( attributeName ) : obj.get( attributeName );
-					
-					// Process nested models
-					if( currentValue instanceof Kevlar.Model ) {
-						modelClientId = currentValue.getClientId();
+		// Recursively goes through the data structure, and convert models to objects, and collections to arrays
+		Kevlar.apply( data, (function convert( dataContainer ) {
+			var clientId, 
+			    cachedDataContainer,
+			    data,
+			    i, len;
 						
-						if( ( cachedModel = cache[ modelClientId ] ) ) {
-							data[ attributeName ] = cachedModel;
-						} else {
-							// first, set up an object for the cache (so it exists when checking for it in the next call to convert()), 
-							// and set that object to the return data as well
-							data[ attributeName ] = cache[ modelClientId ] = {};
+			if( dataContainer instanceof Kevlar.Model ) {
+				var attributes = dataContainer.getAttributes(),
+				    attributeNames = options.attributeNames || Kevlar.util.Object.keysToArray( attributes ),
+				    attributeName, currentValue;
+				
+				data = {};  // data is an object for a Model
+				
+				// Slight hack, but delete options.attributeNames now, so that it is not used again for inner Models (should only affect the first 
+				// Model that gets converted, i.e. the Model provided to this method)
+				delete options.attributeNames;
+				
+				for( i = 0, len = attributeNames.length; i < len; i++ ) {
+					attributeName = attributeNames[ i ];
+					if( !persistedOnly || attributes[ attributeName ].isPersisted() === true ) {
+						currentValue = data[ attributeName ] = ( raw ) ? dataContainer.raw( attributeName ) : dataContainer.get( attributeName );
+						
+						// Process Nested DataContainers
+						if( currentValue instanceof Kevlar.DataContainer ) {
+							clientId = currentValue.getClientId();
 							
-							// now, populate that object with the properties of the inner object
-							Kevlar.apply( cache[ modelClientId ], convert( currentValue ) );  
+							if( ( cachedDataContainer = cache[ clientId ] ) ) {
+								data[ attributeName ] = cachedDataContainer;
+							} else {
+								// first, set up an array/object for the cache (so it exists when checking for it in the next call to convert()), 
+								// and set that array/object to the return data as well
+								cache[ clientId ] = data[ attributeName ] = ( currentValue instanceof Kevlar.Collection ) ? [] : {};  // Collection is an Array, Model is an Object
+								
+								// now, populate that object with the properties of the inner object
+								Kevlar.apply( cache[ clientId ], convert( currentValue ) );  
+							}
 						}
 					}
 				}
+				
+			} else if( dataContainer instanceof Kevlar.Collection ) {
+				var models = dataContainer.getModels(),
+				    model;
+				
+				data = [];  // data is an array for a Container
+				
+				for( i = 0, len = models.length; i < len; i++ ) {
+					model = models[ i ];
+					clientId = model.getClientId();
+					
+					data[ i ] = cache[ clientId ] || convert( model );
+				}
 			}
+			
 			return data;
-		})( obj ) );
+		})( dataContainer ) );
 		
 		return data;
 	}

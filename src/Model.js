@@ -1,8 +1,8 @@
 /**
  * @class Kevlar.Model
- * @extends Kevlar.util.Observable
+ * @extends Kevlar.DataContainer
  * 
- * Generalized data storage class, which has a number of data-related features, including the ability to persist the data to a backend server.
+ * Generalized key/value data storage class, which has a number of data-related features, including the ability to persist its data to a backend server.
  * Basically, a Model represents some object of data that your application uses. For example, in an online store, one might define two Models: 
  * one for Users, and the other for Products. These would be `User` and `Product` models, respectively. Each of these Models would in turn,
  * have the {@link Kevlar.attribute.Attribute Attributes} (data values) that each Model is made up of. Ex: A User model may have: `userId`, `firstName`, and 
@@ -10,7 +10,7 @@
  */
 /*global window, Kevlar */
 /*jslint forin:true */
-Kevlar.Model = Kevlar.util.Observable.extend( {
+Kevlar.Model = Kevlar.DataContainer.extend( {
 	
 	/**
 	 * @cfg {Kevlar.persistence.Proxy} persistenceProxy
@@ -108,14 +108,6 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 	 */
 	
 	/**
-	 * @protected
-	 * @property {String} clientId (readonly)
-	 * 
-	 * A unique ID for the Model on the client side. This is used to uniquely identify each Model instance.
-	 * Retrieve with {@link #getClientId}.
-	 */
-	
-	/**
 	 * @private
 	 * @property {Object} embeddedModelHandlers
 	 * 
@@ -131,15 +123,6 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 	 * @property {String} id (readonly)
 	 * The id for the Model. This property is set when the attribute specified by the {@link #idAttribute} config
 	 * is {@link #set}. 
-	 * 
-	 * *** Note: This property is here solely to maintain compatibility with Backbone's Collection, and should
-	 * not be accessed or used, as it will most likely be removed in the future.
-	 */
-	
-	/**
-	 * @hide
-	 * @property {String} cid (readonly)
-	 * A "client id" for the Model. This is a uniquely generated identifier assigned to the Model.
 	 * 
 	 * *** Note: This property is here solely to maintain compatibility with Backbone's Collection, and should
 	 * not be accessed or used, as it will most likely be removed in the future.
@@ -232,8 +215,8 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 		// --------------------------
 		
 		
-		// Call superclass constructor (Observable)
-		Kevlar.Model.superclass.constructor.call( me );
+		// Call superclass constructor
+		this._super( arguments );
 		
 		// If this class has a persistenceProxy definition that is an object literal, instantiate it *onto the prototype*
 		// (so one Proxy instance can be shared for every model)
@@ -293,11 +276,7 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 			 */
 			'destroy'
 		);
-		
-		
-		// Create a client ID for the Model, and set it to the property 'cid' as well to maintain compatibility with Backbone's Collection
-		me.clientId = me.cid = 'c' + Kevlar.newId();
-		
+				
 		
 		// Set the default values for attributes that don't have an initial value.
 		var attributes = me.attributes,  // me.attributes is a hash of the Attribute objects, keyed by their name
@@ -359,17 +338,6 @@ Kevlar.Model = Kevlar.util.Observable.extend( {
 	 */
 	getAttributes : function() {
 		return this.attributes;
-	},
-	
-	
-	/**
-	 * Retrieves the Model instance's unique {@link #clientId}.
-	 * 
-	 * @method getClientId
-	 * @return {String} The Model instance's unique {@link #clientId}. 
-	 */
-	getClientId : function() {
-		return this.clientId;
 	},
 	
 	
