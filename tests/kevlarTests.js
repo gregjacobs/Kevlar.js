@@ -1328,12 +1328,47 @@ tests.unit.add( new Ext.test.TestSuite( {
 			}
 		},
 		
-	
+		
+		
 		/*
 		 * Test add()
 		 */
 		{
 			name : "Test add()",
+			
+			"add() should simply delegate to the insert() method" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'attr' ]
+				} );
+				
+				var insertedModels, insertedIndex;
+				var Collection = Kevlar.Collection.extend( {
+					model : Model,
+					
+					// override insert() method, to make sure it is called
+					insert : function( models, index ) {
+						insertedModels = models;
+						insertedIndex = index;
+					}
+				} );
+				
+				var collection = new Collection(),
+				    model1 = new Model(),
+				    model2 = new Model();
+				    
+				collection.add( [ model1, model2 ] );
+				
+				Y.ArrayAssert.itemsAreSame( [ model1, model2 ], insertedModels, "The models passed to insert() should be the same ones provided to add()" );
+				Y.Assert.isUndefined( insertedIndex, "The index for the insert should be undefined, which defaults to appending the models to the collection" );
+			}
+		},
+		
+	
+		/*
+		 * Test insert()
+		 */
+		{
+			name : "Test insert()",
 			
 			setUp : function() {
 				this.Model = Kevlar.Model.extend( {
@@ -1345,7 +1380,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				} );
 			},
 			
-			"add() should be able to add a single Model instance to the Collection" : function() {
+			"insert() should be able to add a single Model instance to the Collection" : function() {
 				var collection = new this.Collection(),
 				    model = new this.Model( { attr: 'value' } ),
 				    models;
@@ -1353,7 +1388,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				models = collection.getModels();
 				Y.Assert.areSame( 0, models.length, "Initial condition: There should be no models in the collection" );
 				
-				collection.add( model );
+				collection.insert( model );
 				
 				models = collection.getModels();
 				Y.Assert.areSame( 1, models.length, "There should now be one model in the collection" );
@@ -1361,7 +1396,26 @@ tests.unit.add( new Ext.test.TestSuite( {
 			},
 			
 			
-			"add() should be able to add an array of Model instances to the Collection" : function() {
+			"insert() should be able to add a single Model instance to the Collection at a specified index" : function() {
+				var model1 = new this.Model( { attr: 'value1' } ),
+				    model2 = new this.Model( { attr: 'value2' } ),
+				    model3 = new this.Model( { attr: 'value3' } ),
+				    collection = new this.Collection( [ model1, model2 ] ), // only inserting model1 and model2 for now
+				    models;
+				
+				models = collection.getModels();
+				Y.Assert.areSame( 2, models.length, "Initial condition: There should be 2 models in the collection" );
+				
+				// Now insert model3 in the middel
+				collection.insert( model3, 1 );
+				
+				models = collection.getModels();
+				Y.Assert.areSame( 3, models.length, "There should now be 3 models in the collection" );
+				Y.ArrayAssert.itemsAreSame( [ model1, model3, model2 ], models, "model3 should have been added in the middle" );
+			},
+			
+			
+			"insert() should be able to add an array of Model instances to the Collection" : function() {
 				var collection = new this.Collection(),
 				    model1 = new this.Model( { attr: 'value1' } ),
 				    model2 = new this.Model( { attr: 'value2' } ),
@@ -1370,7 +1424,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				models = collection.getModels();
 				Y.Assert.areSame( 0, models.length, "Initial condition: There should be no models in the collection" );
 				
-				collection.add( [ model1, model2 ] );
+				collection.insert( [ model1, model2 ] );
 				
 				models = collection.getModels();
 				Y.Assert.areSame( 2, models.length, "There should now be two models in the collection" );
@@ -1379,12 +1433,50 @@ tests.unit.add( new Ext.test.TestSuite( {
 			},
 			
 			
+			"insert() should be able to add an array of Model instance to the Collection at a specified index" : function() {
+				var model1 = new this.Model( { attr: 'value1' } ),
+				    model2 = new this.Model( { attr: 'value2' } ),
+				    model3 = new this.Model( { attr: 'value3' } ),
+				    model4 = new this.Model( { attr: 'value4' } ),
+				    collection = new this.Collection( [ model1, model2 ] ), // only inserting model1 and model2 for now
+				    models;
+				
+				models = collection.getModels();
+				Y.Assert.areSame( 2, models.length, "Initial condition: There should be 2 models in the collection" );
+				
+				// Now insert model3 and model4 in the middel
+				collection.insert( [ model3, model4 ], 1 );
+				
+				models = collection.getModels();
+				Y.Assert.areSame( 4, models.length, "There should now be 4 models in the collection" );
+				Y.ArrayAssert.itemsAreSame( [ model1, model3, model4, model2 ], models, "model3 and model4 should have been added in the middle" );
+			},
+			
+			
+			
+			
 			// -------------------------
 			
 			// Test the 'add' event
 			
 			
-			"add() should fire the 'add' event with the array of inserted models" : function() {
+			"insert() should fire the 'add' event with the array of inserted models, even if only one model is inserted" : function() {
+				var collection = new this.Collection(),
+				    model = new this.Model( { attr: 'value' } ),
+				    models;
+				
+				var addedModels;
+				collection.on( 'add', function( collection, models ) {
+					addedModels = models;
+				} );
+				collection.insert( model );
+				
+				Y.Assert.areSame( 1, addedModels.length, "1 model should have been provided to the 'add' event" );
+				Y.Assert.areSame( model, addedModels[ 0 ], "The model provided with the 'add' event should be the model added to the collection" );
+			},
+			
+			
+			"insert() should fire the 'add' event with the array of inserted models when multiple models are inserted" : function() {
 				var collection = new this.Collection(),
 				    model1 = new this.Model( { attr: 'value1' } ),
 				    model2 = new this.Model( { attr: 'value2' } ),
@@ -1394,7 +1486,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				collection.on( 'add', function( collection, models ) {
 					addedModels = models;
 				} );
-				collection.add( [ model1, model2 ] );
+				collection.insert( [ model1, model2 ] );
 				
 				Y.Assert.areSame( 2, addedModels.length, "2 models should have been provided to the 'add' event" );
 				Y.Assert.areSame( model1, addedModels[ 0 ], "The first model added in the array should be the first model added to the collection" );
@@ -1402,19 +1494,117 @@ tests.unit.add( new Ext.test.TestSuite( {
 			},
 			
 			
-			"add() should fire the 'add' event with the array of inserted models, even if only one model is inserted" : function() {
-				var collection = new this.Collection(),
-				    model = new this.Model( { attr: 'value' } ),
-				    models;
+			"insert() should *not* fire the 'add' event for a model that is already in the Collection" : function() {
+				var model = new this.Model( { attr: 'value1' } ),
+				    collection = new this.Collection( [ model ] );  // initally add the model
+				
+				var addEventFired = false;
+				collection.on( 'add', function( collection, models ) {
+					addEventFired = true;
+				} );
+				collection.insert( model );
+				
+				Y.Assert.isFalse( addEventFired, "The 'add' event should not have been fired for another insert of the same model" );
+			},
+			
+			
+			"insert() should *not* fire the 'add' event for a model that is already in the Collection when multiple models are inserted, and only some exist already" : function() {
+				var model1 = new this.Model( { attr: 'value1' } ),
+				    model2 = new this.Model( { attr: 'value2' } ),
+				    collection = new this.Collection( [ model1 ] );  // initally add model1
 				
 				var addedModels;
 				collection.on( 'add', function( collection, models ) {
 					addedModels = models;
 				} );
-				collection.add( model );
+				collection.insert( [ model1, model2 ] );  // now insert model1 and model2. Only model2 should really have been "added"
 				
-				Y.Assert.areSame( 1, addedModels.length, "1 model should have been provided to the 'add' event" );
-				Y.Assert.areSame( model, addedModels[ 0 ], "The model provided with the 'add' event should be the model added to the collection" );
+				Y.ArrayAssert.itemsAreSame( [ model2 ], addedModels, "The 'add' event should have only fired with the model that was actually added" );
+			},
+			
+			
+			// -------------------------
+			
+			// Test reordering models
+			
+			
+			"insert() should reorder models when they already exist in the Collection" : function() {
+				var model1 = new this.Model( { attr: 'value1' } ),
+				    model2 = new this.Model( { attr: 'value2' } ),
+				    model3 = new this.Model( { attr: 'value3' } ),
+				    collection = new this.Collection( [ model1, model2, model3 ] ),
+				    models;
+				
+				collection.insert( model3, 0 );
+				Y.ArrayAssert.itemsAreSame( [ model3, model1, model2 ], collection.getModels(), "insert() should have moved model3 to the beginning" );
+				
+				collection.insert( [ model2, model1 ], 0 );
+				Y.ArrayAssert.itemsAreSame( [ model2, model1, model3 ], collection.getModels(), "insert() should have moved model2 and model1 to the beginning" );
+				
+				collection.insert( model2, 2 );
+				Y.ArrayAssert.itemsAreSame( [ model1, model3, model2 ], collection.getModels(), "insert() should have moved model2 to the end" );
+				
+				
+				// Try attempting to move models to out-of-bound indexes (they should be normalized)
+				collection.insert( model2, -1000 );
+				Y.ArrayAssert.itemsAreSame( [ model2, model1, model3 ], collection.getModels(), "insert() should have moved model2 to the beginning with an out of bounds negative index" );
+				
+				collection.insert( [ model1, model2 ], 1000 );
+				Y.ArrayAssert.itemsAreSame( [ model3, model1, model2 ], collection.getModels(), "insert() should have moved model1 and model2 to the end with an out of bounds positive index" );
+			},
+			
+			
+			"insert() should fire the 'reorder' event when reordering models" : function() {
+				var model1 = new this.Model( { attr: 'value1' } ),
+				    model2 = new this.Model( { attr: 'value2' } ),
+				    model3 = new this.Model( { attr: 'value3' } ),
+				    collection = new this.Collection( [ model1, model2, model3 ] ),
+				    models;
+				
+				var reorderEventCallCount = 0,
+				    reorderedModels = [],      // all of these are
+				    reorderedNewIndexes = [],  // arrays, for when we test
+				    reorderedOldIndexes = [];  // reordering multiple models at once
+				    
+				collection.on( 'reorder', function( collection, model, newIndex, oldIndex ) {
+					reorderEventCallCount++;
+					reorderedModels.push( model );
+					reorderedNewIndexes.push( newIndex );
+					reorderedOldIndexes.push( oldIndex );
+				} );
+				
+				collection.insert( model3, 0 );
+				Y.ArrayAssert.itemsAreSame( [ model3, model1, model2 ], collection.getModels(), "The models should be in the correct new order (this is mostly here to just show which order the collection should now be in)" );
+				Y.Assert.areSame( 1, reorderEventCallCount, "The reorder event should have been fired exactly once" );
+				Y.ArrayAssert.itemsAreSame( [ model3 ], reorderedModels, "model3 should have been fired with a 'reorder' event (and that is the only reorder event that should have been fired)" );
+				Y.ArrayAssert.itemsAreSame( [ 0 ], reorderedNewIndexes, "the new index for model3 should have been reported as index 0" );
+				Y.ArrayAssert.itemsAreSame( [ 2 ], reorderedOldIndexes, "the old index for model3 should have been reported as index 2" );
+				
+				
+				// Reset the result variables first
+				reorderEventCallCount = 0;
+				reorderedModels = [];
+				reorderedNewIndexes = [];
+				reorderedOldIndexes = [];
+				
+				collection.insert( [ model1, model2 ], 0 );  // move model1 and model2 back to the beginning
+				Y.ArrayAssert.itemsAreSame( [ model1, model2, model3 ], collection.getModels(), "The models should be in the correct new order (this is mostly here to just show which order the collection should now be in)" );
+				Y.Assert.areSame( 2, reorderEventCallCount, "The reorder event should have been fired exactly twice" );
+				Y.ArrayAssert.itemsAreSame( [ model1, model2 ], reorderedModels, "model1 and model2 should have been fired with a 'reorder' events" );
+				Y.ArrayAssert.itemsAreSame( [ 0, 1 ], reorderedNewIndexes, "the new indexes for model1 and model2 should have been reported as index 0, and 1, respectively" );
+				Y.ArrayAssert.itemsAreSame( [ 1, 2 ], reorderedOldIndexes, "the old indexes for model1 and model2 should have been reported as index 1, and 2, respectively" );
+			},
+			
+			
+			"insert() should *not* reorder models when calling insert() without the `index` argument (which would be the case as well if add() was called)" : function() {
+				var model1 = new this.Model( { attr: 'value1' } ),
+				    model2 = new this.Model( { attr: 'value2' } ),
+				    model3 = new this.Model( { attr: 'value3' } ),
+				    collection = new this.Collection( [ model1, model2, model3 ] ),
+				    models;
+				
+				collection.insert( model1 );  // supposed append, but model1 is already in the Collection, and an index was not given
+				Y.ArrayAssert.itemsAreSame( [ model1, model2, model3 ], collection.getModels(), "The models should be in the original order, as the supposed 'append' should not have happened because the model was already in the collection, and no new index was given" );
 			},
 			
 			
@@ -1423,7 +1613,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			// Test converting anonymous configs to Model instances
 			
 			
-			"add() should transform anonymous data objects to Model instances, based on the 'model' config" : function() {
+			"insert() should transform anonymous data objects to Model instances, based on the 'model' config" : function() {
 				var collection = new this.Collection(),  // note: this.Collection is configured with this.Model as the 'model'
 				    modelData1 = { attr: 'value1' },
 				    modelData2 = { attr: 'value2' },
@@ -1432,7 +1622,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				models = collection.getModels();
 				Y.Assert.areSame( 0, models.length, "Initial condition: There should be no models in the collection" );
 				
-				collection.add( [ modelData1, modelData2 ] );
+				collection.insert( [ modelData1, modelData2 ] );
 				
 				models = collection.getModels();
 				Y.Assert.areSame( 2, models.length, "There should now be two models in the collection" );
@@ -1441,7 +1631,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			},
 			
 			
-			"add() should fire the 'add' event with instantiated models for any anonymous config objects" : function() {
+			"insert() should fire the 'add' event with instantiated models for any anonymous config objects" : function() {
 				var collection = new this.Collection(),  // note: this.Collection is configured with this.Model as the 'model'
 				    modelData1 = { attr: 'value1' },
 				    modelData2 = { attr: 'value2' };
@@ -1450,7 +1640,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				collection.on( 'add', function( collection, models ) {
 					addedModels = models;
 				} );
-				collection.add( [ modelData1, modelData2 ] );
+				collection.insert( [ modelData1, modelData2 ] );
 				
 				Y.Assert.areSame( 2, addedModels.length, "2 models should have been provided to the 'add' event" );
 				Y.Assert.areSame( 'value1', addedModels[ 0 ].get( 'attr' ), "The first model added in the array should have the data provided from modelData1" );
@@ -1463,7 +1653,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			// Test sorting functionality with the `sortBy` config
 			
 			
-			"add() should insert models in the order specified by the sortBy config, if one is provided" : function() {
+			"insert() should insert models in the order specified by the sortBy config, if one is provided" : function() {
 				var Model = Kevlar.Model.extend( {
 					attributes : [ 'name' ]
 				} );
@@ -1484,7 +1674,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				    models;
 				
 				var collection = new Collection();
-				collection.add( [ model2, model4, model1 ] );  // Insert models in incorrect order
+				collection.insert( [ model2, model4, model1 ] );  // Insert models in incorrect order
 				
 				models = collection.getModels();
 				Y.ArrayAssert.itemsAreSame( [ model1, model2, model4 ], models, "The models should have been re-ordered based on the 'name' attribute" );
@@ -1492,7 +1682,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				
 				// Now create a new model, and see if it gets inserted in the correct position
 				var model3 = new Model( { name : "C" } );
-				collection.add( model3 );
+				collection.insert( model3 );
 				models = collection.getModels();
 				Y.ArrayAssert.itemsAreSame( [ model1, model2, model3, model4 ], models, "The models should have been re-ordered based on the 'name' attribute with the new model" );
 			},
@@ -1523,7 +1713,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				    model3 = new Model( { name : "C" } );
 				    
 				var collection = new Collection();
-				collection.add( [ model2, model3, model1 ] );  // Insert models in incorrect order
+				collection.insert( [ model2, model3, model1 ] );  // Insert models in incorrect order
 				
 				Y.Assert.areSame( 'name', attributeNameToSortBy, "The attributeNameToSortBy variable should have been set by sortBy() being called in the correct scope, able to access its helper method" );
 			},
@@ -1534,11 +1724,11 @@ tests.unit.add( new Ext.test.TestSuite( {
 			// Test duplicates functionality
 			
 			
-			"add() should not allow duplicate models (at this time. config option to come)" : function() {
+			"insert() should not allow duplicate models (at this time. config option to come)" : function() {
 				var model = new this.Model(),
 				    collection = new this.Collection();
 				
-				collection.add( [ model, model ] );  // try to add the model twice
+				collection.insert( [ model, model ] );  // try to add the model twice
 				Y.ArrayAssert.itemsAreSame( [ model ], collection.getModels(), "There should only be the one model in the collection at this time" );
 			},
 			
@@ -1548,7 +1738,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			// Test adding the "id" change listener
 			
 			
-			"add() should attach a 'change' listener for changes to the 'idAttribute' of a model, so that its internal modelsById hashmap can be updated if it changes" : function() {
+			"insert() should attach a 'change' listener for changes to the 'idAttribute' of a model, so that its internal modelsById hashmap can be updated if it changes" : function() {
 				var onModelIdChangeCallCount = 0,
 				    newIdValue, oldIdValue;
 				
@@ -2111,6 +2301,55 @@ tests.unit.add( new Ext.test.TestSuite( {
 				modelsArray.splice( 0, 1 );
 				Y.Assert.areSame( 2, modelsArray.length, "The models array should have been reduced to 2 elements" );
 				Y.Assert.areSame( 3, collection.getCount(), "The number of models in the collection should still be 3" );
+			}
+		},
+		
+				
+		{
+			/*
+			 * Test getData()
+			 */
+			name: 'Test getData()',
+			
+			setUp : function() {
+				// Hijack the Kevlar.data.NativeObjectConverter for the tests
+				this.origNativeObjectConverter = Kevlar.data.NativeObjectConverter;
+				
+				var args = this.args = {};
+				Kevlar.data.NativeObjectConverter = {
+					convert : function() {
+						args[ 0 ] = arguments[ 0 ];
+						args[ 1 ] = arguments[ 1 ];
+					}
+				};
+			},
+			
+			tearDown : function() {
+				// Restore the NativeObjectConverter after the tests
+				Kevlar.data.NativeObjectConverter = this.origNativeObjectConverter;
+			},
+			
+			
+			// ---------------------------
+			
+			
+			"getData() should delegate to the singleton NativeObjectConverter to create an Array representation of its data" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes: [ 'attr1', 'attr2' ]
+				} );
+				
+				var Collection = Kevlar.Collection.extend( {
+					model : Model
+				} );
+				
+				var collection = new Collection( [ { attr1: 'value1', attr2: 'value2' } ] );
+				
+				var optionsObj = { raw: true };
+				var result = collection.getData( optionsObj );  // even though there really is no result from this unit test with a mock object, this has the side effect of populating the test data
+				
+				// Check that the correct arguments were provided to the NativeObjectConverter's convert() method
+				Y.Assert.areSame( collection, this.args[ 0 ], "The first arg provided to NativeObjectConverter::convert() should have been the collection." );
+				Y.Assert.areSame( optionsObj, this.args[ 1 ], "The second arg provided to NativeObjectConverter::convert() should have been the options object" );
 			}
 		},
 		
@@ -2681,7 +2920,7 @@ tests.unit.data.add( new Ext.test.TestSuite( {
 				Y.Assert.areSame( data, data[ 0 ].nestedCollection, "The nested collection's array should refer back to the same array created for 'data'" );
 				
 				// Make sure we can reference through the nested collections
-				Y.Assert.areSame( data, data[ 0 ].nestedCollection[ 0 ].nestedCollection[ 0 ].nestedCollection, "Nesty nesty nesty should work..." );
+				Y.Assert.areSame( data, data[ 0 ].nestedCollection[ 0 ].nestedCollection[ 0 ].nestedCollection, "Nesty nesty nesty should work" );
 			}
 		}
 	]

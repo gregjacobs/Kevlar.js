@@ -224,7 +224,7 @@ tests.unit.data.add( new Ext.test.TestSuite( {
 				Y.Assert.areSame( data, data[ 0 ].nestedCollection, "The nested collection's array should refer back to the same array created for 'data'" );
 				
 				// Make sure we can reference through the nested collections
-				Y.Assert.areSame( data, data[ 0 ].nestedCollection[ 0 ].nestedCollection[ 0 ].nestedCollection, "Nesty nesty nesty should work..." );
+				Y.Assert.areSame( data, data[ 0 ].nestedCollection[ 0 ].nestedCollection[ 0 ].nestedCollection, "Nesty nesty nesty should work" );
 			}
 		}
 	]

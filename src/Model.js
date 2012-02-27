@@ -689,7 +689,8 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 	 * to pre-process the data before it is returned in the final hash, unless the `raw` option is set to true,
 	 * in which case the Model attributes are retrieved via {@link #raw}. 
 	 * 
-	 * @methods getData
+	 * @override
+	 * @method getData
 	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This object is sent to
 	 *   the {@link Kevlar.data.NativeObjectConverter#convert NativeObjectConverter's convert method}, and accepts all of the options
 	 *   that the {@link Kevlar.data.NativeObjectConverter#convert} method does. See that method for details.

@@ -47,7 +47,7 @@ Kevlar.data.NativeObjectConverter = {
 			    cachedDataContainer,
 			    data,
 			    i, len;
-						
+			
 			if( dataContainer instanceof Kevlar.Model ) {
 				var attributes = dataContainer.getAttributes(),
 				    attributeNames = options.attributeNames || Kevlar.util.Object.keysToArray( attributes ),

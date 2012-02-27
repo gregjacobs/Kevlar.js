@@ -2260,7 +2260,20 @@ Kevlar.DataContainer = Kevlar.util.Observable.extend( {
 	 */
 	getClientId : function() {
 		return this.clientId;
-	}
+	},
+	
+	
+	/**
+	 * Retrieves the native JavaScript value for the DataContainer.
+	 * 
+	 * @override
+	 * @method getData
+	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This object is sent to
+	 *   the {@link Kevlar.data.NativeObjectConverter#convert NativeObjectConverter's convert method}, and accepts all of the options
+	 *   that the {@link Kevlar.data.NativeObjectConverter#convert} method does. See that method for details.
+	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.attribute.Attribute Attribute} values.
+	 */
+	getData : Kevlar.abstractFn
 	
 } );
 
@@ -2820,19 +2833,34 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 			 * 
 			 * @event add
 			 * @param {Kevlar.Collection} collection This Collection instance.
-			 * @param {Kevlar.Model[]} The array of model instances that were added. This will be an
+			 * @param {Kevlar.Model[]} models The array of model instances that were added. This will be an
 			 *   array even in the case that a single model is added, so that handlers can consistently
 			 *   handle both cases of single/multiple model addition.
-			 * @param {Number} index The index at which the models were inserted. 
 			 */
 			'add',
+			
+			/**
+			 * Fires when a model is reordered within the Collection. A reorder can be performed
+			 * by calling the {@link #insert} method with a given index of where to re-insert one or
+			 * more models. If the model did not yet exist in the Collection, it will *not* fire a 
+			 * reorder event, but will be provided with an {@link #event-add add} event instead. 
+			 * 
+			 * This event is fired once for each model that is reordered.
+			 * 
+			 * @event reorder
+			 * @param {Kevlar.Collection} collection This Collection instance.
+			 * @param {Kevlar.Model} model The model that was reordered.
+			 * @param {Number} newIndex The new index for the model.
+			 * @param {Number} oldIndex The old index for the model.
+			 */
+			'reorder',
 			
 			/**
 			 * Fires when one or more models have been removed from the Collection.
 			 * 
 			 * @event remove
 			 * @param {Kevlar.Collection} collection This Collection instance.
-			 * @param {Kevlar.Model[]} The array of model instances that were removed. This will be an
+			 * @param {Kevlar.Model[]} models The array of model instances that were removed. This will be an
 			 *   array even in the case that a single model is removed, so that handlers can consistently
 			 *   handle both cases of single/multiple model removal.
 			 */
@@ -2958,8 +2986,32 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 	 *   be one or more anonymous objects, which will be converted into models based on the {@link #model} config.
 	 */
 	add : function( models ) {
-		var insertPos = this.models.length,
-		    i, len, model, modelClientId, modelId;
+		this.insert( models );
+	},
+	
+	
+	/**
+	 * Inserts (or moves) one or more models into the Collection, at the specified `index`.
+	 * Fires the {@link #event-add add} event for models that are newly inserted into the Collection,
+	 * and the {@link #event-reorder} event for models that are simply moved within the Collection.
+	 * 
+	 * @method insert
+	 * @param {Kevlar.Model/Kevlar.Model[]} models The model(s) to insert.
+	 * @param {Number} index The index to insert the models at.
+	 */
+	insert : function( models, index ) {
+		var indexSpecified = ( typeof index !== 'undefined' ),
+		    i, len, model, modelClientId, modelId,
+		    addedModels = [];
+		
+		// First, normalize the `index` if it is out of the bounds of the models array
+		if( typeof index !== 'number' ) {
+			index = this.models.length;  // append by default
+		} else if( index < 0 ) {
+			index = 0;
+		} else if( index > this.models.length ) {
+			index = this.models.length;
+		}
 		
 		// Normalize the argument to an array
 		if( !Kevlar.isArray( models ) ) {
@@ -2981,8 +3033,12 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 			
 			// Only add if the model does not already exist in the collection
 			if( !this.modelsByClientId[ modelClientId ] ) {
-				this.models.push( model );
+				addedModels.push( model );
 				this.modelsByClientId[ modelClientId ] = model;
+				
+				// Insert the model into the models array at the correct position
+				this.models.splice( index, 0, model );  // 0 elements to remove
+				index++;  // increment the index for the next model to insert / reorder
 				
 				if( model.hasIdAttribute() ) {  // make sure the model actually has a valid idAttribute first, before trying to call getId()
 					modelId = model.getId();
@@ -2996,6 +3052,21 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 				
 				// Subscribe to 'change' events on the model, so that the Collection can relay them
 				model.on( 'change', this.onModelChange, this );
+				
+			} else {
+				// Handle a reorder, but only actually move the model if a new index was specified.
+				// In the case that add() is called, no index will be specified, and we don't want to
+				// "re-add" models
+				if( indexSpecified ) {
+					var oldIndex = this.indexOf( model );
+					
+					// Move the model to the new index
+					this.models.splice( oldIndex, 1 );
+					this.models.splice( index, 0, model );
+					
+					this.fireEvent( 'reorder', this, model, index, oldIndex );
+					index++; // increment the index for the next model to insert / reorder
+				}
 			}
 		}
 		
@@ -3004,8 +3075,14 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 			this.models.sort( this.sortBy );  // note: the sortBy function has already been bound to the correct scope
 		}
 		
-		this.fireEvent( 'add', this, models, insertPos );
+		// Fire the 'add' event for models that were actually inserted into the Collection (meaning that they didn't already
+		// exist in the collection). Don't fire the event though if none were actually inserted (there could have been models
+		// that were simply reordered).
+		if( addedModels.length > 0 ) {
+			this.fireEvent( 'add', this, addedModels );
+		}
 	},
+	
 	
 	
 	/**
@@ -3190,6 +3267,24 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 	getModels : function() {
 		return this.getRange();  // gets all models
 	},
+	
+	
+	/**
+	 * Retrieves the Array representation of the Collection, where all models are converted into native JavaScript Objects.  The attribute values
+	 * for each of the models are retrieved via the {@link Kevlar.Model#get} method, to pre-process the data before they are returned in the final 
+	 * array of objects, unless the `raw` option is set to true, in which case the Model attributes are retrieved via {@link Kevlar.Model#raw}. 
+	 * 
+	 * @override
+	 * @method getData
+	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This object is sent to
+	 *   the {@link Kevlar.data.NativeObjectConverter#convert NativeObjectConverter's convert method}, and accepts all of the options
+	 *   that the {@link Kevlar.data.NativeObjectConverter#convert} method does. See that method for details.
+	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.attribute.Attribute Attribute} values.
+	 */
+	getData : function( options ) {
+		return Kevlar.data.NativeObjectConverter.convert( this, options );
+	},
+	
 	
 	
 	/**
@@ -3400,7 +3495,7 @@ Kevlar.data.NativeObjectConverter = {
 			    cachedDataContainer,
 			    data,
 			    i, len;
-						
+			
 			if( dataContainer instanceof Kevlar.Model ) {
 				var attributes = dataContainer.getAttributes(),
 				    attributeNames = options.attributeNames || Kevlar.util.Object.keysToArray( attributes ),
@@ -4148,7 +4243,8 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 	 * to pre-process the data before it is returned in the final hash, unless the `raw` option is set to true,
 	 * in which case the Model attributes are retrieved via {@link #raw}. 
 	 * 
-	 * @methods getData
+	 * @override
+	 * @method getData
 	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This object is sent to
 	 *   the {@link Kevlar.data.NativeObjectConverter#convert NativeObjectConverter's convert method}, and accepts all of the options
 	 *   that the {@link Kevlar.data.NativeObjectConverter#convert} method does. See that method for details.
