@@ -106,6 +106,19 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			},
 			
 			
+			_should : {
+				error : {
+					"beforeSet() should throw an error if the string 'modelClass' config does not reference a Model class" :
+						"The string value 'modelClass' config did not resolve to a Model class for attribute 'attr'",
+					"beforeSet() should throw an error if the function value 'modelClass' config does not reference a Model class" :
+						"The function value 'modelClass' config did not resolve to a Model class for attribute 'attr'"
+				}
+			},
+			
+			
+			// -----------------------
+			
+			
 			"beforeSet() should return null when provided any falsy value, or non-object" : function() {
 				var mockModel = JsMockito.mock( Kevlar.Model ),
 				    attribute = new Kevlar.attribute.ModelAttribute( { name: 'attr' } ),
@@ -138,6 +151,49 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			},
 			
 			
+			// ---------------------------
+			
+			// Test errors for if the string or function 'modelClass' configs still return an undefined value
+			
+			"beforeSet() should throw an error if the string 'modelClass' config does not reference a Model class" : function() {				
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    oldValue;  // undefined
+				
+				var attribute = new Kevlar.attribute.ModelAttribute( { 
+					name: 'attr',
+					modelClass: 'somethingThatIsNotDefined'
+				} );
+				
+				var data = { attr1: 1, attr2: 2 },
+				    value = attribute.beforeSet( mockModel, oldValue, data );
+				
+				Y.Assert.fail( "The test should have thrown an error in the call to attribute.beforeSet()" );
+			},
+			
+			
+			"beforeSet() should throw an error if the function value 'modelClass' config does not reference a Model class" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    oldValue;  // undefined
+				
+				var attribute = new Kevlar.attribute.ModelAttribute( { 
+					name: 'attr',
+					modelClass: function() {
+						return;  // undefined
+					}
+				} );
+				
+				var data = { attr1: 1, attr2: 2 },
+				    value = attribute.beforeSet( mockModel, oldValue, data );
+				
+				Y.Assert.fail( "The test should have thrown an error in the call to attribute.beforeSet()" );
+			},
+			
+			
+			// ---------------------------
+			
+			// Test conversions from an object to a Model
+			
+			
 			"beforeSet() should convert an anonymous data object to the provided modelClass, when modelClass is a direct reference to the Model subclass" : function() {
 				var mockModel = JsMockito.mock( Kevlar.Model ),
 				    data = { attr1: 1, attr2: 2 },
@@ -151,7 +207,11 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			
 			
 			"beforeSet() should convert an anonymous data object to the provided modelClass, when modelClass is a string" : function() {
-				window.__Kevlar_ModelAttributeTest_Model = Kevlar.Model.extend( {
+				// Use a deeply nested namespace, as that will probably be what is used
+				window.__Kevlar_CollectionAttributeTest = {};
+				window.__Kevlar_CollectionAttributeTest.ns1 = {};
+				window.__Kevlar_CollectionAttributeTest.ns1.ns2 = {};
+				window.__Kevlar_CollectionAttributeTest.ns1.ns2.MyModel = Kevlar.Model.extend( {
 					attributes : [ 'attr1', 'attr2' ]
 				} );
 				
@@ -160,13 +220,13 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				
 				var attribute = new Kevlar.attribute.ModelAttribute( { 
 					name: 'attr',
-					modelClass: '__Kevlar_ModelAttributeTest_Model'
+					modelClass: '__Kevlar_CollectionAttributeTest.ns1.ns2.MyModel'
 				} );
 				
 				var data = { attr1: 1, attr2: 2 };
 				var value = attribute.beforeSet( mockModel, oldValue, data );
 				
-				Y.Assert.isInstanceOf( window.__Kevlar_ModelAttributeTest_Model, value, "The return value from beforeSet should have been an instance of the Model" );
+				Y.Assert.isInstanceOf( window.__Kevlar_CollectionAttributeTest.ns1.ns2.MyModel, value, "The return value from beforeSet should have been an instance of the Model" );
 				Y.Assert.areSame( 1, value.get( 'attr1' ), "The data should have been set to the new model" );
 				Y.Assert.areSame( 2, value.get( 'attr2' ), "The data should have been set to the new model" );
 			},

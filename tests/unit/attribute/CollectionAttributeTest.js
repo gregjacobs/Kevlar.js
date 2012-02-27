@@ -104,6 +104,19 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			},
 			
 			
+			_should : {
+				error : {
+					"beforeSet() should throw an error if the string 'collectionClass' config does not reference a Collection class" :
+						"The string value 'collectionClass' config did not resolve to a Collection class for attribute 'attr'",
+					"beforeSet() should throw an error if the function value 'collectionClass' config does not reference a Collection class" :
+						"The function value 'collectionClass' config did not resolve to a Collection class for attribute 'attr'"
+				}
+			},
+			
+			
+			// -----------------------
+			
+			
 			"beforeSet() should return null when provided any falsy value, or non-object" : function() {
 				var mockModel = JsMockito.mock( Kevlar.Model ),
 				    attribute = new Kevlar.attribute.CollectionAttribute( { name: 'attr' } ),
@@ -136,6 +149,49 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			},
 			
 			
+			// ---------------------------
+			
+			// Test errors for if the string or function 'collectionClass' configs still return an undefined value
+			
+			"beforeSet() should throw an error if the string 'collectionClass' config does not reference a Collection class" : function() {				
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    oldValue;  // undefined
+				
+				var attribute = new Kevlar.attribute.CollectionAttribute( { 
+					name: 'attr',
+					collectionClass: 'somethingThatIsNotDefined'
+				} );
+				
+				var data = [ { attr1: 1, attr2: 2 }, { attr1: 3, attr2: 4 } ],
+				    value = attribute.beforeSet( mockModel, oldValue, data );
+				
+				Y.Assert.fail( "The test should have thrown an error in the call to attribute.beforeSet()" );
+			},
+			
+			
+			"beforeSet() should throw an error if the function value 'collectionClass' config does not reference a Collection class" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    oldValue;  // undefined
+				
+				var attribute = new Kevlar.attribute.CollectionAttribute( { 
+					name: 'attr',
+					collectionClass: function() {
+						return;  // undefined
+					}
+				} );
+				
+				var data = [ { attr1: 1, attr2: 2 }, { attr1: 3, attr2: 4 } ],
+				    value = attribute.beforeSet( mockModel, oldValue, data );
+				
+				Y.Assert.fail( "The test should have thrown an error in the call to attribute.beforeSet()" );
+			},
+			
+			
+			// ---------------------------
+			
+			// Test conversions from an array to a Collection
+			
+			
 			"beforeSet() should convert an array of data objects, when collectionClass is a direct reference to the Collection subclass" : function() {
 				var mockModel = JsMockito.mock( Kevlar.Model ),
 				    data = [ { attr1: 1, attr2: 2 }, { attr1: 3, attr2: 4 } ],
@@ -154,7 +210,11 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			
 			
 			"beforeSet() should convert an array of data objects, when collectionClass is a string" : function() {
-				window.__Kevlar_CollectionAttributeTest_Collection = Kevlar.Collection.extend( {
+				// Use a deeply nested namespace, as that will probably be what is used
+				window.__Kevlar_CollectionAttributeTest = {};
+				window.__Kevlar_CollectionAttributeTest.ns1 = {};
+				window.__Kevlar_CollectionAttributeTest.ns1.ns2 = {};
+				window.__Kevlar_CollectionAttributeTest.ns1.ns2.MyCollection = Kevlar.Collection.extend( {
 					model : this.Model
 				} );
 				
@@ -163,13 +223,13 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				
 				var attribute = new Kevlar.attribute.CollectionAttribute( { 
 					name: 'attr',
-					collectionClass: '__Kevlar_CollectionAttributeTest_Collection'
+					collectionClass: '__Kevlar_CollectionAttributeTest.ns1.ns2.MyCollection'
 				} );
 				
 				var data = [ { attr1: 1, attr2: 2 }, { attr1: 3, attr2: 4 } ],
 				    value = attribute.beforeSet( mockModel, oldValue, data );
 				
-				Y.Assert.isInstanceOf( window.__Kevlar_CollectionAttributeTest_Collection, value, "The return value from beforeSet should have been an instance of the Collection" );
+				Y.Assert.isInstanceOf( window.__Kevlar_CollectionAttributeTest.ns1.ns2.MyCollection, value, "The return value from beforeSet should have been an instance of the Collection" );
 				
 				
 				var model1 = value.getAt( 0 ),

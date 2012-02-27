@@ -104,9 +104,23 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 			
 			// Normalize the modelClass
 			if( typeof modelClass === 'string' ) {
-				this.modelClass = modelClass = window[ modelClass ];
+				var modelClassPaths = modelClass.split( '.' );
+				
+				// Loop through the namespaces down to the end of the path
+				modelClass = null;
+				for( var i = 0, len = modelClassPaths.length; i < len; i++ ) {
+					modelClass = ( modelClass || window )[ modelClassPaths[ i ] ];
+				}
+				
+				//this.collectionClass = collectionClass = window[ collectionClass ];
+				if( !modelClass ) {
+					throw new Error( "The string value 'modelClass' config did not resolve to a Model class for attribute '" + this.getName() + "'" );
+				}
 			} else if( typeof modelClass === 'function' && modelClass.constructor === Function ) {  // it's an anonymous function, run it, so it returns the Model reference we need
 				this.modelClass = modelClass = modelClass();
+				if( !modelClass ) {
+					throw new Error( "The function value 'modelClass' config did not resolve to a Model class for attribute '" + this.getName() + "'" );
+				}
 			}
 			
 			if( newValue && typeof modelClass === 'function' && !( newValue instanceof modelClass ) ) {

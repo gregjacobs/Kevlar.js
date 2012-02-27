@@ -108,9 +108,23 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.ObjectAttribute.extend( 
 			
 			// Normalize the collectionClass
 			if( typeof collectionClass === 'string' ) {
-				this.collectionClass = collectionClass = window[ collectionClass ];
-			} else if( typeof collectionClass === 'function' && collectionClass.constructor === Function ) {  // it's an anonymous function, run it, so it returns the Model reference we need
+				var collectionClassPaths = collectionClass.split( '.' );
+				
+				// Loop through the namespaces down to the end of the path
+				collectionClass = null;
+				for( var i = 0, len = collectionClassPaths.length; i < len; i++ ) {
+					collectionClass = ( collectionClass || window )[ collectionClassPaths[ i ] ];
+				}
+				
+				//this.collectionClass = collectionClass = window[ collectionClass ];
+				if( !collectionClass ) {
+					throw new Error( "The string value 'collectionClass' config did not resolve to a Collection class for attribute '" + this.getName() + "'" );
+				}
+			} else if( typeof collectionClass === 'function' && collectionClass.constructor === Function ) {  // it's an anonymous function, run it, so it returns the Collection reference we need
 				this.collectionClass = collectionClass = collectionClass();
+				if( !collectionClass ) {
+					throw new Error( "The function value 'collectionClass' config did not resolve to a Collection class for attribute '" + this.getName() + "'" );
+				}
 			}
 			
 			if( newValue && typeof collectionClass === 'function' && !( newValue instanceof collectionClass ) ) {
