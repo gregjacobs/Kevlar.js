@@ -1002,15 +1002,21 @@ var KevlarUTIL = Kevlar.util,
  *             }
  *         }
  *     });
+ * 
+ * 
+ * Note that it is possible to subscribe to *all* events from a given Observable, by subscribing to the
+ * special {@link #event-all all} event.
  */
 /*global Class, Kevlar */
 KevlarUTIL.Observable = Class.extend( Object, {
+	
 	/**
 	 * @cfg {Object} listeners (optional) 
 	 * A config object containing one or more event handlers to be added to this object during initialization.  
 	 * This should be a valid listeners config object as specified in the {@link #addListener} example for attaching 
 	 * multiple handlers at once.
 	 */
+		
 	
 	
 	/**
@@ -1023,6 +1029,30 @@ KevlarUTIL.Observable = Class.extend( Object, {
 			me.on( me.listeners );
 			delete me.listeners;
 		}
+		
+		this.addEvents(
+			/**
+			 * Special event which can be used to subscribe to *all* events from the Observable. When a given event
+			 * is fired, this event is fired immediately after it, with the name of the original event as the first
+			 * argument, and all other original arguments provided immediately after.
+			 * 
+			 * Ex:
+			 * 
+			 *     var myObservable = new Kevlar.util.Observable();
+			 *     myObservable.on( 'all', function( eventName ) {
+			 *         console.log( "Event '" + eventName + "' was fired with args: ", Array.prototype.slice.call( arguments, 1 ) );
+			 *     } );
+			 *     
+			 *     myObservable.fireEvent( 'change', 'a', 'b', 'c' );
+			 *     // console: Event 'change' was fired with args: [ "a", "b", "c" ]
+			 *     
+			 * 
+			 * @event all
+			 * @param {String} eventName The name of the original event that was fired.
+			 * @param {Mixed...} args The original arguments that were provided with the original event.  
+			 */
+			'all'
+		);
 	},
 
 
@@ -1096,7 +1126,8 @@ KevlarUTIL.Observable = Class.extend( Object, {
 			}
 		}
 		
-		// Fire an "all" event for compatibility with Backbone. Will probably be removed in the future
+		// Fire an "all" event, which is a special event that can be used to capture all events on an Observable. The first
+		// argument passed to handlers will be the event name, and all arguments that were passed from the original event will follow.
 		if( eventName !== 'all' ) {
 			this.fireEvent.apply( this, [ 'all' ].concat( Array.prototype.slice.call( arguments, 0 ) ) );
 		}
@@ -1483,16 +1514,6 @@ OBSERVABLE.unbind = OBSERVABLE.removeListener;
  */
 OBSERVABLE.trigger = OBSERVABLE.fireEvent;
 
-/**
- * Removes **all** added captures from the Observable.
- * 
- * @static
- * @method releaseCapture
- * @param {Kevlar.util.Observable} o The Observable to release
- */
-KevlarUTIL.Observable.releaseCapture = function(o){
-	o.fireEvent = OBSERVABLE.fireEvent;
-};
 
 function createTargeted(h, o, scope){
 	return function(){
@@ -2394,7 +2415,7 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.ObjectAttribute.extend( 
 	beforeSet : function( model, oldValue, newValue ) {
 		// First, if the oldValue was a Model, and this attribute is an "embedded" collection, we need to unsubscribe it from its parent model
 		if( this.embedded && oldValue instanceof Kevlar.Collection ) {
-			model.unsubscribeEmbeddedModel( this.getName(), oldValue );
+			model.unsubscribeEmbeddedDataContainer( this.getName(), oldValue );
 		}
 		
 		// Now, normalize the newValue to an object, or null
@@ -2448,7 +2469,7 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.ObjectAttribute.extend( 
 		}
 		
 		if( this.embedded && value instanceof Kevlar.Collection ) {
-			model.subscribeEmbeddedModel( this.getName(), value );
+			model.subscribeEmbeddedDataContainer( this.getName(), value );
 		}
 		
 		return value;
@@ -2623,7 +2644,7 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 	beforeSet : function( model, oldValue, newValue ) {
 		// First, if the oldValue was a Model, and this attribute is an "embedded" model, we need to unsubscribe it from its parent model
 		if( this.embedded && oldValue instanceof Kevlar.Model ) {
-			model.unsubscribeEmbeddedModel( this.getName(), oldValue );
+			model.unsubscribeEmbeddedDataContainer( this.getName(), oldValue );
 		}
 		
 		// Now, normalize the newValue to an object, or null
@@ -2676,7 +2697,7 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 		}
 		
 		if( this.embedded && value instanceof Kevlar.Model ) {
-			model.subscribeEmbeddedModel( this.getName(), value );
+			model.subscribeEmbeddedDataContainer( this.getName(), value );
 		}
 		
 		return value;
@@ -2720,6 +2741,29 @@ Kevlar.attribute.Attribute.registerType( 'string', Kevlar.attribute.StringAttrib
  * 
  * 
  * Note: Configuration options should be placed on the prototype of a Collection subclass.
+ * 
+ * 
+ * ### Model Events
+ * 
+ * Collections automatically relay all of their {@link Kevlar.Model Models'} events as if the Collection
+ * fired it. For example, Models' {@link Kevlar.Model#event-change change} events:
+ *     
+ *     var Model = Kevlar.Model.extend( {
+ *         attributes: [ 'name' ]
+ *     } );
+ *     var Collection = Kevlar.Collection.extend( {
+ *         model : Model
+ *     } );
+ * 
+ *     var model1 = new Model( { name: "Greg" } ),
+ *         model2 = new Model( { name: "Josh" } );
+ *     var collection = new Collection( [ model1, model2 ] );
+ *     collection.on( 'change', function( model, attributeName, newValue, oldValue ) {
+ *         console.log( "A model changed its '" + attributeName + "' attribute from '" + oldValue + "' to '" + newValue + "'" );
+ *     } );
+ * 
+ *     model1.set( 'name', "Gregory" );
+ *       // "A model changed its 'name' attribute from 'Greg' to 'Gregory'"
  */
 /*global window, Kevlar */
 Kevlar.Collection = Kevlar.DataContainer.extend( {
@@ -2864,34 +2908,7 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 			 *   array even in the case that a single model is removed, so that handlers can consistently
 			 *   handle both cases of single/multiple model removal.
 			 */
-			'remove',
-			
-			/**
-			 * Fires when a {@link Kevlar.attribute.Attribute} in a Model that the Collection holds has changed 
-			 * its value. This is a convenience event to respond to just a single attribute's change. Ex: if you 
-			 * want to just respond to the `title` attribute's change, you could subscribe to `change:title`. Ex:
-			 * 
-			 *     model.addListener( 'change:myAttribute', function( collection, model, newValue ) { ... } );
-			 * 
-			 * @event change:[attributeName]
-			 * @param {Kevlar.Collection} collection This Collection instance.
-			 * @param {Kevlar.Model} model This Model instance.
-			 * @param {Mixed} newValue The new value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
-			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
-			 */
-			
-			/**
-			 * Fires when one of the models in the Collection fires a {@link Kevlar.Model#change} event of 
-			 * its own. This event "relays" the model's event so that it can be listened to from the collection.
-			 * 
-			 * @event change
-			 * @param {Kevlar.Collection} collection This Collection instance.
-			 * @param {Kevlar.Model} model The model that was changed.
-			 * @param {String} attributeName The name of the attribute that was changed.
-			 * @param {Mixed} newValue The new value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
-			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
-			 */
-			'change'
+			'remove'
 		);
 		
 		
@@ -2909,10 +2926,10 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 		
 		
 		// If a 'sortBy' exists, and it is a function, create a bound function to bind it to this Collection instance
-		//  for when it is passed into Array.prototype.sort()
+		// for when it is passed into Array.prototype.sort()
 		if( typeof this.sortBy === 'function' ) {
 			this.sortBy = Kevlar.bind( this.sortBy, this );
-		} 
+		}
 		
 		
 		this.models = [];
@@ -3050,8 +3067,8 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 					model.on( 'change:' + model.getIdAttribute().getName(), this.onModelIdChange, this );
 				}
 				
-				// Subscribe to 'change' events on the model, so that the Collection can relay them
-				model.on( 'change', this.onModelChange, this );
+				// Subscribe to the special 'all' event on the model, so that the Collection can relay all of its events
+				model.on( 'all', this.onModelEvent, this );
 				
 			} else {
 				// Handle a reorder, but only actually move the model if a new index was specified.
@@ -3117,8 +3134,8 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 					model.un( 'change:' + model.getIdAttribute().getName(), this.onModelIdChange, this );
 				}
 				
-				// Unsubscribe the 'change' event listener from the model
-				model.un( 'change', this.onModelChange, this );
+				// Unsubscribe the special 'all' event listener from the model
+				model.un( 'all', this.onModelEvent, this );
 				
 				// Remove the model from the models array
 				for( j = 0, jlen = collectionModels.length; j < jlen; j++ ) {
@@ -3153,7 +3170,7 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 	 * Handles a change to a model's {@link Kevlar.Model#idAttribute}, so that the Collection's 
 	 * {@link #modelsById} hashmap can be updated.
 	 * 
-	 * Note that {@link #onModelChange} is still called even when this method executes.
+	 * Note that {@link #onModelEvent} is still called even when this method executes.
 	 * 
 	 * @protected
 	 * @method onModelIdChange
@@ -3171,20 +3188,17 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 	
 	
 	/**
-	 * Handles a change to a Model in the Collection by firing the {@link #change} event.
+	 * Handles an event fired by a Model in the Collection by relaying it from the Collection
+	 * (as if the Collection had fired it).
 	 * 
 	 * @protected
-	 * @method onModelChange
-	 * @param {Kevlar.Model} model
-	 * @param {String} attributeName
-	 * @param {Mixed} newValue
-	 * @param {Mixed} oldValue
+	 * @method onModelEvent
+	 * @param {String} eventName
+	 * @param {Mixed...} args The original arguments passed to the event.
 	 */
-	onModelChange : function( model, attributeName, newValue, oldValue ) {
-		// Fire a specific event for the attribute that changed
-		this.fireEvent( 'change:' + attributeName, this, model, newValue, oldValue );
-		
-		this.fireEvent( 'change', this, model, attributeName, newValue, oldValue );
+	onModelEvent : function( eventName ) {
+		// Relay the event from the collection, passing the original arguments
+		this.fireEvent.apply( this, [ eventName ].concat( Array.prototype.slice.call( arguments, 1 ) ) );
 	},
 	
 	
@@ -3663,7 +3677,7 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 	
 	/**
 	 * @private
-	 * @property {Object} embeddedModelHandlers
+	 * @property {Object} embeddedDataContainerHandlers
 	 * 
 	 * A hashmap of {@link #change} handlers for any embedded models (which are defined by a {@link Kevlar.attribute.ModelAttribute} with
 	 * {@link Kevlar.attribute.ModelAttribute#embedded} set to `true`).
@@ -3847,8 +3861,8 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 		// Initialize the data hash for storing attribute names of modified data, and their original values (see property description)
 		me.modifiedData = {};
 		
-		// Initialize the embeddedModelHandlers hashmap
-		me.embeddedModelHandlers = {};
+		// Initialize the embeddedDataContainerHandlers hashmap
+		me.embeddedDataContainerHandlers = {};
 		
 		// Set the initial data / defaults, if we have any
 		me.set( data );
@@ -4126,38 +4140,54 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 	// Embedded Model / Collection related functionality
 	
 	/**
-	 * Used internally by the framework, this method subscribes to the change event of the given (child) model, in order to relay
-	 * its events through this (i.e. the parent) model. This supports a form of "event bubbling" for {@link Kevlar.attribute.ModelAttribute#embedded embedded} 
-	 * child models, and is called from {@link Kevlar.attribute.ModelAttribute ModelAttribute}. For non-embedded Models (i.e. simply "related"
-	 * models), this method is not called.
+	 * Used internally by the framework, this method subscribes to the change event of the given child {@link Kevlar.Model}/{@link Kevlar.Container}, in order to relay
+	 * its events through this (i.e. their parent) model. This supports a form of "event bubbling" for {@link Kevlar.attribute.ModelAttribute#embedded embedded} 
+	 * child models, and is called from {@link Kevlar.attribute.ModelAttribute ModelAttribute}/{@link Kevlar.attribute.CollectionAttribute CollectionAttribute}. 
+	 * For non-embedded Models/Collections (i.e. simply "related" Models/Collection), this method is not called.
 	 * 
 	 * @hide
-	 * @method subscribeEmbeddedModel
-	 * @param {String} attributeName The name of the Attribute that is subscribing a Model.
-	 * @param {Kevlar.Model} childModel
+	 * @method subscribeEmbeddedDataContainer
+	 * @param {String} attributeName The name of the Attribute that is subscribing a Model/Collection.
+	 * @param {Kevlar.Model/Kevlar.Collection} dataContainer
 	 */
-	subscribeEmbeddedModel : function( attributeName, childModel ) {
-		var changeHandler = function( model, attrName, newValue, oldValue, nestedModels ) {  // note: 'nestedModels' arg is needed for the bubbling of deep model/collection events
-			this.onEmbeddedModelChange( attributeName, model, attrName, newValue, oldValue, nestedModels );
+	subscribeEmbeddedDataContainer : function( attributeName, dataContainer ) {
+		/*
+		var changeHandler = function() {  // note: 'nestedDataContainers' arg is needed for the bubbling of deep model/collection events
+			this.onEmbeddedDataContainerChange.apply( this, [ attributeName ].concat( arguments ) );
 		};
+		*/
 		
-		this.embeddedModelHandlers[ attributeName ] = changeHandler;
-		childModel.on( 'change', changeHandler, this );
+		
+		var changeHandler;
+		
+		
+		if( dataContainer instanceof Kevlar.Model ) {
+			changeHandler = function( model, attrName, newValue, oldValue, nestedDataContainers ) {  // note: 'nestedDataContainers' arg is needed for the bubbling of deep model/collection events
+				this.onEmbeddedDataContainerChange( attributeName, model, attrName, newValue, oldValue, nestedDataContainers );
+			};
+		} else {
+			changeHandler = function( collection, model, attrName, newValue, oldValue, nestedDataContainers ) {
+				this.onEmbeddedDataContainerChange( attributeName, model, attrName, newValue, oldValue, nestedDataContainers );
+			};
+		}
+		
+		this.embeddedDataContainerHandlers[ attributeName ] = changeHandler;
+		dataContainer.on( 'change', changeHandler, this );
 	},
 	
 	
 	/**
-	 * Used internally by the framework, this method unsubscribes the change event from the given (child) model. Used in conjunction with 
-	 * {@link #subscribeEmbeddedModel}, when a child model is un-set from its parent model.
+	 * Used internally by the framework, this method unsubscribes the change event from the given child {@link Kevlar.Model}/{@link Kevlar.Container}. 
+	 * Used in conjunction with {@link #subscribeEmbeddedDataContainer}, when a child model/collection is un-set from its parent model (i.e. this model).
 	 * 
 	 * @hide
-	 * @method unsubscribeEmbeddedModel
-	 * @param {String} attributeName The name of the Attribute that is unsubscribing a Model.
-	 * @param {Kevlar.Model} childModel
+	 * @method unsubscribeEmbeddedDataContainer
+	 * @param {String} attributeName The name of the Attribute that is unsubscribing a Model/Collection.
+	 * @param {Kevlar.Model/Kevlar.Collection} dataContainer
 	 */
-	unsubscribeEmbeddedModel : function( attributeName, childModel ) {
-		var changeHandler = this.embeddedModelHandlers[ attributeName ];
-		childModel.un( 'change', changeHandler, this );
+	unsubscribeEmbeddedDataContainer : function( attributeName, dataContainer ) {
+		var changeHandler = this.embeddedDataContainerHandlers[ attributeName ];
+		dataContainer.un( 'change', changeHandler, this );
 	},
 	
 	
@@ -4165,26 +4195,26 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 	 * Handler for a change in an embedded model. Relays the embedded model's {@link #change} events through this model.
 	 * 
 	 * @private
-	 * @method onEmbeddedModelChange
+	 * @method onEmbeddedDataContainerChange
 	 * @param {String} attributeName The attribute name in *this* model that stores the embedded model.
 	 * @param {Kevlar.Model} childModel The embedded child model.
 	 * @param {String} childModelAttr The attribute name of the changed attribute in the embedded model. When fired "up the chain"
 	 *   from deeply nested models, this will accumulate into a dot-delimited path to the child model. Ex: "parent.intermediate.child".
 	 * @param {Mixed} newValue
 	 * @param {Mixed} oldValue
-	 * @param {Kevlar.Model[]} [nestedModels] An array of the nested models that have fired an event below this Model's
-	 *   event. This is a "private" argument, which is only used for this feature.
+	 * @param {Kevlar.Model[]} [nestedDataContainers] An array of the nested models/collections that have fired a 'change' event below 
+	 *   this Model's event. This is a "private" argument, which is only used for this feature.
 	 */
-	onEmbeddedModelChange : function( attributeName, childModel, childModelAttr, newValue, oldValue, nestedModels ) {
-		nestedModels = nestedModels || [ childModel ];
-		nestedModels.unshift( this );  // prepend this model to the list
+	onEmbeddedDataContainerChange : function( attributeName, childModel, childModelAttr, newValue, oldValue, nestedDataContainers ) {
+		nestedDataContainers = nestedDataContainers || [ childModel ];
+		nestedDataContainers.unshift( this );  // prepend this model to the list
 		
 				
 		var pathToChangedAttr = attributeName + '.' + childModelAttr,
 		    pathsToChangedAttr = pathToChangedAttr.split( '.' );   // array of the parts of the full dot-delimited path
 		
 		// First, an event with the full path
-		this.fireEvent( 'change:' + pathToChangedAttr, nestedModels[ nestedModels.length - 1 ], newValue, oldValue );
+		this.fireEvent( 'change:' + pathToChangedAttr, nestedDataContainers[ nestedDataContainers.length - 1 ], newValue, oldValue );
 		
 		// Next, fire an event for each of the "paths" leading up to the changed attribute, but not including the attribute itself (we fired an event for that just above).
 		// This loop will fire them backwards, from longest path, to shortest.
@@ -4192,17 +4222,17 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 		//   - change:parent.intermediate.child  attr = "attr"                     model = child
 		//   - change:parent.intermediate        attr = "child.attr"               model = intermediate
 		//   - change:parent                     attr = "intermediate.child.attr"  model = parent
-		// Note: The 'model' arg that the event is fired with is always the 
+		// Note: The 'model' arg that the event is fired with is always the one that relates to the path
 		for( var i = pathsToChangedAttr.length - 2; i >= 0; i-- ) {
 			var currentPath = pathsToChangedAttr.slice( 0, i + 1 ).join( '.' ),
 			    changedAttr = pathsToChangedAttr.slice( i + 1 ).join( '.' ),
-			    modelForPath = nestedModels[ i + 1 ];
+			    modelForPath = nestedDataContainers[ i + 1 ];
 			
 			this.fireEvent( 'change:' + currentPath, modelForPath, changedAttr, newValue, oldValue );
 		}
 		
 		// Now fire the general 'change' event from this model
-		this.fireEvent( 'change', this, pathToChangedAttr, newValue, oldValue, nestedModels );          // this model, attributeName, newValue, oldValue, the nestedModels so far for this event from the deep child
+		this.fireEvent( 'change', this, pathToChangedAttr, newValue, oldValue, nestedDataContainers );   // this model, attributeName, newValue, oldValue, the nested models/collections so far for this event from the deepest child
 	},
 	
 	

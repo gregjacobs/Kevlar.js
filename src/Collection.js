@@ -13,6 +13,29 @@
  * 
  * 
  * Note: Configuration options should be placed on the prototype of a Collection subclass.
+ * 
+ * 
+ * ### Model Events
+ * 
+ * Collections automatically relay all of their {@link Kevlar.Model Models'} events as if the Collection
+ * fired it. For example, Models' {@link Kevlar.Model#event-change change} events:
+ *     
+ *     var Model = Kevlar.Model.extend( {
+ *         attributes: [ 'name' ]
+ *     } );
+ *     var Collection = Kevlar.Collection.extend( {
+ *         model : Model
+ *     } );
+ * 
+ *     var model1 = new Model( { name: "Greg" } ),
+ *         model2 = new Model( { name: "Josh" } );
+ *     var collection = new Collection( [ model1, model2 ] );
+ *     collection.on( 'change', function( model, attributeName, newValue, oldValue ) {
+ *         console.log( "A model changed its '" + attributeName + "' attribute from '" + oldValue + "' to '" + newValue + "'" );
+ *     } );
+ * 
+ *     model1.set( 'name', "Gregory" );
+ *       // "A model changed its 'name' attribute from 'Greg' to 'Gregory'"
  */
 /*global window, Kevlar */
 Kevlar.Collection = Kevlar.DataContainer.extend( {
@@ -157,34 +180,7 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 			 *   array even in the case that a single model is removed, so that handlers can consistently
 			 *   handle both cases of single/multiple model removal.
 			 */
-			'remove',
-			
-			/**
-			 * Fires when a {@link Kevlar.attribute.Attribute} in a Model that the Collection holds has changed 
-			 * its value. This is a convenience event to respond to just a single attribute's change. Ex: if you 
-			 * want to just respond to the `title` attribute's change, you could subscribe to `change:title`. Ex:
-			 * 
-			 *     model.addListener( 'change:myAttribute', function( collection, model, newValue ) { ... } );
-			 * 
-			 * @event change:[attributeName]
-			 * @param {Kevlar.Collection} collection This Collection instance.
-			 * @param {Kevlar.Model} model This Model instance.
-			 * @param {Mixed} newValue The new value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
-			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
-			 */
-			
-			/**
-			 * Fires when one of the models in the Collection fires a {@link Kevlar.Model#change} event of 
-			 * its own. This event "relays" the model's event so that it can be listened to from the collection.
-			 * 
-			 * @event change
-			 * @param {Kevlar.Collection} collection This Collection instance.
-			 * @param {Kevlar.Model} model The model that was changed.
-			 * @param {String} attributeName The name of the attribute that was changed.
-			 * @param {Mixed} newValue The new value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
-			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
-			 */
-			'change'
+			'remove'
 		);
 		
 		
@@ -202,10 +198,10 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 		
 		
 		// If a 'sortBy' exists, and it is a function, create a bound function to bind it to this Collection instance
-		//  for when it is passed into Array.prototype.sort()
+		// for when it is passed into Array.prototype.sort()
 		if( typeof this.sortBy === 'function' ) {
 			this.sortBy = Kevlar.bind( this.sortBy, this );
-		} 
+		}
 		
 		
 		this.models = [];
@@ -343,8 +339,8 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 					model.on( 'change:' + model.getIdAttribute().getName(), this.onModelIdChange, this );
 				}
 				
-				// Subscribe to 'change' events on the model, so that the Collection can relay them
-				model.on( 'change', this.onModelChange, this );
+				// Subscribe to the special 'all' event on the model, so that the Collection can relay all of its events
+				model.on( 'all', this.onModelEvent, this );
 				
 			} else {
 				// Handle a reorder, but only actually move the model if a new index was specified.
@@ -410,8 +406,8 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 					model.un( 'change:' + model.getIdAttribute().getName(), this.onModelIdChange, this );
 				}
 				
-				// Unsubscribe the 'change' event listener from the model
-				model.un( 'change', this.onModelChange, this );
+				// Unsubscribe the special 'all' event listener from the model
+				model.un( 'all', this.onModelEvent, this );
 				
 				// Remove the model from the models array
 				for( j = 0, jlen = collectionModels.length; j < jlen; j++ ) {
@@ -446,7 +442,7 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 	 * Handles a change to a model's {@link Kevlar.Model#idAttribute}, so that the Collection's 
 	 * {@link #modelsById} hashmap can be updated.
 	 * 
-	 * Note that {@link #onModelChange} is still called even when this method executes.
+	 * Note that {@link #onModelEvent} is still called even when this method executes.
 	 * 
 	 * @protected
 	 * @method onModelIdChange
@@ -464,20 +460,17 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 	
 	
 	/**
-	 * Handles a change to a Model in the Collection by firing the {@link #change} event.
+	 * Handles an event fired by a Model in the Collection by relaying it from the Collection
+	 * (as if the Collection had fired it).
 	 * 
 	 * @protected
-	 * @method onModelChange
-	 * @param {Kevlar.Model} model
-	 * @param {String} attributeName
-	 * @param {Mixed} newValue
-	 * @param {Mixed} oldValue
+	 * @method onModelEvent
+	 * @param {String} eventName
+	 * @param {Mixed...} args The original arguments passed to the event.
 	 */
-	onModelChange : function( model, attributeName, newValue, oldValue ) {
-		// Fire a specific event for the attribute that changed
-		this.fireEvent( 'change:' + attributeName, this, model, newValue, oldValue );
-		
-		this.fireEvent( 'change', this, model, attributeName, newValue, oldValue );
+	onModelEvent : function( eventName ) {
+		// Relay the event from the collection, passing the original arguments
+		this.fireEvent.apply( this, [ eventName ].concat( Array.prototype.slice.call( arguments, 1 ) ) );
 	},
 	
 	
