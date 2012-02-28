@@ -583,23 +583,9 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 	 * @param {Kevlar.Model/Kevlar.Collection} dataContainer
 	 */
 	subscribeEmbeddedDataContainer : function( attributeName, dataContainer ) {
-		/*
-		var changeHandler = function() {  // note: 'nestedDataContainers' arg is needed for the bubbling of deep model/collection events
-			this.onEmbeddedDataContainerChange.apply( this, [ attributeName ].concat( arguments ) );
+		var changeHandler = function( model, attrName, newValue, oldValue, nestedDataContainers ) {  // note: 'nestedDataContainers' arg is needed for the bubbling of deep model/collection events
+			this.onEmbeddedDataContainerChange( attributeName, model, attrName, newValue, oldValue, nestedDataContainers );
 		};
-		*/
-		
-		
-		var changeHandler;		
-		if( dataContainer instanceof Kevlar.Model ) {
-			changeHandler = function( model, attrName, newValue, oldValue, nestedDataContainers ) {  // note: 'nestedDataContainers' arg is needed for the bubbling of deep model/collection events
-				this.onEmbeddedDataContainerChange( attributeName, model, attrName, newValue, oldValue, nestedDataContainers );
-			};
-		} else {
-			changeHandler = function( collection, model, attrName, newValue, oldValue, nestedDataContainers ) {
-				this.onEmbeddedDataContainerChange( attributeName, model, attrName, newValue, oldValue, nestedDataContainers );
-			};
-		}
 		
 		this.embeddedDataContainerHandlers[ attributeName ] = changeHandler;
 		dataContainer.on( 'change', changeHandler, this );
