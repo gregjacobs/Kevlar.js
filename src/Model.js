@@ -373,6 +373,18 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 	
 	
 	/**
+	 * Retrieves the name of the "ID attribute" for the Model. This will be the attribute referenced by the {@link #idAttribute}
+	 * config.
+	 * 
+	 * @method getIdAttributeName
+	 * @return {String} The name of the "ID attribute".
+	 */
+	getIdAttributeName : function() {
+		return this.idAttribute;
+	},
+	
+	
+	/**
 	 * Determines if the Model has a valid {@link #idAttribute}. Will return true if there is an {@link #attributes attribute}
 	 * that is referenced by the {@link #idAttribute}, or false otherwise.
 	 * 

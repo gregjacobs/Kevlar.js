@@ -3449,7 +3449,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			name : "Test getIdAttribute()",
 			
 			
-			"getIdAttribute should return the Kevlar.attribute.Attribute referenced by the 'idAttribute' config" : function() {
+			"getIdAttribute() should return the Kevlar.attribute.Attribute referenced by the 'idAttribute' config" : function() {
 				var Model = Kevlar.Model.extend( {
 					attributes: [ 'id' ],
 					idAttribute: 'id'
@@ -3460,7 +3460,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			},
 			
 			
-			"getIdAttribute should return null if there is no attribute referenced by the 'idAttribute' config" : function() {
+			"getIdAttribute() should return null if there is no attribute referenced by the 'idAttribute' config" : function() {
 				var Model = Kevlar.Model.extend( {
 					attributes: [ 'id' ],
 					idAttribute: 'ooglyBoogly'
@@ -3468,6 +3468,25 @@ tests.unit.add( new Ext.test.TestSuite( {
 				
 				var model = new Model();
 				Y.Assert.isNull( model.getIdAttribute() );
+			}
+		},
+		
+		
+		{
+			/*
+			 * Test getIdAttributeName()
+			 */
+			name : "Test getIdAttributeName()",
+			
+			
+			"getIdAttributeName() should return the value of the 'idAttribute' config" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes: [ 'id' ],
+					idAttribute: 'myBrandyNewIdAttribute'  // doesn't matter if there is no attribute that matches the idAttribute's name (for now...) 
+				} );
+				
+				var model = new Model();
+				Y.Assert.areSame( 'myBrandyNewIdAttribute', model.getIdAttributeName() );
 			}
 		},
 		
