@@ -46,15 +46,21 @@ var KevlarUTIL = Kevlar.util,
  *             }
  *         }
  *     });
+ * 
+ * 
+ * Note that it is possible to subscribe to *all* events from a given Observable, by subscribing to the
+ * special {@link #event-all all} event.
  */
 /*global Class, Kevlar */
 KevlarUTIL.Observable = Class.extend( Object, {
+	
 	/**
 	 * @cfg {Object} listeners (optional) 
 	 * A config object containing one or more event handlers to be added to this object during initialization.  
 	 * This should be a valid listeners config object as specified in the {@link #addListener} example for attaching 
 	 * multiple handlers at once.
 	 */
+		
 	
 	
 	/**
@@ -67,6 +73,30 @@ KevlarUTIL.Observable = Class.extend( Object, {
 			me.on( me.listeners );
 			delete me.listeners;
 		}
+		
+		this.addEvents(
+			/**
+			 * Special event which can be used to subscribe to *all* events from the Observable. When a given event
+			 * is fired, this event is fired immediately after it, with the name of the original event as the first
+			 * argument, and all other original arguments provided immediately after.
+			 * 
+			 * Ex:
+			 * 
+			 *     var myObservable = new Kevlar.util.Observable();
+			 *     myObservable.on( 'all', function( eventName ) {
+			 *         console.log( "Event '" + eventName + "' was fired with args: ", Array.prototype.slice.call( arguments, 1 ) );
+			 *     } );
+			 *     
+			 *     myObservable.fireEvent( 'change', 'a', 'b', 'c' );
+			 *     // console: Event 'change' was fired with args: [ "a", "b", "c" ]
+			 *     
+			 * 
+			 * @event all
+			 * @param {String} eventName The name of the original event that was fired.
+			 * @param {Mixed...} args The original arguments that were provided with the original event.  
+			 */
+			'all'
+		);
 	},
 
 
@@ -140,7 +170,8 @@ KevlarUTIL.Observable = Class.extend( Object, {
 			}
 		}
 		
-		// Fire an "all" event for compatibility with Backbone. Will probably be removed in the future
+		// Fire an "all" event, which is a special event that can be used to capture all events on an Observable. The first
+		// argument passed to handlers will be the event name, and all arguments that were passed from the original event will follow.
 		if( eventName !== 'all' ) {
 			this.fireEvent.apply( this, [ 'all' ].concat( Array.prototype.slice.call( arguments, 0 ) ) );
 		}
@@ -527,16 +558,6 @@ OBSERVABLE.unbind = OBSERVABLE.removeListener;
  */
 OBSERVABLE.trigger = OBSERVABLE.fireEvent;
 
-/**
- * Removes **all** added captures from the Observable.
- * 
- * @static
- * @method releaseCapture
- * @param {Kevlar.util.Observable} o The Observable to release
- */
-KevlarUTIL.Observable.releaseCapture = function(o){
-	o.fireEvent = OBSERVABLE.fireEvent;
-};
 
 function createTargeted(h, o, scope){
 	return function(){
