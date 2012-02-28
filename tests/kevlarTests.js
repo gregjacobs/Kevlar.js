@@ -6321,6 +6321,115 @@ tests.unit.util.add( new Ext.test.TestSuite( {
 /*global window, Ext, Y, JsMockito, tests, Kevlar */
 tests.integration.add( new Ext.test.TestSuite( {
 	
+	name: 'Collection with Models',
+	
+	
+	items : [
+		
+		{
+			/*
+			 * Test Model Changes
+			 */
+			name : "Test Model Changes",
+			
+			
+			"changing an attribute in a model should fire a general 'change' event in the Collection" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'attr' ]
+				} );
+				
+				var Collection = Kevlar.Collection.extend( {
+					model : Model
+				} );
+				
+				var model1 = new Model( { attr: 'model1Value1' } ),
+				    model2 = new Model( { attr: 'model2Value1' } ),
+				    collection = new Collection( [ model1, model2 ] );
+				
+				var changeEventCallCount = 0,
+				    changeEventCollection,
+				    changeEventModel,
+				    changeEventAttributeName,
+				    changeEventNewValue,
+				    changeEventOldValue;
+				    
+				collection.on( 'change', function( collection, model, attributeName, newValue, oldValue ) {
+					changeEventCallCount++;
+					changeEventCollection = collection;
+					changeEventModel = model;
+					changeEventAttributeName = attributeName;
+					changeEventNewValue = newValue;
+					changeEventOldValue = oldValue;
+				} );
+				
+				model1.set( 'attr', 'model1Value2' );
+				Y.Assert.areSame( 1, changeEventCallCount, "The call count should now be exactly 1" );
+				Y.Assert.areSame( collection, changeEventCollection, "The event for model1 should have been fired with the collection as the first arg" );
+				Y.Assert.areSame( model1, changeEventModel, "The event for model1 should have been fired with the model that changed" );
+				Y.Assert.areSame( 'attr', changeEventAttributeName, "The event for model1 should have been fired with the correct attribute name" );
+				Y.Assert.areSame( 'model1Value2', changeEventNewValue, "The event for model1 should have been fired with the new value" );
+				Y.Assert.areSame( 'model1Value1', changeEventOldValue, "The event for model1 should have been fired with the old value" );
+				
+				model2.set( 'attr', 'model2Value2' );
+				Y.Assert.areSame( 2, changeEventCallCount, "The call count should now be exactly 2" );
+				Y.Assert.areSame( collection, changeEventCollection, "The event for model2 should have been fired with the collection as the first arg" );
+				Y.Assert.areSame( model2, changeEventModel, "The event for model2 should have been fired with the model that changed" );
+				Y.Assert.areSame( 'attr', changeEventAttributeName, "The event for model2 should have been fired with the correct attribute name" );
+				Y.Assert.areSame( 'model2Value2', changeEventNewValue, "The event for model2 should have been fired with the new value" );
+				Y.Assert.areSame( 'model2Value1', changeEventOldValue, "The event for model2 should have been fired with the old value" );
+			},
+			
+			
+			"changing an attribute in a model should fire an attribute-specific 'change' event in the Collection" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'attr' ]
+				} );
+				
+				var Collection = Kevlar.Collection.extend( {
+					model : Model
+				} );
+				
+				var model1 = new Model( { attr: 'model1Value1' } ),
+				    model2 = new Model( { attr: 'model2Value1' } ),
+				    collection = new Collection( [ model1, model2 ] );
+				
+				var changeEventCallCount = 0,
+				    changeEventCollection,
+				    changeEventModel,
+				    changeEventNewValue,
+				    changeEventOldValue;
+				    
+				collection.on( 'change:attr', function( collection, model, newValue, oldValue ) {
+					changeEventCallCount++;
+					changeEventCollection = collection;
+					changeEventModel = model;
+					changeEventNewValue = newValue;
+					changeEventOldValue = oldValue;
+				} );
+				
+				model1.set( 'attr', 'model1Value2' );
+				Y.Assert.areSame( 1, changeEventCallCount, "The call count should now be exactly 1" );
+				Y.Assert.areSame( collection, changeEventCollection, "The event for model1 should have been fired with the collection as the first arg" );
+				Y.Assert.areSame( model1, changeEventModel, "The event for model1 should have been fired with the model that changed" );
+				Y.Assert.areSame( 'model1Value2', changeEventNewValue, "The event for model1 should have been fired with the new value" );
+				Y.Assert.areSame( 'model1Value1', changeEventOldValue, "The event for model1 should have been fired with the old value" );
+				
+				model2.set( 'attr', 'model2Value2' );
+				Y.Assert.areSame( 2, changeEventCallCount, "The call count should now be exactly 2" );
+				Y.Assert.areSame( collection, changeEventCollection, "The event for model2 should have been fired with the collection as the first arg" );
+				Y.Assert.areSame( model2, changeEventModel, "The event for model2 should have been fired with the model that changed" );
+				Y.Assert.areSame( 'model2Value2', changeEventNewValue, "The event for model2 should have been fired with the new value" );
+				Y.Assert.areSame( 'model2Value1', changeEventOldValue, "The event for model2 should have been fired with the old value" );
+			}
+		}
+		
+	]
+
+} ) );
+
+/*global window, Ext, Y, JsMockito, tests, Kevlar */
+tests.integration.add( new Ext.test.TestSuite( {
+	
 	name: 'Model with ModelAttribute',
 	
 	
@@ -6747,89 +6856,54 @@ tests.integration.add( new Ext.test.TestSuite( {
 			/*
 			 * Test the 'change' event for embedded collections
 			 */
-			name : "Test the 'change' event for embedded collections"/*,
+			name : "Test the 'change' event for embedded collections",
 			
 			
 			
-			"When an attribute has changed in an embedded model, its parent model should fire the appropriate 'change' events" : function() {
-				var ParentModel = Kevlar.Model.extend( {
-					attributes : [
-						{ name: 'child', type: 'model', embedded: true }
-					]
-				} );
-				
+			"When an attribute has changed in a model of an embedded collection, its parent collection should fire the appropriate 'change' events" : function() {
 				var ChildModel = Kevlar.Model.extend( {
-					attributes : [
-						{ name : 'attr', type: 'string' }
-					]
+					attributes: [ 'attr' ]
 				} );
 				
-				var childModel = new ChildModel();
-				var parentModel = new ParentModel( {
-					child: childModel
+				var Collection = Kevlar.Collection.extend( {
+					model : ChildModel
 				} );
 				
-				
-				// Subscribe to the general 'change' event
-				var parentGeneralChangeEventCount = 0,
-				    parentGeneralChangedModel,
-				    parentGeneralChangedAttribute,
-				    parentGeneralChangedValue;
-				    
-				parentModel.on( 'change', function( model, attributeName, value ) {
-					parentGeneralChangeEventCount++;
-					parentGeneralChangedModel = model;
-					parentGeneralChangedAttribute = attributeName;
-					parentGeneralChangedValue = value;
+				var ParentModel = Kevlar.Model.extend( {
+					attributes : [ { name: 'myCollection', type: 'Collection', embedded: true } ]
 				} );
 				
 				
-				// We should also be able to subscribe to the general (but child model-specific) 'change' event for the embedded model itself
-				var generalModelSpecificChangeEventCount = 0,
-				    generalModelSpecificChangedModel,
-				    generalModelSpecificChangedAttribute,
-				    generalModelSpecificChangedValue;
-				    
-				parentModel.on( 'change:child', function( model, attributeName, value ) {
-					generalModelSpecificChangeEventCount++;
-					generalModelSpecificChangedModel = model;
-					generalModelSpecificChangedAttribute = attributeName;
-					generalModelSpecificChangedValue = value;
+				var childModel1 = new ChildModel( { attr: 'origValue1' } ),
+				    childModel2 = new ChildModel( { attr: 'origValue2' } ),
+				    collection = new Collection( [ childModel1, childModel2 ] ),
+				    parentModel = new ParentModel( { myCollection: collection } );
+				
+				var changeEventCallCount = 0,
+				    changeEventModel,
+				    changeEventAttributeName,
+				    changeEventNewValue,
+				    changeEventOldValue;
+				
+				parentModel.on( 'change', function( model, attributeName, newValue, oldValue ) {
+					changeEventCallCount++;
+					changeEventModel = model;
+					changeEventAttributeName = attributeName;
+					changeEventNewValue = newValue;
+					changeEventOldValue = oldValue;
 				} );
 				
-				
-				// And finally, we should be able to subscribe to the attribute-specific 'change' event from the embedded model itself
-				var attrSpecificChangeEventCount = 0,
-				    attrSpecificChangedModel,
-				    attrSpecificChangedValue;
-				    
-				parentModel.on( 'change:child.attr', function( model, value ) {
-					attrSpecificChangeEventCount++;
-					attrSpecificChangedModel = model;
-					attrSpecificChangedValue = value;
-				} );
-				
-				
-				
-				// Now set the value of the attribute in the child model
-				childModel.set( 'attr', 'asdf' );
-				
-				Y.Assert.areSame( 1, parentGeneralChangeEventCount, "The parent's general change event should have fired exactly once" );
-				Y.Assert.areSame( parentModel, parentGeneralChangedModel, "The parent's general change event should have fired with the parent model" );
-				Y.Assert.areSame( 'child.attr', parentGeneralChangedAttribute, "The parent's general change event should have fired with attributeName as the path to the nested model" );
-				Y.Assert.areSame( 'asdf', parentGeneralChangedValue, "The parent's general change event should have fired with the new value" );
-				
-				Y.Assert.areSame( 1, generalModelSpecificChangeEventCount, "The childModel-specific change event should have fired exactly once" );
-				Y.Assert.areSame( childModel, generalModelSpecificChangedModel, "The childModel-specific change event should have fired with the child model" );
-				Y.Assert.areSame( 'attr', generalModelSpecificChangedAttribute, "The childModel-specific change event should have fired with attributeName of the changed attribute" );
-				Y.Assert.areSame( 'asdf', generalModelSpecificChangedValue, "The childModel-specific change event should have fired with the new value" );
-				
-				Y.Assert.areSame( 1, attrSpecificChangeEventCount, "The attribute-specific change event should have fired exactly once" );
-				Y.Assert.areSame( childModel, attrSpecificChangedModel, "The attribute-specific change event should have fired with the child model" );
-				Y.Assert.areSame( 'asdf', attrSpecificChangedValue, "The attribute-specific change event should have fired with the new value" );
-			},
+				childModel1.set( 'attr', 'newValue1' );
+				Y.Assert.areSame( 1, changeEventCallCount, "The call count should now be exactly 1" );
+				//Y.Assert.areSame( collection, changeEventCollection, "The event for model1 should have been fired with the collection as the first arg" );
+				Y.Assert.areSame( childModel1, changeEventModel, "The event for childModel1 should have been fired with the model that changed" );
+				Y.Assert.areSame( 'attr', changeEventAttributeName, "The event for childModel1 should have been fired with the correct attribute name" );
+				Y.Assert.areSame( 'newValue1', changeEventNewValue, "The event for childModel1 should have been fired with the new value" );
+				Y.Assert.areSame( 'origValue1', changeEventOldValue, "The event for childModel1 should have been fired with the old value" );
+			}
 			
 			
+			/*
 			"When an attribute has changed in a non-embedded model, its parent model should *not* fire a 'change' event" : function() {
 				var ParentModel = Kevlar.Model.extend( {
 					attributes : [
