@@ -36,9 +36,20 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	/**
 	 * @cfg {Mixed/Function} defaultValue
 	 * The default value for the Attribute, if it has no value of its own. This can also be specified as the config 'default', 
-	 * but must be wrapped in quotes as `default` is a reserved word in JavaScript.
+	 * but must be wrapped in quotes (as `default` is a reserved word in JavaScript).
 	 *
-	 * If the defaultValue is a function, the function will be executed, and its return value used as the defaultValue.
+	 * If the defaultValue is a function, the function will be executed each time a Model is created, and its return value used as 
+	 * the defaultValue. This is useful, for example, to assign a new unique number to an attribute of a model. Ex:
+	 * 
+	 *     MyModel = Kevlar.Model.extend( {
+	 *         attributes : [
+	 *             { name: 'uniqueId', defaultValue: function() { return Kevlar.newId(); } }
+	 *         ]
+	 *     } );
+	 * 
+	 * If an Object is provided as the defaultValue, its properties will be recursed and searched for functions. The functions will
+	 * be executed to provide default values for nested properties of the object in the same way that providing a Function for this config
+	 * will do.
 	 */
 	
 	/**
@@ -265,16 +276,40 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 		}
 		
 		
-		// Handle defaultValue
+		// Normalize defaultValue
 		if( this[ 'default' ] ) {  // accept the key as simply 'default'
 			this.defaultValue = this[ 'default' ];
 		}
-		if( typeof this.defaultValue === "function" ) {
-			this.defaultValue = this.defaultValue();
+	},
+	
+	
+	/**
+	 * Retrieves the name for the Attribute.
+	 * 
+	 * @method getName
+	 * @return {String}
+	 */
+	getName : function() {
+		return this.name;
+	},
+	
+	
+	/**
+	 * Retrieves the default value for the Attribute. 
+	 * 
+	 * @method getDefaultValue
+	 * @return {Mixed}
+	 */
+	getDefaultValue : function() {
+		var defaultValue = this.defaultValue;
+		
+		if( typeof defaultValue === "function" ) {
+			defaultValue = defaultValue();
 		}
 		
 		// If defaultValue is an object, recurse through it and execute any functions, using their return values as the defaults
-		if( typeof this.defaultValue === 'object' ) {
+		if( typeof defaultValue === 'object' ) {
+			defaultValue = Kevlar.util.Object.clone( defaultValue );  // clone it, to not edit the original object structure
 			(function recurse( obj ) {
 				for( var prop in obj ) {
 					if( obj.hasOwnProperty( prop ) ) {
@@ -285,20 +320,12 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 						}
 					}
 				}
-			})( this.defaultValue );
+			})( defaultValue );
 		}
 		
+		return defaultValue;
 	},
 	
-	
-	/**
-	 * Retrieves the name for the Attribute.
-	 * 
-	 * @method getName()
-	 */
-	getName : function() {
-		return this.name;
-	},
 	
 	
 	/**

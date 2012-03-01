@@ -1720,9 +1720,20 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	/**
 	 * @cfg {Mixed/Function} defaultValue
 	 * The default value for the Attribute, if it has no value of its own. This can also be specified as the config 'default', 
-	 * but must be wrapped in quotes as `default` is a reserved word in JavaScript.
+	 * but must be wrapped in quotes (as `default` is a reserved word in JavaScript).
 	 *
-	 * If the defaultValue is a function, the function will be executed, and its return value used as the defaultValue.
+	 * If the defaultValue is a function, the function will be executed each time a Model is created, and its return value used as 
+	 * the defaultValue. This is useful, for example, to assign a new unique number to an attribute of a model. Ex:
+	 * 
+	 *     MyModel = Kevlar.Model.extend( {
+	 *         attributes : [
+	 *             { name: 'uniqueId', defaultValue: function() { return Kevlar.newId(); } }
+	 *         ]
+	 *     } );
+	 * 
+	 * If an Object is provided as the defaultValue, its properties will be recursed and searched for functions. The functions will
+	 * be executed to provide default values for nested properties of the object in the same way that providing a Function for this config
+	 * will do.
 	 */
 	
 	/**
@@ -1949,16 +1960,40 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 		}
 		
 		
-		// Handle defaultValue
+		// Normalize defaultValue
 		if( this[ 'default' ] ) {  // accept the key as simply 'default'
 			this.defaultValue = this[ 'default' ];
 		}
-		if( typeof this.defaultValue === "function" ) {
-			this.defaultValue = this.defaultValue();
+	},
+	
+	
+	/**
+	 * Retrieves the name for the Attribute.
+	 * 
+	 * @method getName
+	 * @return {String}
+	 */
+	getName : function() {
+		return this.name;
+	},
+	
+	
+	/**
+	 * Retrieves the default value for the Attribute. 
+	 * 
+	 * @method getDefaultValue
+	 * @return {Mixed}
+	 */
+	getDefaultValue : function() {
+		var defaultValue = this.defaultValue;
+		
+		if( typeof defaultValue === "function" ) {
+			defaultValue = defaultValue();
 		}
 		
 		// If defaultValue is an object, recurse through it and execute any functions, using their return values as the defaults
-		if( typeof this.defaultValue === 'object' ) {
+		if( typeof defaultValue === 'object' ) {
+			defaultValue = Kevlar.util.Object.clone( defaultValue );  // clone it, to not edit the original object structure
 			(function recurse( obj ) {
 				for( var prop in obj ) {
 					if( obj.hasOwnProperty( prop ) ) {
@@ -1969,20 +2004,12 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 						}
 					}
 				}
-			})( this.defaultValue );
+			})( defaultValue );
 		}
 		
+		return defaultValue;
 	},
 	
-	
-	/**
-	 * Retrieves the name for the Attribute.
-	 * 
-	 * @method getName()
-	 */
-	getName : function() {
-		return this.name;
-	},
 	
 	
 	/**
@@ -3799,7 +3826,7 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 			 * convenience event to respond to just a single attribute's change. Ex: if you want to
 			 * just respond to the `title` attribute's change, you could subscribe to `change:title`. Ex:
 			 * 
-			 *     model.addListener( 'change:myAttribute', function( model, newValue ) { ... } );
+			 *     model.addListener( 'change:title', function( model, newValue ) { ... } );
 			 * 
 			 * @event change:[attributeName]
 			 * @param {Kevlar.Model} model This Model instance.
@@ -3850,7 +3877,7 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 		var attributes = me.attributes,  // me.attributes is a hash of the Attribute objects, keyed by their name
 		    attributeDefaultValue;
 		for( var name in attributes ) {
-			if( data[ name ] === undefined && ( attributeDefaultValue = attributes[ name ].defaultValue ) !== undefined ) {
+			if( data[ name ] === undefined && ( attributeDefaultValue = attributes[ name ].getDefaultValue() ) !== undefined ) {
 				data[ name ] = attributeDefaultValue;
 			}
 		}
@@ -4130,7 +4157,7 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 	 * @return {Mixed} The default value for the attribute.
 	 */
 	getDefault : function( attributeName ) {
-		return this.attributes[ attributeName ].defaultValue;
+		return this.attributes[ attributeName ].getDefaultValue();
 	},
 	
 	
@@ -4347,22 +4374,29 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 	
 	/**
 	 * @hide
-	 * Creates a clone of the Model, by copying its instance data.
+	 * Creates a clone of the Model, by copying its instance data. Note that the cloned model will *not* have a value
+	 * for its {@link #idAttribute} (as it is a new model, and multiple models of the same type cannot exist with
+	 * the same id). You may optionally provide a new id for the clone with the `id` parameter. 
 	 * 
 	 * Note: This is a very very early, alpha version of the method, where the final version will most likely
-	 * account for shared nested models, while copying embedded models and other such nested data. Will also handle 
+	 * account for embedded models, while copying embedded models and other such nested data. Will also handle 
 	 * circular dependencies. Do not use just yet.
 	 * 
 	 * @method clone
+	 * @param {Mixed} [id] A new id for the Model. Defaults to undefined.
 	 * @return {Kevlar.Model} The new Model instance, which is a clone of the Model this method was called on.
 	 */
-	clone : function() {
+	clone : function( id ) {
 		var data = Kevlar.util.Object.clone( this.getData() );
 		
 		// Remove the id, so that it becomes a new model. If this is kept here, a reference to this exact
 		// model will be returned instead of a new one, as the framework does not allow duplicate models with
-		// the same id.
-		delete data[ this.idAttribute ];  
+		// the same id. Otherwise, if a new id is passed, it will be set to the new model.
+		if( typeof id === 'undefined' ) {
+			delete data[ this.idAttribute ];
+		} else {
+			data[ this.idAttribute ] = id;
+		}
 		
 		return new this.constructor( data );
 	},
@@ -4559,7 +4593,6 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 		// Make a request to destroy the data on the server
 		this.persistenceProxy.destroy( this, proxyOptions );
 	}
-	
 	
 } );
 

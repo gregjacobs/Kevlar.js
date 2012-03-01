@@ -231,7 +231,7 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 			 * convenience event to respond to just a single attribute's change. Ex: if you want to
 			 * just respond to the `title` attribute's change, you could subscribe to `change:title`. Ex:
 			 * 
-			 *     model.addListener( 'change:myAttribute', function( model, newValue ) { ... } );
+			 *     model.addListener( 'change:title', function( model, newValue ) { ... } );
 			 * 
 			 * @event change:[attributeName]
 			 * @param {Kevlar.Model} model This Model instance.
@@ -282,7 +282,7 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 		var attributes = me.attributes,  // me.attributes is a hash of the Attribute objects, keyed by their name
 		    attributeDefaultValue;
 		for( var name in attributes ) {
-			if( data[ name ] === undefined && ( attributeDefaultValue = attributes[ name ].defaultValue ) !== undefined ) {
+			if( data[ name ] === undefined && ( attributeDefaultValue = attributes[ name ].getDefaultValue() ) !== undefined ) {
 				data[ name ] = attributeDefaultValue;
 			}
 		}
@@ -562,7 +562,7 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 	 * @return {Mixed} The default value for the attribute.
 	 */
 	getDefault : function( attributeName ) {
-		return this.attributes[ attributeName ].defaultValue;
+		return this.attributes[ attributeName ].getDefaultValue();
 	},
 	
 	

@@ -115,7 +115,7 @@ tests.unit.attribute.add( new Ext.test.TestCase( {
 			'default' : 1
 		} );
 		
-		Y.Assert.areSame( 1, attribute.defaultValue );
+		Y.Assert.areSame( 1, attribute.getDefaultValue() );
 	},
 	
 	
@@ -125,7 +125,7 @@ tests.unit.attribute.add( new Ext.test.TestCase( {
 			'default' : function() { return 1; }
 		} );
 		
-		Y.Assert.areSame( 1, attribute.defaultValue );
+		Y.Assert.areSame( 1, attribute.getDefaultValue() );
 	},
 	
 	
@@ -135,7 +135,7 @@ tests.unit.attribute.add( new Ext.test.TestCase( {
 			defaultValue : 1
 		} );
 		
-		Y.Assert.areSame( 1, attribute.defaultValue );
+		Y.Assert.areSame( 1, attribute.getDefaultValue() );
 	},
 	
 	
@@ -145,7 +145,19 @@ tests.unit.attribute.add( new Ext.test.TestCase( {
 			defaultValue : function() { return 1; }
 		} );
 		
-		Y.Assert.areSame( 1, attribute.defaultValue );
+		Y.Assert.areSame( 1, attribute.getDefaultValue() );
+	},
+	
+	
+	"A default provided as defaultValue that is a function should be executed each time the default is called for" : function() {
+		var counter = 0;
+		var attribute = new Kevlar.attribute.Attribute( {
+			name : "TestAttribute",
+			defaultValue : function() { return ++counter; }
+		} );
+		
+		Y.Assert.areSame( 1, attribute.getDefaultValue() );
+		Y.Assert.areSame( 2, attribute.getDefaultValue() );
 	},
 	
 	
@@ -168,7 +180,7 @@ tests.unit.attribute.add( new Ext.test.TestCase( {
 				}
 			}
 		} );
-		var defaultData = attribute.defaultValue;
+		var defaultData = attribute.getDefaultValue();
 		Y.Assert.areSame( "A", defaultData.a, "The 'default' config provided as an object should have had the value 'A' for property 'a'." );
 		Y.Assert.areSame( "B1", defaultData.b.innerB1, "The 'default' config provided as an object should have been recursed for functions, and their return values used as the properties." );
 		Y.Assert.areSame( "C2", defaultData.c.innerC2, "The 'default' config provided as an object should have been recursed for functions, and their return values used as the properties." );
