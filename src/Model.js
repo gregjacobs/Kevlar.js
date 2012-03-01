@@ -970,7 +970,6 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 		}
 		
 		var successCallback = function() {
-			this.onDestroy();  // call hook method for subclasses
 			this.fireEvent( 'destroy', this );
 			
 			if( typeof options.success === 'function' ) {
@@ -998,18 +997,7 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 		
 		// Make a request to destroy the data on the server
 		this.persistenceProxy.destroy( this, proxyOptions );
-	},
-	
-	
-	/**
-	 * Hook method for subclasses to implement any logic that should be executed upon the destruction of the model.
-	 * This method is executed upon successful destruction of the model on the server.
-	 * 
-	 * @protected
-	 * @method onDestroy
-	 */
-	onDestroy : Kevlar.emptyFn
-	
+	}
 	
 } );
 
