@@ -1,6 +1,6 @@
 /**
  * @class Kevlar.attribute.CollectionAttribute
- * @extends Kevlar.attribute.ObjectAttribute
+ * @extends Kevlar.attribute.DataContainerAttribute
  * 
  * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.Collection} value.
  * 
@@ -14,7 +14,7 @@
  * function to convert any anonymous array to a Collection in the appropriate way. 
  */
 /*global window, Kevlar */
-Kevlar.attribute.CollectionAttribute = Kevlar.attribute.ObjectAttribute.extend( {
+Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataContainerAttribute.extend( {
 		
 	/**
 	 * @cfg {Kevlar.Collection/String/Function} collectionClass
@@ -108,15 +108,8 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.ObjectAttribute.extend( 
 			
 			// Normalize the collectionClass
 			if( typeof collectionClass === 'string' ) {
-				var collectionClassPaths = collectionClass.split( '.' );
+				collectionClass = this.resolveGlobalPath( collectionClass );  // changes the string "a.b.c" into the value at `a.b.c`
 				
-				// Loop through the namespaces down to the end of the path
-				collectionClass = null;
-				for( var i = 0, len = collectionClassPaths.length; i < len; i++ ) {
-					collectionClass = ( collectionClass || window )[ collectionClassPaths[ i ] ];
-				}
-				
-				//this.collectionClass = collectionClass = window[ collectionClass ];
 				if( !collectionClass ) {
 					throw new Error( "The string value 'collectionClass' config did not resolve to a Collection class for attribute '" + this.getName() + "'" );
 				}

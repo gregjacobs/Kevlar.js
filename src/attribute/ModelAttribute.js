@@ -1,6 +1,6 @@
 /**
  * @class Kevlar.attribute.ModelAttribute
- * @extends Kevlar.attribute.ObjectAttribute
+ * @extends Kevlar.attribute.DataContainerAttribute
  * 
  * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.Model} value.
  * 
@@ -12,7 +12,7 @@
  * function to convert any anonymous object to a Model in the appropriate way. 
  */
 /*global window, Kevlar */
-Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
+Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataContainerAttribute.extend( {
 		
 	/**
 	 * @cfg {Kevlar.Model/String/Function} modelClass
@@ -104,15 +104,8 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 			
 			// Normalize the modelClass
 			if( typeof modelClass === 'string' ) {
-				var modelClassPaths = modelClass.split( '.' );
+				modelClass = this.resolveGlobalPath( modelClass );  // changes the string "a.b.c" into the value at `a.b.c`
 				
-				// Loop through the namespaces down to the end of the path
-				modelClass = null;
-				for( var i = 0, len = modelClassPaths.length; i < len; i++ ) {
-					modelClass = ( modelClass || window )[ modelClassPaths[ i ] ];
-				}
-				
-				//this.collectionClass = collectionClass = window[ collectionClass ];
 				if( !modelClass ) {
 					throw new Error( "The string value 'modelClass' config did not resolve to a Model class for attribute '" + this.getName() + "'" );
 				}
