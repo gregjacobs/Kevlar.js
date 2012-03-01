@@ -779,22 +779,29 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 	
 	/**
 	 * @hide
-	 * Creates a clone of the Model, by copying its instance data.
+	 * Creates a clone of the Model, by copying its instance data. Note that the cloned model will *not* have a value
+	 * for its {@link #idAttribute} (as it is a new model, and multiple models of the same type cannot exist with
+	 * the same id). You may optionally provide a new id for the clone with the `id` parameter. 
 	 * 
 	 * Note: This is a very very early, alpha version of the method, where the final version will most likely
-	 * account for shared nested models, while copying embedded models and other such nested data. Will also handle 
+	 * account for embedded models, while copying embedded models and other such nested data. Will also handle 
 	 * circular dependencies. Do not use just yet.
 	 * 
 	 * @method clone
+	 * @param {Mixed} [id] A new id for the Model. Defaults to undefined.
 	 * @return {Kevlar.Model} The new Model instance, which is a clone of the Model this method was called on.
 	 */
-	clone : function() {
+	clone : function( id ) {
 		var data = Kevlar.util.Object.clone( this.getData() );
 		
 		// Remove the id, so that it becomes a new model. If this is kept here, a reference to this exact
 		// model will be returned instead of a new one, as the framework does not allow duplicate models with
-		// the same id.
-		delete data[ this.idAttribute ];  
+		// the same id. Otherwise, if a new id is passed, it will be set to the new model.
+		if( typeof id === 'undefined' ) {
+			delete data[ this.idAttribute ];
+		} else {
+			data[ this.idAttribute ] = id;
+		}
 		
 		return new this.constructor( data );
 	},
