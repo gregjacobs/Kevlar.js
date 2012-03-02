@@ -2577,10 +2577,6 @@ tests.unit.add( new Ext.test.TestSuite( {
 			name : "Test isModified()",
 			
 			setUp : function() {
-				this.Model = Kevlar.Model.extend( {
-					attributes : [ 'attr' ]
-				} );
-				
 				this.Collection = Kevlar.Collection.extend( {
 					model : this.Model
 				} );
@@ -2588,33 +2584,27 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			
 			"isModified() should return false if no Models within the collection have been modified" : function() {
-				var model1 = new this.Model( { attr: 1 } ),
-				    model2 = new this.Model( { attr: 2 } ),
-				    collection = new this.Collection( [ model1, model2 ] );
+				var model = JsMockito.mock( Kevlar.Model );
+				JsMockito.when( model ).isModified().thenReturn( false );
+				
+				var collection = new this.Collection( [ model ] );
 				
 				Y.Assert.isFalse( collection.isModified() );
 			},
 			
 			
 			"isModified() should return true if a Model within the collection has been modified" : function() {
-				var model1 = new this.Model( { attr: 1 } ),
-				    model2 = new this.Model( { attr: 2 } ),
-				    collection = new this.Collection( [ model1, model2 ] );
+				var model1 = JsMockito.mock( Kevlar.Model );
+				JsMockito.when( model1 ).getClientId().thenReturn( 1 );     // (models must have a different clientID so they are considered unique)
+				JsMockito.when( model1 ).isModified().thenReturn( false );
 				
-				model1.set( 'attr', 42 );
+				var model2 = JsMockito.mock( Kevlar.Model );
+				JsMockito.when( model2 ).getClientId().thenReturn( 2 );     // (models must have a different clientID so they are considered unique)
+				JsMockito.when( model2 ).isModified().thenReturn( true );
+				
+				var collection = new this.Collection( [ model1, model2 ] );
+				
 				Y.Assert.isTrue( collection.isModified() );
-			},
-			
-			
-			"isModified() should return false if a Model within the collection has been modified, but then rolled back or committed" : function() {
-				var model1 = new this.Model( { attr: 1 } ),
-				    model2 = new this.Model( { attr: 2 } ),
-				    collection = new this.Collection( [ model1, model2 ] );
-				
-				model1.set( 'attr', 42 );
-				model1.rollback();
-				
-				Y.Assert.isFalse( collection.isModified() );
 			}
 		},
 		
@@ -6621,8 +6611,60 @@ tests.integration.add( new Ext.test.TestSuite( {
 				model1.fireEvent( 'testevent' );
 				Y.Assert.areSame( 0, testEventCallCount, "The testevent should *not* have been fired from the collection, as the child model was removed" );
 			}
-		}
+		},
 		
+		
+		{
+			/*
+			 * Test isModified()
+			 */
+			name : "Test isModified()",
+			
+			setUp : function() {
+				this.Model = Kevlar.Model.extend( {
+					attributes : [ 'attr' ]
+				} );
+				
+				this.Collection = Kevlar.Collection.extend( {
+					model : this.Model
+				} );
+			},
+			
+			"isModified() should return false if no Models within the collection have been modified" : function() {
+				var model1 = new this.Model( { attr: 1 } ),
+				    model2 = new this.Model( { attr: 2 } ),
+				    collection = new this.Collection( [ model1, model2 ] );
+								
+				Y.Assert.isFalse( collection.isModified() );
+			},
+			
+			"isModified() should return true if a Model within the collection has been modified" : function() {
+				var model1 = new this.Model( { attr: 1 } ),
+				    model2 = new this.Model( { attr: 2 } ),
+				    collection = new this.Collection( [ model1, model2 ] );
+				
+				model1.set( 'attr', 42 );
+				
+				Y.Assert.isTrue( collection.isModified() );
+			},
+			
+			"isModified() should return false if a Model within the collection has been modified, but then rolled back or committed" : function() {
+				var model1 = new this.Model( { attr: 1 } ),
+				    model2 = new this.Model( { attr: 2 } ),
+				    collection = new this.Collection( [ model1, model2 ] );
+				
+				model1.set( 'attr', 42 );
+				Y.Assert.isTrue( collection.isModified(), "Just double checking that the collection is considered modified, before rolling back" );
+				model1.rollback();
+				Y.Assert.isFalse( collection.isModified(), "Should be false after rollback" );
+				
+				
+				model1.set( 'attr', 42 );
+				Y.Assert.isTrue( collection.isModified(), "Just double checking that the collection is considered modified again, before committing" );
+				model1.commit();
+				Y.Assert.isFalse( collection.isModified(), "Should be false after commit" );
+			}
+		}
 	]
 
 } ) );
