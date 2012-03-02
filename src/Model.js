@@ -690,8 +690,6 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 	 */
 	isModified : function( attributeName ) {
 		var attributes = this.attributes,
-		    attribute,
-		    DataContainerAttribute = Kevlar.attribute.DataContainerAttribute,  // quick reference to constructor;
 		    data = this.data;
 		
 		if( !attributeName ) {
@@ -702,20 +700,22 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 			}
 			
 			// No local modifications to primitives, check all embedded collections/models to see if they have changes
-			var dataContainer;  // for storing the current DataContainerAttribute
-			for( var attrName in attributes ) {
-				if( attributes.hasOwnProperty( attrName ) && ( attribute = attributes[ attrName ] ) instanceof DataContainerAttribute && attribute.isEmbedded() ) {
-					if( ( dataContainer = data[ attrName ] ) && dataContainer.isModified() ) {
-						return true;
-					}
+			var embeddedDataContainerAttrs = this.getEmbeddedDataContainerAttributes(),
+			    dataContainer;
+			
+			for( var i = 0, len = embeddedDataContainerAttrs.length; i < len; i++ ) {
+				var attrName = embeddedDataContainerAttrs[ i ].getName();
+				
+				if( ( dataContainer = data[ attrName ] ) && dataContainer.isModified() ) {
+					return true;
 				}
 			}
 			return false;
 			
 		} else {
-			attribute = this.attributes[ attributeName ];
+			var attribute = this.attributes[ attributeName ];
 			
-			return ( attributeName in this.modifiedData ) || ( attribute instanceof DataContainerAttribute && attribute.isEmbedded() && data[ attributeName ].isModified() );
+			return ( attributeName in this.modifiedData ) || ( attribute instanceof Kevlar.attribute.DataContainerAttribute && attribute.isEmbedded() && data[ attributeName ].isModified() );
 		}
 	},
 	
@@ -759,17 +759,15 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 		options.attributeNames = Kevlar.util.Object.keysToArray( this.modifiedData );
 		
 		// Add any modified embedded model/collection to the options.attributeNames array
-		var attributes = this.attributes,
-		    attribute,
+		var embeddedDataContainerAttrs = this.getEmbeddedDataContainerAttributes(),
 		    data = this.data,
-		    DataContainerAttribute = Kevlar.attribute.DataContainerAttribute,
 		    dataContainer;
-		
-		for( var attrName in attributes ) {
-			if( attributes.hasOwnProperty( attrName ) && ( attribute = attributes[ attrName ] ) instanceof DataContainerAttribute && attribute.isEmbedded() ) {
-				if( ( dataContainer = data[ attrName ] ) && dataContainer.isModified() ) {
-					options.attributeNames.push( attrName );
-				}
+	
+		for( var i = 0, len = embeddedDataContainerAttrs.length; i < len; i++ ) {
+			var attrName = embeddedDataContainerAttrs[ i ].getName();
+			
+			if( ( dataContainer = data[ attrName ] ) && dataContainer.isModified() ) {
+				options.attributeNames.push( attrName );
 			}
 		}
 		
@@ -782,11 +780,25 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 	 * this method should normally not need to be called explicitly, as it will be called upon the successful persistence of the Model's data
 	 * to the server.
 	 * 
+	 * @override
 	 * @method commit
 	 */
 	commit : function() {
 		this.modifiedData = {};  // reset the modifiedData hash. There is no modified data.
 		this.dirty = false;
+		
+		// Go through all embedded models/collections, and "commit" those as well
+		var embeddedDataContainerAttrs = this.getEmbeddedDataContainerAttributes(),
+		    data = this.data,
+		    dataContainer;
+		
+		for( var i = 0, len = embeddedDataContainerAttrs.length; i < len; i++ ) {
+			var attrName = embeddedDataContainerAttrs[ i ].getName();
+			
+			if( ( dataContainer = data[ attrName ] ) ) {
+				dataContainer.commit();
+			}
+		}
 		
 		this.fireEvent( 'commit', this );
 	},
@@ -795,6 +807,7 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 	/**
 	 * Rolls back the Model attributes that have been changed since the last commit or rollback.
 	 * 
+	 * @override
 	 * @method rollback
 	 */
 	rollback : function() {
@@ -1036,6 +1049,35 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 		
 		// Make a request to destroy the data on the server
 		this.persistenceProxy.destroy( this, proxyOptions );
+	},
+	
+	
+	// --------------------------
+	
+	// Private utility methods
+	
+	/**
+	 * Retrieves an array of the attributes that are {@link Kevlar.attribute.DataContainerAttribute DataContainerAttributes} which
+	 * are also {@link Kevlar.attribute.DataContainerAttribute#embedded}. This is a convenience method that supports the methods which
+	 * use the embedded DataContainerAttributes. 
+	 * 
+	 * @private
+	 * @method getEmbeddedDataContainerAttributes
+	 * @return {Kevlar.attribute.DataContainerAttribute[]}
+	 */
+	getEmbeddedDataContainerAttributes : function() {
+		var attributes = this.attributes,
+		    attribute,
+		    DataContainerAttribute = Kevlar.attribute.DataContainerAttribute,
+		    dataContainerAttributes = [];
+		
+		for( var attrName in attributes ) {
+			if( attributes.hasOwnProperty( attrName ) && ( attribute = attributes[ attrName ] ) instanceof DataContainerAttribute && attribute.isEmbedded() ) {
+				dataContainerAttributes.push( attribute );
+			}
+		}
+		
+		return dataContainerAttributes;
 	}
 	
 } );

@@ -1392,6 +1392,12 @@ tests.unit.add( new Ext.test.TestSuite( {
 				} );
 			},
 			
+			
+			// -------------------------
+			
+			// Test direct adding (appending) of models (not specifying an index of where to add them)
+			
+			
 			"insert() should be able to add a single Model instance to the Collection" : function() {
 				var collection = new this.Collection(),
 				    model = new this.Model( { attr: 'value' } ),
@@ -1405,25 +1411,6 @@ tests.unit.add( new Ext.test.TestSuite( {
 				models = collection.getModels();
 				Y.Assert.areSame( 1, models.length, "There should now be one model in the collection" );
 				Y.Assert.areSame( model, models[ 0 ], "The model added should be the first model in the collection" );
-			},
-			
-			
-			"insert() should be able to add a single Model instance to the Collection at a specified index" : function() {
-				var model1 = new this.Model( { attr: 'value1' } ),
-				    model2 = new this.Model( { attr: 'value2' } ),
-				    model3 = new this.Model( { attr: 'value3' } ),
-				    collection = new this.Collection( [ model1, model2 ] ), // only inserting model1 and model2 for now
-				    models;
-				
-				models = collection.getModels();
-				Y.Assert.areSame( 2, models.length, "Initial condition: There should be 2 models in the collection" );
-				
-				// Now insert model3 in the middel
-				collection.insert( model3, 1 );
-				
-				models = collection.getModels();
-				Y.Assert.areSame( 3, models.length, "There should now be 3 models in the collection" );
-				Y.ArrayAssert.itemsAreSame( [ model1, model3, model2 ], models, "model3 should have been added in the middle" );
 			},
 			
 			
@@ -1442,6 +1429,43 @@ tests.unit.add( new Ext.test.TestSuite( {
 				Y.Assert.areSame( 2, models.length, "There should now be two models in the collection" );
 				Y.Assert.areSame( model1, models[ 0 ], "The first model added in the array should be the first model in the collection" );
 				Y.Assert.areSame( model2, models[ 1 ], "The second model added in the array should be the second model in the collection" );
+			},
+			
+			
+			"inserting (adding) one or more models should have the Collection considered as 'modified'" : function() {
+				var collection = new this.Collection(),
+				    model1 = new this.Model( { attr: 'value1' } ),
+				    model2 = new this.Model( { attr: 'value2' } ),
+				    models;
+				
+				Y.Assert.isFalse( collection.isModified(), "Initial condition: the collection should not be modified" );
+				
+				collection.add( model1 );
+				Y.Assert.isTrue( collection.isModified(), "The collection should now be considered modified" );
+			},
+			
+			
+			// -------------------------
+			
+			// Test inserting models at specified indexes
+			
+			
+			"insert() should be able to add a single Model instance to the Collection at a specified index" : function() {
+				var model1 = new this.Model( { attr: 'value1' } ),
+				    model2 = new this.Model( { attr: 'value2' } ),
+				    model3 = new this.Model( { attr: 'value3' } ),
+				    collection = new this.Collection( [ model1, model2 ] ), // only inserting model1 and model2 for now
+				    models;
+				
+				models = collection.getModels();
+				Y.Assert.areSame( 2, models.length, "Initial condition: There should be 2 models in the collection" );
+				
+				// Now insert model3 in the middel
+				collection.insert( model3, 1 );
+				
+				models = collection.getModels();
+				Y.Assert.areSame( 3, models.length, "There should now be 3 models in the collection" );
+				Y.ArrayAssert.itemsAreSame( [ model1, model3, model2 ], models, "model3 should have been added in the middle" );
 			},
 			
 			
@@ -1605,6 +1629,40 @@ tests.unit.add( new Ext.test.TestSuite( {
 				Y.ArrayAssert.itemsAreSame( [ model1, model2 ], reorderedModels, "model1 and model2 should have been fired with a 'reorder' events" );
 				Y.ArrayAssert.itemsAreSame( [ 0, 1 ], reorderedNewIndexes, "the new indexes for model1 and model2 should have been reported as index 0, and 1, respectively" );
 				Y.ArrayAssert.itemsAreSame( [ 1, 2 ], reorderedOldIndexes, "the old indexes for model1 and model2 should have been reported as index 1, and 2, respectively" );
+			},
+			
+			
+			"in a 'reorder' event handler, the new order of the models should be present immediately (getModels should return the models in the new order, inside a handler)" : function() {
+				var model1 = new this.Model( { attr: 'value1' } ),
+				    model2 = new this.Model( { attr: 'value2' } ),
+				    model3 = new this.Model( { attr: 'value3' } ),
+				    collection = new this.Collection( [ model1, model2, model3 ] ),
+				    models;
+				
+				var modelsInReorderHandler;
+				collection.on( 'reorder', function( collection, model, newIndex, oldIndex ) {
+					modelsInReorderHandler = collection.getModels();
+				} );
+				
+				collection.insert( model3, 1 );
+				Y.ArrayAssert.itemsAreSame( [ model1, model3, model2 ], modelsInReorderHandler );	
+				
+				collection.insert( model1, 1 );
+				Y.ArrayAssert.itemsAreSame( [ model3, model1, model2 ], modelsInReorderHandler );
+			},
+			
+			
+			"After a reorder, the Collection should be considered 'modified'" : function() {
+				var model1 = new this.Model( { attr: 'value1' } ),
+				    model2 = new this.Model( { attr: 'value2' } ),
+				    model3 = new this.Model( { attr: 'value3' } ),
+				    collection = new this.Collection( [ model1, model2, model3 ] ),
+				    models;
+				
+				Y.Assert.isFalse( collection.isModified(), "Initial condition: the collection should not yet be considered 'modified'" );
+				
+				collection.insert( model3, 1 );
+				Y.Assert.isTrue( collection.isModified(), "The collection should now be considered modified, since there has been a reorder" );
 			},
 			
 			
@@ -2577,34 +2635,99 @@ tests.unit.add( new Ext.test.TestSuite( {
 			name : "Test isModified()",
 			
 			setUp : function() {
-				this.Collection = Kevlar.Collection.extend( {
-					model : this.Model
-				} );
+				this.unmodifiedModel1 = JsMockito.mock( Kevlar.Model );
+				JsMockito.when( this.unmodifiedModel1 ).getClientId().thenReturn( 1 );
+				JsMockito.when( this.unmodifiedModel1 ).isModified().thenReturn( false );
+				
+				this.unmodifiedModel2 = JsMockito.mock( Kevlar.Model );
+				JsMockito.when( this.unmodifiedModel2 ).getClientId().thenReturn( 2 );
+				JsMockito.when( this.unmodifiedModel2 ).isModified().thenReturn( false );
+				
+				this.modifiedModel1 = JsMockito.mock( Kevlar.Model );
+				JsMockito.when( this.modifiedModel1 ).getClientId().thenReturn( 3 );
+				JsMockito.when( this.modifiedModel1 ).isModified().thenReturn( true );
+				
+				this.modifiedModel2 = JsMockito.mock( Kevlar.Model );
+				JsMockito.when( this.modifiedModel2 ).getClientId().thenReturn( 4 );
+				JsMockito.when( this.modifiedModel2 ).isModified().thenReturn( true );
+								
+				this.Collection = Kevlar.Collection.extend( {} );
 			},
 			
 			
+			// ------------------------
+			
+			// Test with changes to child models
+			
+			
 			"isModified() should return false if no Models within the collection have been modified" : function() {
-				var model = JsMockito.mock( Kevlar.Model );
-				JsMockito.when( model ).isModified().thenReturn( false );
-				
-				var collection = new this.Collection( [ model ] );
+				var collection = new this.Collection( [ this.unmodifiedModel1 ] );
 				
 				Y.Assert.isFalse( collection.isModified() );
 			},
 			
 			
 			"isModified() should return true if a Model within the collection has been modified" : function() {
-				var model1 = JsMockito.mock( Kevlar.Model );
-				JsMockito.when( model1 ).getClientId().thenReturn( 1 );     // (models must have a different clientID so they are considered unique)
-				JsMockito.when( model1 ).isModified().thenReturn( false );
-				
-				var model2 = JsMockito.mock( Kevlar.Model );
-				JsMockito.when( model2 ).getClientId().thenReturn( 2 );     // (models must have a different clientID so they are considered unique)
-				JsMockito.when( model2 ).isModified().thenReturn( true );
-				
-				var collection = new this.Collection( [ model1, model2 ] );
+				var collection = new this.Collection( [ this.unmodifiedModel1, this.modifiedModel1 ] );
 				
 				Y.Assert.isTrue( collection.isModified() );
+			},
+			
+			
+			// ------------------------
+			
+			// Test with adds/removes/reorders to the collection
+			
+			
+			"isModified() should return true if a model has been added to the Collection since the last commit/rollback" : function() {
+				var collection = new this.Collection();
+				
+				Y.Assert.isFalse( collection.isModified(), "Initial condition: the collection should not be considered modified" );
+				
+				collection.add( this.unmodifiedModel1 );
+				Y.Assert.isTrue( collection.isModified(), "The collection should now be modified, since a Model was added." );
+			},
+			
+			
+			"isModified() should return true if a model has been removed from the Collection since the last commit/rollback" : function() {
+				var collection = new this.Collection( [ this.unmodifiedModel1, this.unmodifiedModel2 ] );
+				
+				Y.Assert.isFalse( collection.isModified(), "Initial condition: the collection should not be considered modified" );
+				
+				collection.remove( this.unmodifiedModel1 );
+				Y.Assert.isTrue( collection.isModified(), "The collection should now be modified, since a Model was removed." );
+			},
+			
+			
+			"isModified() should return true if a model has been reordered in the Collection since the last commit/rollback" : function() {
+				var collection = new this.Collection( [ this.unmodifiedModel1, this.unmodifiedModel2 ] );
+				
+				Y.Assert.isFalse( collection.isModified(), "Initial condition: the collection should not be considered modified" );
+				
+				collection.insert( this.unmodifiedModel1, 1 );  // move unmodifiedmodel1 to the 2nd position
+				Y.Assert.isTrue( collection.isModified(), "The collection should now be modified, since a Model was reordered." );
+			},
+			
+			
+			// ------------------------
+			
+			// Test that commit()/rollback() causes isModified() to return false
+			
+			
+			"isModified() should return false when there is a change, but commit()/rollback() has been called" : function() {
+				var collection = new this.Collection();
+				
+				Y.Assert.isFalse( collection.isModified(), "Initial condition: the collection should not be considered modified" );
+				
+				// Add but then commit()
+				collection.add( this.unmodifiedModel1 );
+				collection.commit();
+				Y.Assert.isFalse( collection.isModified(), "The collection should no longer be considered modified, since a Model was added, and then committed." );
+				
+				// Add but then rollback()
+				collection.add( this.unmodifiedModel2 );
+				collection.rollback();
+				Y.Assert.isFalse( collection.isModified(), "The collection should no longer be considered modified, since a Model was added, and then rolled back." );
 			}
 		},
 		
@@ -4546,10 +4669,34 @@ tests.unit.add( new Ext.test.TestSuite( {
 				model.commit();
 				
 				Y.Assert.areSame( 1, commitEventCount, "The 'commit' event should have been fired exactly once after committing." );
+			},
+			
+			
+			// --------------------
+			
+			// Test with embedded DataContainers (Models and Collections)
+			
+			"committing a parent model should also commit any embedded child DataContainer that the model holds" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ new Kevlar.attribute.DataContainerAttribute( { name: 'childDataContainer', embedded: true } ) ]
+				} );
+				
+				var mockDataContainer = JsMockito.mock( Kevlar.DataContainer );
+				var model = new Model();
+				
+				model.set( 'childDataContainer', mockDataContainer );
+				model.commit();
+				
+				try {
+					JsMockito.verify( mockDataContainer ).commit();  // verify that this was called at least once
+				} catch( ex ) {
+					Y.Assert.fail( ex );  // those newbs throw strings for errors...
+				}
 			}
+			
 		},
-			
-			
+		
+		
 		
 		{
 			/*

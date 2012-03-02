@@ -65,6 +65,25 @@ Kevlar.DataContainer = Kevlar.util.Observable.extend( {
 	 * @method isModified
 	 * @return {Boolean}
 	 */
-	isModified : Kevlar.abstractFn
+	isModified : Kevlar.abstractFn,
+	
+	
+	/**
+	 * Commits the data in the DataContainer, so that it is no longer considered "modified".
+	 * 
+	 * @abstract
+	 * @method commit
+	 */
+	commit : Kevlar.abstractFn,
+	
+	
+	/**
+	 * Rolls the data in the DataContainer back to its state before the last {@link #commit}
+	 * or rollback.
+	 * 
+	 * @abstract
+	 * @method rollback
+	 */
+	rollback : Kevlar.abstractFn
 	
 } );

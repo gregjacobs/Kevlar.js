@@ -1485,10 +1485,34 @@ tests.unit.add( new Ext.test.TestSuite( {
 				model.commit();
 				
 				Y.Assert.areSame( 1, commitEventCount, "The 'commit' event should have been fired exactly once after committing." );
+			},
+			
+			
+			// --------------------
+			
+			// Test with embedded DataContainers (Models and Collections)
+			
+			"committing a parent model should also commit any embedded child DataContainer that the model holds" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ new Kevlar.attribute.DataContainerAttribute( { name: 'childDataContainer', embedded: true } ) ]
+				} );
+				
+				var mockDataContainer = JsMockito.mock( Kevlar.DataContainer );
+				var model = new Model();
+				
+				model.set( 'childDataContainer', mockDataContainer );
+				model.commit();
+				
+				try {
+					JsMockito.verify( mockDataContainer ).commit();  // verify that this was called at least once
+				} catch( ex ) {
+					Y.Assert.fail( ex );  // those newbs throw strings for errors...
+				}
 			}
+			
 		},
-			
-			
+		
+		
 		
 		{
 			/*

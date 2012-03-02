@@ -129,6 +129,14 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 	 * An object (hashmap) of the models that the Collection is currently holding, keyed by the models' {@link Kevlar.Model#id id}, if the model has one.
 	 */
 	
+	/**
+	 * @private
+	 * @property {Boolean} modified
+	 * 
+	 * Flag that is set to true whenever there is an addition, insertion, or removal of a model in the Collection.
+	 */
+	modified : false,
+	
 	
 	
 	/**
@@ -211,6 +219,7 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 		
 		if( initialModels ) {
 			this.add( initialModels );
+			this.modified = false;  // initial models should not make the collection "modified". Note: NOT calling commit() here, because we may not want to commit changed model data. Need to figure that out.
 		}
 		
 		// Call hook method for subclasses
@@ -322,6 +331,8 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 			
 			// Only add if the model does not already exist in the collection
 			if( !this.modelsByClientId[ modelClientId ] ) {
+				this.modified = true;  // model is being added, then the Collection has been modified
+				
 				addedModels.push( model );
 				this.modelsByClientId[ modelClientId ] = model;
 				
@@ -347,6 +358,8 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 				// In the case that add() is called, no index will be specified, and we don't want to
 				// "re-add" models
 				if( indexSpecified ) {
+					this.modified = true;  // model is being reordered, then the Collection has been modified
+					
 					var oldIndex = this.indexOf( model );
 					
 					// Move the model to the new index
@@ -397,6 +410,8 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 			
 			// Don't bother searching to remove the model if we know it doesn't exist in the Collection
 			if( this.modelsByClientId[ modelClientId ] ) {
+				this.modified = true;  // model is being removed, then the Collection has been modified
+				
 				delete this.modelsByClientId[ modelClientId ];
 				
 				if( model.hasIdAttribute() ) {   // make sure the model actually has a valid idAttribute first, before trying to call getId()
@@ -670,22 +685,71 @@ Kevlar.Collection = Kevlar.DataContainer.extend( {
 	
 	
 	/**
-	 * Determines if the Collection has any {@link Kevlar.Model models} which are modified.
+	 * Commits any changes in the Collection, so that it is no longer considered "modified".
+	 * 
+	 * @override
+	 * @method commit
+	 */
+	commit : function() {
+		this.modified = false;  // reset flag
+		
+		// TODO: Determine if child models should also be committed. Possibly a flag argument for this?
+		// But for now, maintain consistency with isModified()
+		var models = this.models;
+		for( var i = 0, len = models.length; i < len; i++ ) {
+			models[ i ].commit();
+		}
+	},
+	
+	
+	
+	/**
+	 * Rolls any changes to the Collection back to its state when it was last {@link #commit committed}
+	 * or rolled back.
+	 * 
+	 * @override
+	 * @method rollback 
+	 */
+	rollback : function() {
+		this.modified = false;  // reset flag
+		
+		// TODO: Implement rolling back the collection's state to the array of models that it had before any
+		// changes were made
+		
+		
+		// TODO: Determine if child models should also be rolled back. Possibly a flag argument for this?
+		// But for now, maintain consistency with isModified()
+		var models = this.models;
+		for( var i = 0, len = models.length; i < len; i++ ) {
+			models[ i ].rollback();
+		}
+	},
+	
+	
+	/**
+	 * Determines if the Collection has been added to, removed from, reordered, or 
+	 * has any {@link Kevlar.Model models} which are modified.
 	 * 
 	 * @override
 	 * @method isModified
 	 * @return {Boolean} True if the Collection has any modified models, false otherwise.
 	 */
 	isModified : function() {
-		var models = this.models,
-		    i, len;
-		
-		for( i = 0, len = models.length; i < len; i++ ) {
-			if( models[ i ].isModified() ) {
-				return true;
+		// First, if the collection itself has been added to / removed from / reordered, then it is modified
+		if( this.modified ) {
+			return true;
+			
+		} else {
+			var models = this.models,
+			    i, len;
+			
+			for( i = 0, len = models.length; i < len; i++ ) {
+				if( models[ i ].isModified() ) {
+					return true;
+				}
 			}
+			return false;
 		}
-		return false;
 	},
 	
 	
