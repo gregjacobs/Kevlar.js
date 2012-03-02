@@ -1303,6 +1303,58 @@ tests.unit.add( new Ext.test.TestSuite( {
 		// -------------------------------
 		
 		
+		{
+			/*
+			 * Test isModified
+			 */
+			name : "Test isModified()",
+			
+			setUp : function() {
+				this.Model = Kevlar.Model.extend( {
+					attributes : [ 'attr' ]
+				} );
+				
+				this.Collection = Kevlar.Collection.extend( {
+					model : this.Model
+				} );
+			},
+			
+			
+			"isModified() should return false if no Models within the collection have been modified" : function() {
+				var model1 = new this.Model( { attr: 1 } ),
+				    model2 = new this.Model( { attr: 2 } ),
+				    collection = new this.Collection( [ model1, model2 ] );
+				
+				Y.Assert.isFalse( collection.isModified() );
+			},
+			
+			
+			"isModified() should return true if a Model within the collection has been modified" : function() {
+				var model1 = new this.Model( { attr: 1 } ),
+				    model2 = new this.Model( { attr: 2 } ),
+				    collection = new this.Collection( [ model1, model2 ] );
+				
+				model1.set( 'attr', 42 );
+				Y.Assert.isTrue( collection.isModified() );
+			},
+			
+			
+			"isModified() should return false if a Model within the collection has been modified, but then rolled back or committed" : function() {
+				var model1 = new this.Model( { attr: 1 } ),
+				    model2 = new this.Model( { attr: 2 } ),
+				    collection = new this.Collection( [ model1, model2 ] );
+				
+				model1.set( 'attr', 42 );
+				model1.rollback();
+				
+				Y.Assert.isFalse( collection.isModified() );
+			}
+		},
+		
+		
+		// -------------------------------
+		
+		
 		
 		/*
 		 * Test find()
