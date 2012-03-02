@@ -4286,6 +4286,47 @@ tests.unit.add( new Ext.test.TestSuite( {
 				model.rollback();
 				Y.Assert.isFalse( model.isModified( 'attribute1' ), "attribute1 should have been rolled back, and therefore not marked as modified" );
 				Y.Assert.isFalse( model.isModified( 'attribute2' ), "attribute2 should have been rolled back, and therefore not marked as modified" );
+			},
+			
+			
+			// -------------------------
+			
+			// Test with embedded models/collections
+			
+			"In the case of embedded DataContainers, the parent model should be considered 'modified' when a child embedded DataContainer has changes" : function() {
+				var ParentModel = Kevlar.Model.extend( {
+					attributes : [
+						new Kevlar.attribute.DataContainerAttribute( { name: 'child', embedded: true } )
+					]
+				} );
+				
+				var childDataContainer = JsMockito.mock( Kevlar.DataContainer );
+				JsMockito.when( childDataContainer ).isModified().thenReturn( true );
+				
+				var parentModel = new ParentModel( {
+					child: childDataContainer
+				} );
+				
+				Y.Assert.isTrue( parentModel.isModified(), "The parent model should be considered 'modified' while its child model is 'modified'" );
+				Y.Assert.isTrue( parentModel.isModified( 'child' ), "The 'child' attribute should be considered 'modified'" );
+			},
+			
+			
+			"The parent model should *not* have changes when a child model has changes, but is not 'embedded'" : function() {
+				var ParentModel = Kevlar.Model.extend( {
+					attributes : [
+						new Kevlar.attribute.DataContainerAttribute( { name: 'child', embedded: false } )  // note: NOT embedded
+					]
+				} );
+				
+				var childDataContainer = JsMockito.mock( Kevlar.DataContainer );
+				JsMockito.when( childDataContainer ).isModified().thenReturn( true );
+				
+				var parentModel = new ParentModel( {
+					child: childDataContainer
+				} );
+				
+				Y.Assert.isFalse( parentModel.isModified(), "The parent model should not be considered 'modified' even though its child model is 'modified', because the child is not 'embedded'" );
 			}
 		},
 		
@@ -4368,26 +4409,39 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			"getChanges() should delegate to the singleton NativeObjectConverter to create an Object representation of its data, but only provide changed attributes for the attributes that should be returned" : function() {
 				var Model = Kevlar.Model.extend( {
-					attributes: [ 'attr1', 'attr2', 'attr3' ]
+					attributes: [ 
+						'attr1', 
+						'attr2', 
+						'attr3',
+						new Kevlar.attribute.DataContainerAttribute( { name: 'nestedDataContainer', embedded: false } ),  // this one NOT embedded
+						new Kevlar.attribute.DataContainerAttribute( { name: 'embeddedDataContainer', embedded: true } )  // this one IS embedded
+					]
 				} );
+				
+				
+				var mockDataContainer = JsMockito.mock( Kevlar.DataContainer );
+				JsMockito.when( mockDataContainer ).isModified().thenReturn( true );
 				
 				var model = new Model( {
 					attr1: 'value1',
 					attr2: 'value2',
-					attr3: 'value3'
+					attr3: 'value3',
+					nestedDataContainer : mockDataContainer,
+					embeddedDataContainer : mockDataContainer
 				} );
 				model.set( 'attr1', 'newValue1' );
 				model.set( 'attr2', 'newValue2' );
+				// Note: the mockDataContainer is always going to return true for its isModified() method, so no need to "change" it
 				
 				// even though there really is no result from this unit test with a mock object, this has the side effect of populating the test data
 				var result = model.getChanges( { raw: true } );  // add an extra option to make sure it goes through
 				
-				var optionsProvidedToConvert = this.args[ 1 ];
+				var optionsProvidedToConvert = this.args[ 1 ];  // defined in the setUp method
 				
 				// Check that the correct arguments were provided to the NativeObjectConverter's convert() method
 				Y.Assert.areSame( model, this.args[ 0 ], "The first arg provided to NativeObjectConverter::convert() should have been the model." );
 				Y.Assert.areSame( true, optionsProvidedToConvert.raw, "The second arg provided to NativeObjectConverter::convert() should have receieved the 'raw:true' option" );
-				Y.ArrayAssert.itemsAreSame( [ 'attr1', 'attr2' ], optionsProvidedToConvert.attributeNames, "The second arg provided to NativeObjectConverter::convert() should have receieved the 'attributeNames' option, with the attributes that were changed" );
+				Y.ArrayAssert.itemsAreSame( [ 'attr1', 'attr2', 'embeddedDataContainer' ], optionsProvidedToConvert.attributeNames, "The second arg provided to NativeObjectConverter::convert() should have receieved the 'attributeNames' option, with the attributes that were changed" );
 			}
 		},
 		
@@ -7200,6 +7254,68 @@ tests.integration.add( new Ext.test.TestSuite( {
 				Y.Assert.areSame( childModel, attrSpecificChangedModel, "The childModel attribute-specific change event should have fired with the child model" );
 				Y.Assert.areSame( 'asdf', attrSpecificChangedValue, "The childModel attribute-specific change event should have fired with the new value" );
 			}*/
+		},
+		
+		
+		{
+			/*
+			 * Test that the parent model "has changes" when an embedded collection is changed 
+			 */
+			name : "Test that the parent model \"has changes\" when an embedded collection is changed",
+			
+			"The parent model should have changes when a child embedded collection has changes" : function() {
+				var ParentModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'myCollection', type: 'collection', embedded: true }
+					]
+				} );
+				
+				var ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'attr', type: 'string' }
+					]
+				} );
+				
+				var Collection = Kevlar.Collection.extend( {
+					model : ChildModel
+				} );
+				
+				var collection = new Collection( [ { attr: 1 }, { attr: 2 } ] );
+				var parentModel = new ParentModel( {
+					myCollection: collection
+				} );
+				
+				collection.getAt( 0 ).set( 'attr', 'newValue' );
+				Y.Assert.isTrue( parentModel.isModified(), "The parent model should be considered 'modified' while a model in its child collection is 'modified'" );
+				Y.Assert.isTrue( parentModel.isModified( 'myCollection' ), "The 'myCollection' attribute should be considered 'modified'" );
+			},
+			
+			
+			"The parent model should *not* have changes when a child collection has changes, but is not 'embedded'" : function() {
+				var ParentModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'myCollection', type: 'collection', embedded: true }
+					]
+				} );
+				
+				var ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'attr', type: 'string' }
+					]
+				} );
+				
+				var Collection = Kevlar.Collection.extend( {
+					model : ChildModel
+				} );
+				
+				var collection = new Collection( [ { attr: 1 }, { attr: 2 } ] );
+				var parentModel = new ParentModel( {
+					myCollection: collection
+				} );
+				
+				collection.getAt( 0 ).set( 'attr', 'newValue' );
+				Y.Assert.isTrue( parentModel.isModified(), "The parent model should not be considered 'modified' even though its child collection is 'modified', because the child is not 'embedded'" );
+			}
 		}
 	]
 	
@@ -7547,6 +7663,61 @@ tests.integration.add( new Ext.test.TestSuite( {
 				Y.Assert.areSame( 1, attrSpecificChangeEventCount, "The childModel attribute-specific change event should have fired exactly once" );
 				Y.Assert.areSame( childModel, attrSpecificChangedModel, "The childModel attribute-specific change event should have fired with the child model" );
 				Y.Assert.areSame( 'asdf', attrSpecificChangedValue, "The childModel attribute-specific change event should have fired with the new value" );
+			}
+		},
+		
+		
+		{
+			/*
+			 * Test that the parent model "has changes" when an embedded model is changed 
+			 */
+			name : "Test that the parent model \"has changes\" when an embedded model is changed",
+			
+			"The parent model should have changes when a child embedded model has changes" : function() {
+				var ParentModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'child', type: 'model', embedded: true }
+					]
+				} );
+				
+				var ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'attr', type: 'string' }
+					]
+				} );
+				
+				var childModel = new ChildModel();
+				var parentModel = new ParentModel( {
+					child: childModel
+				} );
+				
+				childModel.set( 'attr', 'newValue' );
+				Y.Assert.isTrue( childModel.isModified(), "As a base test, the child model should be considered 'modified'" );
+				Y.Assert.isTrue( parentModel.isModified(), "The parent model should be considered 'modified' while its child model is 'modified'" );
+				Y.Assert.isTrue( parentModel.isModified( 'child' ), "The 'child' attribute should be considered 'modified'" );
+			},
+			
+			
+			"The parent model should *not* have changes when a child model has changes, but is not 'embedded'" : function() {
+				var ParentModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'child', type: 'model', embedded: false }  // note: NOT embedded
+					]
+				} );
+				
+				var ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'attr', type: 'string' }
+					]
+				} );
+				
+				var childModel = new ChildModel();
+				var parentModel = new ParentModel( {
+					child: childModel
+				} );
+				
+				childModel.set( 'attr', 'newValue' );
+				Y.Assert.isFalse( parentModel.isModified(), "The parent model should not be considered 'modified' even though its child model is 'modified', because the child is not 'embedded'" );
 			}
 		}
 	]

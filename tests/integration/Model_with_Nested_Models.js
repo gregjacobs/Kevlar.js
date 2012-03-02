@@ -341,6 +341,61 @@ tests.integration.add( new Ext.test.TestSuite( {
 				Y.Assert.areSame( childModel, attrSpecificChangedModel, "The childModel attribute-specific change event should have fired with the child model" );
 				Y.Assert.areSame( 'asdf', attrSpecificChangedValue, "The childModel attribute-specific change event should have fired with the new value" );
 			}
+		},
+		
+		
+		{
+			/*
+			 * Test that the parent model "has changes" when an embedded model is changed 
+			 */
+			name : "Test that the parent model \"has changes\" when an embedded model is changed",
+			
+			"The parent model should have changes when a child embedded model has changes" : function() {
+				var ParentModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'child', type: 'model', embedded: true }
+					]
+				} );
+				
+				var ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'attr', type: 'string' }
+					]
+				} );
+				
+				var childModel = new ChildModel();
+				var parentModel = new ParentModel( {
+					child: childModel
+				} );
+				
+				childModel.set( 'attr', 'newValue' );
+				Y.Assert.isTrue( childModel.isModified(), "As a base test, the child model should be considered 'modified'" );
+				Y.Assert.isTrue( parentModel.isModified(), "The parent model should be considered 'modified' while its child model is 'modified'" );
+				Y.Assert.isTrue( parentModel.isModified( 'child' ), "The 'child' attribute should be considered 'modified'" );
+			},
+			
+			
+			"The parent model should *not* have changes when a child model has changes, but is not 'embedded'" : function() {
+				var ParentModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'child', type: 'model', embedded: false }  // note: NOT embedded
+					]
+				} );
+				
+				var ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'attr', type: 'string' }
+					]
+				} );
+				
+				var childModel = new ChildModel();
+				var parentModel = new ParentModel( {
+					child: childModel
+				} );
+				
+				childModel.set( 'attr', 'newValue' );
+				Y.Assert.isFalse( parentModel.isModified(), "The parent model should not be considered 'modified' even though its child model is 'modified', because the child is not 'embedded'" );
+			}
 		}
 	]
 	

@@ -48,13 +48,23 @@ Kevlar.DataContainer = Kevlar.util.Observable.extend( {
 	/**
 	 * Retrieves the native JavaScript value for the DataContainer.
 	 * 
-	 * @override
+	 * @abstract
 	 * @method getData
 	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This object is sent to
 	 *   the {@link Kevlar.data.NativeObjectConverter#convert NativeObjectConverter's convert method}, and accepts all of the options
 	 *   that the {@link Kevlar.data.NativeObjectConverter#convert} method does. See that method for details.
 	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.attribute.Attribute Attribute} values.
 	 */
-	getData : Kevlar.abstractFn
+	getData : Kevlar.abstractFn,
+	
+	
+	/**
+	 * Determines if the DataContainer has any modifications.
+	 * 
+	 * @abstract
+	 * @method isModified
+	 * @return {Boolean}
+	 */
+	isModified : Kevlar.abstractFn
 	
 } );

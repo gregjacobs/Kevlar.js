@@ -320,6 +320,68 @@ tests.integration.add( new Ext.test.TestSuite( {
 				Y.Assert.areSame( childModel, attrSpecificChangedModel, "The childModel attribute-specific change event should have fired with the child model" );
 				Y.Assert.areSame( 'asdf', attrSpecificChangedValue, "The childModel attribute-specific change event should have fired with the new value" );
 			}*/
+		},
+		
+		
+		{
+			/*
+			 * Test that the parent model "has changes" when an embedded collection is changed 
+			 */
+			name : "Test that the parent model \"has changes\" when an embedded collection is changed",
+			
+			"The parent model should have changes when a child embedded collection has changes" : function() {
+				var ParentModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'myCollection', type: 'collection', embedded: true }
+					]
+				} );
+				
+				var ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'attr', type: 'string' }
+					]
+				} );
+				
+				var Collection = Kevlar.Collection.extend( {
+					model : ChildModel
+				} );
+				
+				var collection = new Collection( [ { attr: 1 }, { attr: 2 } ] );
+				var parentModel = new ParentModel( {
+					myCollection: collection
+				} );
+				
+				collection.getAt( 0 ).set( 'attr', 'newValue' );
+				Y.Assert.isTrue( parentModel.isModified(), "The parent model should be considered 'modified' while a model in its child collection is 'modified'" );
+				Y.Assert.isTrue( parentModel.isModified( 'myCollection' ), "The 'myCollection' attribute should be considered 'modified'" );
+			},
+			
+			
+			"The parent model should *not* have changes when a child collection has changes, but is not 'embedded'" : function() {
+				var ParentModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'myCollection', type: 'collection', embedded: true }
+					]
+				} );
+				
+				var ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'attr', type: 'string' }
+					]
+				} );
+				
+				var Collection = Kevlar.Collection.extend( {
+					model : ChildModel
+				} );
+				
+				var collection = new Collection( [ { attr: 1 }, { attr: 2 } ] );
+				var parentModel = new ParentModel( {
+					myCollection: collection
+				} );
+				
+				collection.getAt( 0 ).set( 'attr', 'newValue' );
+				Y.Assert.isTrue( parentModel.isModified(), "The parent model should not be considered 'modified' even though its child collection is 'modified', because the child is not 'embedded'" );
+			}
 		}
 	]
 	

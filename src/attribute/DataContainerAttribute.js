@@ -44,6 +44,18 @@ Kevlar.attribute.DataContainerAttribute = Kevlar.attribute.ObjectAttribute.exten
 	
 	
 	/**
+	 * Determines if the Attribute is an {@link #embedded} Attribute.
+	 * 
+	 * @method isEmbedded
+	 * @return {Boolean}
+	 */
+	isEmbedded : function() {
+		return this.embedded;
+	},
+	
+	
+	
+	/**
 	 * Utility method to resolve a string path to an object from the global scope to the
 	 * actual object.
 	 * 
