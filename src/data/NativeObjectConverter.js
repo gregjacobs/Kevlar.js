@@ -44,7 +44,7 @@ Kevlar.data.NativeObjectConverter = {
 		// Recursively goes through the data structure, and convert models to objects, and collections to arrays
 		Kevlar.apply( data, (function convert( dataContainer ) {
 			var clientId, 
-			    cachedDataContainer,
+			    cachedDataComponent,
 			    data,
 			    i, len;
 			
@@ -64,12 +64,12 @@ Kevlar.data.NativeObjectConverter = {
 					if( !persistedOnly || attributes[ attributeName ].isPersisted() === true ) {
 						currentValue = data[ attributeName ] = ( raw ) ? dataContainer.raw( attributeName ) : dataContainer.get( attributeName );
 						
-						// Process Nested DataContainers
-						if( currentValue instanceof Kevlar.DataContainer ) {
+						// Process Nested DataComponents
+						if( currentValue instanceof Kevlar.DataComponent ) {
 							clientId = currentValue.getClientId();
 							
-							if( ( cachedDataContainer = cache[ clientId ] ) ) {
-								data[ attributeName ] = cachedDataContainer;
+							if( ( cachedDataComponent = cache[ clientId ] ) ) {
+								data[ attributeName ] = cachedDataComponent;
 							} else {
 								// first, set up an array/object for the cache (so it exists when checking for it in the next call to convert()), 
 								// and set that array/object to the return data as well

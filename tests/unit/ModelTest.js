@@ -1274,18 +1274,18 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			// Test with embedded models/collections
 			
-			"In the case of embedded DataContainers, the parent model should be considered 'modified' when a child embedded DataContainer has changes" : function() {
+			"In the case of embedded DataComponents, the parent model should be considered 'modified' when a child embedded DataComponent has changes" : function() {
 				var ParentModel = Kevlar.Model.extend( {
 					attributes : [
-						new Kevlar.attribute.DataContainerAttribute( { name: 'child', embedded: true } )
+						new Kevlar.attribute.DataComponentAttribute( { name: 'child', embedded: true } )
 					]
 				} );
 				
-				var childDataContainer = JsMockito.mock( Kevlar.DataContainer );
-				JsMockito.when( childDataContainer ).isModified().thenReturn( true );
+				var childDataComponent = JsMockito.mock( Kevlar.DataComponent );
+				JsMockito.when( childDataComponent ).isModified().thenReturn( true );
 				
 				var parentModel = new ParentModel( {
-					child: childDataContainer
+					child: childDataComponent
 				} );
 				
 				Y.Assert.isTrue( parentModel.isModified(), "The parent model should be considered 'modified' while its child model is 'modified'" );
@@ -1296,15 +1296,15 @@ tests.unit.add( new Ext.test.TestSuite( {
 			"The parent model should *not* have changes when a child model has changes, but is not 'embedded'" : function() {
 				var ParentModel = Kevlar.Model.extend( {
 					attributes : [
-						new Kevlar.attribute.DataContainerAttribute( { name: 'child', embedded: false } )  // note: NOT embedded
+						new Kevlar.attribute.DataComponentAttribute( { name: 'child', embedded: false } )  // note: NOT embedded
 					]
 				} );
 				
-				var childDataContainer = JsMockito.mock( Kevlar.DataContainer );
-				JsMockito.when( childDataContainer ).isModified().thenReturn( true );
+				var childDataComponent = JsMockito.mock( Kevlar.DataComponent );
+				JsMockito.when( childDataComponent ).isModified().thenReturn( true );
 				
 				var parentModel = new ParentModel( {
-					child: childDataContainer
+					child: childDataComponent
 				} );
 				
 				Y.Assert.isFalse( parentModel.isModified(), "The parent model should not be considered 'modified' even though its child model is 'modified', because the child is not 'embedded'" );
@@ -1394,25 +1394,25 @@ tests.unit.add( new Ext.test.TestSuite( {
 						'attr1', 
 						'attr2', 
 						'attr3',
-						new Kevlar.attribute.DataContainerAttribute( { name: 'nestedDataContainer', embedded: false } ),  // this one NOT embedded
-						new Kevlar.attribute.DataContainerAttribute( { name: 'embeddedDataContainer', embedded: true } )  // this one IS embedded
+						new Kevlar.attribute.DataComponentAttribute( { name: 'nestedDataComponent', embedded: false } ),  // this one NOT embedded
+						new Kevlar.attribute.DataComponentAttribute( { name: 'embeddedDataComponent', embedded: true } )  // this one IS embedded
 					]
 				} );
 				
 				
-				var mockDataContainer = JsMockito.mock( Kevlar.DataContainer );
-				JsMockito.when( mockDataContainer ).isModified().thenReturn( true );
+				var mockDataComponent = JsMockito.mock( Kevlar.DataComponent );
+				JsMockito.when( mockDataComponent ).isModified().thenReturn( true );
 				
 				var model = new Model( {
 					attr1: 'value1',
 					attr2: 'value2',
 					attr3: 'value3',
-					nestedDataContainer : mockDataContainer,
-					embeddedDataContainer : mockDataContainer
+					nestedDataComponent : mockDataComponent,
+					embeddedDataComponent : mockDataComponent
 				} );
 				model.set( 'attr1', 'newValue1' );
 				model.set( 'attr2', 'newValue2' );
-				// Note: the mockDataContainer is always going to return true for its isModified() method, so no need to "change" it
+				// Note: the mockDataComponent is always going to return true for its isModified() method, so no need to "change" it
 				
 				// even though there really is no result from this unit test with a mock object, this has the side effect of populating the test data
 				var result = model.getChanges( { raw: true } );  // add an extra option to make sure it goes through
@@ -1422,7 +1422,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				// Check that the correct arguments were provided to the NativeObjectConverter's convert() method
 				Y.Assert.areSame( model, this.args[ 0 ], "The first arg provided to NativeObjectConverter::convert() should have been the model." );
 				Y.Assert.areSame( true, optionsProvidedToConvert.raw, "The second arg provided to NativeObjectConverter::convert() should have receieved the 'raw:true' option" );
-				Y.ArrayAssert.itemsAreSame( [ 'attr1', 'attr2', 'embeddedDataContainer' ], optionsProvidedToConvert.attributeNames, "The second arg provided to NativeObjectConverter::convert() should have receieved the 'attributeNames' option, with the attributes that were changed" );
+				Y.ArrayAssert.itemsAreSame( [ 'attr1', 'attr2', 'embeddedDataComponent' ], optionsProvidedToConvert.attributeNames, "The second arg provided to NativeObjectConverter::convert() should have receieved the 'attributeNames' option, with the attributes that were changed" );
 			}
 		},
 		
@@ -1490,21 +1490,21 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			// --------------------
 			
-			// Test with embedded DataContainers (Models and Collections)
+			// Test with embedded DataComponents (Models and Collections)
 			
-			"committing a parent model should also commit any embedded child DataContainer that the model holds" : function() {
+			"committing a parent model should also commit any embedded child DataComponent that the model holds" : function() {
 				var Model = Kevlar.Model.extend( {
-					attributes : [ new Kevlar.attribute.DataContainerAttribute( { name: 'childDataContainer', embedded: true } ) ]
+					attributes : [ new Kevlar.attribute.DataComponentAttribute( { name: 'childDataComponent', embedded: true } ) ]
 				} );
 				
-				var mockDataContainer = JsMockito.mock( Kevlar.DataContainer );
+				var mockDataComponent = JsMockito.mock( Kevlar.DataComponent );
 				var model = new Model();
 				
-				model.set( 'childDataContainer', mockDataContainer );
+				model.set( 'childDataComponent', mockDataComponent );
 				model.commit();
 				
 				try {
-					JsMockito.verify( mockDataContainer ).commit();  // verify that this was called at least once
+					JsMockito.verify( mockDataComponent ).commit();  // verify that this was called at least once
 				} catch( ex ) {
 					Y.Assert.fail( ex );  // those newbs throw strings for errors...
 				}

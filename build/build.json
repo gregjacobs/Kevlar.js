@@ -15,11 +15,11 @@
 				
 				{ file: "../src/attribute/Attribute.js" },
 				{ file: "../src/attribute/ObjectAttribute.js" },
-				{ file: "../src/attribute/DataContainerAttribute.js" },
+				{ file: "../src/attribute/DataComponentAttribute.js" },
 				
 				{ file: "../src/persistence/Proxy.js" },
 				
-				{ file: "../src/DataContainer.js" },
+				{ file: "../src/DataComponent.js" },
 				
 				{ tree: "../src/" }
 			]

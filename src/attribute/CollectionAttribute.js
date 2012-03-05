@@ -1,6 +1,6 @@
 /**
  * @class Kevlar.attribute.CollectionAttribute
- * @extends Kevlar.attribute.DataContainerAttribute
+ * @extends Kevlar.attribute.DataComponentAttribute
  * 
  * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.Collection} value.
  * 
@@ -14,7 +14,7 @@
  * function to convert any anonymous array to a Collection in the appropriate way. 
  */
 /*global window, Kevlar */
-Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataContainerAttribute.extend( {
+Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.extend( {
 		
 	/**
 	 * @cfg {Kevlar.Collection/String/Function} collectionClass
@@ -97,7 +97,7 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataContainerAttribute.e
 	beforeSet : function( model, oldValue, newValue ) {
 		// First, if the oldValue was a Model, and this attribute is an "embedded" collection, we need to unsubscribe it from its parent model
 		if( this.embedded && oldValue instanceof Kevlar.Collection ) {
-			model.unsubscribeEmbeddedDataContainer( this.getName(), oldValue );
+			model.unsubscribeEmbeddedDataComponent( this.getName(), oldValue );
 		}
 		
 		// Now, normalize the newValue to an object, or null
@@ -144,7 +144,7 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataContainerAttribute.e
 		}
 		
 		if( this.embedded && value instanceof Kevlar.Collection ) {
-			model.subscribeEmbeddedDataContainer( this.getName(), value );
+			model.subscribeEmbeddedDataComponent( this.getName(), value );
 		}
 		
 		return value;

@@ -1,6 +1,6 @@
 /**
  * @class Kevlar.Collection
- * @extends Kevlar.DataContainer
+ * @extends Kevlar.DataComponent
  * 
  * Manages an ordered set of {@link Kevlar.Model Models}. This class itself is not meant to be used directly, 
  * but rather extended and configured for the different collections in your application.
@@ -38,7 +38,7 @@
  *       // "A model changed its 'name' attribute from 'Greg' to 'Gregory'"
  */
 /*global window, Kevlar */
-Kevlar.Collection = Kevlar.DataContainer.extend( {
+Kevlar.Collection = Kevlar.DataComponent.extend( {
 	
 	/**
 	 * @cfg {Function} model

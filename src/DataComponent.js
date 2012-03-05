@@ -1,7 +1,7 @@
 /**
  * @private
  * @abstract
- * @class Kevlar.DataContainer
+ * @class Kevlar.DataComponent
  * 
  * Base class for data-holding classes ({@link Kevlar.Model} and {@link Kevlar.Collection}), that abstracts out some
  * of the commonalities between them.
@@ -9,7 +9,7 @@
  * This class is used internally by the framework, and shouldn't be used directly.
  */
 /*global Kevlar */
-Kevlar.DataContainer = Kevlar.util.Observable.extend( {
+Kevlar.DataComponent = Kevlar.util.Observable.extend( {
 	
 	/**
 	 * @protected
@@ -29,16 +29,16 @@ Kevlar.DataContainer = Kevlar.util.Observable.extend( {
 		// Call the superclass's constructor (Observable)
 		this._super( arguments );
 		
-		// Create a client ID for the DataContainer
+		// Create a client ID for the DataComponent
 		me.clientId = 'c' + Kevlar.newId();
 	},
 	
 	
 	/**
-	 * Retrieves the DataContainer's unique {@link #clientId}.
+	 * Retrieves the DataComponent's unique {@link #clientId}.
 	 * 
 	 * @method getClientId
-	 * @return {String} The DataContainer's unique {@link #clientId}. 
+	 * @return {String} The DataComponent's unique {@link #clientId}. 
 	 */
 	getClientId : function() {
 		return this.clientId;
@@ -46,7 +46,7 @@ Kevlar.DataContainer = Kevlar.util.Observable.extend( {
 	
 	
 	/**
-	 * Retrieves the native JavaScript value for the DataContainer.
+	 * Retrieves the native JavaScript value for the DataComponent.
 	 * 
 	 * @abstract
 	 * @method getData
@@ -59,7 +59,7 @@ Kevlar.DataContainer = Kevlar.util.Observable.extend( {
 	
 	
 	/**
-	 * Determines if the DataContainer has any modifications.
+	 * Determines if the DataComponent has any modifications.
 	 * 
 	 * @abstract
 	 * @method isModified
@@ -69,7 +69,7 @@ Kevlar.DataContainer = Kevlar.util.Observable.extend( {
 	
 	
 	/**
-	 * Commits the data in the DataContainer, so that it is no longer considered "modified".
+	 * Commits the data in the DataComponent, so that it is no longer considered "modified".
 	 * 
 	 * @abstract
 	 * @method commit
@@ -78,7 +78,7 @@ Kevlar.DataContainer = Kevlar.util.Observable.extend( {
 	
 	
 	/**
-	 * Rolls the data in the DataContainer back to its state before the last {@link #commit}
+	 * Rolls the data in the DataComponent back to its state before the last {@link #commit}
 	 * or rollback.
 	 * 
 	 * @abstract

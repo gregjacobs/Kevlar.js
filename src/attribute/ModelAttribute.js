@@ -1,6 +1,6 @@
 /**
  * @class Kevlar.attribute.ModelAttribute
- * @extends Kevlar.attribute.DataContainerAttribute
+ * @extends Kevlar.attribute.DataComponentAttribute
  * 
  * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.Model} value.
  * 
@@ -12,7 +12,7 @@
  * function to convert any anonymous object to a Model in the appropriate way. 
  */
 /*global window, Kevlar */
-Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataContainerAttribute.extend( {
+Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend( {
 		
 	/**
 	 * @cfg {Kevlar.Model/String/Function} modelClass
@@ -93,7 +93,7 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataContainerAttribute.extend
 	beforeSet : function( model, oldValue, newValue ) {
 		// First, if the oldValue was a Model, and this attribute is an "embedded" model, we need to unsubscribe it from its parent model
 		if( this.embedded && oldValue instanceof Kevlar.Model ) {
-			model.unsubscribeEmbeddedDataContainer( this.getName(), oldValue );
+			model.unsubscribeEmbeddedDataComponent( this.getName(), oldValue );
 		}
 		
 		// Now, normalize the newValue to an object, or null
@@ -139,7 +139,7 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataContainerAttribute.extend
 		}
 		
 		if( this.embedded && value instanceof Kevlar.Model ) {
-			model.subscribeEmbeddedDataContainer( this.getName(), value );
+			model.subscribeEmbeddedDataComponent( this.getName(), value );
 		}
 		
 		return value;

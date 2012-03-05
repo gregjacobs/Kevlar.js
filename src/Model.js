@@ -1,6 +1,6 @@
 /**
  * @class Kevlar.Model
- * @extends Kevlar.DataContainer
+ * @extends Kevlar.DataComponent
  * 
  * Generalized key/value data storage class, which has a number of data-related features, including the ability to persist its data to a backend server.
  * Basically, a Model represents some object of data that your application uses. For example, in an online store, one might define two Models: 
@@ -10,7 +10,7 @@
  */
 /*global window, Kevlar */
 /*jslint forin:true */
-Kevlar.Model = Kevlar.DataContainer.extend( {
+Kevlar.Model = Kevlar.DataComponent.extend( {
 	
 	/**
 	 * @cfg {Kevlar.persistence.Proxy} persistenceProxy
@@ -109,7 +109,7 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 	
 	/**
 	 * @private
-	 * @property {Object} embeddedDataContainerHandlers
+	 * @property {Object} embeddedDataComponentHandlers
 	 * 
 	 * A hashmap of {@link #change} handlers for any embedded models (which are defined by a {@link Kevlar.attribute.ModelAttribute} with
 	 * {@link Kevlar.attribute.ModelAttribute#embedded} set to `true`).
@@ -293,8 +293,8 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 		// Initialize the data hash for storing attribute names of modified data, and their original values (see property description)
 		me.modifiedData = {};
 		
-		// Initialize the embeddedDataContainerHandlers hashmap
-		me.embeddedDataContainerHandlers = {};
+		// Initialize the embeddedDataComponentHandlers hashmap
+		me.embeddedDataComponentHandlers = {};
 		
 		// Set the initial data / defaults, if we have any
 		me.set( data );
@@ -590,31 +590,31 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 	 * For non-embedded Models/Collections (i.e. simply "related" Models/Collection), this method is not called.
 	 * 
 	 * @hide
-	 * @method subscribeEmbeddedDataContainer
+	 * @method subscribeEmbeddedDataComponent
 	 * @param {String} attributeName The name of the Attribute that is subscribing a Model/Collection.
 	 * @param {Kevlar.Model/Kevlar.Collection} dataContainer
 	 */
-	subscribeEmbeddedDataContainer : function( attributeName, dataContainer ) {
-		var changeHandler = function( model, attrName, newValue, oldValue, nestedDataContainers ) {  // note: 'nestedDataContainers' arg is needed for the bubbling of deep model/collection events
-			this.onEmbeddedDataContainerChange( attributeName, model, attrName, newValue, oldValue, nestedDataContainers );
+	subscribeEmbeddedDataComponent : function( attributeName, dataContainer ) {
+		var changeHandler = function( model, attrName, newValue, oldValue, nestedDataComponents ) {  // note: 'nestedDataComponents' arg is needed for the bubbling of deep model/collection events
+			this.onEmbeddedDataComponentChange( attributeName, model, attrName, newValue, oldValue, nestedDataComponents );
 		};
 		
-		this.embeddedDataContainerHandlers[ attributeName ] = changeHandler;
+		this.embeddedDataComponentHandlers[ attributeName ] = changeHandler;
 		dataContainer.on( 'change', changeHandler, this );
 	},
 	
 	
 	/**
 	 * Used internally by the framework, this method unsubscribes the change event from the given child {@link Kevlar.Model}/{@link Kevlar.Container}. 
-	 * Used in conjunction with {@link #subscribeEmbeddedDataContainer}, when a child model/collection is un-set from its parent model (i.e. this model).
+	 * Used in conjunction with {@link #subscribeEmbeddedDataComponent}, when a child model/collection is un-set from its parent model (i.e. this model).
 	 * 
 	 * @hide
-	 * @method unsubscribeEmbeddedDataContainer
+	 * @method unsubscribeEmbeddedDataComponent
 	 * @param {String} attributeName The name of the Attribute that is unsubscribing a Model/Collection.
 	 * @param {Kevlar.Model/Kevlar.Collection} dataContainer
 	 */
-	unsubscribeEmbeddedDataContainer : function( attributeName, dataContainer ) {
-		var changeHandler = this.embeddedDataContainerHandlers[ attributeName ];
+	unsubscribeEmbeddedDataComponent : function( attributeName, dataContainer ) {
+		var changeHandler = this.embeddedDataComponentHandlers[ attributeName ];
 		dataContainer.un( 'change', changeHandler, this );
 	},
 	
@@ -623,26 +623,26 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 	 * Handler for a change in an embedded model. Relays the embedded model's {@link #change} events through this model.
 	 * 
 	 * @private
-	 * @method onEmbeddedDataContainerChange
+	 * @method onEmbeddedDataComponentChange
 	 * @param {String} attributeName The attribute name in *this* model that stores the embedded model.
 	 * @param {Kevlar.Model} childModel The embedded child model.
 	 * @param {String} childModelAttr The attribute name of the changed attribute in the embedded model. When fired "up the chain"
 	 *   from deeply nested models, this will accumulate into a dot-delimited path to the child model. Ex: "parent.intermediate.child".
 	 * @param {Mixed} newValue
 	 * @param {Mixed} oldValue
-	 * @param {Kevlar.Model[]} [nestedDataContainers] An array of the nested models/collections that have fired a 'change' event below 
+	 * @param {Kevlar.Model[]} [nestedDataComponents] An array of the nested models/collections that have fired a 'change' event below 
 	 *   this Model's event. This is a "private" argument, which is only used for this feature.
 	 */
-	onEmbeddedDataContainerChange : function( attributeName, childModel, childModelAttr, newValue, oldValue, nestedDataContainers ) {
-		nestedDataContainers = nestedDataContainers || [ childModel ];
-		nestedDataContainers.unshift( this );  // prepend this model to the list
+	onEmbeddedDataComponentChange : function( attributeName, childModel, childModelAttr, newValue, oldValue, nestedDataComponents ) {
+		nestedDataComponents = nestedDataComponents || [ childModel ];
+		nestedDataComponents.unshift( this );  // prepend this model to the list
 		
 				
 		var pathToChangedAttr = attributeName + '.' + childModelAttr,
 		    pathsToChangedAttr = pathToChangedAttr.split( '.' );   // array of the parts of the full dot-delimited path
 		
 		// First, an event with the full path
-		this.fireEvent( 'change:' + pathToChangedAttr, nestedDataContainers[ nestedDataContainers.length - 1 ], newValue, oldValue );
+		this.fireEvent( 'change:' + pathToChangedAttr, nestedDataComponents[ nestedDataComponents.length - 1 ], newValue, oldValue );
 		
 		// Next, fire an event for each of the "paths" leading up to the changed attribute, but not including the attribute itself (we fired an event for that just above).
 		// This loop will fire them backwards, from longest path, to shortest.
@@ -654,13 +654,13 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 		for( var i = pathsToChangedAttr.length - 2; i >= 0; i-- ) {
 			var currentPath = pathsToChangedAttr.slice( 0, i + 1 ).join( '.' ),
 			    changedAttr = pathsToChangedAttr.slice( i + 1 ).join( '.' ),
-			    modelForPath = nestedDataContainers[ i + 1 ];
+			    modelForPath = nestedDataComponents[ i + 1 ];
 			
 			this.fireEvent( 'change:' + currentPath, modelForPath, changedAttr, newValue, oldValue );
 		}
 		
 		// Now fire the general 'change' event from this model
-		this.fireEvent( 'change', this, pathToChangedAttr, newValue, oldValue, nestedDataContainers );   // this model, attributeName, newValue, oldValue, the nested models/collections so far for this event from the deepest child
+		this.fireEvent( 'change', this, pathToChangedAttr, newValue, oldValue, nestedDataComponents );   // this model, attributeName, newValue, oldValue, the nested models/collections so far for this event from the deepest child
 	},
 	
 	
@@ -700,11 +700,11 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 			}
 			
 			// No local modifications to primitives, check all embedded collections/models to see if they have changes
-			var embeddedDataContainerAttrs = this.getEmbeddedDataContainerAttributes(),
+			var embeddedDataComponentAttrs = this.getEmbeddedDataComponentAttributes(),
 			    dataContainer;
 			
-			for( var i = 0, len = embeddedDataContainerAttrs.length; i < len; i++ ) {
-				var attrName = embeddedDataContainerAttrs[ i ].getName();
+			for( var i = 0, len = embeddedDataComponentAttrs.length; i < len; i++ ) {
+				var attrName = embeddedDataComponentAttrs[ i ].getName();
 				
 				if( ( dataContainer = data[ attrName ] ) && dataContainer.isModified() ) {
 					return true;
@@ -715,7 +715,7 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 		} else {
 			var attribute = this.attributes[ attributeName ];
 			
-			return ( attributeName in this.modifiedData ) || ( attribute instanceof Kevlar.attribute.DataContainerAttribute && attribute.isEmbedded() && data[ attributeName ].isModified() );
+			return ( attributeName in this.modifiedData ) || ( attribute instanceof Kevlar.attribute.DataComponentAttribute && attribute.isEmbedded() && data[ attributeName ].isModified() );
 		}
 	},
 	
@@ -759,12 +759,12 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 		options.attributeNames = Kevlar.util.Object.keysToArray( this.modifiedData );
 		
 		// Add any modified embedded model/collection to the options.attributeNames array
-		var embeddedDataContainerAttrs = this.getEmbeddedDataContainerAttributes(),
+		var embeddedDataComponentAttrs = this.getEmbeddedDataComponentAttributes(),
 		    data = this.data,
 		    dataContainer;
 	
-		for( var i = 0, len = embeddedDataContainerAttrs.length; i < len; i++ ) {
-			var attrName = embeddedDataContainerAttrs[ i ].getName();
+		for( var i = 0, len = embeddedDataComponentAttrs.length; i < len; i++ ) {
+			var attrName = embeddedDataComponentAttrs[ i ].getName();
 			
 			if( ( dataContainer = data[ attrName ] ) && dataContainer.isModified() ) {
 				options.attributeNames.push( attrName );
@@ -788,12 +788,12 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 		this.dirty = false;
 		
 		// Go through all embedded models/collections, and "commit" those as well
-		var embeddedDataContainerAttrs = this.getEmbeddedDataContainerAttributes(),
+		var embeddedDataComponentAttrs = this.getEmbeddedDataComponentAttributes(),
 		    data = this.data,
 		    dataContainer;
 		
-		for( var i = 0, len = embeddedDataContainerAttrs.length; i < len; i++ ) {
-			var attrName = embeddedDataContainerAttrs[ i ].getName();
+		for( var i = 0, len = embeddedDataComponentAttrs.length; i < len; i++ ) {
+			var attrName = embeddedDataComponentAttrs[ i ].getName();
 			
 			if( ( dataContainer = data[ attrName ] ) ) {
 				dataContainer.commit();
@@ -1057,22 +1057,22 @@ Kevlar.Model = Kevlar.DataContainer.extend( {
 	// Private utility methods
 	
 	/**
-	 * Retrieves an array of the attributes that are {@link Kevlar.attribute.DataContainerAttribute DataContainerAttributes} which
-	 * are also {@link Kevlar.attribute.DataContainerAttribute#embedded}. This is a convenience method that supports the methods which
-	 * use the embedded DataContainerAttributes. 
+	 * Retrieves an array of the attributes that are {@link Kevlar.attribute.DataComponentAttribute DataComponentAttributes} which
+	 * are also {@link Kevlar.attribute.DataComponentAttribute#embedded}. This is a convenience method that supports the methods which
+	 * use the embedded DataComponentAttributes. 
 	 * 
 	 * @private
-	 * @method getEmbeddedDataContainerAttributes
-	 * @return {Kevlar.attribute.DataContainerAttribute[]}
+	 * @method getEmbeddedDataComponentAttributes
+	 * @return {Kevlar.attribute.DataComponentAttribute[]}
 	 */
-	getEmbeddedDataContainerAttributes : function() {
+	getEmbeddedDataComponentAttributes : function() {
 		var attributes = this.attributes,
 		    attribute,
-		    DataContainerAttribute = Kevlar.attribute.DataContainerAttribute,
+		    DataComponentAttribute = Kevlar.attribute.DataComponentAttribute,
 		    dataContainerAttributes = [];
 		
 		for( var attrName in attributes ) {
-			if( attributes.hasOwnProperty( attrName ) && ( attribute = attributes[ attrName ] ) instanceof DataContainerAttribute && attribute.isEmbedded() ) {
+			if( attributes.hasOwnProperty( attrName ) && ( attribute = attributes[ attrName ] ) instanceof DataComponentAttribute && attribute.isEmbedded() ) {
 				dataContainerAttributes.push( attribute );
 			}
 		}

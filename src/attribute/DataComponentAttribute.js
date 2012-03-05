@@ -1,6 +1,6 @@
 /**
  * @abstract
- * @class Kevlar.attribute.DataContainerAttribute
+ * @class Kevlar.attribute.DataComponentAttribute
  * @extends Kevlar.attribute.ObjectAttribute
  * 
  * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.Model} value.
@@ -13,20 +13,20 @@
  * function to convert any anonymous object to a Model in the appropriate way. 
  */
 /*global window, Kevlar */
-Kevlar.attribute.DataContainerAttribute = Kevlar.attribute.ObjectAttribute.extend( {
+Kevlar.attribute.DataComponentAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 	
 	/**
 	 * @cfg {Boolean} embedded
-	 * Setting this config to true has the parent {@link Kevlar.Model Model} treat the child {@link Kevlar.DataContainer DataContainer} as if it is a part of itself. 
-	 * Normally, a child DataContainer that is not embedded is treated as a "relation", where it is considered as independent from the parent Model.
+	 * Setting this config to true has the parent {@link Kevlar.Model Model} treat the child {@link Kevlar.DataComponent DataComponent} as if it is a part of itself. 
+	 * Normally, a child DataComponent that is not embedded is treated as a "relation", where it is considered as independent from the parent Model.
 	 * 
 	 * What this means is that, when true:
 	 * 
-	 * - The parent Model is considered as "changed" when there is a change in the child DataContainer is changed. This Attribute 
-	 *   (the attribute that holds the child DataContainer) is the "change".
-	 * - The parent Model's {@link Kevlar.Model#change change} event is fired when an attribute on the child DataContainer (Model or Collection) has changed.
-	 * - The child DataContainer's data is persisted with the parent Model's data, unless the {@link #persistIdOnly} config is set to true,
-	 *   in which case just the child DataContainer's {@link Kevlar.Model#idAttribute id} is persisted with the parent Model. In the case of a {@link Kevlar.Collection},
+	 * - The parent Model is considered as "changed" when there is a change in the child DataComponent is changed. This Attribute 
+	 *   (the attribute that holds the child DataComponent) is the "change".
+	 * - The parent Model's {@link Kevlar.Model#change change} event is fired when an attribute on the child DataComponent (Model or Collection) has changed.
+	 * - The child DataComponent's data is persisted with the parent Model's data, unless the {@link #persistIdOnly} config is set to true,
+	 *   in which case just the child DataComponent's {@link Kevlar.Model#idAttribute id} is persisted with the parent Model. In the case of a {@link Kevlar.Collection},
 	 *   the ID's of the models are only persisted if {@link #persistIdOnly} is true.
 	 */
 	embedded : false,
@@ -35,7 +35,7 @@ Kevlar.attribute.DataContainerAttribute = Kevlar.attribute.ObjectAttribute.exten
 	 * @cfg {Boolean} persistIdOnly
 	 * In the case that the {@link #embedded} config is true, set this to true to only have the {@link Kevlar.Model#idProperty id} of the embedded 
 	 * model(s) be persisted, rather than all of the Model/Collection data. Normally, when {@link #embedded} is false (the default), the child 
-	 * {@link Kevlar.DataContainer DataContainer} is treated as a relation, and only its {@link Kevlar.Model#idAttribute ids} is/are persisted.
+	 * {@link Kevlar.DataComponent DataComponent} is treated as a relation, and only its {@link Kevlar.Model#idAttribute ids} is/are persisted.
 	 */
 	persistIdOnly : false,
 	
