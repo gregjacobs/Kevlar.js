@@ -232,15 +232,81 @@ tests.integration.add( new Ext.test.TestSuite( {
 				childModel1.set( 'attr', 'newNewValue1' );
 				
 				Y.Assert.areSame( 2, changeEventCallCount, "We should now only have 2 for the event firing count, as we un-set the child model from the parent (which was the +1), but shouldn't get 3 from childModel1's event" );
-			}/*,
+			},
 			
 			
 			// ------------------------------
 			
-			// Test multiple levels of embedded models
+			// Test that a parent model fires a change event when a child collection is added to / removed from / reordered
+			
+			"When a child collection is added to / removed from / reordered, the parent model should fire a 'change' event" : function() {
+				var ParentModel = Kevlar.Model.extend( {
+					attributes : [ { name: 'childCollection', type: 'collection', embedded: true } ],
+					
+					toString : function() { return "(ParentModel)"; }  // for debugging
+				} );
+				
+				var ChildModel = Kevlar.Model.extend( {
+					attributes : [ { name : 'attr', type: 'string' } ],
+					
+					toString : function() { return "(ChildModel)"; }  // for debugging
+				} );
+				
+				var Collection = Kevlar.Collection.extend( {
+					model : ChildModel,
+					
+					toString : function() { return "(Collection)"; }  // for debugging
+				} );
+				
+				
+				var childModel1 = new ChildModel( { attr: 1 } ),
+				    childModel2 = new ChildModel( { attr: 2 } ),
+				    childModel3 = new ChildModel( { attr: 3 } ),  // not added to the collection initially
+				    collection = new Collection( [ childModel1, childModel2 ] ),
+				    parentModel = new ParentModel( { childCollection: collection } );
+				
+				
+				var changeCount = 0,
+				    changeModel, changeAttr, changeNewVal, changeOldVal;
+				    
+				parentModel.on( 'change', function( model, attr, newVal, oldVal ) {
+					changeCount++;
+					changeModel = model; changeAttr = attr; changeNewVal = newVal; changeOldVal = oldVal;
+				} );
+				
+				Y.Assert.areSame( 0, changeCount, "Initial condition: the changeCount should be 0" );
+				
+				
+				collection.add( childModel3 );
+				Y.Assert.areSame( 1, changeCount, "The changeCount should now be 1 after an 'add' event" );
+				Y.Assert.areSame( parentModel, changeModel, "The changed model should be the parent model for an add event" );
+				Y.Assert.areSame( 'childCollection', changeAttr, "The changed attribute should be the childCollection for an add event" );
+				Y.Assert.areSame( collection, changeNewVal, "The newValue for the change event should be the collection for an add event" );
+				Y.Assert.areSame( collection, changeOldVal, "The oldValue for the change event should be the collection for an add event" );
+				
+				collection.remove( childModel3 );
+				Y.Assert.areSame( 2, changeCount, "The changeCount should now be 2 after a 'remove' event" );
+				Y.Assert.areSame( parentModel, changeModel, "The changed model should be the parent model for a remove event" );
+				Y.Assert.areSame( 'childCollection', changeAttr, "The changed attribute should be the childCollection for a remove event" );
+				Y.Assert.areSame( collection, changeNewVal, "The newValue for the change event should be the collection for a remove event" );
+				Y.Assert.areSame( collection, changeOldVal, "The oldValue for the change event should be the collection for a remove event" );
+				
+				collection.insert( childModel1, 1 );  // "reorder" childModel1 to the 2nd position 
+				Y.Assert.areSame( 3, changeCount, "The changeCount should now be 3 after a 'reorder' event" );
+				Y.Assert.areSame( parentModel, changeModel, "The changed model should be the parent model for a reorder event" );
+				Y.Assert.areSame( 'childCollection', changeAttr, "The changed attribute should be the childCollection for a reorder event" );
+				Y.Assert.areSame( collection, changeNewVal, "The newValue for the change event should be the collection for a reorder event" );
+				Y.Assert.areSame( collection, changeOldVal, "The oldValue for the change event should be the collection for a reorder event" );				
+			}/*,
+						
 			
 			
-			"When an attribute has changed in a deeply nested embedded model, its parent model should fire a 'change' event, with the parentAttr.childAttr.childAttr attributeName" : function() {
+			// ------------------------------
+			
+			// Test multiple levels of embedded models and collections
+			
+			
+			"When an attribute has changed in a deeply nested embedded model/collection, its uppermost parent model should fire a 'change' event" : function() {
 				var ParentModel = Kevlar.Model.extend( {
 					attributes : [
 						{ name: 'name', defaultValue: 'Parent' }, // for debugging

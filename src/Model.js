@@ -109,13 +109,25 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	
 	/**
 	 * @private
-	 * @property {Object} embeddedDataComponentHandlers
+	 * @property {Object} embeddedDataComponentChangeHandlers
 	 * 
-	 * A hashmap of {@link #change} handlers for any embedded models (which are defined by a {@link Kevlar.attribute.ModelAttribute} with
-	 * {@link Kevlar.attribute.ModelAttribute#embedded} set to `true`).
+	 * A hashmap of {@link #change} handlers for any embedded DataComponents (which are defined by a {@link Kevlar.attribute.DataComponentAttribute} with
+	 * {@link Kevlar.attribute.DataComponentAttribute#embedded} set to `true`).
 	 * 
 	 * This hashmap is keyed by the Attribute's name, and stores a Function reference as its value, which is the handler for a change
-	 * event in the embedded model.
+	 * event in the embedded DataComponent.
+	 */
+	
+	/**
+	 * @private
+	 * @property {Object} embeddedCollectionAddRemoveReorderHandlers
+	 * 
+	 * A hashmap of {@link Kevlar.Collection#event-add}, {@link Kevlar.Collection#event-remove}, and {@link Kevlar.Collection#event-reorder} handlers for any
+	 * embedded {@link Kevlar.Collection Collections}. An "embedded" Collection is defined by a {@link Kevlar.attribute.CollectionAttribute} with
+	 * {@link Kevlar.attribute.CollectionAttribute#embedded} set to `true`.
+	 * 
+	 * This hashmap is keyed by the Attribute's name, and stores a Function reference as its value, which is the handler for the add/remove/reorder
+	 * events in the embedded Collection.
 	 */
 	
 	/**
@@ -293,8 +305,9 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		// Initialize the data hash for storing attribute names of modified data, and their original values (see property description)
 		me.modifiedData = {};
 		
-		// Initialize the embeddedDataComponentHandlers hashmap
-		me.embeddedDataComponentHandlers = {};
+		// Initialize the embeddedDataComponentChangeHandlers and embeddedCollectionAddRemoveReorderHandlers hashmaps
+		me.embeddedDataComponentChangeHandlers = {};
+		me.embeddedCollectionAddRemoveReorderHandlers = {};
 		
 		// Set the initial data / defaults, if we have any
 		me.set( data );
@@ -599,7 +612,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			this.onEmbeddedDataComponentChange( attributeName, /* collection */ null, model, attrName, newValue, oldValue, childChangeData );
 		};
 		
-		this.embeddedDataComponentHandlers[ attributeName ] = changeHandler;
+		this.embeddedDataComponentChangeHandlers[ attributeName ] = changeHandler;
 		embeddedModel.on( 'change', changeHandler, this );
 	},	
 	
@@ -619,9 +632,20 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		var changeHandler = function( collection, model, attrName, newValue, oldValue, childChangeData ) {  // note: 'childChangeData' arg is needed for the bubbling of deep model/collection events
 			this.onEmbeddedDataComponentChange( attributeName, collection, model, attrName, newValue, oldValue, childChangeData );
 		};
-		
-		this.embeddedDataComponentHandlers[ attributeName ] = changeHandler;
+		this.embeddedDataComponentChangeHandlers[ attributeName ] = changeHandler;
 		embeddedCollection.on( 'change', changeHandler, this );
+		
+		
+		var addRemoveReorderHandler = function( collection ) {
+			this.onEmbeddedCollectionAddRemoveReorder( attributeName, collection );
+		};
+		this.embeddedCollectionAddRemoveReorderHandlers[ attributeName ] = addRemoveReorderHandler;
+		embeddedCollection.on( {
+			'add'     : addRemoveReorderHandler,
+			'remove'  : addRemoveReorderHandler,
+			'reorder' : addRemoveReorderHandler,
+			scope : this
+		} );
 	},
 	
 	
@@ -651,6 +675,14 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 */
 	unsubscribeEmbeddedCollection : function( attributeName, embeddedCollection ) {
 		this.unsubscribeEmbeddedDataComponent( attributeName, embeddedCollection );
+		
+		var addRemoveReorderHandler = this.embeddedCollectionAddRemoveReorderHandlers[ attributeName ];
+		embeddedCollection.un( {
+			'add'     : addRemoveReorderHandler,
+			'remove'  : addRemoveReorderHandler,
+			'reorder' : addRemoveReorderHandler,
+			scope : this
+		} );
 	},
 	
 	
@@ -662,11 +694,11 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * @hide
 	 * @method unsubscribeEmbeddedDataComponent
 	 * @param {String} attributeName The name of the Attribute that is unsubscribing a Model/Collection.
-	 * @param {Kevlar.DataComponent} embeddedModel
+	 * @param {Kevlar.DataComponent} dataComponent
 	 */
-	unsubscribeEmbeddedDataComponent : function( attributeName, embeddedModel ) {
-		var changeHandler = this.embeddedDataComponentHandlers[ attributeName ];
-		embeddedModel.un( 'change', changeHandler, this );
+	unsubscribeEmbeddedDataComponent : function( attributeName, dataComponent ) {
+		var changeHandler = this.embeddedDataComponentChangeHandlers[ attributeName ];
+		dataComponent.un( 'change', changeHandler, this );
 	},
 	
 	
@@ -712,9 +744,9 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			};
 		}
 		
-		if( window.a ) {
+		/*if( window.a ) {
 			console.log( 'this handler called with childCollection: ', childCollection );
-		}
+		}*/
 		if( childCollection ) {
 			childChangeData.embeddedDataComponents.unshift( childCollection );
 		}
@@ -736,17 +768,17 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		//   - change:parent.intermediate.child.attr  model = child                 newValue = [the new value]  oldValue = [the old value]
 		//   - change:parent.intermediate.child.*     model = child  attr = "attr"  newValue = [the new value]  oldValue = [the old value]
 		if( parentDataComponent instanceof Kevlar.Collection ) {
-			if( window.a ) {
+			/*if( window.a ) {
 				console.log( 'firing event --- change:' + pathToChangedAttr, parentDataComponent, changedDataComponent, origNewValue, origOldValue );
 				console.log( 'firing event --- change:' + pathToChangedDataComponent + '.*', parentDataComponent, changedDataComponent, changedAttrName, origNewValue, origOldValue );
-			}
+			}*/
 			this.fireEvent( 'change:' + pathToChangedAttr, parentDataComponent, changedDataComponent, origNewValue, origOldValue );
 			this.fireEvent( 'change:' + pathToChangedDataComponent + '.*', parentDataComponent, changedDataComponent, changedAttrName, origNewValue, origOldValue );
 		} else {
-			if( window.a ) {
+			/*if( window.a ) {
 				console.log( 'firing event --- change:' + pathToChangedAttr, changedDataComponent, origNewValue, origOldValue );
 				console.log( 'firing event --- change:' + pathToChangedDataComponent + '.*', changedDataComponent, changedAttrName, origNewValue, origOldValue );
-			}
+			}*/
 			this.fireEvent( 'change:' + pathToChangedAttr, changedDataComponent, origNewValue, origOldValue );
 			this.fireEvent( 'change:' + pathToChangedDataComponent + '.*', changedDataComponent, changedAttrName, origNewValue, origOldValue );
 		}
@@ -771,29 +803,29 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			
 			// Now if the event should relate to a Collection, we must fire it like a Collection fires its event. Unforunately, this is a little
 			// hacky that Kevlar.Model should know about Kevlar.Collection, but going with it for now.
-			if( window.a ) {
+			/*if( window.a ) {
 				console.log( 'in loop. dataComponentForPathParent = ', dataComponentForPathParent );
 				console.log( 'in loop. dataComponentForPath = ', dataComponentForPath );
-			}
+			}*/
 			if( dataComponentForPathParent instanceof Kevlar.Collection ) {
-				if( window.a ) {
+				/*if( window.a ) {
 					console.log( 'firing event in loop for collection --- change:' + currentPath, dataComponentForPathParent, dataComponentForPath, dataComponentForPath );
 					if( currentPathParent !== '' ) {
 						console.log( 'firing event in loop for collection --- change:' + currentPathParent + '.*', dataComponentForPathParent, changedAttr, dataComponentForPath, dataComponentForPath );
 					}
-				}
+				}*/
 				this.fireEvent( 'change:' + currentPath, dataComponentForPathParent, dataComponentForPath, dataComponentForPath );
 				if( currentPathParent !== '' ) {
 					this.fireEvent( 'change:' + currentPathParent + '.*', dataComponentForPathParent, changedAttr, dataComponentForPath, dataComponentForPath );
 				}
 				
 			} else {
-				if( window.a ) {
+				/*if( window.a ) {
 					console.log( 'firing event in loop --- change:' + currentPath, dataComponentForPathParent, dataComponentForPath, dataComponentForPath );
 					if( currentPathParent !== '' ) {
 						console.log( 'firing event in loop --- change:' + currentPathParent + '.*', dataComponentForPathParent, changedAttr, dataComponentForPath, dataComponentForPath );
 					}
-				}
+				}*/
 				this.fireEvent( 'change:' + currentPath, dataComponentForPathParent, dataComponentForPath, dataComponentForPath );
 				if( currentPathParent !== '' ) {
 					this.fireEvent( 'change:' + currentPathParent + '.*', dataComponentForPathParent, changedAttr, dataComponentForPath, dataComponentForPath );
@@ -803,18 +835,35 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		
 		// Now fire the general 'change' event from this model
 		if( childCollection ) {
-			if( window.a ) {
+			/*if( window.a ) {
 				console.log( 'firing event --- change', this, attributeName, childCollection, childCollection, childChangeData );
-			}
+			}*/
 			this.fireEvent( 'change', this, attributeName, childCollection, childCollection, childChangeData );   // this model, attributeName, newValue, oldValue, the string path to the changed attribute, the original newValue from the deepest child, the original oldValue from the deepest child, the nested models/collections so far for this event from the deepest child
 			
 		} else {
-			if( window.a ) {
+			/*if( window.a ) {
 				console.log( 'firing event --- change', this, attributeName, childModel, childModel, childChangeData );
-			}
+			}*/
 			this.fireEvent( 'change', this, attributeName, childModel, childModel, childChangeData );   // this model, attributeName, newValue, oldValue, the string path to the changed attribute, the original newValue from the deepest child, the original oldValue from the deepest child, the nested models/collections so far for this event from the deepest child
 		}
 	},
+	
+	
+	/**
+	 * Method that responds to an embedded {@link Kevlar.Collection Collection}, and fires a change event in this model
+	 * when a Collection is {@link Kevlar.Collection#event-add added to}, {@link Kevlar.Collection#event-remove removed from},
+	 * of {@link Kevlar.Collection#event-reorder reordered}.
+	 * 
+	 * @private
+	 * @method onEmbeddedCollectionAddRemoveReorder
+	 * @param {String} attributeName The name of the attribute where the embedded Collection exists.
+	 * @param {Kevlar.Collection} collection The collection that fired the {@link Kevlar.Collection#event-add}, 
+	 *   {@link Kevlar.Collection#event-remove}, or {@link Kevlar.Collection#event-reorder} event. 
+	 */
+	onEmbeddedCollectionAddRemoveReorder : function( attributeName, collection ) {
+		this.fireEvent( 'change', this, attributeName, collection, collection );
+	},
+	
 	
 	
 	// --------------------------------

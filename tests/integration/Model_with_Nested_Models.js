@@ -249,7 +249,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 			// Test multiple levels of embedded models
 			
 			
-			"When an attribute has changed in a deeply nested embedded model, its parent model should fire a 'change' event, with the parentAttr.childAttr.childAttr attributeName" : function() {
+			"When an attribute has changed in a deeply nested embedded model, its parent model should fire a 'change' event" : function() {
 				var ParentModel = Kevlar.Model.extend( {
 					attributes : [
 						{ name: 'intermediate', type: 'model', embedded: true }
