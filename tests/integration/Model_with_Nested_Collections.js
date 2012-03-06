@@ -266,33 +266,54 @@ tests.integration.add( new Ext.test.TestSuite( {
 				    parentModel = new ParentModel( { childCollection: collection } );
 				
 				
-				var changeCount = 0,
+				var addEventCount = 0,
+				    removeEventCount = 0,
+				    reorderEventCount = 0;
+				collection.on( 'add', function() { addEventCount++; } );
+				collection.on( 'remove', function() { removeEventCount++; } );
+				collection.on( 'reorder', function() { reorderEventCount++; } );
+				
+								
+				var changeEventCount = 0,
 				    changeModel, changeAttr, changeNewVal, changeOldVal;
 				    
 				parentModel.on( 'change', function( model, attr, newVal, oldVal ) {
-					changeCount++;
+					changeEventCount++;
 					changeModel = model; changeAttr = attr; changeNewVal = newVal; changeOldVal = oldVal;
 				} );
 				
-				Y.Assert.areSame( 0, changeCount, "Initial condition: the changeCount should be 0" );
+				
+				Y.Assert.areSame( 0, addEventCount, "Initial condition: the addEventCount should be 0" );
+				Y.Assert.areSame( 0, removeEventCount, "Initial condition: the removeEventCount should be 0" );
+				Y.Assert.areSame( 0, reorderEventCount, "Initial condition: the reorderEventCount should be 0" );
+				Y.Assert.areSame( 0, changeEventCount, "Initial condition: the changeCount should be 0" );
 				
 				
 				collection.add( childModel3 );
-				Y.Assert.areSame( 1, changeCount, "The changeCount should now be 1 after an 'add' event" );
+				Y.Assert.areSame( 1, addEventCount, "The addEventCount should now be 1" );
+				Y.Assert.areSame( 0, removeEventCount, "The removeEventCount should still be 0" );
+				Y.Assert.areSame( 0, reorderEventCount, "The addEventCount should still be 0" );
+				Y.Assert.areSame( 1, changeEventCount, "The changeEventCount should now be 1 after an 'add' event" );
 				Y.Assert.areSame( parentModel, changeModel, "The changed model should be the parent model for an add event" );
 				Y.Assert.areSame( 'childCollection', changeAttr, "The changed attribute should be the childCollection for an add event" );
 				Y.Assert.areSame( collection, changeNewVal, "The newValue for the change event should be the collection for an add event" );
 				Y.Assert.areSame( collection, changeOldVal, "The oldValue for the change event should be the collection for an add event" );
 				
 				collection.remove( childModel3 );
-				Y.Assert.areSame( 2, changeCount, "The changeCount should now be 2 after a 'remove' event" );
+				Y.Assert.areSame( 1, addEventCount, "The addEventCount should still be 1" );
+				Y.Assert.areSame( 1, removeEventCount, "The removeEventCount should now be 1" );
+				Y.Assert.areSame( 0, reorderEventCount, "The addEventCount should still be 0" );
+				Y.Assert.areSame( 2, changeEventCount, "The changeEventCount should now be 2 after a 'remove' event" );
 				Y.Assert.areSame( parentModel, changeModel, "The changed model should be the parent model for a remove event" );
 				Y.Assert.areSame( 'childCollection', changeAttr, "The changed attribute should be the childCollection for a remove event" );
 				Y.Assert.areSame( collection, changeNewVal, "The newValue for the change event should be the collection for a remove event" );
 				Y.Assert.areSame( collection, changeOldVal, "The oldValue for the change event should be the collection for a remove event" );
 				
 				collection.insert( childModel1, 1 );  // "reorder" childModel1 to the 2nd position 
-				Y.Assert.areSame( 3, changeCount, "The changeCount should now be 3 after a 'reorder' event" );
+				Y.Assert.areSame( 1, addEventCount, "The addEventCount should still be 1" );
+				Y.Assert.areSame( 1, removeEventCount, "The removeEventCount should still be 1" );
+				Y.Assert.areSame( 1, reorderEventCount, "The addEventCount should now be 1" );
+				Y.Assert.areSame( 3, changeEventCount, "The changeEventCount should now be 3 after a 'reorder' event" );
 				Y.Assert.areSame( parentModel, changeModel, "The changed model should be the parent model for a reorder event" );
 				Y.Assert.areSame( 'childCollection', changeAttr, "The changed attribute should be the childCollection for a reorder event" );
 				Y.Assert.areSame( collection, changeNewVal, "The newValue for the change event should be the collection for a reorder event" );
