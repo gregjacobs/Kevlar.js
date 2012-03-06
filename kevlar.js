@@ -2371,13 +2371,11 @@ Kevlar.DataComponent = Kevlar.util.Observable.extend( {
 	 * @constructor
 	 */
 	constructor : function() {
-		var me = this;
-		
 		// Call the superclass's constructor (Observable)
 		this._super( arguments );
 		
 		// Create a client ID for the DataComponent
-		me.clientId = 'c' + Kevlar.newId();
+		this.clientId = 'c' + Kevlar.newId();
 	},
 	
 	
@@ -2552,7 +2550,7 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.e
 	beforeSet : function( model, oldValue, newValue ) {
 		// First, if the oldValue was a Model, and this attribute is an "embedded" collection, we need to unsubscribe it from its parent model
 		if( this.embedded && oldValue instanceof Kevlar.Collection ) {
-			model.unsubscribeEmbeddedDataComponent( this.getName(), oldValue );
+			model.unsubscribeEmbeddedCollection( this.getName(), oldValue );
 		}
 		
 		// Now, normalize the newValue to an object, or null
@@ -2599,7 +2597,7 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.e
 		}
 		
 		if( this.embedded && value instanceof Kevlar.Collection ) {
-			model.subscribeEmbeddedDataComponent( this.getName(), value );
+			model.subscribeEmbeddedCollection( this.getName(), value );
 		}
 		
 		return value;
@@ -2774,7 +2772,7 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend
 	beforeSet : function( model, oldValue, newValue ) {
 		// First, if the oldValue was a Model, and this attribute is an "embedded" model, we need to unsubscribe it from its parent model
 		if( this.embedded && oldValue instanceof Kevlar.Model ) {
-			model.unsubscribeEmbeddedDataComponent( this.getName(), oldValue );
+			model.unsubscribeEmbeddedModel( this.getName(), oldValue );
 		}
 		
 		// Now, normalize the newValue to an object, or null
@@ -2820,7 +2818,7 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend
 		}
 		
 		if( this.embedded && value instanceof Kevlar.Model ) {
-			model.subscribeEmbeddedDataComponent( this.getName(), value );
+			model.subscribeEmbeddedModel( this.getName(), value );
 		}
 		
 		return value;
@@ -2869,7 +2867,8 @@ Kevlar.attribute.Attribute.registerType( 'string', Kevlar.attribute.StringAttrib
  * ### Model Events
  * 
  * Collections automatically relay all of their {@link Kevlar.Model Models'} events as if the Collection
- * fired it. For example, Models' {@link Kevlar.Model#event-change change} events:
+ * fired it. The collection instance provides itself in the handler though. For example, Models' 
+ * {@link Kevlar.Model#event-change change} events:
  *     
  *     var Model = Kevlar.Model.extend( {
  *         attributes: [ 'name' ]
@@ -2881,7 +2880,7 @@ Kevlar.attribute.Attribute.registerType( 'string', Kevlar.attribute.StringAttrib
  *     var model1 = new Model( { name: "Greg" } ),
  *         model2 = new Model( { name: "Josh" } );
  *     var collection = new Collection( [ model1, model2 ] );
- *     collection.on( 'change', function( model, attributeName, newValue, oldValue ) {
+ *     collection.on( 'change', function( collection, model, attributeName, newValue, oldValue ) {
  *         console.log( "A model changed its '" + attributeName + "' attribute from '" + oldValue + "' to '" + newValue + "'" );
  *     } );
  * 
@@ -3335,8 +3334,8 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 	 * @param {Mixed...} args The original arguments passed to the event.
 	 */
 	onModelEvent : function( eventName ) {
-		// Relay the event from the collection, passing the original arguments
-		this.fireEvent.apply( this, [ eventName ].concat( Array.prototype.slice.call( arguments, 1 ) ) );
+		// Relay the event from the collection, passing the collection itself, and the original arguments
+		this.fireEvent.apply( this, [ eventName, this ].concat( Array.prototype.slice.call( arguments, 1 ) ) );
 	},
 	
 	
@@ -3700,27 +3699,27 @@ Kevlar.data.NativeObjectConverter = {
 	 * @return {Object[]/Object} An array of objects (for the case of a Collection}, or an Object (for the case of a Model)
 	 *   with the internal attributes converted to their native equivalent.
 	 */
-	convert : function( dataContainer, options ) {
+	convert : function( dataComponent, options ) {
 		options = options || {};
 		var cache = {},  // keyed by models' clientId, and used for handling circular dependencies
 		    persistedOnly = !!options.persistedOnly,
 		    raw = !!options.raw,
-		    data = ( dataContainer instanceof Kevlar.Collection ) ? [] : {};  // Collection is an Array, Model is an Object
+		    data = ( dataComponent instanceof Kevlar.Collection ) ? [] : {};  // Collection is an Array, Model is an Object
 		
 		// Prime the cache with the Model/Collection provided to this method, so that if a circular reference points back to this
 		// model, the data object is not duplicated as an internal object (i.e. it should refer right back to the converted
 		// Model's/Collection's data object)
-		cache[ dataContainer.getClientId() ] = data;
+		cache[ dataComponent.getClientId() ] = data;
 		
 		// Recursively goes through the data structure, and convert models to objects, and collections to arrays
-		Kevlar.apply( data, (function convert( dataContainer ) {
+		Kevlar.apply( data, (function convert( dataComponent ) {
 			var clientId, 
 			    cachedDataComponent,
 			    data,
 			    i, len;
 			
-			if( dataContainer instanceof Kevlar.Model ) {
-				var attributes = dataContainer.getAttributes(),
+			if( dataComponent instanceof Kevlar.Model ) {
+				var attributes = dataComponent.getAttributes(),
 				    attributeNames = options.attributeNames || Kevlar.util.Object.keysToArray( attributes ),
 				    attributeName, currentValue;
 				
@@ -3733,7 +3732,7 @@ Kevlar.data.NativeObjectConverter = {
 				for( i = 0, len = attributeNames.length; i < len; i++ ) {
 					attributeName = attributeNames[ i ];
 					if( !persistedOnly || attributes[ attributeName ].isPersisted() === true ) {
-						currentValue = data[ attributeName ] = ( raw ) ? dataContainer.raw( attributeName ) : dataContainer.get( attributeName );
+						currentValue = data[ attributeName ] = ( raw ) ? dataComponent.raw( attributeName ) : dataComponent.get( attributeName );
 						
 						// Process Nested DataComponents
 						if( currentValue instanceof Kevlar.DataComponent ) {
@@ -3753,8 +3752,8 @@ Kevlar.data.NativeObjectConverter = {
 					}
 				}
 				
-			} else if( dataContainer instanceof Kevlar.Collection ) {
-				var models = dataContainer.getModels(),
+			} else if( dataComponent instanceof Kevlar.Collection ) {
+				var models = dataComponent.getModels(),
 				    model;
 				
 				data = [];  // data is an array for a Container
@@ -3768,7 +3767,7 @@ Kevlar.data.NativeObjectConverter = {
 			}
 			
 			return data;
-		})( dataContainer ) );
+		})( dataComponent ) );
 		
 		return data;
 	}
@@ -4361,24 +4360,46 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	// Embedded Model / Collection related functionality
 	
 	/**
-	 * Used internally by the framework, this method subscribes to the change event of the given child {@link Kevlar.Model}/{@link Kevlar.Container}, in order to relay
-	 * its events through this (i.e. their parent) model. This supports a form of "event bubbling" for {@link Kevlar.attribute.ModelAttribute#embedded embedded} 
-	 * child models, and is called from {@link Kevlar.attribute.ModelAttribute ModelAttribute}/{@link Kevlar.attribute.CollectionAttribute CollectionAttribute}. 
-	 * For non-embedded Models/Collections (i.e. simply "related" Models/Collection), this method is not called.
+	 * Used internally by the framework, this method subscribes to the change event of the given child {@link Kevlar.Model}, in order to relay
+	 * its events through this (i.e. its parent) model. This supports a form of "event bubbling" for {@link Kevlar.attribute.ModelAttribute#embedded embedded} 
+	 * child models, and is called from {@link Kevlar.attribute.ModelAttribute ModelAttribute}. For non-embedded Models (i.e. simply "related" Models), this 
+	 * method is not called.
 	 * 
 	 * @hide
-	 * @method subscribeEmbeddedDataComponent
-	 * @param {String} attributeName The name of the Attribute that is subscribing a Model/Collection.
-	 * @param {Kevlar.Model/Kevlar.Collection} dataContainer
+	 * @method subscribeEmbeddedModel
+	 * @param {String} attributeName The name of the Attribute that is subscribing a Model.
+	 * @param {Kevlar.Model} embeddedModel
 	 */
-	subscribeEmbeddedDataComponent : function( attributeName, dataContainer ) {
-		var changeHandler = function( model, attrName, newValue, oldValue, nestedDataComponents ) {  // note: 'nestedDataComponents' arg is needed for the bubbling of deep model/collection events
-			this.onEmbeddedDataComponentChange( attributeName, model, attrName, newValue, oldValue, nestedDataComponents );
+	subscribeEmbeddedModel : function( attributeName, embeddedModel ) {
+		var changeHandler = function( model, attrName, newValue, oldValue, childChangeData ) {  // note: 'childChangeData' arg is needed for the bubbling of deep model/collection events
+			this.onEmbeddedDataComponentChange( attributeName, /* collection */ null, model, attrName, newValue, oldValue, childChangeData );
 		};
 		
 		this.embeddedDataComponentHandlers[ attributeName ] = changeHandler;
-		dataContainer.on( 'change', changeHandler, this );
+		embeddedModel.on( 'change', changeHandler, this );
+	},	
+	
+	
+	/**
+	 * Used internally by the framework, this method subscribes to the change event of the given child {@link Kevlar.Container}, in order to relay
+	 * its events through this (i.e. its parent) model. This supports a form of "event bubbling" for {@link Kevlar.attribute.CollectionAttribute#embedded embedded} 
+	 * child collections, and is called from {@link Kevlar.attribute.CollectionAttribute CollectionAttribute}. For non-embedded Collections (i.e. simply "related" 
+	 * Collections), this method is not called.
+	 * 
+	 * @hide
+	 * @method subscribeEmbeddedCollection
+	 * @param {String} attributeName The name of the Attribute that is subscribing a Collection.
+	 * @param {Kevlar.Collection} embeddedCollection
+	 */
+	subscribeEmbeddedCollection : function( attributeName, embeddedCollection ) {
+		var changeHandler = function( collection, model, attrName, newValue, oldValue, childChangeData ) {  // note: 'childChangeData' arg is needed for the bubbling of deep model/collection events
+			this.onEmbeddedDataComponentChange( attributeName, collection, model, attrName, newValue, oldValue, childChangeData );
+		};
+		
+		this.embeddedDataComponentHandlers[ attributeName ] = changeHandler;
+		embeddedCollection.on( 'change', changeHandler, this );
 	},
+	
 	
 	
 	/**
@@ -4386,58 +4407,189 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * Used in conjunction with {@link #subscribeEmbeddedDataComponent}, when a child model/collection is un-set from its parent model (i.e. this model).
 	 * 
 	 * @hide
-	 * @method unsubscribeEmbeddedDataComponent
+	 * @method unsubscribeEmbeddedModel
 	 * @param {String} attributeName The name of the Attribute that is unsubscribing a Model/Collection.
-	 * @param {Kevlar.Model/Kevlar.Collection} dataContainer
+	 * @param {Kevlar.Model} embeddedModel
 	 */
-	unsubscribeEmbeddedDataComponent : function( attributeName, dataContainer ) {
-		var changeHandler = this.embeddedDataComponentHandlers[ attributeName ];
-		dataContainer.un( 'change', changeHandler, this );
+	unsubscribeEmbeddedModel : function( attributeName, embeddedModel ) {
+		this.unsubscribeEmbeddedDataComponent( attributeName, embeddedModel );
 	},
 	
 	
 	/**
-	 * Handler for a change in an embedded model. Relays the embedded model's {@link #change} events through this model.
+	 * Used internally by the framework, this method unsubscribes the change event from the given child {@link Kevlar.Model}/{@link Kevlar.Container}. 
+	 * Used in conjunction with {@link #subscribeEmbeddedCollection}, when a child model/collection is un-set from its parent model (i.e. this model).
+	 * 
+	 * @hide
+	 * @method unsubscribeEmbeddedCollection
+	 * @param {String} attributeName The name of the Attribute that is unsubscribing a Model/Collection.
+	 * @param {Kevlar.Model} embeddedModel
+	 */
+	unsubscribeEmbeddedCollection : function( attributeName, embeddedCollection ) {
+		this.unsubscribeEmbeddedDataComponent( attributeName, embeddedCollection );
+	},
+	
+	
+	/**
+	 * Used internally by the framework, this method unsubscribes the change event from the given child {@link Kevlar.Model}/{@link Kevlar.Container}. 
+	 * Used in conjunction with {@link #subscribeEmbeddedModel}/{@link #subscribeEmbeddedCollection}, when a child model/collection is un-set from 
+	 * its parent model (i.e. this model).
+	 * 
+	 * @hide
+	 * @method unsubscribeEmbeddedDataComponent
+	 * @param {String} attributeName The name of the Attribute that is unsubscribing a Model/Collection.
+	 * @param {Kevlar.DataComponent} embeddedModel
+	 */
+	unsubscribeEmbeddedDataComponent : function( attributeName, embeddedModel ) {
+		var changeHandler = this.embeddedDataComponentHandlers[ attributeName ];
+		embeddedModel.un( 'change', changeHandler, this );
+	},
+	
+	
+	
+	
+	/**
+	 * Handler for a change in an embedded model/collection. Relays the embedded model's/collection's {@link #change} events through this model.
 	 * 
 	 * @private
 	 * @method onEmbeddedDataComponentChange
 	 * @param {String} attributeName The attribute name in *this* model that stores the embedded model.
+	 * @param {Kevlar.Collection} childCollection The embedded child collection, if there is one at this level in the bubbling hierarchy.
+	 *   Should be set to null otherwise.
 	 * @param {Kevlar.Model} childModel The embedded child model.
 	 * @param {String} childModelAttr The attribute name of the changed attribute in the embedded model. When fired "up the chain"
 	 *   from deeply nested models, this will accumulate into a dot-delimited path to the child model. Ex: "parent.intermediate.child".
 	 * @param {Mixed} newValue
 	 * @param {Mixed} oldValue
-	 * @param {Kevlar.Model[]} [nestedDataComponents] An array of the nested models/collections that have fired a 'change' event below 
+	 * 
+	 * @param {Object} [childChangeData] An object which holds information from the 'change' event of child DataComponents. This is a "private"
+	 *   argument, and is only used for the event bubbling feature.
+	 * @param {String} [childChangeData.pathToChangedAttr] A string path to the changed attribute. This is a "private" argument, which is only used for
+	 *   the event bubbling feature. Defaults to the value of `childModelAttr`.
+	 * @param {Mixed} [childChangeData.origNewValue=newValue] The newValue from the original event in the deepest DataComponent.
+	 * @param {Mixed} [childChangeData.origOldValue=oldValue] The oldValue from the original event in the deepest DataComponent.
+	 * @param {Kevlar.Model[]} [childChangeData.embeddedDataComponents] An array of the nested models/collections that have fired a 'change' event below 
 	 *   this Model's event. This is a "private" argument, which is only used for this feature.
 	 */
-	onEmbeddedDataComponentChange : function( attributeName, childModel, childModelAttr, newValue, oldValue, nestedDataComponents ) {
-		nestedDataComponents = nestedDataComponents || [ childModel ];
-		nestedDataComponents.unshift( this );  // prepend this model to the list
-		
+	onEmbeddedDataComponentChange : function( attributeName, childCollection, childModel, childModelAttr, newValue, oldValue, childChangeData ) {
+		// If pathToChangedAttr argument is undefined, the rest must be undefined as well, so they must be defaulted
+		if( !childChangeData ) {
+			childChangeData = {
+				// Default the pathToChangedAttr to the childModelAttr, so it starts out with the attribute that is changed from the deepest child
+				pathToChangedAttr : childModelAttr,
 				
-		var pathToChangedAttr = attributeName + '.' + childModelAttr,
+				// Default the original newValue/oldValue to the newValue/oldValue provided to this handler. These will be the the newValue/oldValue from the
+				// deepest child, and then passed up.
+				origNewValue : newValue,
+				origOldValue : oldValue,
+				
+				// Default the embeddedDataComponents to the child DataComponent
+				embeddedDataComponents : [ childModel ]
+			};
+		}
+		
+		if( window.a ) {
+			console.log( 'this handler called with childCollection: ', childCollection );
+		}
+		if( childCollection ) {
+			childChangeData.embeddedDataComponents.unshift( childCollection );
+		}
+		childChangeData.embeddedDataComponents.unshift( this );  // prepend this model/collection to the list
+		childChangeData.pathToChangedAttr = attributeName + '.' + childChangeData.pathToChangedAttr;  // prepend the attribute from this DataComponent
+		
+		var pathToChangedAttr = childChangeData.pathToChangedAttr,
+		    embeddedDataComponents = childChangeData.embeddedDataComponents,
+		    origNewValue = childChangeData.origNewValue,
+		    origOldValue = childChangeData.origOldValue,
 		    pathsToChangedAttr = pathToChangedAttr.split( '.' );   // array of the parts of the full dot-delimited path
 		
-		// First, an event with the full path
-		this.fireEvent( 'change:' + pathToChangedAttr, nestedDataComponents[ nestedDataComponents.length - 1 ], newValue, oldValue );
+		var changedDataComponent = embeddedDataComponents[ embeddedDataComponents.length - 1 ],
+		    pathToChangedDataComponent = pathsToChangedAttr.slice( 0, pathsToChangedAttr.length - 1 ).join( '.' ),   // if the path to the attr is 'child.attr', this will be 'child'
+		    changedAttrName = pathsToChangedAttr[ pathsToChangedAttr.length - 1 ],
+		    parentDataComponent = embeddedDataComponents[ embeddedDataComponents.length - 2 ];
+		
+		// First, an event with the full path, and one for the generalized attribute change event. Example:
+		//   - change:parent.intermediate.child.attr  model = child                 newValue = [the new value]  oldValue = [the old value]
+		//   - change:parent.intermediate.child.*     model = child  attr = "attr"  newValue = [the new value]  oldValue = [the old value]
+		if( parentDataComponent instanceof Kevlar.Collection ) {
+			if( window.a ) {
+				console.log( 'firing event --- change:' + pathToChangedAttr, parentDataComponent, changedDataComponent, origNewValue, origOldValue );
+				console.log( 'firing event --- change:' + pathToChangedDataComponent + '.*', parentDataComponent, changedDataComponent, changedAttrName, origNewValue, origOldValue );
+			}
+			this.fireEvent( 'change:' + pathToChangedAttr, parentDataComponent, changedDataComponent, origNewValue, origOldValue );
+			this.fireEvent( 'change:' + pathToChangedDataComponent + '.*', parentDataComponent, changedDataComponent, changedAttrName, origNewValue, origOldValue );
+		} else {
+			if( window.a ) {
+				console.log( 'firing event --- change:' + pathToChangedAttr, changedDataComponent, origNewValue, origOldValue );
+				console.log( 'firing event --- change:' + pathToChangedDataComponent + '.*', changedDataComponent, changedAttrName, origNewValue, origOldValue );
+			}
+			this.fireEvent( 'change:' + pathToChangedAttr, changedDataComponent, origNewValue, origOldValue );
+			this.fireEvent( 'change:' + pathToChangedDataComponent + '.*', changedDataComponent, changedAttrName, origNewValue, origOldValue );
+		}
+		
 		
 		// Next, fire an event for each of the "paths" leading up to the changed attribute, but not including the attribute itself (we fired an event for that just above).
 		// This loop will fire them backwards, from longest path, to shortest.
 		// Example of events while looping, if the full path to the changed attr is 'parent.intermediate.child.attr':
-		//   - change:parent.intermediate.child  attr = "attr"                     model = child
-		//   - change:parent.intermediate        attr = "child.attr"               model = intermediate
-		//   - change:parent                     attr = "intermediate.child.attr"  model = parent
+		//   - change:parent.intermediate.child       model = intermediate                             newValue = childModel         oldValue = childModel
+		//   - change:parent.intermediate.*           model = intermediate      attr = "child"         newValue = childModel         oldValue = childModel
+		//   - change:parent.intermediate             model = parent                                   newValue = intermediateModel  oldValue = intermediateModel
+		//   - change:parent.*                        model = parent            attr = "intermediate"  newValue = intermediateModel  oldValue = intermediateModel
+		//   - change:parent                          model = [parent's parent]                        newValue = parentModel        oldValue = parentModel 
 		// Note: The 'model' arg that the event is fired with is always the one that relates to the path
 		for( var i = pathsToChangedAttr.length - 2; i >= 0; i-- ) {
 			var currentPath = pathsToChangedAttr.slice( 0, i + 1 ).join( '.' ),
-			    changedAttr = pathsToChangedAttr.slice( i + 1 ).join( '.' ),
-			    modelForPath = nestedDataComponents[ i + 1 ];
+			    currentPathParent = pathsToChangedAttr.slice( 0, i ).join( '.' ),
+			    changedAttr = pathsToChangedAttr[ i ],
+			    dataComponentForPathParent = embeddedDataComponents[ i ],
+			    dataComponentForPath = embeddedDataComponents[ i + 1 ];
 			
-			this.fireEvent( 'change:' + currentPath, modelForPath, changedAttr, newValue, oldValue );
+			
+			// Now if the event should relate to a Collection, we must fire it like a Collection fires its event. Unforunately, this is a little
+			// hacky that Kevlar.Model should know about Kevlar.Collection, but going with it for now.
+			if( window.a ) {
+				console.log( 'in loop. dataComponentForPathParent = ', dataComponentForPathParent );
+				console.log( 'in loop. dataComponentForPath = ', dataComponentForPath );
+			}
+			if( dataComponentForPathParent instanceof Kevlar.Collection ) {
+				if( window.a ) {
+					console.log( 'firing event in loop for collection --- change:' + currentPath, dataComponentForPathParent, dataComponentForPath, dataComponentForPath );
+					if( currentPathParent !== '' ) {
+						console.log( 'firing event in loop for collection --- change:' + currentPathParent + '.*', dataComponentForPathParent, changedAttr, dataComponentForPath, dataComponentForPath );
+					}
+				}
+				this.fireEvent( 'change:' + currentPath, dataComponentForPathParent, dataComponentForPath, dataComponentForPath );
+				if( currentPathParent !== '' ) {
+					this.fireEvent( 'change:' + currentPathParent + '.*', dataComponentForPathParent, changedAttr, dataComponentForPath, dataComponentForPath );
+				}
+				
+			} else {
+				if( window.a ) {
+					console.log( 'firing event in loop --- change:' + currentPath, dataComponentForPathParent, dataComponentForPath, dataComponentForPath );
+					if( currentPathParent !== '' ) {
+						console.log( 'firing event in loop --- change:' + currentPathParent + '.*', dataComponentForPathParent, changedAttr, dataComponentForPath, dataComponentForPath );
+					}
+				}
+				this.fireEvent( 'change:' + currentPath, dataComponentForPathParent, dataComponentForPath, dataComponentForPath );
+				if( currentPathParent !== '' ) {
+					this.fireEvent( 'change:' + currentPathParent + '.*', dataComponentForPathParent, changedAttr, dataComponentForPath, dataComponentForPath );
+				}
+			}
 		}
 		
 		// Now fire the general 'change' event from this model
-		this.fireEvent( 'change', this, pathToChangedAttr, newValue, oldValue, nestedDataComponents );   // this model, attributeName, newValue, oldValue, the nested models/collections so far for this event from the deepest child
+		if( childCollection ) {
+			if( window.a ) {
+				console.log( 'firing event --- change', this, attributeName, childCollection, childCollection, childChangeData );
+			}
+			this.fireEvent( 'change', this, attributeName, childCollection, childCollection, childChangeData );   // this model, attributeName, newValue, oldValue, the string path to the changed attribute, the original newValue from the deepest child, the original oldValue from the deepest child, the nested models/collections so far for this event from the deepest child
+			
+		} else {
+			if( window.a ) {
+				console.log( 'firing event --- change', this, attributeName, childModel, childModel, childChangeData );
+			}
+			this.fireEvent( 'change', this, attributeName, childModel, childModel, childChangeData );   // this model, attributeName, newValue, oldValue, the string path to the changed attribute, the original newValue from the deepest child, the original oldValue from the deepest child, the nested models/collections so far for this event from the deepest child
+		}
 	},
 	
 	
@@ -4478,12 +4630,12 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			
 			// No local modifications to primitives, check all embedded collections/models to see if they have changes
 			var embeddedDataComponentAttrs = this.getEmbeddedDataComponentAttributes(),
-			    dataContainer;
+			    dataComponent;
 			
 			for( var i = 0, len = embeddedDataComponentAttrs.length; i < len; i++ ) {
 				var attrName = embeddedDataComponentAttrs[ i ].getName();
 				
-				if( ( dataContainer = data[ attrName ] ) && dataContainer.isModified() ) {
+				if( ( dataComponent = data[ attrName ] ) && dataComponent.isModified() ) {
 					return true;
 				}
 			}
@@ -4538,12 +4690,12 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		// Add any modified embedded model/collection to the options.attributeNames array
 		var embeddedDataComponentAttrs = this.getEmbeddedDataComponentAttributes(),
 		    data = this.data,
-		    dataContainer;
+		    dataComponent;
 	
 		for( var i = 0, len = embeddedDataComponentAttrs.length; i < len; i++ ) {
 			var attrName = embeddedDataComponentAttrs[ i ].getName();
 			
-			if( ( dataContainer = data[ attrName ] ) && dataContainer.isModified() ) {
+			if( ( dataComponent = data[ attrName ] ) && dataComponent.isModified() ) {
 				options.attributeNames.push( attrName );
 			}
 		}
@@ -4567,13 +4719,13 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		// Go through all embedded models/collections, and "commit" those as well
 		var embeddedDataComponentAttrs = this.getEmbeddedDataComponentAttributes(),
 		    data = this.data,
-		    dataContainer;
+		    dataComponent;
 		
 		for( var i = 0, len = embeddedDataComponentAttrs.length; i < len; i++ ) {
 			var attrName = embeddedDataComponentAttrs[ i ].getName();
 			
-			if( ( dataContainer = data[ attrName ] ) ) {
-				dataContainer.commit();
+			if( ( dataComponent = data[ attrName ] ) ) {
+				dataComponent.commit();
 			}
 		}
 		
@@ -4846,15 +4998,15 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		var attributes = this.attributes,
 		    attribute,
 		    DataComponentAttribute = Kevlar.attribute.DataComponentAttribute,
-		    dataContainerAttributes = [];
+		    dataComponentAttributes = [];
 		
 		for( var attrName in attributes ) {
 			if( attributes.hasOwnProperty( attrName ) && ( attribute = attributes[ attrName ] ) instanceof DataComponentAttribute && attribute.isEmbedded() ) {
-				dataContainerAttributes.push( attribute );
+				dataComponentAttributes.push( attribute );
 			}
 		}
 		
-		return dataContainerAttributes;
+		return dataComponentAttributes;
 	}
 	
 } );

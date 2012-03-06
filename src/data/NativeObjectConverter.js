@@ -29,27 +29,27 @@ Kevlar.data.NativeObjectConverter = {
 	 * @return {Object[]/Object} An array of objects (for the case of a Collection}, or an Object (for the case of a Model)
 	 *   with the internal attributes converted to their native equivalent.
 	 */
-	convert : function( dataContainer, options ) {
+	convert : function( dataComponent, options ) {
 		options = options || {};
 		var cache = {},  // keyed by models' clientId, and used for handling circular dependencies
 		    persistedOnly = !!options.persistedOnly,
 		    raw = !!options.raw,
-		    data = ( dataContainer instanceof Kevlar.Collection ) ? [] : {};  // Collection is an Array, Model is an Object
+		    data = ( dataComponent instanceof Kevlar.Collection ) ? [] : {};  // Collection is an Array, Model is an Object
 		
 		// Prime the cache with the Model/Collection provided to this method, so that if a circular reference points back to this
 		// model, the data object is not duplicated as an internal object (i.e. it should refer right back to the converted
 		// Model's/Collection's data object)
-		cache[ dataContainer.getClientId() ] = data;
+		cache[ dataComponent.getClientId() ] = data;
 		
 		// Recursively goes through the data structure, and convert models to objects, and collections to arrays
-		Kevlar.apply( data, (function convert( dataContainer ) {
+		Kevlar.apply( data, (function convert( dataComponent ) {
 			var clientId, 
 			    cachedDataComponent,
 			    data,
 			    i, len;
 			
-			if( dataContainer instanceof Kevlar.Model ) {
-				var attributes = dataContainer.getAttributes(),
+			if( dataComponent instanceof Kevlar.Model ) {
+				var attributes = dataComponent.getAttributes(),
 				    attributeNames = options.attributeNames || Kevlar.util.Object.keysToArray( attributes ),
 				    attributeName, currentValue;
 				
@@ -62,7 +62,7 @@ Kevlar.data.NativeObjectConverter = {
 				for( i = 0, len = attributeNames.length; i < len; i++ ) {
 					attributeName = attributeNames[ i ];
 					if( !persistedOnly || attributes[ attributeName ].isPersisted() === true ) {
-						currentValue = data[ attributeName ] = ( raw ) ? dataContainer.raw( attributeName ) : dataContainer.get( attributeName );
+						currentValue = data[ attributeName ] = ( raw ) ? dataComponent.raw( attributeName ) : dataComponent.get( attributeName );
 						
 						// Process Nested DataComponents
 						if( currentValue instanceof Kevlar.DataComponent ) {
@@ -82,8 +82,8 @@ Kevlar.data.NativeObjectConverter = {
 					}
 				}
 				
-			} else if( dataContainer instanceof Kevlar.Collection ) {
-				var models = dataContainer.getModels(),
+			} else if( dataComponent instanceof Kevlar.Collection ) {
+				var models = dataComponent.getModels(),
 				    model;
 				
 				data = [];  // data is an array for a Container
@@ -97,7 +97,7 @@ Kevlar.data.NativeObjectConverter = {
 			}
 			
 			return data;
-		})( dataContainer ) );
+		})( dataComponent ) );
 		
 		return data;
 	}

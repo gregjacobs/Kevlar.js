@@ -8,7 +8,6 @@
 			includes: [
 				{ file: "unit/packageSuites.js" },
 				{ file: "unit/KevlarTest.js" },
-				{ tree: "unit/" },
 				
 				{ file: "integration/packageSuites.js" },
 				{ tree: "integration/" }

@@ -1,4 +1,4 @@
-/*global window, Ext, Y, JsMockito, tests, Kevlar */
+/*global window, Ext, Y, JsMockito, tests, Class, Kevlar */
 tests.integration.add( new Ext.test.TestSuite( {
 	
 	name: 'Model with Nested Collections',
@@ -76,15 +76,18 @@ tests.integration.add( new Ext.test.TestSuite( {
 			
 			"When an attribute has changed in a model of an embedded collection, its parent collection should fire the appropriate 'change' events" : function() {
 				var ChildModel = Kevlar.Model.extend( {
-					attributes: [ 'attr' ]
+					attributes: [ 'attr' ],
+					toString : function() { return "(ChildModel)"; }
 				} );
 				
 				var Collection = Kevlar.Collection.extend( {
-					model : ChildModel
+					model : ChildModel,
+					toString : function() { return "(Collection)"; }
 				} );
 				
 				var ParentModel = Kevlar.Model.extend( {
-					attributes : [ { name: 'myCollection', type: 'Collection', embedded: true } ]
+					attributes : [ { name: 'myCollection', type: 'Collection', embedded: true } ],
+					toString : function() { return "(ParentModel)"; }
 				} );
 				
 				
@@ -93,46 +96,76 @@ tests.integration.add( new Ext.test.TestSuite( {
 				    collection = new Collection( [ childModel1, childModel2 ] ),
 				    parentModel = new ParentModel( { myCollection: collection } );
 				
+				
+				// A class to store the results
+				var ChangeEventResults = Class( {
+					constructor : function( model, attributeName, newValue, oldValue ) {
+						this.model = model;
+						this.attributeName = attributeName;
+						this.newValue = newValue;
+						this.oldValue = oldValue;
+					}
+				} );
+				
+				var CollectionChangeEventResults = ChangeEventResults.extend( {
+					constructor : function( collection, model, attributeName, newValue, oldValue ) {
+						this.collection = collection;
+						this._super( [ model, attributeName, newValue, oldValue ] );
+					}
+				} );
+				
+				
 				var changeEventCallCount = 0,
-				    changeEventModel,
-				    changeEventAttributeName,
-				    changeEventNewValue,
-				    changeEventOldValue;
+				    changeEvent;
 				
 				parentModel.on( 'change', function( model, attributeName, newValue, oldValue ) {
 					changeEventCallCount++;
-					changeEventModel = model;
-					changeEventAttributeName = attributeName;
-					changeEventNewValue = newValue;
-					changeEventOldValue = oldValue;
+					changeEvent = new ChangeEventResults( model, attributeName, newValue, oldValue );
 				} );
+				
 				
 				var attrSpecificChangeEventCallCount = 0,
-				    attrSpecificChangeEventModel,
-				    attrSpecificChangeEventAttributeName,
-				    attrSpecificChangeEventNewValue,
-				    attrSpecificChangeEventOldValue;
+				    attrSpecificChangeEvent;
 				
-				parentModel.on( 'change:myCollection', function( model, attributeName, newValue, oldValue ) {
+				parentModel.on( 'change:myCollection', function( model, newValue, oldValue ) {
 					attrSpecificChangeEventCallCount++;
-					attrSpecificChangeEventModel = model;
-					attrSpecificChangeEventAttributeName = attributeName;
-					attrSpecificChangeEventNewValue = newValue;
-					attrSpecificChangeEventOldValue = oldValue;
+					attrSpecificChangeEvent = new ChangeEventResults( model, '', newValue, oldValue );
 				} );
 				
-				childModel1.set( 'attr', 'newValue1' );
-				Y.Assert.areSame( 1, changeEventCallCount, "The call count should now be exactly 1" );
-				Y.Assert.areSame( parentModel, changeEventModel, "The event for childModel1 should have been fired with the model that changed" );
-				Y.Assert.areSame( 'myCollection.attr', changeEventAttributeName, "The event for childModel1 should have been fired with the correct attribute name" );
-				Y.Assert.areSame( 'newValue1', changeEventNewValue, "The event for childModel1 should have been fired with the new value" );
-				Y.Assert.areSame( 'origValue1', changeEventOldValue, "The event for childModel1 should have been fired with the old value" );
 				
+				var attrSpecificChangeAttrEventCallCount = 0,
+				    attrSpecificChangeAttrEvent;
+				
+				parentModel.on( 'change:myCollection.*', function( collection, model, attributeName, newValue, oldValue ) {
+					attrSpecificChangeAttrEventCallCount++;
+					attrSpecificChangeAttrEvent = new CollectionChangeEventResults( collection, model, attributeName, newValue, oldValue );
+				} );
+				
+				
+				window.a = true;
+				childModel1.set( 'attr', 'newValue1' );
+				window.a = false;
+				
+				// 'change'
+				Y.Assert.areSame( 1, changeEventCallCount, "The call count should now be exactly 1" );
+				Y.Assert.areSame( parentModel, changeEvent.model, "The event for childModel1 should have been fired with the parentModel" );
+				Y.Assert.areSame( 'myCollection', changeEvent.attributeName, "The event for childModel1 should have been fired with the correct attribute name" );
+				Y.Assert.areSame( collection, changeEvent.newValue, "The event for childModel1 should have been fired with the newValue of the collection" );
+				Y.Assert.areSame( collection, changeEvent.oldValue, "The event for childModel1 should have been fired with the oldValue of the collection" );
+				
+				// 'change:myCollection'
 				Y.Assert.areSame( 1, attrSpecificChangeEventCallCount, "The call count should now be exactly 1" );
-				Y.Assert.areSame( childModel1, attrSpecificChangeEventModel, "The attribute-specific event for childModel1 should have been fired with the model that changed" );
-				Y.Assert.areSame( 'attr', attrSpecificChangeEventAttributeName, "The attribute-specific event for childModel1 should have been fired with the correct attribute name" );
-				Y.Assert.areSame( 'newValue1', attrSpecificChangeEventNewValue, "The attribute-specific event for childModel1 should have been fired with the new value" );
-				Y.Assert.areSame( 'origValue1', attrSpecificChangeEventOldValue, "The attribute-specific event for childModel1 should have been fired with the old value" );
+				Y.Assert.areSame( parentModel, attrSpecificChangeEvent.model, "The attribute-specific event for childModel1 should have been fired with the parentModel" );
+				Y.Assert.areSame( collection, attrSpecificChangeEvent.newValue, "The attribute-specific event for childModel1 should have been fired with the newValue of the collection" );
+				Y.Assert.areSame( collection, attrSpecificChangeEvent.oldValue, "The attribute-specific event for childModel1 should have been fired with the oldValue of the collection" );
+				
+				// 'change:myCollection.*'
+				Y.Assert.areSame( 1, attrSpecificChangeAttrEventCallCount, "The call count should now be exactly 1" );
+				Y.Assert.areSame( collection, attrSpecificChangeAttrEvent.collection, "The attribute-specific event for childModel1 should have been fired with the collection" );
+				Y.Assert.areSame( childModel1, attrSpecificChangeAttrEvent.model, "The attribute-specific event for childModel1 should have been fired with the model that changed" );
+				Y.Assert.areSame( 'attr', attrSpecificChangeAttrEvent.attributeName, "The event for childModel1 should have been fired with the correct attribute name" );
+				Y.Assert.areSame( 'newValue1', attrSpecificChangeAttrEvent.newValue, "The attribute-specific event for childModel1 should have been fired with the newValue" );
+				Y.Assert.areSame( 'origValue1', attrSpecificChangeAttrEvent.oldValue, "The attribute-specific event for childModel1 should have been fired with the oldValue" );
 			},
 			
 			
@@ -186,9 +219,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				
 				var changeEventCallCount = 0;
 				parentModel.on( 'change', function( model, attributeName, newValue, oldValue ) {
-					if( attributeName === 'myCollection.attr' ) {
-						changeEventCallCount++;
-					}
+					changeEventCallCount++;
 				} );
 				
 				// Set a value in a child model. We should get a change event.
@@ -200,7 +231,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				parentModel.set( 'myCollection', null );
 				childModel1.set( 'attr', 'newNewValue1' );
 				
-				Y.Assert.areSame( 1, changeEventCallCount, "We should still only have 1 for the event firing count, as we un-set the child model from the parent" );
+				Y.Assert.areSame( 2, changeEventCallCount, "We should now only have 2 for the event firing count, as we un-set the child model from the parent (which was the +1), but shouldn't get 3 from childModel1's event" );
 			}/*,
 			
 			

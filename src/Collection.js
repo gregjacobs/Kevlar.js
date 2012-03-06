@@ -18,7 +18,8 @@
  * ### Model Events
  * 
  * Collections automatically relay all of their {@link Kevlar.Model Models'} events as if the Collection
- * fired it. For example, Models' {@link Kevlar.Model#event-change change} events:
+ * fired it. The collection instance provides itself in the handler though. For example, Models' 
+ * {@link Kevlar.Model#event-change change} events:
  *     
  *     var Model = Kevlar.Model.extend( {
  *         attributes: [ 'name' ]
@@ -30,7 +31,7 @@
  *     var model1 = new Model( { name: "Greg" } ),
  *         model2 = new Model( { name: "Josh" } );
  *     var collection = new Collection( [ model1, model2 ] );
- *     collection.on( 'change', function( model, attributeName, newValue, oldValue ) {
+ *     collection.on( 'change', function( collection, model, attributeName, newValue, oldValue ) {
  *         console.log( "A model changed its '" + attributeName + "' attribute from '" + oldValue + "' to '" + newValue + "'" );
  *     } );
  * 
@@ -484,8 +485,8 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 	 * @param {Mixed...} args The original arguments passed to the event.
 	 */
 	onModelEvent : function( eventName ) {
-		// Relay the event from the collection, passing the original arguments
-		this.fireEvent.apply( this, [ eventName ].concat( Array.prototype.slice.call( arguments, 1 ) ) );
+		// Relay the event from the collection, passing the collection itself, and the original arguments
+		this.fireEvent.apply( this, [ eventName, this ].concat( Array.prototype.slice.call( arguments, 1 ) ) );
 	},
 	
 	

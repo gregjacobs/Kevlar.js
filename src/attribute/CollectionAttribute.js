@@ -97,7 +97,7 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.e
 	beforeSet : function( model, oldValue, newValue ) {
 		// First, if the oldValue was a Model, and this attribute is an "embedded" collection, we need to unsubscribe it from its parent model
 		if( this.embedded && oldValue instanceof Kevlar.Collection ) {
-			model.unsubscribeEmbeddedDataComponent( this.getName(), oldValue );
+			model.unsubscribeEmbeddedCollection( this.getName(), oldValue );
 		}
 		
 		// Now, normalize the newValue to an object, or null
@@ -144,7 +144,7 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.e
 		}
 		
 		if( this.embedded && value instanceof Kevlar.Collection ) {
-			model.subscribeEmbeddedDataComponent( this.getName(), value );
+			model.subscribeEmbeddedCollection( this.getName(), value );
 		}
 		
 		return value;

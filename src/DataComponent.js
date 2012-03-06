@@ -24,13 +24,11 @@ Kevlar.DataComponent = Kevlar.util.Observable.extend( {
 	 * @constructor
 	 */
 	constructor : function() {
-		var me = this;
-		
 		// Call the superclass's constructor (Observable)
 		this._super( arguments );
 		
 		// Create a client ID for the DataComponent
-		me.clientId = 'c' + Kevlar.newId();
+		this.clientId = 'c' + Kevlar.newId();
 	},
 	
 	
