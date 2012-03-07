@@ -4308,6 +4308,29 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 		
 		
+		// ------------------------
+		
+		
+		{
+			/*
+			 * Test onEmbeddedDataComponentChange()
+			 */
+			name : "Test onEmbeddedDataComponentChange()",
+			
+			"onEmbeddedDataComponentChange() should " : function() {
+				
+			}
+		},
+		
+		
+		
+		
+		// ------------------------
+		
+		
+		
+		
+		
 		{
 			/*
 			 * Test isDirty()
@@ -7301,6 +7324,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				} );
 				
 				
+				// 'change'
 				var changeEventCallCount = 0,
 				    changeEvent;
 				
@@ -7310,6 +7334,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				} );
 				
 				
+				// 'change:myCollection'
 				var attrSpecificChangeEventCallCount = 0,
 				    attrSpecificChangeEvent;
 				
@@ -7319,6 +7344,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				} );
 				
 				
+				// 'change:myCollection.*'
 				var attrSpecificChangeAttrEventCallCount = 0,
 				    attrSpecificChangeAttrEvent;
 				
@@ -7328,9 +7354,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				} );
 				
 				
-				window.a = true;
 				childModel1.set( 'attr', 'newValue1' );
-				window.a = false;
 				
 				// 'change'
 				Y.Assert.areSame( 1, changeEventCallCount, "The call count should now be exactly 1" );
@@ -7419,6 +7443,176 @@ tests.integration.add( new Ext.test.TestSuite( {
 				
 				Y.Assert.areSame( 2, changeEventCallCount, "We should now only have 2 for the event firing count, as we un-set the child model from the parent (which was the +1), but shouldn't get 3 from childModel1's event" );
 			},
+						
+			
+			
+			// ------------------------------
+			
+			// Test multiple levels of embedded models and collections
+			
+			/* Need to fully implement...
+			"When an attribute has changed in a deeply nested embedded model/collection, its uppermost parent model should fire 'change' events for every step of the way" : function() {
+				// Creating a structure as such:
+				// 
+				// ParentModel
+				//   ParentCollection
+				//     IntermediateModel
+				//       ChildCollection
+				//         ChildModel
+								
+				var ParentModel = Kevlar.Model.extend( {
+					attributes : [ { name: 'parentCollection', type: 'Collection', embedded: true } ],
+					toString : function() { return "(ParentModel)"; }
+				} );
+				var IntermediateModel = Kevlar.Model.extend( {
+					attributes : [ { name: 'childCollection', type: 'Collection', embedded: true } ],
+					toString : function() { return "(IntermediateModel)"; }
+				} );
+				var ChildModel = Kevlar.Model.extend( {
+					attributes: [ 'attr' ],
+					toString : function() { return "(ChildModel)"; }
+				} );
+				
+				var ParentCollection = Kevlar.Collection.extend( {
+					model : IntermediateModel,
+					toString : function() { return "(ParentCollection)"; }
+				} );
+				var ChildCollection = Kevlar.Collection.extend( {
+					model : ChildModel,
+					toString : function() { return "(ChildCollection)"; }
+				} );
+				
+				
+				var childModel1 = new ChildModel( { attr: 'origValue1' } ),
+				    childModel2 = new ChildModel( { attr: 'origValue2' } ),
+				    childCollection = new ChildCollection( [ childModel1, childModel2 ] ),
+				    intermediateModel = new IntermediateModel( { childCollection: childCollection } ),
+				    parentCollection = new ParentCollection( [ intermediateModel ] ),
+				    parentModel = new ParentModel( { parentCollection: parentCollection } );
+				
+				
+				// A class to store the results
+				var ChangeEventResults = Class( {
+					constructor : function( model, attributeName, newValue, oldValue ) {
+						this.model = model;
+						this.attributeName = attributeName;
+						this.newValue = newValue;
+						this.oldValue = oldValue;
+					}
+				} );
+				
+				var CollectionChangeEventResults = ChangeEventResults.extend( {
+					constructor : function( collection, model, attributeName, newValue, oldValue ) {
+						this.collection = collection;
+						this._super( [ model, attributeName, newValue, oldValue ] );
+					}
+				} );
+				
+				
+				// 'change'
+				var parentModelChangeCallCount = 0,
+				    parentModelChange;
+				
+				parentModel.on( 'change', function( model, attributeName, newValue, oldValue ) {
+					parentModelChangeCallCount++;
+					parentModelChange = new ChangeEventResults( model, attributeName, newValue, oldValue );
+				} );
+				
+				
+				// 'change:parentCollection'
+				var parentCollectionChangeCallCount = 0,
+				    parentCollectionChange;
+				
+				parentModel.on( 'change:parentCollection', function( model, newValue, oldValue ) {
+					parentCollectionChangeCallCount++;
+					parentCollectionChange = new ChangeEventResults( model, '', newValue, oldValue );
+				} );
+				
+				
+				// 'change:parentCollection.*'
+				var parentCollectionAttrChangeCallCount = 0,
+				    parentCollectionAttrChange;
+				
+				parentModel.on( 'change:parentCollection.*', function( collection, model, attributeName, newValue, oldValue ) {
+					parentCollectionAttrChangeCallCount++;
+					parentCollectionAttrChange = new CollectionChangeEventResults( collection, model, attributeName, newValue, oldValue );
+				} );
+				
+				
+				// 'change:parentCollection.childCollection'
+				var childCollectionChangeCallCount = 0,
+				    childCollectionChange;
+				
+				parentModel.on( 'change:parentCollection.childCollection', function( model, newValue, oldValue ) {
+					childCollectionChangeCallCount++;
+					childCollectionChange = new ChangeEventResults( model, '', newValue, oldValue );
+				} );
+				
+				
+				// 'change:parentCollection.childCollection.*'
+				var childCollectionAttrChangeCallCount = 0,
+				    childCollectionAttrChange;
+				
+				parentModel.on( 'change:parentCollection.childCollection.*', function( collection, model, attributeName, newValue, oldValue ) {
+					childCollectionAttrChangeCallCount++;
+					childCollectionAttrChange = new CollectionChangeEventResults( collection, model, attributeName, newValue, oldValue );
+				} );
+				
+				
+				// 'change:parentCollection.childCollection.attr'
+				var childModelChangeCallCount = 0,
+				    childModelChange;
+				
+				parentModel.on( 'change:parentCollection.childCollection.attr', function( collection, model, newValue, oldValue ) {
+					childModelChangeCallCount++;
+					childModelChange = new CollectionChangeEventResults( collection, model, newValue, oldValue );
+				} );
+				
+				
+				childModel1.set( 'attr', 'newValue1' );
+				
+				// 'change:parentCollection.childCollection.attr'
+				Y.Assert.areSame( 1, childModelChangeCallCount, "The childModelChangeCallCount should now be exactly 1" );
+				Y.Assert.areSame( childCollection, childModelChange.collection, "The childModelChange should have been fired with the childCollection" );
+				Y.Assert.areSame( childModel1, childModelChange.model, "The childModelChange should have been fired with childModel1" );
+				Y.Assert.areSame( 'newValue1', childModelChange.newValue, "The childModelChangeshould have been fired with the correct newValue" );
+				Y.Assert.areSame( 'origValue1', childModelChange.oldValue, "The childModelChange should have been fired with the correct oldValue" );
+				
+				// 'change:parentCollection.childCollection.*'
+				Y.Assert.areSame( 1, childCollectionAttrChangeCallCount, "The childCollectionAttrChangeCallCount should now be exactly 1" );
+				Y.Assert.areSame( childCollection, childCollectionAttrChange.collection, "The attribute-specific event for childModel1 should have been fired with the collection" );
+				Y.Assert.areSame( childModel1, childCollectionAttrChange.model, "The attribute-specific event for childModel1 should have been fired with the model that changed" );
+				Y.Assert.areSame( 'attr', childCollectionAttrChange.attributeName, "The event for childModel1 should have been fired with the correct attribute name" );
+				Y.Assert.areSame( 'newValue1', childCollectionAttrChange.newValue, "The attribute-specific event for childModel1 should have been fired with the newValue" );
+				Y.Assert.areSame( 'origValue1', childCollectionAttrChange.oldValue, "The attribute-specific event for childModel1 should have been fired with the oldValue" );
+				
+				// 'change:parentCollection.childCollection'
+				Y.Assert.areSame( 1, childCollectionChangeCallCount, "The childCollectionChangeCallCount should now be exactly 1" );
+				Y.Assert.areSame( intermediateModel, childCollectionChange.model, "The attribute-specific event for childModel1 should have been fired with the parentModel" );
+				Y.Assert.areSame( childCollection, childCollectionChange.newValue, "The attribute-specific event for childModel1 should have been fired with the newValue of the childCollection" );
+				Y.Assert.areSame( childCollection, childCollectionChange.oldValue, "The attribute-specific event for childModel1 should have been fired with the oldValue of the childCollection" );
+				
+				// 'change:parentCollection.*'
+				Y.Assert.areSame( 1, parentCollectionAttrChangeCallCount, "The parentCollectionAttrChangeCallCount should now be exactly 1" );
+				Y.Assert.areSame( parentCollection, parentCollectionAttrChange.collection, "The parentCollectionAttrChange should have been fired with the collection" );
+				Y.Assert.areSame( intermediateModel, parentCollectionAttrChange.model, "The parentCollectionAttrChange should have been fired with the model that changed" );
+				Y.Assert.areSame( 'childCollection', parentCollectionAttrChange.attributeName, "The parentCollectionAttrChange should have been fired with the correct attribute name" );
+				Y.Assert.areSame( childCollection, parentCollectionAttrChange.newValue, "The parentCollectionAttrChange should have been fired with the childCollection" );
+				Y.Assert.areSame( childCollection, parentCollectionAttrChange.oldValue, "The parentCollectionAttrChange should have been fired with the childCollection" );
+				
+				// 'change:parentCollection'
+				Y.Assert.areSame( 1, parentCollectionChangeCallCount, "The parentCollectionChangeCallCount should now be exactly 1" );
+				Y.Assert.areSame( parentModel, parentCollectionChange.model, "The parentCollectionChange should have been fired with the parentModel" );
+				Y.Assert.areSame( parentCollection, parentCollectionChange.newValue, "The parentCollectionChange should have been fired with the newValue of the parentCollection" );
+				Y.Assert.areSame( parentCollection, parentCollectionChange.oldValue, "The parentCollectionChange should have been fired with the oldValue of the parentCollection" );
+				
+				// 'change'
+				Y.Assert.areSame( 1, parentModelChangeCallCount, "The parentModelChangeCallCount should now be exactly 1" );
+				Y.Assert.areSame( parentModel, parentModelChange.model, "The parentModelChange should have been fired with the parentModel" );
+				Y.Assert.areSame( 'parentCollection', parentModelChange.attributeName, "The parentModelChange should have been fired with the correct attribute name" );
+				Y.Assert.areSame( parentCollection, parentModelChange.newValue, "The parentModelChange should have been fired with the newValue of the parentCollection" );
+				Y.Assert.areSame( parentCollection, parentModelChange.oldValue, "The parentModelChange should have been fired with the oldValue of the parentCollection" );
+			},*/
 			
 			
 			// ------------------------------
@@ -7504,126 +7698,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				Y.Assert.areSame( 'childCollection', changeAttr, "The changed attribute should be the childCollection for a reorder event" );
 				Y.Assert.areSame( collection, changeNewVal, "The newValue for the change event should be the collection for a reorder event" );
 				Y.Assert.areSame( collection, changeOldVal, "The oldValue for the change event should be the collection for a reorder event" );				
-			}/*,
-						
-			
-			
-			// ------------------------------
-			
-			// Test multiple levels of embedded models and collections
-			
-			
-			"When an attribute has changed in a deeply nested embedded model/collection, its uppermost parent model should fire a 'change' event" : function() {
-				var ParentModel = Kevlar.Model.extend( {
-					attributes : [
-						{ name: 'name', defaultValue: 'Parent' }, // for debugging
-						{ name: 'intermediate', type: 'model', embedded: true }
-					]
-				} );
-				
-				var IntermediateModel = Kevlar.Model.extend( {
-					attributes : [
-						{ name: 'name', defaultValue: 'Intermediate' }, // for debugging
-						{ name: 'child', type: 'model', embedded: true }
-					]
-				} );
-				
-				var ChildModel = Kevlar.Model.extend( {
-					attributes : [
-						{ name: 'name', defaultValue: 'Child' }, // for debugging
-						{ name : 'attr', type: 'string' }
-					]
-				} );
-				
-				
-				// Create the models 
-				var parentModel = new ParentModel(),
-				    intermediateModel = new IntermediateModel(),
-				    childModel = new ChildModel();
-				    
-				parentModel.set( 'intermediate', intermediateModel );
-				intermediateModel.set( 'child', childModel );
-				
-				
-				// Subscribe to the general 'change' event
-				var generalChangeEventCount = 0,
-				    generalChangedModel,
-				    generalChangedAttribute,
-				    generalChangedValue;
-				    
-				parentModel.on( 'change', function( model, attributeName, value ) {
-					generalChangeEventCount++;
-					generalChangedModel = model;
-					generalChangedAttribute = attributeName;
-					generalChangedValue = value;
-				} );
-				
-				
-				// We should also be able to subscribe to the general (but intermediate model-specific) 'change' event for the embedded model itself
-				var intermediateModelChangeEventCount = 0,
-				    intermediateModelChangedModel,
-				    intermediateModelChangedAttribute,
-				    intermediateModelChangedValue;
-				
-				parentModel.on( 'change:intermediate', function( model, attributeName, value ) {
-					intermediateModelChangeEventCount++;
-					intermediateModelChangedModel = model;
-					intermediateModelChangedAttribute = attributeName;
-					intermediateModelChangedValue = value;
-				} );
-				
-				
-				// We should be able to subscribe to the deeply nested (but childModel-specific) 'change' event
-				var childModelChangeEventCount = 0,
-				    childModelChangedModel,
-				    childModelChangedAttribute,
-				    childModelChangedValue;
-				
-				parentModel.on( 'change:intermediate.child', function( model, attributeName, value ) {
-					childModelChangeEventCount++;
-					childModelChangedModel = model;
-					childModelChangedAttribute = attributeName;
-					childModelChangedValue = value;
-				} );
-				
-				
-				// And finally, we should be able to subscribe to the attribute-specific 'change' event from the embedded model itself
-				var attrSpecificChangeEventCount = 0,
-				    attrSpecificChangedModel,
-				    attrSpecificChangedValue;
-				    
-				parentModel.on( 'change:intermediate.child.attr', function( model, value ) {
-					attrSpecificChangeEventCount++;
-					attrSpecificChangedModel = model;
-					attrSpecificChangedValue = value;
-				} );
-				
-				
-				
-				// Now set the value of the attribute in the child model
-				window.a = true;
-				childModel.set( 'attr', 'asdf' );
-				window.a = false;
-				
-				Y.Assert.areSame( 1, generalChangeEventCount, "The general change event should have fired exactly once" );
-				Y.Assert.areSame( parentModel, generalChangedModel, "The general change event should have fired with the parent model" );
-				Y.Assert.areSame( 'intermediate.child.attr', generalChangedAttribute, "The general change event should have fired with the attributeName as the path to the child model's attribute" );
-				Y.Assert.areSame( 'asdf', generalChangedValue, "The general change event should have fired with the new value" );
-				
-				Y.Assert.areSame( 1, intermediateModelChangeEventCount, "The intermediateModel-specific change event should have fired exactly once" );
-				Y.Assert.areSame( intermediateModel, intermediateModelChangedModel, "The intermediateModel-specific change event should have fired with the intermediate model" );
-				Y.Assert.areSame( 'child.attr', intermediateModelChangedAttribute, "The intermediateModel-specific change event should have fired with path to the changed attribute in the deeper child model" );
-				Y.Assert.areSame( 'asdf', intermediateModelChangedValue, "The intermediateModel-specific change event should have fired with the new value" );
-				
-				Y.Assert.areSame( 1, childModelChangeEventCount, "The childModel-specific change event should have fired exactly once" );
-				Y.Assert.areSame( childModel, childModelChangedModel, "The childModel-specific change event should have fired with the child model" );
-				Y.Assert.areSame( 'attr', childModelChangedAttribute, "The childModel-specific change event should have fired with the attributeName that was changed" );
-				Y.Assert.areSame( 'asdf', childModelChangedValue, "The childModel-specific change event should have fired with the new value" );
-				
-				Y.Assert.areSame( 1, attrSpecificChangeEventCount, "The childModel attribute-specific change event should have fired exactly once" );
-				Y.Assert.areSame( childModel, attrSpecificChangedModel, "The childModel attribute-specific change event should have fired with the child model" );
-				Y.Assert.areSame( 'asdf', attrSpecificChangedValue, "The childModel attribute-specific change event should have fired with the new value" );
-			}*/
+			}
 		},
 		
 		

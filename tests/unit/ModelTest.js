@@ -1124,6 +1124,29 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 		
 		
+		// ------------------------
+		
+		
+		{
+			/*
+			 * Test onEmbeddedDataComponentChange()
+			 */
+			name : "Test onEmbeddedDataComponentChange()",
+			
+			"onEmbeddedDataComponentChange() should " : function() {
+				
+			}
+		},
+		
+		
+		
+		
+		// ------------------------
+		
+		
+		
+		
+		
 		{
 			/*
 			 * Test isDirty()

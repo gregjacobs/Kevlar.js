@@ -4504,7 +4504,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 *   this Model's event. This is a "private" argument, which is only used for this feature.
 	 */
 	onEmbeddedDataComponentChange : function( attributeName, childCollection, childModel, childModelAttr, newValue, oldValue, childChangeData ) {
-		// If pathToChangedAttr argument is undefined, the rest must be undefined as well, so they must be defaulted
+		// Create the childChangeData object for the change event of the first (deepest) DataComponent
 		if( !childChangeData ) {
 			childChangeData = {
 				// Default the pathToChangedAttr to the childModelAttr, so it starts out with the attribute that is changed from the deepest child
@@ -4520,9 +4520,6 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			};
 		}
 		
-		/*if( window.a ) {
-			console.log( 'this handler called with childCollection: ', childCollection );
-		}*/
 		if( childCollection ) {
 			childChangeData.embeddedDataComponents.unshift( childCollection );
 		}
@@ -4535,26 +4532,19 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		    origOldValue = childChangeData.origOldValue,
 		    pathsToChangedAttr = pathToChangedAttr.split( '.' );   // array of the parts of the full dot-delimited path
 		
+		
+		// First, an event with the full path, and one for the generalized attribute change event. Example:
+		//   - change:parent.intermediate.child.attr  model = child                 newValue = [the new value]  oldValue = [the old value]
+		//   - change:parent.intermediate.child.*     model = child  attr = "attr"  newValue = [the new value]  oldValue = [the old value]
 		var changedDataComponent = embeddedDataComponents[ embeddedDataComponents.length - 1 ],
 		    pathToChangedDataComponent = pathsToChangedAttr.slice( 0, pathsToChangedAttr.length - 1 ).join( '.' ),   // if the path to the attr is 'child.attr', this will be 'child'
 		    changedAttrName = pathsToChangedAttr[ pathsToChangedAttr.length - 1 ],
 		    parentDataComponent = embeddedDataComponents[ embeddedDataComponents.length - 2 ];
 		
-		// First, an event with the full path, and one for the generalized attribute change event. Example:
-		//   - change:parent.intermediate.child.attr  model = child                 newValue = [the new value]  oldValue = [the old value]
-		//   - change:parent.intermediate.child.*     model = child  attr = "attr"  newValue = [the new value]  oldValue = [the old value]
 		if( parentDataComponent instanceof Kevlar.Collection ) {
-			/*if( window.a ) {
-				console.log( 'firing event --- change:' + pathToChangedAttr, parentDataComponent, changedDataComponent, origNewValue, origOldValue );
-				console.log( 'firing event --- change:' + pathToChangedDataComponent + '.*', parentDataComponent, changedDataComponent, changedAttrName, origNewValue, origOldValue );
-			}*/
 			this.fireEvent( 'change:' + pathToChangedAttr, parentDataComponent, changedDataComponent, origNewValue, origOldValue );
 			this.fireEvent( 'change:' + pathToChangedDataComponent + '.*', parentDataComponent, changedDataComponent, changedAttrName, origNewValue, origOldValue );
 		} else {
-			/*if( window.a ) {
-				console.log( 'firing event --- change:' + pathToChangedAttr, changedDataComponent, origNewValue, origOldValue );
-				console.log( 'firing event --- change:' + pathToChangedDataComponent + '.*', changedDataComponent, changedAttrName, origNewValue, origOldValue );
-			}*/
 			this.fireEvent( 'change:' + pathToChangedAttr, changedDataComponent, origNewValue, origOldValue );
 			this.fireEvent( 'change:' + pathToChangedDataComponent + '.*', changedDataComponent, changedAttrName, origNewValue, origOldValue );
 		}
@@ -4577,31 +4567,14 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			    dataComponentForPath = embeddedDataComponents[ i + 1 ];
 			
 			
-			// Now if the event should relate to a Collection, we must fire it like a Collection fires its event. Unforunately, this is a little
-			// hacky that Kevlar.Model should know about Kevlar.Collection, but going with it for now.
-			/*if( window.a ) {
-				console.log( 'in loop. dataComponentForPathParent = ', dataComponentForPathParent );
-				console.log( 'in loop. dataComponentForPath = ', dataComponentForPath );
-			}*/
+			// Now if the event should relate to a Collection, we must fire it like a Collection fires its event.
 			if( dataComponentForPathParent instanceof Kevlar.Collection ) {
-				/*if( window.a ) {
-					console.log( 'firing event in loop for collection --- change:' + currentPath, dataComponentForPathParent, dataComponentForPath, dataComponentForPath );
-					if( currentPathParent !== '' ) {
-						console.log( 'firing event in loop for collection --- change:' + currentPathParent + '.*', dataComponentForPathParent, changedAttr, dataComponentForPath, dataComponentForPath );
-					}
-				}*/
 				this.fireEvent( 'change:' + currentPath, dataComponentForPathParent, dataComponentForPath, dataComponentForPath );
 				if( currentPathParent !== '' ) {
 					this.fireEvent( 'change:' + currentPathParent + '.*', dataComponentForPathParent, changedAttr, dataComponentForPath, dataComponentForPath );
 				}
 				
 			} else {
-				/*if( window.a ) {
-					console.log( 'firing event in loop --- change:' + currentPath, dataComponentForPathParent, dataComponentForPath, dataComponentForPath );
-					if( currentPathParent !== '' ) {
-						console.log( 'firing event in loop --- change:' + currentPathParent + '.*', dataComponentForPathParent, changedAttr, dataComponentForPath, dataComponentForPath );
-					}
-				}*/
 				this.fireEvent( 'change:' + currentPath, dataComponentForPathParent, dataComponentForPath, dataComponentForPath );
 				if( currentPathParent !== '' ) {
 					this.fireEvent( 'change:' + currentPathParent + '.*', dataComponentForPathParent, changedAttr, dataComponentForPath, dataComponentForPath );
@@ -4611,15 +4584,9 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		
 		// Now fire the general 'change' event from this model
 		if( childCollection ) {
-			/*if( window.a ) {
-				console.log( 'firing event --- change', this, attributeName, childCollection, childCollection, childChangeData );
-			}*/
 			this.fireEvent( 'change', this, attributeName, childCollection, childCollection, childChangeData );   // this model, attributeName, newValue, oldValue, the string path to the changed attribute, the original newValue from the deepest child, the original oldValue from the deepest child, the nested models/collections so far for this event from the deepest child
 			
 		} else {
-			/*if( window.a ) {
-				console.log( 'firing event --- change', this, attributeName, childModel, childModel, childChangeData );
-			}*/
 			this.fireEvent( 'change', this, attributeName, childModel, childModel, childChangeData );   // this model, attributeName, newValue, oldValue, the string path to the changed attribute, the original newValue from the deepest child, the original oldValue from the deepest child, the nested models/collections so far for this event from the deepest child
 		}
 	},
