@@ -6,6 +6,11 @@ This is currently a work in progress, and is alpha.
 
 ## Changelog:
 
+### 0.4
+
+* Implemented "embedded" collections, where change events "bubble" to parent models. 
+* Implemented a range of other features / methods to fill in gaps, and make collections really usable.
+
 ### 0.3
 
 * Implemented first Collection implementation.
