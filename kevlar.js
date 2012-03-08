@@ -4965,11 +4965,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		};
 		
 		// Make a request to create or update the data on the server
-		if( this.isNew() ) {
-			this.persistenceProxy.create( this, proxyOptions );
-		} else {
-			this.persistenceProxy.update( this, proxyOptions );
-		}
+		this.persistenceProxy[ this.isNew() ? 'create' : 'update' ]( this, proxyOptions );
 	},
 	
 	
@@ -5280,6 +5276,15 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 			
 			if( typeof options.success === 'function' ) {
 				options.success.call( options.scope || window );
+			}
+			
+			// Epic hack for now until we have the response data populating the model upon create/update
+			var idAttribute = model.getIdAttributeName();
+			if( idAttribute in data ) {
+				model.set( idAttribute, data[ idAttribute ] );
+				
+				// And now, the epic hacks of epicness: pretend that the idAttribute isn't modified
+				delete model.modifiedData[ idAttribute ];
 			}
 		};
 		
