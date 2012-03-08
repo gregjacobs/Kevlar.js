@@ -485,6 +485,11 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 	 * @param {Mixed...} args The original arguments passed to the event.
 	 */
 	onModelEvent : function( eventName ) {
+		// If the model was destroyed, we need to remove it from the collection
+		if( eventName === 'destroy' ) {
+			this.remove( arguments[ 1 ] );  // arguments[ 1 ] is the model for the 'destroy' event
+		}
+		
 		// Relay the event from the collection, passing the collection itself, and the original arguments
 		this.fireEvent.apply( this, [ eventName, this ].concat( Array.prototype.slice.call( arguments, 1 ) ) );
 	},

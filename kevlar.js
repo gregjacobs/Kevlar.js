@@ -3334,6 +3334,11 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 	 * @param {Mixed...} args The original arguments passed to the event.
 	 */
 	onModelEvent : function( eventName ) {
+		// If the model was destroyed, we need to remove it from the collection
+		if( eventName === 'destroy' ) {
+			this.remove( arguments[ 1 ] );  // arguments[ 1 ] is the model for the 'destroy' event
+		}
+		
 		// Relay the event from the collection, passing the collection itself, and the original arguments
 		this.fireEvent.apply( this, [ eventName, this ].concat( Array.prototype.slice.call( arguments, 1 ) ) );
 	},
@@ -4613,6 +4618,23 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	
 	
 	/**
+	 * Determines if the Model is a new model, and has not yet been persisted to the server.
+	 * It is a new Model if it lacks an id.
+	 * 
+	 * @method isNew
+	 * @return {Boolean} True if the model is new, false otherwise.
+	 */
+	isNew : function() {
+		if( !this.hasIdAttribute() ) {
+			return true;
+		} else {
+			var id = this.getId();
+			return ( typeof id === 'undefined' || id === null );
+		}
+	},
+	
+	
+	/**
 	 * Determines if the Model currently has un-committed (i.e. changed) data.
 	 * 
 	 * @method isDirty
@@ -4888,6 +4910,12 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			throw new Error( "Kevlar.Model::save() error: Cannot save. No persistenceProxy." );
 		}
 		
+		// No id attribute, throw an error
+		if( !this.hasIdAttribute ) {
+			throw new Error( "Kevlar.Model::save() error: Cannot save. Model does not have an idAttribute that relates to a valid attribute." );
+		}
+		
+		
 		// Store a "snapshot" of the data that is being persisted. This is used to compare against the Model's current data at the time of when the persistence operation 
 		// completes. Anything that does not match this persisted snapshot data must have been updated while the persistence operation was in progress, and the Model must 
 		// be marked as dirty for those attributes after its commit() runs. This is a bit roundabout that a commit() operation runs when the persistence operation is complete
@@ -4937,7 +4965,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		};
 		
 		// Make a request to create or update the data on the server
-		if( typeof this.getId() === 'undefined' ) {
+		if( this.isNew() ) {
 			this.persistenceProxy.create( this, proxyOptions );
 		} else {
 			this.persistenceProxy.update( this, proxyOptions );
@@ -4961,39 +4989,51 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		options = options || {};
 		var scope = options.scope || options.context || window;
 		
-		// No persistenceProxy, cannot destroy. Throw an error
-		if( !this.persistenceProxy ) {
-			throw new Error( "Kevlar.Model::destroy() error: Cannot destroy. No persistenceProxy." );
-		}
-		
-		var successCallback = function() {
+		if( this.isNew() ) {
+			// If it is a new model, there is nothing on the server to destroy. Simply fire the event and call the callback
 			this.fireEvent( 'destroy', this );
-			
 			if( typeof options.success === 'function' ) {
 				options.success.call( scope );
 			}
-		};
-		var errorCallback = function() {
-			if( typeof options.error === 'function' ) {
-				options.error.call( scope );
-			}
-		};
-		var completeCallback = function() {
 			if( typeof options.complete === 'function' ) {
 				options.complete.call( scope );
 			}
-		};
-		
-		var proxyOptions = {
-			async    : ( typeof options.async === 'undefined' ) ? true : options.async,   // defaults to true
-			success  : successCallback,
-			error    : errorCallback,
-			complete : completeCallback,
-			scope    : this
-		};
-		
-		// Make a request to destroy the data on the server
-		this.persistenceProxy.destroy( this, proxyOptions );
+			
+		} else {
+			// No persistenceProxy, cannot destroy. Throw an error
+			if( !this.persistenceProxy ) {
+				throw new Error( "Kevlar.Model::destroy() error: Cannot destroy model on server. No persistenceProxy." );
+			}
+			
+			var successCallback = function() {
+				this.fireEvent( 'destroy', this );
+				
+				if( typeof options.success === 'function' ) {
+					options.success.call( scope );
+				}
+			};
+			var errorCallback = function() {
+				if( typeof options.error === 'function' ) {
+					options.error.call( scope );
+				}
+			};
+			var completeCallback = function() {
+				if( typeof options.complete === 'function' ) {
+					options.complete.call( scope );
+				}
+			};
+			
+			var proxyOptions = {
+				async    : ( typeof options.async === 'undefined' ) ? true : options.async,   // defaults to true
+				success  : successCallback,
+				error    : errorCallback,
+				complete : completeCallback,
+				scope    : this
+			};
+			
+			// Make a request to destroy the data on the server
+			this.persistenceProxy.destroy( this, proxyOptions );
+		}
 	},
 	
 	

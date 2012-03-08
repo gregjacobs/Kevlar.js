@@ -228,6 +228,33 @@ tests.integration.add( new Ext.test.TestSuite( {
 				model1.commit();
 				Y.Assert.isFalse( collection.isModified(), "Should be false after commit" );
 			}
+		},
+		
+		
+		{
+			/*
+			 * Test destroying a model. It should be removed from the collection.
+			 */
+			name : "Test destroying a model. It should be removed from the collection.",
+			
+			"When a model is destroyed, it should be removed from the collection" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'attr' ]
+				} );
+				
+				var Collection = Kevlar.Collection.extend( {
+					model : Model
+				} );
+				
+				var model1 = new Model( { attr: 1 } ),
+				    model2 = new Model( { attr: 2 } ),
+				    collection = new Collection( [ model1, model2 ] );
+				
+				Y.Assert.isTrue( collection.has( model1 ), "Initial condition: the collection should have model1" );
+				
+				model1.destroy();
+				Y.Assert.isFalse( collection.has( model1 ), "model1 should have been removed from the collection upon destruction" );
+			}
 		}
 	]
 

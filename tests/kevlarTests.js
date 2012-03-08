@@ -5212,18 +5212,19 @@ tests.unit.add( new Ext.test.TestSuite( {
 					// Special instructions
 					_should : {
 						error : {
-							"destroy() should throw an error if there is no configured persistenceProxy" : "Kevlar.Model::destroy() error: Cannot destroy. No persistenceProxy."
+							"destroy() should throw an error if there is no configured persistenceProxy when it tries to destroy a model that has been persisted (i.e. has an id)" : 
+								"Kevlar.Model::destroy() error: Cannot destroy model on server. No persistenceProxy."
 						}
 					},
 					
 					
-					"destroy() should throw an error if there is no configured persistenceProxy" : function() {
+					"destroy() should throw an error if there is no configured persistenceProxy when it tries to destroy a model that has been persisted (i.e. has an id)" : function() {
 						var Model = Kevlar.Model.extend( {
-							addAttributes : [ 'attribute1', 'attribute2' ]
+							addAttributes : [ 'id', 'attribute1', 'attribute2' ]
 							// note: no persistenceProxy
 						} );
 						
-						var model = new Model();
+						var model = new Model( { id: 1 } );  // the model needs an id to be considered as persisted on the server
 						model.destroy();
 						Y.Assert.fail( "destroy() should have thrown an error with no configured persistenceProxy" );
 					},
@@ -5232,10 +5233,11 @@ tests.unit.add( new Ext.test.TestSuite( {
 					"destroy() should delegate to its persistenceProxy's destroy() method to persist the destruction of the model" : function() {
 						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );				
 						var Model = Kevlar.Model.extend( {
+							attributes : [ 'id' ],
 							persistenceProxy : mockProxy
 						} );
 						
-						var model = new Model();
+						var model = new Model( { id: 1 } );  // the model needs an id to be considered as persisted on the server
 						
 						// Run the destroy() method to delegate 
 						model.destroy();
@@ -5255,10 +5257,11 @@ tests.unit.add( new Ext.test.TestSuite( {
 						};
 						
 						var Model = Kevlar.Model.extend( {
+							attributes : [ 'id' ],
 							persistenceProxy : mockProxy
 						} );
 						
-						var model = new Model();
+						var model = new Model( { id: 1 } );  // the model needs an id to be considered as persisted on the server
 						
 						var destroyEventFired = false;
 						model.addListener( 'destroy', function() {
@@ -5290,10 +5293,10 @@ tests.unit.add( new Ext.test.TestSuite( {
 						    completeCallCount = 0;
 						
 						var Model = Kevlar.Model.extend( {
-							attributes : [ 'attribute1' ],
+							attributes : [ 'id' ],
 							persistenceProxy  : this.mockProxy
 						} );
-						var model = new Model();
+						var model = new Model( { id: 1 } );  // the model needs an id to be considered as persisted on the server
 						
 						model.destroy( {
 							success  : function() { successCallCount++; },
@@ -5317,10 +5320,10 @@ tests.unit.add( new Ext.test.TestSuite( {
 						};
 						
 						var Model = Kevlar.Model.extend( {
-							attributes : [ 'attribute1' ],
+							attributes : [ 'id' ],
 							persistenceProxy  : this.mockProxy
 						} );
-						var model = new Model();
+						var model = new Model( { id: 1 } );  // the model needs an id to be considered as persisted on the server
 						
 						model.destroy( {
 							error    : function() { errorCallCount++; },
@@ -6844,6 +6847,33 @@ tests.integration.add( new Ext.test.TestSuite( {
 				Y.Assert.isTrue( collection.isModified(), "Just double checking that the collection is considered modified again, before committing" );
 				model1.commit();
 				Y.Assert.isFalse( collection.isModified(), "Should be false after commit" );
+			}
+		},
+		
+		
+		{
+			/*
+			 * Test destroying a model. It should be removed from the collection.
+			 */
+			name : "Test destroying a model. It should be removed from the collection.",
+			
+			"When a model is destroyed, it should be removed from the collection" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'attr' ]
+				} );
+				
+				var Collection = Kevlar.Collection.extend( {
+					model : Model
+				} );
+				
+				var model1 = new Model( { attr: 1 } ),
+				    model2 = new Model( { attr: 2 } ),
+				    collection = new Collection( [ model1, model2 ] );
+				
+				Y.Assert.isTrue( collection.has( model1 ), "Initial condition: the collection should have model1" );
+				
+				model1.destroy();
+				Y.Assert.isFalse( collection.has( model1 ), "model1 should have been removed from the collection upon destruction" );
 			}
 		}
 	]
