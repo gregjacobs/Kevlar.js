@@ -1184,11 +1184,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		};
 		
 		// Make a request to create or update the data on the server
-		if( this.isNew() ) {
-			this.persistenceProxy.create( this, proxyOptions );
-		} else {
-			this.persistenceProxy.update( this, proxyOptions );
-		}
+		this.persistenceProxy[ this.isNew() ? 'create' : 'update' ]( this, proxyOptions );
 	},
 	
 	
