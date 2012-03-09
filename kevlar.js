@@ -3173,8 +3173,8 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 		
 		for( i = 0, len = models.length; i < len; i++ ) {
 			model = models[ i ];
-			if( !( models[ i ] instanceof Kevlar.Model ) ) {
-				model = models[ i ] = this.createModel( models[ i ] );
+			if( !( model instanceof Kevlar.Model ) ) {
+				model = this.createModel( model );
 			}
 			
 			modelClientId = model.getClientId();
