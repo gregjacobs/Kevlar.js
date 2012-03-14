@@ -13824,14 +13824,24 @@ Ext.test.TestCase = Ext.extend( Y.Test.Case, {
 			if( Ext.isFunction( this[ prop ] ) ) {
 				
 				// If the property name starts with 'test', or has the word 'should' in it, then it is a test function
-				if( prop.indexOf( "test" ) === 0 
-					  || ( prop.toLowerCase().indexOf( "should" ) > -1 && prop.indexOf( " " ) > -1 ) ) {
+				if( prop.indexOf( "test" ) === 0 || ( prop.toLowerCase().indexOf( "should" ) > -1 && prop.indexOf( " " ) > -1 ) ) {
 					tests.push( new Ext.test.Test( prop, this, this[ prop ] ) );
 				}
 				
 			}
 		}
 		return tests;
+	},
+	
+	
+	/**
+	 * Retrieves the parent {@link Ext.test.TestSuite} of the TestCase.
+	 * 
+	 * @method getParentSuite
+	 * @return {Ext.test.TestSuite}
+	 */
+	getParentSuite : function() {
+		return this.parentSuite;
 	}
 	
 });
@@ -13962,6 +13972,7 @@ Ext.test.Session = Ext.extend( Ext.util.Observable, {
 		var t = this.findSuite(name);
 		if (!t) {
 			t = this.createSuite(name);
+			this.masterSuite.add( t );  // creating a suite, need to add it to the master suite to be shown
 		}
 		return t;
 	},

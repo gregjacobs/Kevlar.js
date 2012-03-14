@@ -99,6 +99,7 @@ Ext.test.Session = Ext.extend( Ext.util.Observable, {
 		var t = this.findSuite(name);
 		if (!t) {
 			t = this.createSuite(name);
+			this.masterSuite.add( t );  // creating a suite, need to add it to the master suite to be shown
 		}
 		return t;
 	},
