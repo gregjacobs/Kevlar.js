@@ -54,12 +54,9 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	
 	/**
 	 * @cfg {String[]/Object[]} addAttributes
-	 * Alias of {@link #attributes}, which may make more sense to use in hierarchies of models that go past more than one level of nesting, 
+	 * Alias of {@link #cfg-attributes}, which may make more sense to use in hierarchies of models that go past more than one level of nesting, 
 	 * as it conveys the meaning that the attributes are being *added* to the attributes that are already defined in its superclass, not
 	 * replacing them.
-	 * 
-	 * This config is recommended over {@link #attributes} for any hierarchy of models that goes past one level of nesting, or even those that 
-	 * don't but may do so in the future.
 	 */
 	
 	/**
@@ -74,7 +71,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * @property {Object} attributes
 	 * 
 	 * A hash of the combined Attributes, which have been put together from the current Model subclass, and all of
-	 * its superclasses. This is created by the {@link #initAttributes} method upon instantiation.
+	 * its superclasses.
 	 */
 	
 	/**
@@ -96,12 +93,13 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	/**
 	 * @private 
 	 * @property {Object} modifiedData
-	 * A hash that serves two functions:<br> 
+	 * A hash that serves two functions:
+	 * 
 	 * 1) Properties are set to it when an attribute is modified. The property name is the attribute {@link Kevlar.attribute.Attribute#name}. 
-	 * This allows it to be used to determine which attributes have been modified. 
-	 * 2) The <b>original</b> (non-committed) data of the attribute (before it was {@link #set}) is stored as the value of the 
-	 * property. When rolling back changes (via {@link #rollback}), these values are copied back onto the {@link #data} object
-	 * to overwrite the data to be rolled back.
+	 *    This allows it to be used to determine which attributes have been modified. 
+	 * 2) The *original* (non-committed) data of the attribute (before it was {@link #set}) is stored as the value of the 
+	 *    property. When rolling back changes (via {@link #method-rollback}), these values are copied back onto the {@link #data} object
+	 *    to overwrite the data to be rolled back.
 	 * 
 	 * Went back and forth with naming this `originalData` and `modifiedData`, because it stores original data, but is used
 	 * to determine which data is modified... 
@@ -131,7 +129,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 */
 	
 	/**
-	 * @hide
+	 * @private
 	 * @property {String} id (readonly)
 	 * The id for the Model. This property is set when the attribute specified by the {@link #idAttribute} config
 	 * is {@link #set}. 
@@ -201,7 +199,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * Creates a new Model instance.
 	 * 
 	 * @constructor 
-	 * @param {Object} [data] Any initial data for the {@link #attributes attributes}, specified in an object (hash map). See {@link #set}.
+	 * @param {Object} [data] Any initial data for the {@link #cfg-attributes attributes}, specified in an object (hash map). See {@link #set}.
 	 */
 	constructor : function( data ) {
 		var me = this;
@@ -398,7 +396,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	
 	
 	/**
-	 * Determines if the Model has a valid {@link #idAttribute}. Will return true if there is an {@link #attributes attribute}
+	 * Determines if the Model has a valid {@link #idAttribute}. Will return true if there is an {@link #cfg-attributes attribute}
 	 * that is referenced by the {@link #idAttribute}, or false otherwise.
 	 * 
 	 * @method hasIdAttribute
@@ -602,7 +600,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * child models, and is called from {@link Kevlar.attribute.ModelAttribute ModelAttribute}. For non-embedded Models (i.e. simply "related" Models), this 
 	 * method is not called.
 	 * 
-	 * @hide
+	 * @ignore
 	 * @method subscribeEmbeddedModel
 	 * @param {String} attributeName The name of the Attribute that is subscribing a Model.
 	 * @param {Kevlar.Model} embeddedModel
@@ -623,7 +621,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * child collections, and is called from {@link Kevlar.attribute.CollectionAttribute CollectionAttribute}. For non-embedded Collections (i.e. simply "related" 
 	 * Collections), this method is not called.
 	 * 
-	 * @hide
+	 * @ignore
 	 * @method subscribeEmbeddedCollection
 	 * @param {String} attributeName The name of the Attribute that is subscribing a Collection.
 	 * @param {Kevlar.Collection} embeddedCollection
@@ -654,7 +652,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * Used internally by the framework, this method unsubscribes the change event from the given child {@link Kevlar.Model}/{@link Kevlar.Container}. 
 	 * Used in conjunction with {@link #subscribeEmbeddedDataComponent}, when a child model/collection is un-set from its parent model (i.e. this model).
 	 * 
-	 * @hide
+	 * @ignore
 	 * @method unsubscribeEmbeddedModel
 	 * @param {String} attributeName The name of the Attribute that is unsubscribing a Model/Collection.
 	 * @param {Kevlar.Model} embeddedModel
@@ -668,7 +666,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * Used internally by the framework, this method unsubscribes the change event from the given child {@link Kevlar.Model}/{@link Kevlar.Container}. 
 	 * Used in conjunction with {@link #subscribeEmbeddedCollection}, when a child model/collection is un-set from its parent model (i.e. this model).
 	 * 
-	 * @hide
+	 * @ignore
 	 * @method unsubscribeEmbeddedCollection
 	 * @param {String} attributeName The name of the Attribute that is unsubscribing a Model/Collection.
 	 * @param {Kevlar.Model} embeddedModel
@@ -691,7 +689,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * Used in conjunction with {@link #subscribeEmbeddedModel}/{@link #subscribeEmbeddedCollection}, when a child model/collection is un-set from 
 	 * its parent model (i.e. this model).
 	 * 
-	 * @hide
+	 * @ignore
 	 * @method unsubscribeEmbeddedDataComponent
 	 * @param {String} attributeName The name of the Attribute that is unsubscribing a Model/Collection.
 	 * @param {Kevlar.DataComponent} dataComponent
@@ -1016,14 +1014,13 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	
 	
 	/**
-	 * @hide
 	 * Creates a clone of the Model, by copying its instance data. Note that the cloned model will *not* have a value
 	 * for its {@link #idAttribute} (as it is a new model, and multiple models of the same type cannot exist with
 	 * the same id). You may optionally provide a new id for the clone with the `id` parameter. 
 	 * 
-	 * Note: This is a very very early, alpha version of the method, where the final version will most likely
+	 * Note: This is a very early, alpha version of the method, where the final version will most likely
 	 * account for embedded models, while copying embedded models and other such nested data. Will also handle 
-	 * circular dependencies. Do not use just yet.
+	 * circular dependencies. I don't recommend using it just yet.
 	 * 
 	 * @method clone
 	 * @param {Mixed} [id] A new id for the Model. Defaults to undefined.

@@ -7,7 +7,7 @@
  * defines the behaviors of a {@link Kevlar.Model Model's} attributes. A {@link Kevlar.Model Model} is made up of Attributes. 
  * 
  * Note: You will most likely not instantiate Attribute objects directly. This is used by {@link Kevlar.Model} with its
- * {@link Kevlar.Model#attributes attributes} prototype config. Anonymous config objects provided to {@link Kevlar.Model#attributes attributes}
+ * {@link Kevlar.Model#cfg-attributes attributes} prototype config. Anonymous config objects provided to {@link Kevlar.Model#cfg-attributes attributes}
  * will be passed to the Attribute constructor.
  */
 /*global Kevlar */
@@ -395,7 +395,7 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * Note that the default implementation simply returns the value unchanged, but this may be overridden
 	 * in subclasses to provide a conversion.
 	 * 
-	 * @method beforeSet
+	 * @method afterSet
 	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
 	 *   but is provided in case any model processing is needed.
 	 * @param {Mixed} value The value provided to the {@link Kevlar.Model#set} method, after it has been processed by the

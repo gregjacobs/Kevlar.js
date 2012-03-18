@@ -65,6 +65,7 @@ KevlarUTIL.Observable = Class.extend( Object, {
 	
 	/**
 	 * @constructor
+	 * Instantiates a new Observable object.
 	 */
 	constructor : function() {
 		var me = this, e = me.events;
@@ -107,8 +108,8 @@ KevlarUTIL.Observable = Class.extend( Object, {
 	/**
 	 * Fires the specified event with the passed parameters (minus the event name).
 	 * 
-	 * An event may be set to bubble up an Observable parent hierarchy (See {@link ui.Component#getBubbleTarget})
-	 * by calling {@link #enableBubble}.
+	 * An event may be set to bubble up an Observable parent hierarchy (See {@link #getBubbleTarget}),
+	 * by calling {@link #enableBubble} for an event.
 	 * 
 	 * @method fireEvent
 	 * @param {String} eventName The name of the event to fire.
@@ -407,11 +408,7 @@ KevlarUTIL.Observable = Class.extend( Object, {
 	/**
 	 * Enables events fired by this Observable to bubble up an owner hierarchy by calling {@link #getBubbleTarget} to determine
 	 * the object's owner. The default implementation of {@link #getBubbleTarget} in this class is just to return null, which specifies no owner.
-	 * This method should be overridden by subclasses to provide this if applicable.
-	 * 
-	 * This is commonly used by {@link ui.Component ui.Components} to bubble events to owner {@link ui.Container iu.Containers}. 
-	 * See {@link ui.Component#getBubbleTarget}. The default implementation in {@link ui.Component} returns the Component's immediate owner, 
-	 * but if a known target is required, this can be overridden to access that target more quickly.
+	 * This method should be overridden by subclasses to provide this, if applicable.
 	 * 
 	 * <p>Example:</p><pre><code>
 MyClass = Kevlar.extend( Kevlar.util.Observable, {

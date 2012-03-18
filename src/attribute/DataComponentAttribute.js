@@ -3,14 +3,7 @@
  * @class Kevlar.attribute.DataComponentAttribute
  * @extends Kevlar.attribute.ObjectAttribute
  * 
- * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.Model} value.
- * 
- * This class enforces that the Attribute hold a {@link Kevlar.Model Model} value, or null. However, it will
- * automatically convert an anonymous data object into the appropriate {@link Kevlar.Model Model} subclass, using
- * the Model provided to the {@link #modelClass} config. 
- * 
- * Otherwise, you must either provide a {@link Kevlar.Model} subclass as the value, or use a custom {@link #set} 
- * function to convert any anonymous object to a Model in the appropriate way. 
+ * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.DataComponent} value.
  */
 /*global window, Kevlar */
 Kevlar.attribute.DataComponentAttribute = Kevlar.attribute.ObjectAttribute.extend( {
@@ -33,7 +26,7 @@ Kevlar.attribute.DataComponentAttribute = Kevlar.attribute.ObjectAttribute.exten
 	
 	/**
 	 * @cfg {Boolean} persistIdOnly
-	 * In the case that the {@link #embedded} config is true, set this to true to only have the {@link Kevlar.Model#idProperty id} of the embedded 
+	 * In the case that the {@link #embedded} config is true, set this to true to only have the {@link Kevlar.Model#idAttribute id} of the embedded 
 	 * model(s) be persisted, rather than all of the Model/Collection data. Normally, when {@link #embedded} is false (the default), the child 
 	 * {@link Kevlar.DataComponent DataComponent} is treated as a relation, and only its {@link Kevlar.Model#idAttribute ids} is/are persisted.
 	 */

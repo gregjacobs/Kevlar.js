@@ -20,9 +20,6 @@ Kevlar.DataComponent = Kevlar.util.Observable.extend( {
 	 */
 	
 	
-	/**
-	 * @constructor
-	 */
 	constructor : function() {
 		// Call the superclass's constructor (Observable)
 		this._super( arguments );

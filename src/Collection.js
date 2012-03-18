@@ -147,7 +147,7 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 	 * @param {Object/Object[]/Kevlar.Model[]} config This can either be a configuration object (in which the options listed
 	 *   under "configuration options" can be provided), or an initial set of Models to provide to the Collection. If providing
 	 *   an initial set of models, they must be wrapped in an array. Note that an initial set of models can be provided when using
-	 *   a configuration object with the {@link #models} config.
+	 *   a configuration object with the {@link #cfg-models} config.
 	 */
 	constructor : function( config ) {
 		this._super( arguments );
@@ -764,7 +764,7 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 	// Searching methods
 	
 	/**
-	 * Finds the first {@link Kevlar.Model Model} in the Collection by {@link Kevlar.Attribute Attribute} name, and a given value.
+	 * Finds the first {@link Kevlar.Model Model} in the Collection by {@link Kevlar.attribute.Attribute Attribute} name, and a given value.
 	 * Uses `===` to compare the value. If a more custom find is required, use {@link #findBy} instead.
 	 * 
 	 * Note that this method is more efficient than using {@link #findBy}, so if it can be used, it should.
