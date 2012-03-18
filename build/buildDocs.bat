@@ -1,1 +1,1 @@
-..\vendor\jsduck\jsduck-3.3.1.exe --config=buildDocs.config
+..\vendor\jsduck\jsduck-3.8.1.exe --config=buildDocs.config
