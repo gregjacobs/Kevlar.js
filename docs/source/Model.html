@@ -17,17 +17,17 @@
 <body onload="prettyPrint(); highlight();">
   <pre class="prettyprint lang-js"><span id='Kevlar-Model'>/**
 </span> * @class Kevlar.Model
- * @extends Kevlar.util.Observable
+ * @extends Kevlar.DataComponent
  * 
- * Generalized data storage class, which has a number of data-related features, including the ability to persist the data to a backend server.
+ * Generalized key/value data storage class, which has a number of data-related features, including the ability to persist its data to a backend server.
  * Basically, a Model represents some object of data that your application uses. For example, in an online store, one might define two Models: 
  * one for Users, and the other for Products. These would be `User` and `Product` models, respectively. Each of these Models would in turn,
- * have the {@link Kevlar.Attribute Attributes} (data values) that each Model is made up of. Ex: A User model may have: `userId`, `firstName`, and 
+ * have the {@link Kevlar.attribute.Attribute Attributes} (data values) that each Model is made up of. Ex: A User model may have: `userId`, `firstName`, and 
  * `lastName` Attributes.
  */
 /*global window, Kevlar */
 /*jslint forin:true */
-Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
+Kevlar.Model = Kevlar.DataComponent.extend( {
 	
 <span id='Kevlar-Model-cfg-persistenceProxy'>	/**
 </span>	 * @cfg {Kevlar.persistence.Proxy} persistenceProxy
@@ -37,11 +37,11 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 <span id='Kevlar-Model-cfg-attributes'>	/**
 </span>	 * @cfg {String[]/Object[]} attributes
-	 * Array of {@link Kevlar.Attribute Attribute} declarations. These are objects with any number of properties, but they
-	 * must have the property 'name'. See the configuration options of {@link Kevlar.Attribute} for more information. 
+	 * Array of {@link Kevlar.attribute.Attribute Attribute} declarations. These are objects with any number of properties, but they
+	 * must have the property 'name'. See the configuration options of {@link Kevlar.attribute.Attribute} for more information. 
 	 * 
-	 * Anonymous config objects defined here will become instantiated {@link Kevlar.Attribute} objects. An item in the array may also simply 
-	 * be a string, which will specify the name of the {@link Kevlar.Attribute Attribute}, with no other {@link Kevlar.Attribute Attribute} 
+	 * Anonymous config objects defined here will become instantiated {@link Kevlar.attribute.Attribute} objects. An item in the array may also simply 
+	 * be a string, which will specify the name of the {@link Kevlar.attribute.Attribute Attribute}, with no other {@link Kevlar.attribute.Attribute Attribute} 
 	 * configuration options.
 	 * 
 	 * Attributes defined on the prototype of a Model, and its superclasses, are concatenated together come
@@ -53,7 +53,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * Example:
 	 * 
 	 *     attributes : [
-	 *         'id',    // name-only; no other configs for this attribute (not recommended! should declare the {@link Kevlar.Attribute#type type})
+	 *         'id',    // name-only; no other configs for this attribute (not recommended! should declare the {@link Kevlar.attribute.Attribute#type type})
 	 *         { name: 'firstName', type: 'string' },
 	 *         { name: 'lastName', type: 'string' },
 	 *         {
@@ -68,16 +68,12 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * config, which does the same thing (defines attributes), but better conveys that attributes in subclasses are being *added* to the
 	 * attributes of the superclass, rather than *overriding* attributes of the superclass.
 	 */
-	attributes : [],
 	
 <span id='Kevlar-Model-cfg-addAttributes'>	/**
 </span>	 * @cfg {String[]/Object[]} addAttributes
-	 * Alias of {@link #attributes}, which may make more sense to use in hierarchies of models that go past more than one level of nesting, 
+	 * Alias of {@link #cfg-attributes}, which may make more sense to use in hierarchies of models that go past more than one level of nesting, 
 	 * as it conveys the meaning that the attributes are being *added* to the attributes that are already defined in its superclass, not
 	 * replacing them.
-	 * 
-	 * This config is recommended over {@link #attributes} for any hierarchy of models that goes past one level of nesting, or even those that 
-	 * don't but may do so in the future.
 	 */
 	
 <span id='Kevlar-Model-cfg-idAttribute'>	/**
@@ -92,14 +88,14 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @property {Object} attributes
 	 * 
 	 * A hash of the combined Attributes, which have been put together from the current Model subclass, and all of
-	 * its superclasses. This is created by the {@link #initAttributes} method upon instantiation.
+	 * its superclasses.
 	 */
 	
 <span id='Kevlar-Model-property-data'>	/**
 </span>	 * @private
 	 * @property {Object} data
 	 * 
-	 * A hash that holds the current data for the {@link Kevlar.Attribute Attributes}. The property names in this object match 
+	 * A hash that holds the current data for the {@link Kevlar.attribute.Attribute Attributes}. The property names in this object match 
 	 * the attribute names.  This hash holds the current data as it is modified by {@link #set}.
 	 */
 	
@@ -114,27 +110,43 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 <span id='Kevlar-Model-property-modifiedData'>	/**
 </span>	 * @private 
 	 * @property {Object} modifiedData
-	 * A hash that serves two functions:&lt;br&gt; 
-	 * 1) Properties are set to it when an attribute is modified. The property name is the attribute {@link Kevlar.Attribute#name}. 
-	 * This allows it to be used to determine which attributes have been modified. 
-	 * 2) The &lt;b&gt;original&lt;/b&gt; (non-committed) data of the attribute (before it was {@link #set}) is stored as the value of the 
-	 * property. When rolling back changes (via {@link #rollback}), these values are copied back onto the {@link #data} object
-	 * to overwrite the data to be rolled back.
+	 * A hash that serves two functions:
+	 * 
+	 * 1) Properties are set to it when an attribute is modified. The property name is the attribute {@link Kevlar.attribute.Attribute#name}. 
+	 *    This allows it to be used to determine which attributes have been modified. 
+	 * 2) The *original* (non-committed) data of the attribute (before it was {@link #set}) is stored as the value of the 
+	 *    property. When rolling back changes (via {@link #method-rollback}), these values are copied back onto the {@link #data} object
+	 *    to overwrite the data to be rolled back.
 	 * 
 	 * Went back and forth with naming this `originalData` and `modifiedData`, because it stores original data, but is used
 	 * to determine which data is modified... 
 	 */
 	
-<span id='Kevlar-Model-property-clientId'>	/**
-</span>	 * @protected
-	 * @property {String} clientId (readonly)
+<span id='Kevlar-Model-property-embeddedDataComponentChangeHandlers'>	/**
+</span>	 * @private
+	 * @property {Object} embeddedDataComponentChangeHandlers
 	 * 
-	 * A unique ID for the Model on the client side. This is used to uniquely identify each Model instance.
-	 * Retrieve with {@link #getClientId}.
+	 * A hashmap of {@link #change} handlers for any embedded DataComponents (which are defined by a {@link Kevlar.attribute.DataComponentAttribute} with
+	 * {@link Kevlar.attribute.DataComponentAttribute#embedded} set to `true`).
+	 * 
+	 * This hashmap is keyed by the Attribute's name, and stores a Function reference as its value, which is the handler for a change
+	 * event in the embedded DataComponent.
+	 */
+	
+<span id='Kevlar-Model-property-embeddedCollectionAddRemoveReorderHandlers'>	/**
+</span>	 * @private
+	 * @property {Object} embeddedCollectionAddRemoveReorderHandlers
+	 * 
+	 * A hashmap of {@link Kevlar.Collection#event-add}, {@link Kevlar.Collection#event-remove}, and {@link Kevlar.Collection#event-reorder} handlers for any
+	 * embedded {@link Kevlar.Collection Collections}. An &quot;embedded&quot; Collection is defined by a {@link Kevlar.attribute.CollectionAttribute} with
+	 * {@link Kevlar.attribute.CollectionAttribute#embedded} set to `true`.
+	 * 
+	 * This hashmap is keyed by the Attribute's name, and stores a Function reference as its value, which is the handler for the add/remove/reorder
+	 * events in the embedded Collection.
 	 */
 	
 <span id='Kevlar-Model-property-id'>	/**
-</span>	 * @hide
+</span>	 * @private
 	 * @property {String} id (readonly)
 	 * The id for the Model. This property is set when the attribute specified by the {@link #idAttribute} config
 	 * is {@link #set}. 
@@ -143,26 +155,59 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * not be accessed or used, as it will most likely be removed in the future.
 	 */
 	
-<span id='Kevlar-Model-property-cid'>	/**
-</span>	 * @hide
-	 * @property {String} cid (readonly)
-	 * A &quot;client id&quot; for the Model. This is a uniquely generated identifier assigned to the Model.
-	 * 
-	 * *** Note: This property is here solely to maintain compatibility with Backbone's Collection, and should
-	 * not be accessed or used, as it will most likely be removed in the future.
-	 */
-	
 	
 	inheritedStatics : {
-<span id='Kevlar-Model-static-property-modelTypeId'>		/**
-</span>		 * A static property that is unique to each Kevlar.Model subclass, which uniquely identifies it.
+<span id='Kevlar-Model-static-property-__Kevlar_modelTypeId'>		/**
+</span>		 * A static property that is unique to each Kevlar.Model subclass, which uniquely identifies the subclass.
 		 * This is used as part of the Model cache, where it is determined if a Model instance already exists
-		 * if two models have the same modelTypeId, and instance id.
+		 * if two models are of the same type (i.e. have the same __Kevlar_modelTypeId), and instance id.
 		 * 
+		 * @private
 		 * @inheritable
 		 * @static
-		 * @property {Number} modelTypeId
+		 * @property {Number} __Kevlar_modelTypeId
 		 */
+		
+		
+		// Subclass-specific setup
+		onClassExtended : function( newModelClass ) {
+			// Assign a unique id to this class, which is used in hashmaps that hold the class
+			newModelClass.__Kevlar_modelTypeId = Kevlar.newId();
+			
+			
+			// Now handle initializing the Attributes, merging this subclass's attributes with the superclass's attributes
+			var classPrototype = newModelClass.prototype,
+			    superclassPrototype = newModelClass.superclass,
+			    superclassAttributes = superclassPrototype.attributes || {},    // will be an object (hashmap) of attributeName -&gt; Attribute instances
+			    newAttributes = {}, 
+			    attributeDefs = [],  // will be an array of Attribute configs (definitions) on the new subclass 
+			    attributeObj,   // for holding each of the attributeDefs, one at a time
+			    i, len;
+			
+			// Grab the 'attributes' or 'addAttributes' property from the new subclass's prototype. If neither of these are present,
+			// will use the empty array instead.
+			if( classPrototype.hasOwnProperty( 'attributes' ) ) {
+				attributeDefs = classPrototype.attributes;
+			} else if( classPrototype.hasOwnProperty( 'addAttributes' ) ) {
+				attributeDefs = classPrototype.addAttributes;
+			}
+			
+			// Instantiate each of the new subclass's Attributes, and then merge them with the superclass's attributes
+			for( i = 0, len = attributeDefs.length; i &lt; len; i++ ) {
+				attributeObj = attributeDefs[ i ];
+				
+				// Normalize to a Kevlar.attribute.Attribute configuration object if it is a string
+				if( typeof attributeObj === 'string' ) {
+					attributeObj = { name: attributeObj };
+				}
+				
+				// Create the actual Attribute instance
+				var attribute = Kevlar.attribute.Attribute.create( attributeObj );
+				newAttributes[ attribute.getName() ] = attribute;
+			}
+			
+			newModelClass.prototype.attributes = Kevlar.apply( {}, newAttributes, superclassAttributes );  // newAttributes take precedence; superclassAttributes are used in the case that a newAttribute doesn't exist for a given attributeName
+		}
 	},
 	
 	
@@ -171,7 +216,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 </span>	 * Creates a new Model instance.
 	 * 
 	 * @constructor 
-	 * @param {Object} [data] Any initial data for the {@link #attributes attributes}, specified in an object (hash map). See {@link #set}.
+	 * @param {Object} [data] Any initial data for the {@link #cfg-attributes attributes}, specified in an object (hash map). See {@link #set}.
 	 */
 	constructor : function( data ) {
 		var me = this;
@@ -197,8 +242,8 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		// --------------------------
 		
 		
-		// Call superclass constructor (Observable)
-		Kevlar.Model.superclass.constructor.call( me );
+		// Call superclass constructor
+		this._super( arguments );
 		
 		// If this class has a persistenceProxy definition that is an object literal, instantiate it *onto the prototype*
 		// (so one Proxy instance can be shared for every model)
@@ -209,26 +254,26 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		me.addEvents(
 <span id='Kevlar-Model-event-change'>			/**
-</span>			 * Fires when a {@link Kevlar.Attribute} in the Model has changed its value. This is a 
+</span>			 * Fires when a {@link Kevlar.attribute.Attribute} in the Model has changed its value. This is a 
 			 * convenience event to respond to just a single attribute's change. Ex: if you want to
 			 * just respond to the `title` attribute's change, you could subscribe to `change:title`. Ex:
 			 * 
-			 *     model.addListener( 'change:myAttribute', function( model, newValue ) { ... } );
+			 *     model.addListener( 'change:title', function( model, newValue ) { ... } );
 			 * 
 			 * @event change:[attributeName]
 			 * @param {Kevlar.Model} model This Model instance.
-			 * @param {Mixed} newValue The new value, processed by the attribute's {@link Kevlar.Attribute#get get} function if one exists. 
-			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.Attribute#get get} function if one exists. 
+			 * @param {Mixed} newValue The new value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
+			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
 			 */
 			
 <span id='Kevlar-Model-event-change'>			/**
-</span>			 * Fires when a {@link Kevlar.Attribute} in the Model has changed its value.
+</span>			 * Fires when a {@link Kevlar.attribute.Attribute} in the Model has changed its value.
 			 * 
 			 * @event change
 			 * @param {Kevlar.Model} model This Model instance.
-			 * @param {String} attributeName The attribute name for the Attribute that was changed.
-			 * @param {Mixed} newValue The new value, processed by the attribute's {@link Kevlar.Attribute#get get} function if one exists. 
-			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.Attribute#get get} function if one exists. 
+			 * @param {String} attributeName The name of the attribute that was changed.
+			 * @param {Mixed} newValue The new value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
+			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
 			 */
 			'change',
 			
@@ -258,20 +303,13 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			 */
 			'destroy'
 		);
-		
-		// Initialize the 'attributes' array, which gets turned into an object (hash)
-		me.initAttributes();
-		
-		
-		// Create a client ID for the Model, and set it to the property 'cid' as well to maintain compatibility with Backbone's Collection
-		me.clientId = me.cid = 'c' + Kevlar.newId();
-		
+				
 		
 		// Set the default values for attributes that don't have an initial value.
 		var attributes = me.attributes,  // me.attributes is a hash of the Attribute objects, keyed by their name
 		    attributeDefaultValue;
 		for( var name in attributes ) {
-			if( data[ name ] === undefined &amp;&amp; ( attributeDefaultValue = attributes[ name ].defaultValue ) !== undefined ) {
+			if( data[ name ] === undefined &amp;&amp; ( attributeDefaultValue = attributes[ name ].getDefaultValue() ) !== undefined ) {
 				data[ name ] = attributeDefaultValue;
 			}
 		}
@@ -281,6 +319,10 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		
 		// Initialize the data hash for storing attribute names of modified data, and their original values (see property description)
 		me.modifiedData = {};
+		
+		// Initialize the embeddedDataComponentChangeHandlers and embeddedCollectionAddRemoveReorderHandlers hashmaps
+		me.embeddedDataComponentChangeHandlers = {};
+		me.embeddedCollectionAddRemoveReorderHandlers = {};
 		
 		// Set the initial data / defaults, if we have any
 		me.set( data );
@@ -292,11 +334,11 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 <span id='Kevlar-Model-method-initialize'>	/**
-</span>	 * Hook methods for subclasses to initialize themselves. This method should be overridden in subclasses to 
+</span>	 * Hook method for subclasses to initialize themselves. This method should be overridden in subclasses to 
 	 * provide any model-specific initialization.
 	 * 
 	 * Note that it is good practice to always call the superclass `initialize` method from within yours (even if
-	 * your class simply extends Kevlar.Model, which has no `initialize` implementation). This is to future proof it
+	 * your class simply extends Kevlar.Model, which has no `initialize` implementation itself). This is to future proof it
 	 * from being moved under another superclass, or if there is ever an implementation made in this class.
 	 * 
 	 * Ex:
@@ -315,83 +357,15 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	initialize : Kevlar.emptyFn,
 	
 	
-	
-<span id='Kevlar-Model-method-initAttributes'>	/**
-</span>	 * Initializes the Model's {@link #attributes} by walking up the prototype change from the current Model subclass
-	 * up to this (the base) class, collecting their `attributes` arrays, and combining them into one single attributes hash. 
-	 * See {@link attributes} for more information.
-	 * 
-	 * @private
-	 * @method initAttributes
-	 */
-	initAttributes : function() {
-		this.attributes = {};
-		
-		// Define concatenated attributes array from all subclasses
-		var attributesObjects = [],
-		    currentConstructor = this.constructor,
-		    currentProto = currentConstructor.prototype;
-		
-		// Walk up the prototype chain from the current object, collecting 'attributes' and 'addAttributes' objects as we go along
-		do {
-			// skip over any prototype that doesn't define `attributes` or `addAttributes` itself
-			if( currentProto.hasOwnProperty( 'attributes' ) &amp;&amp; Kevlar.isArray( currentProto.attributes ) ) {    
-				attributesObjects = attributesObjects.concat( currentProto.attributes );
-			} else if( currentProto.hasOwnProperty( 'addAttributes' ) &amp;&amp; Kevlar.isArray( currentProto.addAttributes ) ) {
-				attributesObjects = attributesObjects.concat( currentProto.addAttributes );
-			}
-		} while( ( currentConstructor = ( currentProto = currentConstructor.superclass ) &amp;&amp; currentProto.constructor ) );
-		
-		// After we have the array of attributes, go backwards through them, which allows attributes from subclasses to override those in superclasses
-		for( var i = attributesObjects.length; i--; ) {
-			var attributeObj = attributesObjects[ i ];
-			
-			// Normalize to a Kevlar.Attribute configuration object if it is a string
-			if( typeof attributeObj === 'string' ) {
-				attributeObj = { name: attributeObj };
-			}
-			
-			var attribute = this.createAttribute( attributeObj );
-			this.attributes[ attribute.getName() ] = attribute;
-		}
-	},
-	
-	
-<span id='Kevlar-Model-method-createAttribute'>	/**
-</span>	 * Factory method which by default creates a {@link Kevlar.Attribute}, but may be overridden by subclasses
-	 * to create different {@link Kevlar.Attribute} subclasses. 
-	 * 
-	 * @protected
-	 * @method createAttribute
-	 * @param {Object} attributeObj The attribute object provided on the prototype. If it was a string, it will have been
-	 *   normalized to the object `{ name: attributeName }`.
-	 * @return {Kevlar.Attribute}
-	 */
-	createAttribute : function( attributeObj ) {
-		return new Kevlar.Attribute( attributeObj );
-	},
-	
-	
 <span id='Kevlar-Model-method-getAttributes'>	/**
 </span>	 * Retrieves the Attribute objects that are present for the Model, in an object (hashmap) where the keys
-	 * are the Attribute names, and the values are the {@link Kevlar.Attribute} objects themselves.
+	 * are the Attribute names, and the values are the {@link Kevlar.attribute.Attribute} objects themselves.
 	 * 
 	 * @method getAttributes
 	 * @return {Object} 
 	 */
 	getAttributes : function() {
 		return this.attributes;
-	},
-	
-	
-<span id='Kevlar-Model-method-getClientId'>	/**
-</span>	 * Retrieves the Model instance's unique {@link #clientId}.
-	 * 
-	 * @method getClientId
-	 * @return {String} The Model instance's unique {@link #clientId}. 
-	 */
-	getClientId : function() {
-		return this.clientId;
 	},
 	
 	
@@ -412,13 +386,49 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		}
 		return this.get( this.idAttribute );
 	},
+	
+	
+<span id='Kevlar-Model-method-getIdAttribute'>	/**
+</span>	 * Retrieves the &quot;ID attribute&quot; for the Model, if there is a valid id attribute. The Model has a valid ID attribute if there exists
+	 * an attribute which is referenced by the {@link #idAttribute} config. Otherwise, returns null.
+	 * 
+	 * @method getIdAttribute
+	 * @return {Kevlar.attribute.Attribute} The Attribute that represents the ID attribute, or null if there is no valid ID attribute.
+	 */
+	getIdAttribute : function() {
+		return this.attributes[ this.idAttribute ] || null;
+	},
+	
+	
+<span id='Kevlar-Model-method-getIdAttributeName'>	/**
+</span>	 * Retrieves the name of the &quot;ID attribute&quot; for the Model. This will be the attribute referenced by the {@link #idAttribute}
+	 * config.
+	 * 
+	 * @method getIdAttributeName
+	 * @return {String} The name of the &quot;ID attribute&quot;.
+	 */
+	getIdAttributeName : function() {
+		return this.idAttribute;
+	},
+	
+	
+<span id='Kevlar-Model-method-hasIdAttribute'>	/**
+</span>	 * Determines if the Model has a valid {@link #idAttribute}. Will return true if there is an {@link #cfg-attributes attribute}
+	 * that is referenced by the {@link #idAttribute}, or false otherwise.
+	 * 
+	 * @method hasIdAttribute
+	 * @return {Boolean}
+	 */
+	hasIdAttribute : function() {
+		return !!this.attributes[ this.idAttribute ];
+	},
 
 	
 	// --------------------------------
 	
 	
 <span id='Kevlar-Model-method-set'>	/**
-</span>	 * Sets the value for a {@link Kevlar.Attribute Attribute} given its `name`, and a `value`. For example, a call could be made as this:
+</span>	 * Sets the value for a {@link Kevlar.attribute.Attribute Attribute} given its `name`, and a `value`. For example, a call could be made as this:
 	 * 
 	 *     model.set( 'attribute1', 'value1' );
 	 * 
@@ -428,7 +438,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * 
 	 * Note that in this form, the method will ignore any property in the object (hash) that don't have associated Attributes.&lt;br&gt;&lt;br&gt;
 	 * 
-	 * When attributes are set, their {@link Kevlar.Attribute#set} method is run, if they have one defined.
+	 * When attributes are set, their {@link Kevlar.attribute.Attribute#set} method is run, if they have one defined.
 	 * 
 	 * @method set
 	 * @param {String/Object} attributeName The attribute name for the Attribute to set, or an object (hash) of name/value pairs.
@@ -451,10 +461,13 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 				throw new Error( &quot;Kevlar.Model.set(): An attribute with the attributeName '&quot; + attributeName + &quot;' was not found.&quot; );
 			}
 			
-			// Get the current value of the attribute, and its current &quot;getter&quot; value (to provide to the 'change' event as the oldValue)
-			var currentValue = this.data[ attributeName ],
-			    currentGetterValue = this.get( attributeName );
+			// Get the current (old) value of the attribute, and its current &quot;getter&quot; value (to provide to the 'change' event as the oldValue)
+			var oldValue = this.data[ attributeName ],
+			    oldGetterValue = this.get( attributeName );
 			
+			
+			// Allow the Attribute to pre-process the newValue
+			newValue = attribute.beforeSet( this, oldValue, newValue );
 			
 			// If the attribute has a 'set' function defined, call it to convert the data
 			if( typeof attribute.set === 'function' ) {
@@ -475,19 +488,22 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 					newValue = this.get( attributeName );
 					
 					// Now manually fire the events
-					this.fireEvent( 'change:' + attributeName, this, newValue, currentGetterValue );  // model, newValue, oldValue
-					this.fireEvent( 'change', this, attributeName, newValue, currentGetterValue );    // model, attributeName, newValue, oldValue
+					this.fireEvent( 'change:' + attributeName, this, newValue, oldGetterValue );  // model, newValue, oldValue
+					this.fireEvent( 'change', this, attributeName, newValue, oldGetterValue );    // model, attributeName, newValue, oldValue
 				}
 			}
 			
+			// Allow the Attribute to post-process the newValue
+			newValue = attribute.afterSet( this, newValue );
+			
 			
 			// Only change if there is no current value for the attribute, or if newValue is different from the current
-			if( !( attributeName in this.data ) || !Kevlar.util.Object.isEqual( currentValue, newValue ) ) {
+			if( !( attributeName in this.data ) || !attribute.valuesAreEqual( oldValue, newValue ) ) {   // let the Attribute itself determine if two values of its datatype are equal
 				// Store the attribute's *current* value (not the newValue) into the &quot;modifiedData&quot; attributes hash.
 				// This should only happen the first time the attribute is set, so that the attribute can be rolled back even if there are multiple
 				// set() calls to change it.
 				if( !( attributeName in this.modifiedData ) ) {
-					this.modifiedData[ attributeName ] = currentValue;
+					this.modifiedData[ attributeName ] = oldValue;
 				}
 				this.data[ attributeName ] = newValue;
 				this.dirty = true;
@@ -502,22 +518,22 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 					this.id = newValue;
 				}
 				
-				this.fireEvent( 'change:' + attributeName, this, newValue, currentGetterValue );  // model, newValue, oldValue
-				this.fireEvent( 'change', this, attributeName, newValue, currentGetterValue );    // model, attributeName, newValue, oldValue
+				this.fireEvent( 'change:' + attributeName, this, newValue, oldGetterValue );  // model, newValue, oldValue
+				this.fireEvent( 'change', this, attributeName, newValue, oldGetterValue );    // model, attributeName, newValue, oldValue
 			}
 		}
 	},
 	
 	
 <span id='Kevlar-Model-method-get'>	/**
-</span>	 * Retrieves the value for the attribute given by `attributeName`. If the {@link Kevlar.Attribute Attribute} has a
-	 * {@link Kevlar.Attribute#get get} function defined, that function will be called, and its return value
+</span>	 * Retrieves the value for the attribute given by `attributeName`. If the {@link Kevlar.attribute.Attribute Attribute} has a
+	 * {@link Kevlar.attribute.Attribute#get get} function defined, that function will be called, and its return value
 	 * will be used as the return of this method.
 	 * 
 	 * @method get
 	 * @param {String} attributeName The name of the Attribute whose value to retieve.
-	 * @return {Mixed} The value of the attribute returned by the Attribute's {@link Kevlar.Attribute#get get} function (if
-	 * one exists), or the underlying value of the attribute. Will return undefined if there is no {@link Kevlar.Attribute#get get}
+	 * @return {Mixed} The value of the attribute returned by the Attribute's {@link Kevlar.attribute.Attribute#get get} function (if
+	 * one exists), or the underlying value of the attribute. Will return undefined if there is no {@link Kevlar.attribute.Attribute#get get}
 	 * function, and the value has never been set.  
 	 */
 	get : function( attributeName ) {
@@ -538,15 +554,15 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 <span id='Kevlar-Model-method-raw'>	/**
-</span>	 * Retrieves the *raw* value for the attribute given by `attributeName`. If the {@link Kevlar.Attribute Attributes} has a
-	 * {@link Kevlar.Attribute#raw raw} function defined, that function will be called, and its return value will be used
+</span>	 * Retrieves the *raw* value for the attribute given by `attributeName`. If the {@link Kevlar.attribute.Attribute Attributes} has a
+	 * {@link Kevlar.attribute.Attribute#raw raw} function defined, that function will be called, and its return value will be used
 	 * by the return of this method. If not, the underlying data that is currently stored will be returned, bypassing any
-	 * {@link Kevlar.Attribute#get get} function defined on the {@link Kevlar.Attribute Attribute}.
+	 * {@link Kevlar.attribute.Attribute#get get} function defined on the {@link Kevlar.attribute.Attribute Attribute}.
 	 * 
 	 * @method raw
 	 * @param {String} attributeName The name of the Attribute whose raw value to retieve.
-	 * @return {Mixed} The value of the attribute returned by the Attribute's {@link Kevlar.Attribute#raw raw} function (if
-	 * one exists), or the underlying value of the attribute. Will return undefined if there is no {@link Kevlar.Attribute#raw raw}
+	 * @return {Mixed} The value of the attribute returned by the Attribute's {@link Kevlar.attribute.Attribute#raw raw} function (if
+	 * one exists), or the underlying value of the attribute. Will return undefined if there is no {@link Kevlar.attribute.Attribute#raw raw}
 	 * function, and the value has never been set.
 	 */
 	raw : function( attributeName ) {
@@ -574,7 +590,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * @return {Mixed} The default value for the attribute.
 	 */
 	getDefault : function( attributeName ) {
-		return this.attributes[ attributeName ].defaultValue;
+		return this.attributes[ attributeName ].getDefaultValue();
 	},
 	
 	
@@ -593,6 +609,265 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	// --------------------------------
 	
 	
+	// Embedded Model / Collection related functionality
+	
+<span id='global-method-subscribeEmbeddedModel'>	/**
+</span>	 * Used internally by the framework, this method subscribes to the change event of the given child {@link Kevlar.Model}, in order to relay
+	 * its events through this (i.e. its parent) model. This supports a form of &quot;event bubbling&quot; for {@link Kevlar.attribute.ModelAttribute#embedded embedded} 
+	 * child models, and is called from {@link Kevlar.attribute.ModelAttribute ModelAttribute}. For non-embedded Models (i.e. simply &quot;related&quot; Models), this 
+	 * method is not called.
+	 * 
+	 * @ignore
+	 * @method subscribeEmbeddedModel
+	 * @param {String} attributeName The name of the Attribute that is subscribing a Model.
+	 * @param {Kevlar.Model} embeddedModel
+	 */
+	subscribeEmbeddedModel : function( attributeName, embeddedModel ) {
+		var changeHandler = function( model, attrName, newValue, oldValue, childChangeData ) {  // note: 'childChangeData' arg is needed for the bubbling of deep model/collection events
+			this.onEmbeddedDataComponentChange( attributeName, /* collection */ null, model, attrName, newValue, oldValue, childChangeData );
+		};
+		
+		this.embeddedDataComponentChangeHandlers[ attributeName ] = changeHandler;
+		embeddedModel.on( 'change', changeHandler, this );
+	},	
+	
+	
+<span id='global-method-subscribeEmbeddedCollection'>	/**
+</span>	 * Used internally by the framework, this method subscribes to the change event of the given child {@link Kevlar.Container}, in order to relay
+	 * its events through this (i.e. its parent) model. This supports a form of &quot;event bubbling&quot; for {@link Kevlar.attribute.CollectionAttribute#embedded embedded} 
+	 * child collections, and is called from {@link Kevlar.attribute.CollectionAttribute CollectionAttribute}. For non-embedded Collections (i.e. simply &quot;related&quot; 
+	 * Collections), this method is not called.
+	 * 
+	 * @ignore
+	 * @method subscribeEmbeddedCollection
+	 * @param {String} attributeName The name of the Attribute that is subscribing a Collection.
+	 * @param {Kevlar.Collection} embeddedCollection
+	 */
+	subscribeEmbeddedCollection : function( attributeName, embeddedCollection ) {
+		var changeHandler = function( collection, model, attrName, newValue, oldValue, childChangeData ) {  // note: 'childChangeData' arg is needed for the bubbling of deep model/collection events
+			this.onEmbeddedDataComponentChange( attributeName, collection, model, attrName, newValue, oldValue, childChangeData );
+		};
+		this.embeddedDataComponentChangeHandlers[ attributeName ] = changeHandler;
+		embeddedCollection.on( 'change', changeHandler, this );
+		
+		
+		var addRemoveReorderHandler = function( collection ) {
+			this.onEmbeddedCollectionAddRemoveReorder( attributeName, collection );
+		};
+		this.embeddedCollectionAddRemoveReorderHandlers[ attributeName ] = addRemoveReorderHandler;
+		embeddedCollection.on( {
+			'add'     : addRemoveReorderHandler,
+			'remove'  : addRemoveReorderHandler,
+			'reorder' : addRemoveReorderHandler,
+			scope : this
+		} );
+	},
+	
+	
+	
+<span id='global-method-unsubscribeEmbeddedModel'>	/**
+</span>	 * Used internally by the framework, this method unsubscribes the change event from the given child {@link Kevlar.Model}/{@link Kevlar.Container}. 
+	 * Used in conjunction with {@link #subscribeEmbeddedDataComponent}, when a child model/collection is un-set from its parent model (i.e. this model).
+	 * 
+	 * @ignore
+	 * @method unsubscribeEmbeddedModel
+	 * @param {String} attributeName The name of the Attribute that is unsubscribing a Model/Collection.
+	 * @param {Kevlar.Model} embeddedModel
+	 */
+	unsubscribeEmbeddedModel : function( attributeName, embeddedModel ) {
+		this.unsubscribeEmbeddedDataComponent( attributeName, embeddedModel );
+	},
+	
+	
+<span id='global-method-unsubscribeEmbeddedCollection'>	/**
+</span>	 * Used internally by the framework, this method unsubscribes the change event from the given child {@link Kevlar.Model}/{@link Kevlar.Container}. 
+	 * Used in conjunction with {@link #subscribeEmbeddedCollection}, when a child model/collection is un-set from its parent model (i.e. this model).
+	 * 
+	 * @ignore
+	 * @method unsubscribeEmbeddedCollection
+	 * @param {String} attributeName The name of the Attribute that is unsubscribing a Model/Collection.
+	 * @param {Kevlar.Model} embeddedModel
+	 */
+	unsubscribeEmbeddedCollection : function( attributeName, embeddedCollection ) {
+		this.unsubscribeEmbeddedDataComponent( attributeName, embeddedCollection );
+		
+		var addRemoveReorderHandler = this.embeddedCollectionAddRemoveReorderHandlers[ attributeName ];
+		embeddedCollection.un( {
+			'add'     : addRemoveReorderHandler,
+			'remove'  : addRemoveReorderHandler,
+			'reorder' : addRemoveReorderHandler,
+			scope : this
+		} );
+	},
+	
+	
+<span id='global-method-unsubscribeEmbeddedDataComponent'>	/**
+</span>	 * Used internally by the framework, this method unsubscribes the change event from the given child {@link Kevlar.Model}/{@link Kevlar.Container}. 
+	 * Used in conjunction with {@link #subscribeEmbeddedModel}/{@link #subscribeEmbeddedCollection}, when a child model/collection is un-set from 
+	 * its parent model (i.e. this model).
+	 * 
+	 * @ignore
+	 * @method unsubscribeEmbeddedDataComponent
+	 * @param {String} attributeName The name of the Attribute that is unsubscribing a Model/Collection.
+	 * @param {Kevlar.DataComponent} dataComponent
+	 */
+	unsubscribeEmbeddedDataComponent : function( attributeName, dataComponent ) {
+		var changeHandler = this.embeddedDataComponentChangeHandlers[ attributeName ];
+		dataComponent.un( 'change', changeHandler, this );
+	},
+	
+	
+	
+	
+<span id='Kevlar-Model-method-onEmbeddedDataComponentChange'>	/**
+</span>	 * Handler for a change in an embedded model/collection. Relays the embedded model's/collection's {@link #change} events through this model.
+	 * 
+	 * @private
+	 * @method onEmbeddedDataComponentChange
+	 * @param {String} attributeName The attribute name in *this* model that stores the embedded model.
+	 * @param {Kevlar.Collection} childCollection The embedded child collection, if there is one at this level in the bubbling hierarchy.
+	 *   Should be set to null otherwise.
+	 * @param {Kevlar.Model} childModel The embedded child model.
+	 * @param {String} childModelAttr The attribute name of the changed attribute in the embedded model. When fired &quot;up the chain&quot;
+	 *   from deeply nested models, this will accumulate into a dot-delimited path to the child model. Ex: &quot;parent.intermediate.child&quot;.
+	 * @param {Mixed} newValue
+	 * @param {Mixed} oldValue
+	 * 
+	 * @param {Object} [childChangeData] An object which holds information from the 'change' event of child DataComponents. This is a &quot;private&quot;
+	 *   argument, and is only used for the event bubbling feature.
+	 * @param {String} [childChangeData.pathToChangedAttr] A string path to the changed attribute. This is a &quot;private&quot; argument, which is only used for
+	 *   the event bubbling feature. Defaults to the value of `childModelAttr`.
+	 * @param {Mixed} [childChangeData.origNewValue=newValue] The newValue from the original event in the deepest DataComponent.
+	 * @param {Mixed} [childChangeData.origOldValue=oldValue] The oldValue from the original event in the deepest DataComponent.
+	 * @param {Kevlar.Model[]} [childChangeData.embeddedDataComponents] An array of the nested models/collections that have fired a 'change' event below 
+	 *   this Model's event. This is a &quot;private&quot; argument, which is only used for this feature.
+	 */
+	onEmbeddedDataComponentChange : function( attributeName, childCollection, childModel, childModelAttr, newValue, oldValue, childChangeData ) {
+		// Create the childChangeData object for the change event of the first (deepest) DataComponent
+		if( !childChangeData ) {
+			childChangeData = {
+				// Default the pathToChangedAttr to the childModelAttr, so it starts out with the attribute that is changed from the deepest child
+				pathToChangedAttr : childModelAttr,
+				
+				// Default the original newValue/oldValue to the newValue/oldValue provided to this handler. These will be the the newValue/oldValue from the
+				// deepest child, and then passed up.
+				origNewValue : newValue,
+				origOldValue : oldValue,
+				
+				// Default the embeddedDataComponents to the child DataComponent
+				embeddedDataComponents : [ childModel ]
+			};
+		}
+		
+		if( childCollection ) {
+			childChangeData.embeddedDataComponents.unshift( childCollection );
+		}
+		childChangeData.embeddedDataComponents.unshift( this );  // prepend this model/collection to the list
+		childChangeData.pathToChangedAttr = attributeName + '.' + childChangeData.pathToChangedAttr;  // prepend the attribute from this DataComponent
+		
+		var pathToChangedAttr = childChangeData.pathToChangedAttr,
+		    embeddedDataComponents = childChangeData.embeddedDataComponents,
+		    origNewValue = childChangeData.origNewValue,
+		    origOldValue = childChangeData.origOldValue,
+		    pathsToChangedAttr = pathToChangedAttr.split( '.' );   // array of the parts of the full dot-delimited path
+		
+		
+		// First, an event with the full path, and one for the generalized attribute change event. Example:
+		//   - change:parent.intermediate.child.attr  model = child                 newValue = [the new value]  oldValue = [the old value]
+		//   - change:parent.intermediate.child.*     model = child  attr = &quot;attr&quot;  newValue = [the new value]  oldValue = [the old value]
+		var changedDataComponent = embeddedDataComponents[ embeddedDataComponents.length - 1 ],
+		    pathToChangedDataComponent = pathsToChangedAttr.slice( 0, pathsToChangedAttr.length - 1 ).join( '.' ),   // if the path to the attr is 'child.attr', this will be 'child'
+		    changedAttrName = pathsToChangedAttr[ pathsToChangedAttr.length - 1 ],
+		    parentDataComponent = embeddedDataComponents[ embeddedDataComponents.length - 2 ];
+		
+		if( parentDataComponent instanceof Kevlar.Collection ) {
+			this.fireEvent( 'change:' + pathToChangedAttr, parentDataComponent, changedDataComponent, origNewValue, origOldValue );
+			this.fireEvent( 'change:' + pathToChangedDataComponent + '.*', parentDataComponent, changedDataComponent, changedAttrName, origNewValue, origOldValue );
+		} else {
+			this.fireEvent( 'change:' + pathToChangedAttr, changedDataComponent, origNewValue, origOldValue );
+			this.fireEvent( 'change:' + pathToChangedDataComponent + '.*', changedDataComponent, changedAttrName, origNewValue, origOldValue );
+		}
+		
+		
+		// Next, fire an event for each of the &quot;paths&quot; leading up to the changed attribute, but not including the attribute itself (we fired an event for that just above).
+		// This loop will fire them backwards, from longest path, to shortest.
+		// Example of events while looping, if the full path to the changed attr is 'parent.intermediate.child.attr':
+		//   - change:parent.intermediate.child       model = intermediate                             newValue = childModel         oldValue = childModel
+		//   - change:parent.intermediate.*           model = intermediate      attr = &quot;child&quot;         newValue = childModel         oldValue = childModel
+		//   - change:parent.intermediate             model = parent                                   newValue = intermediateModel  oldValue = intermediateModel
+		//   - change:parent.*                        model = parent            attr = &quot;intermediate&quot;  newValue = intermediateModel  oldValue = intermediateModel
+		//   - change:parent                          model = [parent's parent]                        newValue = parentModel        oldValue = parentModel 
+		// Note: The 'model' arg that the event is fired with is always the one that relates to the path
+		for( var i = pathsToChangedAttr.length - 2; i &gt;= 0; i-- ) {
+			var currentPath = pathsToChangedAttr.slice( 0, i + 1 ).join( '.' ),
+			    currentPathParent = pathsToChangedAttr.slice( 0, i ).join( '.' ),
+			    changedAttr = pathsToChangedAttr[ i ],
+			    dataComponentForPathParent = embeddedDataComponents[ i ],
+			    dataComponentForPath = embeddedDataComponents[ i + 1 ];
+			
+			
+			// Now if the event should relate to a Collection, we must fire it like a Collection fires its event.
+			if( dataComponentForPathParent instanceof Kevlar.Collection ) {
+				this.fireEvent( 'change:' + currentPath, dataComponentForPathParent, dataComponentForPath, dataComponentForPath );
+				if( currentPathParent !== '' ) {
+					this.fireEvent( 'change:' + currentPathParent + '.*', dataComponentForPathParent, changedAttr, dataComponentForPath, dataComponentForPath );
+				}
+				
+			} else {
+				this.fireEvent( 'change:' + currentPath, dataComponentForPathParent, dataComponentForPath, dataComponentForPath );
+				if( currentPathParent !== '' ) {
+					this.fireEvent( 'change:' + currentPathParent + '.*', dataComponentForPathParent, changedAttr, dataComponentForPath, dataComponentForPath );
+				}
+			}
+		}
+		
+		// Now fire the general 'change' event from this model
+		if( childCollection ) {
+			this.fireEvent( 'change', this, attributeName, childCollection, childCollection, childChangeData );   // this model, attributeName, newValue, oldValue, the string path to the changed attribute, the original newValue from the deepest child, the original oldValue from the deepest child, the nested models/collections so far for this event from the deepest child
+			
+		} else {
+			this.fireEvent( 'change', this, attributeName, childModel, childModel, childChangeData );   // this model, attributeName, newValue, oldValue, the string path to the changed attribute, the original newValue from the deepest child, the original oldValue from the deepest child, the nested models/collections so far for this event from the deepest child
+		}
+	},
+	
+	
+<span id='Kevlar-Model-method-onEmbeddedCollectionAddRemoveReorder'>	/**
+</span>	 * Method that responds to an embedded {@link Kevlar.Collection Collection}, and fires a change event in this model
+	 * when a Collection is {@link Kevlar.Collection#event-add added to}, {@link Kevlar.Collection#event-remove removed from},
+	 * of {@link Kevlar.Collection#event-reorder reordered}.
+	 * 
+	 * @private
+	 * @method onEmbeddedCollectionAddRemoveReorder
+	 * @param {String} attributeName The name of the attribute where the embedded Collection exists.
+	 * @param {Kevlar.Collection} collection The collection that fired the {@link Kevlar.Collection#event-add}, 
+	 *   {@link Kevlar.Collection#event-remove}, or {@link Kevlar.Collection#event-reorder} event. 
+	 */
+	onEmbeddedCollectionAddRemoveReorder : function( attributeName, collection ) {
+		this.fireEvent( 'change', this, attributeName, collection, collection );
+	},
+	
+	
+	
+	// --------------------------------
+	
+	
+<span id='Kevlar-Model-method-isNew'>	/**
+</span>	 * Determines if the Model is a new model, and has not yet been persisted to the server.
+	 * It is a new Model if it lacks an id.
+	 * 
+	 * @method isNew
+	 * @return {Boolean} True if the model is new, false otherwise.
+	 */
+	isNew : function() {
+		if( !this.hasIdAttribute() ) {
+			return true;
+		} else {
+			var id = this.getId();
+			return ( typeof id === 'undefined' || id === null );
+		}
+	},
+	
+	
 <span id='Kevlar-Model-method-isDirty'>	/**
 </span>	 * Determines if the Model currently has un-committed (i.e. changed) data.
 	 * 
@@ -608,16 +883,40 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 </span>	 * Determines if any attribute(s) in the model are modified, or if a given attribute has been modified, since the last 
 	 * {@link #method-commit} or {@link #method-rollback}.
 	 * 
+	 * @override
 	 * @method isModified
 	 * @param {String} [attributeName] Provide this argument to test if a particular attribute has been modified. If this is not 
 	 *   provided, the model itself will be checked to see if there are any modified attributes. 
 	 * @return {Boolean} True if the attribute has been modified, false otherwise.
 	 */
 	isModified : function( attributeName ) {
+		var attributes = this.attributes,
+		    data = this.data;
+		
 		if( !attributeName ) {
-			return !Kevlar.util.Object.isEmpty( this.modifiedData );
+			// First, check if there are any modifications to primitives (i.e. non-nested Models/Collections)
+			var hasLocalModifications = !Kevlar.util.Object.isEmpty( this.modifiedData );
+			if( hasLocalModifications ) {
+				return true;
+			}
+			
+			// No local modifications to primitives, check all embedded collections/models to see if they have changes
+			var embeddedDataComponentAttrs = this.getEmbeddedDataComponentAttributes(),
+			    dataComponent;
+			
+			for( var i = 0, len = embeddedDataComponentAttrs.length; i &lt; len; i++ ) {
+				var attrName = embeddedDataComponentAttrs[ i ].getName();
+				
+				if( ( dataComponent = data[ attrName ] ) &amp;&amp; dataComponent.isModified() ) {
+					return true;
+				}
+			}
+			return false;
+			
 		} else {
-			return ( attributeName in this.modifiedData );
+			var attribute = this.attributes[ attributeName ];
+			
+			return ( attributeName in this.modifiedData ) || ( attribute instanceof Kevlar.attribute.DataComponentAttribute &amp;&amp; attribute.isEmbedded() &amp;&amp; data[ attributeName ].isModified() );
 		}
 	},
 	
@@ -627,11 +926,12 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * to pre-process the data before it is returned in the final hash, unless the `raw` option is set to true,
 	 * in which case the Model attributes are retrieved via {@link #raw}. 
 	 * 
-	 * @methods getData
+	 * @override
+	 * @method getData
 	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This object is sent to
 	 *   the {@link Kevlar.data.NativeObjectConverter#convert NativeObjectConverter's convert method}, and accepts all of the options
 	 *   that the {@link Kevlar.data.NativeObjectConverter#convert} method does. See that method for details.
-	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.Attribute Attribute} values.
+	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.attribute.Attribute Attribute} values.
 	 */
 	getData : function( options ) {
 		return Kevlar.data.NativeObjectConverter.convert( this, options );
@@ -639,7 +939,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 <span id='Kevlar-Model-method-getChanges'>	/**
-</span>	 * Retrieves the values for all of the {@link Kevlar.Attribute attributes} in the Model whose values have been changed since
+</span>	 * Retrieves the values for all of the {@link Kevlar.attribute.Attribute attributes} in the Model whose values have been changed since
 	 * the last {@link #method-commit} or {@link #method-rollback}. 
 	 * 
 	 * The Model attributes are retrieved via the {@link #get} method, to pre-process the data before it is returned in the final hash, 
@@ -656,8 +956,21 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		options = options || {};
 		
 		// Provide specific attribute names to the NativeObjectConverter's convert() method, which are only the
-		// names for attributes that have changed
+		// names for attributes which hold native JS objects that have changed (not embedded models/arrays)
 		options.attributeNames = Kevlar.util.Object.keysToArray( this.modifiedData );
+		
+		// Add any modified embedded model/collection to the options.attributeNames array
+		var embeddedDataComponentAttrs = this.getEmbeddedDataComponentAttributes(),
+		    data = this.data,
+		    dataComponent;
+	
+		for( var i = 0, len = embeddedDataComponentAttrs.length; i &lt; len; i++ ) {
+			var attrName = embeddedDataComponentAttrs[ i ].getName();
+			
+			if( ( dataComponent = data[ attrName ] ) &amp;&amp; dataComponent.isModified() ) {
+				options.attributeNames.push( attrName );
+			}
+		}
 		
 		return Kevlar.data.NativeObjectConverter.convert( this, options );
 	},
@@ -668,11 +981,25 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	 * this method should normally not need to be called explicitly, as it will be called upon the successful persistence of the Model's data
 	 * to the server.
 	 * 
+	 * @override
 	 * @method commit
 	 */
 	commit : function() {
 		this.modifiedData = {};  // reset the modifiedData hash. There is no modified data.
 		this.dirty = false;
+		
+		// Go through all embedded models/collections, and &quot;commit&quot; those as well
+		var embeddedDataComponentAttrs = this.getEmbeddedDataComponentAttributes(),
+		    data = this.data,
+		    dataComponent;
+		
+		for( var i = 0, len = embeddedDataComponentAttrs.length; i &lt; len; i++ ) {
+			var attrName = embeddedDataComponentAttrs[ i ].getName();
+			
+			if( ( dataComponent = data[ attrName ] ) ) {
+				dataComponent.commit();
+			}
+		}
 		
 		this.fireEvent( 'commit', this );
 	},
@@ -681,6 +1008,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 <span id='Kevlar-Model-method-rollback'>	/**
 </span>	 * Rolls back the Model attributes that have been changed since the last commit or rollback.
 	 * 
+	 * @override
 	 * @method rollback
 	 */
 	rollback : function() {
@@ -703,23 +1031,29 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	
 	
 <span id='Kevlar-Model-method-clone'>	/**
-</span>	 * @hide
-	 * Creates a clone of the Model, by copying its instance data.
+</span>	 * Creates a clone of the Model, by copying its instance data. Note that the cloned model will *not* have a value
+	 * for its {@link #idAttribute} (as it is a new model, and multiple models of the same type cannot exist with
+	 * the same id). You may optionally provide a new id for the clone with the `id` parameter. 
 	 * 
-	 * Note: This is a very very early, alpha version of the method, where the final version will most likely
-	 * account for shared nested models, while copying embedded models and other such nested data. Will also handle 
-	 * circular dependencies. Do not use just yet.
+	 * Note: This is a very early, alpha version of the method, where the final version will most likely
+	 * account for embedded models, while copying embedded models and other such nested data. Will also handle 
+	 * circular dependencies. I don't recommend using it just yet.
 	 * 
 	 * @method clone
+	 * @param {Mixed} [id] A new id for the Model. Defaults to undefined.
 	 * @return {Kevlar.Model} The new Model instance, which is a clone of the Model this method was called on.
 	 */
-	clone : function() {
+	clone : function( id ) {
 		var data = Kevlar.util.Object.clone( this.getData() );
 		
 		// Remove the id, so that it becomes a new model. If this is kept here, a reference to this exact
 		// model will be returned instead of a new one, as the framework does not allow duplicate models with
-		// the same id.
-		delete data[ this.idAttribute ];  
+		// the same id. Otherwise, if a new id is passed, it will be set to the new model.
+		if( typeof id === 'undefined' ) {
+			delete data[ this.idAttribute ];
+		} else {
+			data[ this.idAttribute ] = id;
+		}
 		
 		return new this.constructor( data );
 	},
@@ -743,14 +1077,14 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 	},
 	
 	
-<span id='Kevlar-Model-method-getProxy'>	/**
+<span id='Kevlar-Model-method-getPersistenceProxy'>	/**
 </span>	 * Gets the {@link #persistenceProxy} that is currently configured for this Model. Note that
 	 * the same persistenceProxy instance is shared between all instances of the model.
 	 * 
-	 * @method getProxy
+	 * @method getPersistenceProxy
 	 * @return {Kevlar.persistence.Proxy} The persistenceProxy, or null if there is no persistenceProxy currently set.
 	 */
-	getProxy : function() {
+	getPersistenceProxy : function() {
 		return this.persistenceProxy;
 	},
 	
@@ -809,13 +1143,19 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 			throw new Error( &quot;Kevlar.Model::save() error: Cannot save. No persistenceProxy.&quot; );
 		}
 		
+		// No id attribute, throw an error
+		if( !this.hasIdAttribute ) {
+			throw new Error( &quot;Kevlar.Model::save() error: Cannot save. Model does not have an idAttribute that relates to a valid attribute.&quot; );
+		}
+		
+		
 		// Store a &quot;snapshot&quot; of the data that is being persisted. This is used to compare against the Model's current data at the time of when the persistence operation 
 		// completes. Anything that does not match this persisted snapshot data must have been updated while the persistence operation was in progress, and the Model must 
 		// be marked as dirty for those attributes after its commit() runs. This is a bit roundabout that a commit() operation runs when the persistence operation is complete
 		// and then data is manually modified, but this is also the correct time to run the commit() operation, as we still want to see the changes if the request fails. 
 		// So, if a persistence request fails, we should have all of the data still marked as dirty, both the data that was to be persisted, and any new data that was set 
 		// while the persistence operation was being attempted.
-		var persistedData = Kevlar.util.Object.clone( this.data );
+		var persistedData = Kevlar.util.Object.clone( this.getData() );
 		
 		var successCallback = function() {
 			// The request to persist the data was successful, commit the Model
@@ -858,11 +1198,7 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		};
 		
 		// Make a request to create or update the data on the server
-		if( typeof this.getId() === 'undefined' ) {
-			this.persistenceProxy.create( this, proxyOptions );
-		} else {
-			this.persistenceProxy.update( this, proxyOptions );
-		}
+		this.persistenceProxy[ this.isNew() ? 'create' : 'update' ]( this, proxyOptions );
 	},
 	
 	
@@ -882,41 +1218,81 @@ Kevlar.Model = Kevlar.extend( Kevlar.util.Observable, {
 		options = options || {};
 		var scope = options.scope || options.context || window;
 		
-		// No persistenceProxy, cannot destroy. Throw an error
-		if( !this.persistenceProxy ) {
-			throw new Error( &quot;Kevlar.Model::destroy() error: Cannot destroy. No persistenceProxy.&quot; );
-		}
-		
-		var successCallback = function() {
+		if( this.isNew() ) {
+			// If it is a new model, there is nothing on the server to destroy. Simply fire the event and call the callback
 			this.fireEvent( 'destroy', this );
-			
 			if( typeof options.success === 'function' ) {
 				options.success.call( scope );
 			}
-		};
-		var errorCallback = function() {
-			if( typeof options.error === 'function' ) {
-				options.error.call( scope );
-			}
-		};
-		var completeCallback = function() {
 			if( typeof options.complete === 'function' ) {
 				options.complete.call( scope );
 			}
-		};
-		
-		var proxyOptions = {
-			async    : ( typeof options.async === 'undefined' ) ? true : options.async,   // defaults to true
-			success  : successCallback,
-			error    : errorCallback,
-			complete : completeCallback,
-			scope    : this
-		};
-		
-		// Make a request to destroy the data on the server
-		this.persistenceProxy.destroy( this, proxyOptions );
-	}
+			
+		} else {
+			// No persistenceProxy, cannot destroy. Throw an error
+			if( !this.persistenceProxy ) {
+				throw new Error( &quot;Kevlar.Model::destroy() error: Cannot destroy model on server. No persistenceProxy.&quot; );
+			}
+			
+			var successCallback = function() {
+				this.fireEvent( 'destroy', this );
+				
+				if( typeof options.success === 'function' ) {
+					options.success.call( scope );
+				}
+			};
+			var errorCallback = function() {
+				if( typeof options.error === 'function' ) {
+					options.error.call( scope );
+				}
+			};
+			var completeCallback = function() {
+				if( typeof options.complete === 'function' ) {
+					options.complete.call( scope );
+				}
+			};
+			
+			var proxyOptions = {
+				async    : ( typeof options.async === 'undefined' ) ? true : options.async,   // defaults to true
+				success  : successCallback,
+				error    : errorCallback,
+				complete : completeCallback,
+				scope    : this
+			};
+			
+			// Make a request to destroy the data on the server
+			this.persistenceProxy.destroy( this, proxyOptions );
+		}
+	},
 	
+	
+	// --------------------------
+	
+	// Private utility methods
+	
+<span id='Kevlar-Model-method-getEmbeddedDataComponentAttributes'>	/**
+</span>	 * Retrieves an array of the attributes that are {@link Kevlar.attribute.DataComponentAttribute DataComponentAttributes} which
+	 * are also {@link Kevlar.attribute.DataComponentAttribute#embedded}. This is a convenience method that supports the methods which
+	 * use the embedded DataComponentAttributes. 
+	 * 
+	 * @private
+	 * @method getEmbeddedDataComponentAttributes
+	 * @return {Kevlar.attribute.DataComponentAttribute[]}
+	 */
+	getEmbeddedDataComponentAttributes : function() {
+		var attributes = this.attributes,
+		    attribute,
+		    DataComponentAttribute = Kevlar.attribute.DataComponentAttribute,
+		    dataComponentAttributes = [];
+		
+		for( var attrName in attributes ) {
+			if( attributes.hasOwnProperty( attrName ) &amp;&amp; ( attribute = attributes[ attrName ] ) instanceof DataComponentAttribute &amp;&amp; attribute.isEmbedded() ) {
+				dataComponentAttributes.push( attribute );
+			}
+		}
+		
+		return dataComponentAttributes;
+	}
 	
 } );
 
@@ -936,6 +1312,22 @@ Kevlar.Model.prototype.fetch = Kevlar.Model.prototype.load;
  * @method toJSON
  */
 Kevlar.Model.prototype.toJSON = Kevlar.Model.prototype.getData;
+
+
+<span id='Kevlar-Model-method-previous'>/**
+</span> * For compatibility with Backbone's Collection, when it is called from Collection's `_onModelEvent()`
+ * method. `_onModelEvent()` asks for the previous `id` of the Model when the id attribute changes,
+ * such as when a Model is created on the server. This method simply returns undefined for this purpose,
+ * but if more compatibility is needed, it could return the original data for a given attribute (which is
+ * a little different than Backbone's notion of &quot;previous&quot; data, which is the previous data from before any
+ * current 'change' event).
+ * 
+ * @method previous
+ * @param {String} attributeName
+ */
+Kevlar.Model.prototype.previous = function( attributeName ) {
+	return undefined;
+};
 </pre>
 </body>
 </html>
