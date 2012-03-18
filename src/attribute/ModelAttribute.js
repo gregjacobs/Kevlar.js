@@ -90,7 +90,7 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend
 	 * @method beforeSet
 	 * @inheritdoc
 	 */
-	beforeSet : function( model, oldValue, newValue ) {
+	beforeSet : function( model, newValue, oldValue ) {
 		// First, if the oldValue was a Model, and this attribute is an "embedded" model, we need to unsubscribe it from its parent model
 		if( this.embedded && oldValue instanceof Kevlar.Model ) {
 			model.unsubscribeEmbeddedModel( this.getName(), oldValue );

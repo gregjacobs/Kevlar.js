@@ -94,7 +94,7 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.e
 	 * @method beforeSet
 	 * @inheritdoc
 	 */
-	beforeSet : function( model, oldValue, newValue ) {
+	beforeSet : function( model, newValue, oldValue ) {
 		// First, if the oldValue was a Model, and this attribute is an "embedded" collection, we need to unsubscribe it from its parent model
 		if( this.embedded && oldValue instanceof Kevlar.Collection ) {
 			model.unsubscribeEmbeddedCollection( this.getName(), oldValue );

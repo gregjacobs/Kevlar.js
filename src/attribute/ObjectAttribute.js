@@ -22,7 +22,7 @@ Kevlar.attribute.ObjectAttribute = Kevlar.attribute.Attribute.extend( {
 	 * @method beforeSet
 	 * @inheritdoc
 	 */
-	beforeSet : function( model, oldValue, newValue ) {
+	beforeSet : function( model, newValue, oldValue ) {
 		if( typeof newValue !== 'object' ) {
 			newValue = null;  // convert all non-object values to null
 		}

@@ -125,28 +125,28 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				    oldValue,  // undefined
 				    value;
 				
-				value = attribute.beforeSet( mockModel, oldValue, 0 );
+				value = attribute.beforeSet( mockModel, 0, oldValue );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.beforeSet( mockModel, oldValue, 1 );
+				value = attribute.beforeSet( mockModel, 1, oldValue );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.beforeSet( mockModel, oldValue, "" );
+				value = attribute.beforeSet( mockModel, "", oldValue );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.beforeSet( mockModel, oldValue, "hi" );
+				value = attribute.beforeSet( mockModel, "hi", oldValue );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.beforeSet( mockModel, oldValue, false );
+				value = attribute.beforeSet( mockModel, false, oldValue );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.beforeSet( mockModel, oldValue, true );
+				value = attribute.beforeSet( mockModel, true, oldValue );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.beforeSet( mockModel, oldValue, undefined );
+				value = attribute.beforeSet( mockModel, undefined, oldValue );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.beforeSet( mockModel, oldValue, null );
+				value = attribute.beforeSet( mockModel, null, oldValue );
 				Y.Assert.areSame( null, value );
 			},
 			
@@ -165,7 +165,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				} );
 				
 				var data = { attr1: 1, attr2: 2 },
-				    value = attribute.beforeSet( mockModel, oldValue, data );
+				    value = attribute.beforeSet( mockModel, data, oldValue );
 				
 				Y.Assert.fail( "The test should have thrown an error in the call to attribute.beforeSet()" );
 			},
@@ -183,7 +183,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				} );
 				
 				var data = { attr1: 1, attr2: 2 },
-				    value = attribute.beforeSet( mockModel, oldValue, data );
+				    value = attribute.beforeSet( mockModel, data, oldValue );
 				
 				Y.Assert.fail( "The test should have thrown an error in the call to attribute.beforeSet()" );
 			},
@@ -198,7 +198,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				var mockModel = JsMockito.mock( Kevlar.Model ),
 				    data = { attr1: 1, attr2: 2 },
 				    oldValue,  // undefined
-				    value = this.attribute.beforeSet( mockModel, oldValue, data );
+				    value = this.attribute.beforeSet( mockModel, data, oldValue );
 				
 				Y.Assert.isInstanceOf( this.Model, value, "The return value from beforeSet should have been an instance of the Model" );
 				Y.Assert.areSame( 1, value.get( 'attr1' ), "The data should have been set to the new model" );
@@ -224,7 +224,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				} );
 				
 				var data = { attr1: 1, attr2: 2 };
-				var value = attribute.beforeSet( mockModel, oldValue, data );
+				var value = attribute.beforeSet( mockModel, data, oldValue );
 				
 				Y.Assert.isInstanceOf( window.__Kevlar_CollectionAttributeTest.ns1.ns2.MyModel, value, "The return value from beforeSet should have been an instance of the Model" );
 				Y.Assert.areSame( 1, value.get( 'attr1' ), "The data should have been set to the new model" );
@@ -248,7 +248,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				} );
 				
 				var data = { attr1: 1, attr2: 2 };
-				var value = attribute.beforeSet( mockModel, oldValue, data );
+				var value = attribute.beforeSet( mockModel, data, oldValue );
 				
 				Y.Assert.isInstanceOf( TestModel, value, "The return value from beforeSet should have been an instance of the Model" );
 				Y.Assert.areSame( 1, value.get( 'attr1' ), "The data should have been set to the new model" );
@@ -260,7 +260,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				var mockModel = JsMockito.mock( Kevlar.Model ),
 				    oldValue,  // undefined
 				    data = new this.Model( { attr1 : 1, attr2: 2 } ),
-				    value = this.attribute.beforeSet( mockModel, oldValue, data );
+				    value = this.attribute.beforeSet( mockModel, data, oldValue );
 				
 				Y.Assert.areSame( data, value, "The return value from beforeSet should have been the same model instance" );
 				Y.Assert.areSame( 1, value.get( 'attr1' ), "The data should remain set to the new model" );
@@ -280,7 +280,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				} );
 				
 				var data = { attr1: 1, attr2: 2 };
-				var value = attribute.beforeSet( mockModel, oldValue, data );
+				var value = attribute.beforeSet( mockModel, data, oldValue );
 				
 				Y.Assert.areSame( data, value );
 			}

@@ -716,11 +716,11 @@ tests.unit.add( new Ext.test.TestSuite( {
 				    afterSetValue;
 				
 				var TestAttribute = Kevlar.attribute.Attribute.extend( {
-					beforeSet : function( model, oldValue, value ) {
-						return ( beforeSetValue = value + 1 );
+					beforeSet : function( model, newValue, oldValue ) {
+						return ( beforeSetValue = newValue + 1 );
 					},
-					afterSet : function( model, value ) {
-						return ( afterSetValue = value + 20 );
+					afterSet : function( model, newValue ) {
+						return ( afterSetValue = newValue + 20 );
 					}
 				} );
 				

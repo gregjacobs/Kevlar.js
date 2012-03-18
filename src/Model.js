@@ -450,7 +450,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			
 			
 			// Allow the Attribute to pre-process the newValue
-			newValue = attribute.beforeSet( this, oldValue, newValue );
+			newValue = attribute.beforeSet( this, newValue, oldValue );
 			
 			// If the attribute has a 'set' function defined, call it to convert the data
 			if( typeof attribute.set === 'function' ) {

@@ -28,30 +28,31 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			"beforeSet() should return null when provided any falsy value, or non-object" : function() {
 				var mockModel = JsMockito.mock( Kevlar.Model ),
 				    attribute = new Kevlar.attribute.ObjectAttribute( { name: 'attr' } ),
+				    oldValue,  // undefined
 				    value;
 				
-				value = attribute.beforeSet( mockModel, null, 0 );
+				value = attribute.beforeSet( mockModel, 0, oldValue );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.beforeSet( mockModel, null, 1 );
+				value = attribute.beforeSet( mockModel, 1, oldValue );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.beforeSet( mockModel, null, "" );
+				value = attribute.beforeSet( mockModel, "", oldValue );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.beforeSet( mockModel, null, "hi" );
+				value = attribute.beforeSet( mockModel, "hi", oldValue );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.beforeSet( mockModel, null, false );
+				value = attribute.beforeSet( mockModel, false, oldValue );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.beforeSet( mockModel, null, true );
+				value = attribute.beforeSet( mockModel, true, oldValue );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.beforeSet( mockModel, null, undefined );
+				value = attribute.beforeSet( mockModel, undefined, oldValue );
 				Y.Assert.areSame( null, value );
 				
-				value = attribute.beforeSet( mockModel, null, null );
+				value = attribute.beforeSet( mockModel, null, oldValue );
 				Y.Assert.areSame( null, value );
 			},
 			
@@ -59,10 +60,11 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			
 			"beforeSet() should return an object unchanged" : function() {
 				var mockModel = JsMockito.mock( Kevlar.Model ),
-				    attribute = new Kevlar.attribute.ObjectAttribute( { name: 'attr' } );
+				    attribute = new Kevlar.attribute.ObjectAttribute( { name: 'attr' } ),
+				    oldValue;  // undefined
 				
 				var data = { attr1: 1, attr2: 2 };
-				var value = attribute.beforeSet( mockModel, null, data );
+				var value = attribute.beforeSet( mockModel, data, oldValue );
 				
 				Y.Assert.areSame( data, value );
 			}
