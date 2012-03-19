@@ -356,193 +356,310 @@ tests.unit.add( new Ext.test.TestSuite( {
 	
 } ) );
 
-/*global Ext, Y, Kevlar, tests */
-tests.unit.attribute.add( new Ext.test.TestCase( {
+/*global Ext, Y, JsMockito, Kevlar, tests */
+tests.unit.attribute.add( new Ext.test.TestSuite( {
 	
-	name: 'Kevlar.attribute.Attribute',
-	
-	
-	setUp : function() {
-		
-	},
-	
-	
-	// --------------------------------
-	//        Special Instructions
-	// --------------------------------
-	_should : {
-		error : {
-			"Instantiating an Attribute without a 'name' should throw an error" : "no 'name' property provided to Kevlar.attribute.Attribute constructor",
-			"Instantiating an Attribute with an undefined 'name' argument should throw an error" : "no 'name' property provided to Kevlar.attribute.Attribute constructor",
-			"Instantiating an Attribute with an undefined 'name' property should throw an error" : "no 'name' property provided to Kevlar.attribute.Attribute constructor",
-			"Instantiating an Attribute with a null 'name' argument should throw an error" : "no 'name' property provided to Kevlar.attribute.Attribute constructor",
-			"Instantiating an Attribute with a null 'name' property should throw an error" : "no 'name' property provided to Kevlar.attribute.Attribute constructor",
-			"Instantiating an Attribute with an empty 'name' argument should throw an error" : "no 'name' property provided to Kevlar.attribute.Attribute constructor",
-			"Instantiating an Attribute with an empty 'name' property should throw an error" : "no 'name' property provided to Kevlar.attribute.Attribute constructor"
-		}
-	},
+	name: 'Attribute',
 	
 	
 	
-	// --------------------------------
-	//             Tests
-	// --------------------------------
+	items: [
+		{
+			/*
+			 * Test constructor
+			 */
+			name : "Test constructor",
 	
-	
-	// Check that the name property was provided
-	
-	"Instantiating an Attribute without a 'name' should throw an error" : function() {
-		var attribute = new Kevlar.attribute.Attribute();
-	},
-	
-	
-	"Instantiating an Attribute with an undefined 'name' argument should throw an error" : function() {
-		var attribute = new Kevlar.attribute.Attribute( undefined );
-	},
-	
-	
-	"Instantiating an Attribute with an undefined 'name' property should throw an error" : function() {
-		var attribute = new Kevlar.attribute.Attribute( {
-			name : undefined
-		} );
-	},
-	
-	
-	"Instantiating an Attribute with a null 'name' argument should throw an error" : function() {
-		var attribute = new Kevlar.attribute.Attribute( null );
-	},
-	
-	
-	"Instantiating an Attribute with a null 'name' property should throw an error" : function() {
-		var attribute = new Kevlar.attribute.Attribute( {
-			name : null
-		} );
-	},
-	
-	
-	"Instantiating an Attribute with an empty 'name' argument should throw an error" : function() {
-		var attribute = new Kevlar.attribute.Attribute( "" );
-	},
-	
-	
-	"Instantiating an Attribute with an empty 'name' property should throw an error" : function() {
-		var attribute = new Kevlar.attribute.Attribute( {
-			name : ""
-		} );
-	},
-	
-	
-	
-	// Check that the 'name' property can be retrieved by getName()
-	
-	"The name property should be retrievable by getName()" : function() {
-		var attribute1 = new Kevlar.attribute.Attribute( { name: 'testName' } );
-		Y.Assert.areSame( 'testName', attribute1.getName(), "getName() not properly retriving Attribute's name. Was looking for 'testName'." );
-		
-		var attribute2 = new Kevlar.attribute.Attribute( { name: '_' } );
-		Y.Assert.areSame( '_', attribute2.getName(), "getName() not properly retriving Attribute's name. Was looking for '_'." );
-		
-		var attribute3 = new Kevlar.attribute.Attribute( { name: "abc" } );
-		Y.Assert.areSame( "abc", attribute3.getName(), "getName() not properly retriving Attribute's name. Was looking for 'abc'." );
-	},
-	
-	
-	// Make sure a number provided to the constructor as the 'name' is converted to a string datatype
-	
-	"Providing the attribute name as a number directly to the constructor argument should be converted to a string for the attribute's name" : function() {
-		var attribute = new Kevlar.attribute.Attribute( 0 );
-		Y.Assert.areSame( "0", attribute.getName(), "the attribute name should have been converted to a string" );
-	},
-	
-	"Providing the attribute name as a property on the config should be converted to a string for the attribute's name" : function() {
-		var attribute = new Kevlar.attribute.Attribute( {
-			name : 0
-		} );
-		Y.Assert.areSame( "0", attribute.getName(), "the attribute name should have been converted to a string" );
-	},
-	
-	
-	// --------------------------------------
-	
-	
-	// Check that defaultValue is handled correctly
-	
-	"A default provided as the keyword 'default' should be accepted properly as defaultValue" : function() {
-		var attribute = new Kevlar.attribute.Attribute( {
-			name : "TestAttribute",
-			'default' : 1
-		} );
-		
-		Y.Assert.areSame( 1, attribute.getDefaultValue() );
-	},
-	
-	
-	"A default provided as the keyword 'default' that is a function should be executed and set properly to defaultValue" : function() {
-		var attribute = new Kevlar.attribute.Attribute( {
-			name : "TestAttribute",
-			'default' : function() { return 1; }
-		} );
-		
-		Y.Assert.areSame( 1, attribute.getDefaultValue() );
-	},
-	
-	
-	"A default provided as defaultValue should be accepted properly" : function() {
-		var attribute = new Kevlar.attribute.Attribute( {
-			name : "TestAttribute",
-			defaultValue : 1
-		} );
-		
-		Y.Assert.areSame( 1, attribute.getDefaultValue() );
-	},
-	
-	
-	"A default provided as defaultValue that is a function should be executed and set properly to defaultValue" : function() {
-		var attribute = new Kevlar.attribute.Attribute( {
-			name : "TestAttribute",
-			defaultValue : function() { return 1; }
-		} );
-		
-		Y.Assert.areSame( 1, attribute.getDefaultValue() );
-	},
-	
-	
-	"A default provided as defaultValue that is a function should be executed each time the default is called for" : function() {
-		var counter = 0;
-		var attribute = new Kevlar.attribute.Attribute( {
-			name : "TestAttribute",
-			defaultValue : function() { return ++counter; }
-		} );
-		
-		Y.Assert.areSame( 1, attribute.getDefaultValue() );
-		Y.Assert.areSame( 2, attribute.getDefaultValue() );
-	},
-	
-	
-	"A defaultValue provided as an object should be recursed for functions, and those functions' return values should be used in the default" : function() {
-		var attribute = new Kevlar.attribute.Attribute( {
-			name : 'TestAttribute',
-			'default' : { 
-				a : "A",
-				b : {
-					innerB1 : function() {
-						return "B1";
-					},
-					innerB2 : "B2"
-				},
-				c : {
-					innerC1 : "C",
-					innerC2 : function() {
-						return "C2";
-					}
+			// --------------------------------
+			//        Special Instructions
+			// --------------------------------
+			_should : {
+				error : {
+					"Instantiating an Attribute without a 'name' should throw an error" : "no 'name' property provided to Kevlar.attribute.Attribute constructor",
+					"Instantiating an Attribute with an undefined 'name' argument should throw an error" : "no 'name' property provided to Kevlar.attribute.Attribute constructor",
+					"Instantiating an Attribute with an undefined 'name' property should throw an error" : "no 'name' property provided to Kevlar.attribute.Attribute constructor",
+					"Instantiating an Attribute with a null 'name' argument should throw an error" : "no 'name' property provided to Kevlar.attribute.Attribute constructor",
+					"Instantiating an Attribute with a null 'name' property should throw an error" : "no 'name' property provided to Kevlar.attribute.Attribute constructor",
+					"Instantiating an Attribute with an empty 'name' argument should throw an error" : "no 'name' property provided to Kevlar.attribute.Attribute constructor",
+					"Instantiating an Attribute with an empty 'name' property should throw an error" : "no 'name' property provided to Kevlar.attribute.Attribute constructor"
 				}
+			},
+			
+			
+			// -----------------------
+			
+			// Check that the name property was provided
+			
+			"Instantiating an Attribute without a 'name' should throw an error" : function() {
+				var attribute = new Kevlar.attribute.Attribute();
+			},
+			
+			
+			"Instantiating an Attribute with an undefined 'name' argument should throw an error" : function() {
+				var attribute = new Kevlar.attribute.Attribute( undefined );
+			},
+			
+			
+			"Instantiating an Attribute with an undefined 'name' property should throw an error" : function() {
+				var attribute = new Kevlar.attribute.Attribute( {
+					name : undefined
+				} );
+			},
+			
+			
+			"Instantiating an Attribute with a null 'name' argument should throw an error" : function() {
+				var attribute = new Kevlar.attribute.Attribute( null );
+			},
+			
+			
+			"Instantiating an Attribute with a null 'name' property should throw an error" : function() {
+				var attribute = new Kevlar.attribute.Attribute( {
+					name : null
+				} );
+			},
+			
+			
+			"Instantiating an Attribute with an empty 'name' argument should throw an error" : function() {
+				var attribute = new Kevlar.attribute.Attribute( "" );
+			},
+			
+			
+			"Instantiating an Attribute with an empty 'name' property should throw an error" : function() {
+				var attribute = new Kevlar.attribute.Attribute( {
+					name : ""
+				} );
 			}
-		} );
-		var defaultData = attribute.getDefaultValue();
-		Y.Assert.areSame( "A", defaultData.a, "The 'default' config provided as an object should have had the value 'A' for property 'a'." );
-		Y.Assert.areSame( "B1", defaultData.b.innerB1, "The 'default' config provided as an object should have been recursed for functions, and their return values used as the properties." );
-		Y.Assert.areSame( "C2", defaultData.c.innerC2, "The 'default' config provided as an object should have been recursed for functions, and their return values used as the properties." );
-	}
+		},
+		
+		
+		{
+			/*
+			 * Test getName()
+			 */
+			name: "Test getName()",
+			
+			"The name property should be retrievable by getName()" : function() {
+				var attribute1 = new Kevlar.attribute.Attribute( { name: 'testName' } );
+				Y.Assert.areSame( 'testName', attribute1.getName(), "getName() not properly retriving Attribute's name. Was looking for 'testName'." );
+				
+				var attribute2 = new Kevlar.attribute.Attribute( { name: '_' } );
+				Y.Assert.areSame( '_', attribute2.getName(), "getName() not properly retriving Attribute's name. Was looking for '_'." );
+				
+				var attribute3 = new Kevlar.attribute.Attribute( { name: "abc" } );
+				Y.Assert.areSame( "abc", attribute3.getName(), "getName() not properly retriving Attribute's name. Was looking for 'abc'." );
+			},
+		
+		
+			// Make sure a number provided to the constructor as the 'name' is converted to a string datatype
+			
+			"Providing the attribute name as a number directly to the constructor argument should be converted to a string for the attribute's name" : function() {
+				var attribute = new Kevlar.attribute.Attribute( 0 );
+				Y.Assert.areSame( "0", attribute.getName(), "the attribute name should have been converted to a string" );
+			},
+			
+			"Providing the attribute name as a property on the config should be converted to a string for the attribute's name" : function() {
+				var attribute = new Kevlar.attribute.Attribute( {
+					name : 0
+				} );
+				Y.Assert.areSame( "0", attribute.getName(), "the attribute name should have been converted to a string" );
+			}
+		},
+		
+		
+		{
+			/*
+			 * Test getDefaultValue()
+			 */
+			name: "Test getDefaultValue()",
+			
+			
+			// Check that the defaultValue is handled correctly
+	
+			"A default provided as the keyword 'default' should be accepted properly as defaultValue" : function() {
+				var attribute = new Kevlar.attribute.Attribute( {
+					name : "TestAttribute",
+					'default' : 1
+				} );
+				
+				Y.Assert.areSame( 1, attribute.getDefaultValue() );
+			},
+			
+			
+			"A default provided as the keyword 'default' that is a function should be executed and set properly to defaultValue" : function() {
+				var attribute = new Kevlar.attribute.Attribute( {
+					name : "TestAttribute",
+					'default' : function() { return 1; }
+				} );
+				
+				Y.Assert.areSame( 1, attribute.getDefaultValue() );
+			},
+			
+			
+			"A default provided as defaultValue should be accepted properly" : function() {
+				var attribute = new Kevlar.attribute.Attribute( {
+					name : "TestAttribute",
+					defaultValue : 1
+				} );
+				
+				Y.Assert.areSame( 1, attribute.getDefaultValue() );
+			},
+			
+			
+			"A default provided as defaultValue that is a function should be executed and set properly to defaultValue" : function() {
+				var attribute = new Kevlar.attribute.Attribute( {
+					name : "TestAttribute",
+					defaultValue : function() { return 1; }
+				} );
+				
+				Y.Assert.areSame( 1, attribute.getDefaultValue() );
+			},
+			
+			
+			"A default provided as defaultValue that is a function should be executed each time the default is called for" : function() {
+				var counter = 0;
+				var attribute = new Kevlar.attribute.Attribute( {
+					name : "TestAttribute",
+					defaultValue : function() { return ++counter; }
+				} );
+				
+				Y.Assert.areSame( 1, attribute.getDefaultValue() );
+				Y.Assert.areSame( 2, attribute.getDefaultValue() );
+			},
+			
+			
+			"A defaultValue provided as an object should be recursed for functions, and those functions' return values should be used in the default" : function() {
+				var attribute = new Kevlar.attribute.Attribute( {
+					name : 'TestAttribute',
+					'default' : { 
+						a : "A",
+						b : {
+							innerB1 : function() {
+								return "B1";
+							},
+							innerB2 : "B2"
+						},
+						c : {
+							innerC1 : "C",
+							innerC2 : function() {
+								return "C2";
+							}
+						}
+					}
+				} );
+				var defaultData = attribute.getDefaultValue();
+				Y.Assert.areSame( "A", defaultData.a, "The 'default' config provided as an object should have had the value 'A' for property 'a'." );
+				Y.Assert.areSame( "B1", defaultData.b.innerB1, "The 'default' config provided as an object should have been recursed for functions, and their return values used as the properties." );
+				Y.Assert.areSame( "C2", defaultData.c.innerC2, "The 'default' config provided as an object should have been recursed for functions, and their return values used as the properties." );
+			}
+		},
+		
+		
+		/*
+		 * Test the doSet() method
+		 */
+		{
+			name: "Test the doSet() method",
+			
+			
+			"doSet() should call the Attribute's prototype set() method if there is no 'set' config, with the appropriate arguments" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    newValue = 42,
+				    oldValue = 27;
+				
+				var providedModel, 
+				    providedNewValue, 
+				    providedOldValue;
+				    
+				var Attribute = Kevlar.attribute.Attribute.extend( {
+					set : function( model, newValue, oldValue ) {
+						providedModel = model;
+						providedNewValue = newValue;
+						providedOldValue = oldValue;
+					}
+				} );
+				
+				var attribute = new Attribute( 'attr' );
+				attribute.doSet( mockModel, newValue, oldValue );
+				
+				Y.Assert.areSame( mockModel, providedModel, "The mock model should have been provided as the first arg to the set() method" );
+				Y.Assert.areSame( newValue, providedNewValue, "The new value should have been provided as the second arg to the set() method" );
+				Y.Assert.areSame( oldValue, providedOldValue, "The old value should have been provided as the third arg to the set() method" );
+			},
+			
+			
+			"doSet() should call a provided 'set' config function if provided to the Attribute, and it should be called in the scope of the model" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    newValue = 42,
+				    oldValue = 27;
+				
+				var contextCalledIn, 
+				    providedNewValue, 
+				    providedOldValue;
+				    
+				var Attribute = Kevlar.attribute.Attribute.extend( {} );
+				
+				var attribute = new Attribute( {
+					name: 'attr',
+					set: function( newValue, oldValue ) {
+						contextCalledIn = this;
+						providedNewValue = newValue;
+						providedOldValue = oldValue;
+					}
+				} );
+				
+				attribute.doSet( mockModel, newValue, oldValue );
+				
+				Y.Assert.areSame( mockModel, contextCalledIn, "The 'set' config should have been called in the context of the mock model" );
+				Y.Assert.areSame( newValue, providedNewValue, "The new value should have been provided as the first arg to the set() method" );
+				Y.Assert.areSame( oldValue, providedOldValue, "The old value should have been provided as the second arg to the set() method" );
+			},
+			
+			
+			"doSet() should wrap the provided 'set' config function if provided to the Attribute so that this._super() can be called from it for the original conversion" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    newValue = 42,
+				    oldValue = 27;
+				
+				var setMethodModel,
+				    setMethodNewValue,
+				    setMethodOldValue,
+				    
+				    setConfigContext,
+				    setConfigNewValue,
+				    setConfigOldValue;
+				
+				var Attribute = Kevlar.attribute.Attribute.extend( {
+					set : function( model, newValue, oldValue ) {
+						setMethodModel = model;
+						setMethodNewValue = newValue;
+						setMethodOldValue = oldValue;
+					}
+				} );
+				
+				var attribute = new Attribute( {
+					name: 'attr',
+					set: function( newValue, oldValue ) {   // the 'set' config
+						setConfigContext = this;
+						setConfigNewValue = newValue;
+						setConfigOldValue = oldValue;
+						
+						this._super( arguments );
+					}
+				} );
+				
+				attribute.doSet( mockModel, newValue, oldValue );
+				
+				
+				Y.Assert.areSame( mockModel, setMethodModel, "The mock model should have been provided as the first arg to the set() method" );
+				Y.Assert.areSame( newValue, setMethodNewValue, "The new value should have been provided as the second arg to the set() method" );
+				Y.Assert.areSame( oldValue, setMethodOldValue, "The old value should have been provided as the third arg to the set() method" );
+				
+				Y.Assert.areSame( mockModel, setConfigContext, "The 'set' config should have been called in the context of the mock model" );
+				Y.Assert.areSame( newValue, setConfigNewValue, "The new value should have been provided as the first arg to the set() method" );
+				Y.Assert.areSame( oldValue, setConfigOldValue, "The old value should have been provided as the second arg to the set() method" );
+			}
+		}
+	]
 	
 } ) );
 
@@ -3439,8 +3556,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 								{ name: 'attribute1' },
 								{ name: 'attribute2', defaultValue: "attribute2's default" },
 								{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-								{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-								{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+								{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+								{ name: 'attribute5', set : function( newValue ) { return newValue + " " + newValue.get( 'attribute2' ); } }
 							]
 						} );
 					},
@@ -3482,8 +3599,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 								{ name: 'attribute1' },
 								{ name: 'attribute2', defaultValue: "attribute2's default" },
 								{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-								{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-								{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+								{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+								{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 							]
 						} );
 					},
@@ -3712,8 +3829,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute1' },
 						{ name: 'attribute2', defaultValue: "attribute2's default" },
 						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+						{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -3861,7 +3978,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				var TestModel = Kevlar.extend( Kevlar.Model, {
 					addAttributes: [
 						{ name: 'attribute1' },
-						{ name: 'attribute2', set : function( value, model ) { return value + " " + model.get( 'attribute1' ); } }
+						{ name: 'attribute2', set : function( newValue ) { return newValue + " " + this.get( 'attribute1' ); } }
 					]
 				} );
 				var model = new TestModel( {
@@ -3877,7 +3994,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				var TestModel = Kevlar.extend( Kevlar.Model, {
 					addAttributes: [
 						{ name: 'attribute1' },
-						{ name: 'attribute2', set : function( value, model ) { return value + " " + model.get( 'attribute1' ); } }
+						{ name: 'attribute2', set : function( newValue ) { return newValue + " " + this.get( 'attribute1' ); } }
 					]
 				} );
 				var model = new TestModel( {
@@ -3996,7 +4113,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 							// Attribute with a set() function that does not return a new value (presumably modifying some other Attribute in the model),
 							// and therefore does not have a new value set to the underlying data
 							name : 'attribute2', 
-							set : function( value, model ) {
+							set : function( value ) {
 								// Presumably updating some other Attribute in the model
 							}
 						} 
@@ -4054,7 +4171,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 					attributes: [
 						{
 							name : 'myAttribute',
-							get : function( value, model ) { return value + 10; } // add 10, to make sure we're using the getter
+							get : function( value ) { return value + 10; } // add 10, to make sure we're using the getter
 						}
 					]
 				} );
@@ -4093,8 +4210,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 							// Computed Attribute with both a set() function and a get() function, which simply uses 'baseAttribute' for its value
 							// (which in practice, would probably be composed of two or more attributes, and possible does calculations as well)
 							name : 'computedAttribute',
-							set : function( value, model ) { model.set( 'baseAttribute', value ); },
-							get : function( value, model ) { return model.get( 'baseAttribute' ) + 10; }   // add 10, to make sure we're using the getter
+							set : function( value ) { this.set( 'baseAttribute', value ); },
+							get : function( value ) { return this.get( 'baseAttribute' ) + 10; }   // add 10, to make sure we're using the getter
 						}
 					]
 				} );
@@ -4134,7 +4251,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				var TestModel = Kevlar.Model.extend( {
 					addAttributes: [
 						{ name: 'attribute1' },
-						{ name: 'attribute2', set : function( value, model ) { return value + " " + model.get( 'attribute1' ); } }
+						{ name: 'attribute2', set : function( value ) { return value + " " + this.get( 'attribute1' ); } }
 					],
 					idAttribute: 'attribute1'
 				} );
@@ -4166,8 +4283,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute1' },
 						{ name: 'attribute2', defaultValue: "attribute2's default" },
 						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-						{ name: 'attribute5', get : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } }
+						{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+						{ name: 'attribute5', get : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -4223,14 +4340,14 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute2', defaultValue: "attribute2's default" },
 						{ 
 							name: 'attribute3', 
-							get : function( value, model ) { 
-								return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); 
+							get : function( newValue ) { 
+								return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); 
 							} 
 						},
 						{ 
 							name: 'attribute4', 
-							raw : function( value, model ) { 
-								return value + " " + model.get( 'attribute1' );
+							raw : function( newValue ) { 
+								return newValue + " " + this.get( 'attribute1' );
 							} 
 						}
 					]
@@ -4283,8 +4400,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute1' },
 						{ name: 'attribute2', defaultValue: "attribute2's default" },
 						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+						{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -4346,8 +4463,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute1' },
 						{ name: 'attribute2', defaultValue: "attribute2's default" },
 						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+						{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -4400,8 +4517,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute1' },
 						{ name: 'attribute2', defaultValue: "attribute2's default" },
 						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+						{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -4649,8 +4766,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute1' },
 						{ name: 'attribute2', defaultValue: "attribute2's default" },
 						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+						{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -4736,8 +4853,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute1' },
 						{ name: 'attribute2', defaultValue: "attribute2's default" },
 						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+						{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -4843,8 +4960,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute1' },
 						{ name: 'attribute2', defaultValue: "attribute2's default" },
 						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+						{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 					]
 				} );
 			},

@@ -253,8 +253,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 								{ name: 'attribute1' },
 								{ name: 'attribute2', defaultValue: "attribute2's default" },
 								{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-								{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-								{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+								{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+								{ name: 'attribute5', set : function( newValue ) { return newValue + " " + newValue.get( 'attribute2' ); } }
 							]
 						} );
 					},
@@ -296,8 +296,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 								{ name: 'attribute1' },
 								{ name: 'attribute2', defaultValue: "attribute2's default" },
 								{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-								{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-								{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+								{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+								{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 							]
 						} );
 					},
@@ -526,8 +526,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute1' },
 						{ name: 'attribute2', defaultValue: "attribute2's default" },
 						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+						{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -675,7 +675,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				var TestModel = Kevlar.extend( Kevlar.Model, {
 					addAttributes: [
 						{ name: 'attribute1' },
-						{ name: 'attribute2', set : function( value, model ) { return value + " " + model.get( 'attribute1' ); } }
+						{ name: 'attribute2', set : function( newValue ) { return newValue + " " + this.get( 'attribute1' ); } }
 					]
 				} );
 				var model = new TestModel( {
@@ -691,7 +691,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				var TestModel = Kevlar.extend( Kevlar.Model, {
 					addAttributes: [
 						{ name: 'attribute1' },
-						{ name: 'attribute2', set : function( value, model ) { return value + " " + model.get( 'attribute1' ); } }
+						{ name: 'attribute2', set : function( newValue ) { return newValue + " " + this.get( 'attribute1' ); } }
 					]
 				} );
 				var model = new TestModel( {
@@ -810,7 +810,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 							// Attribute with a set() function that does not return a new value (presumably modifying some other Attribute in the model),
 							// and therefore does not have a new value set to the underlying data
 							name : 'attribute2', 
-							set : function( value, model ) {
+							set : function( value ) {
 								// Presumably updating some other Attribute in the model
 							}
 						} 
@@ -868,7 +868,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 					attributes: [
 						{
 							name : 'myAttribute',
-							get : function( value, model ) { return value + 10; } // add 10, to make sure we're using the getter
+							get : function( value ) { return value + 10; } // add 10, to make sure we're using the getter
 						}
 					]
 				} );
@@ -907,8 +907,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 							// Computed Attribute with both a set() function and a get() function, which simply uses 'baseAttribute' for its value
 							// (which in practice, would probably be composed of two or more attributes, and possible does calculations as well)
 							name : 'computedAttribute',
-							set : function( value, model ) { model.set( 'baseAttribute', value ); },
-							get : function( value, model ) { return model.get( 'baseAttribute' ) + 10; }   // add 10, to make sure we're using the getter
+							set : function( value ) { this.set( 'baseAttribute', value ); },
+							get : function( value ) { return this.get( 'baseAttribute' ) + 10; }   // add 10, to make sure we're using the getter
 						}
 					]
 				} );
@@ -948,7 +948,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				var TestModel = Kevlar.Model.extend( {
 					addAttributes: [
 						{ name: 'attribute1' },
-						{ name: 'attribute2', set : function( value, model ) { return value + " " + model.get( 'attribute1' ); } }
+						{ name: 'attribute2', set : function( value ) { return value + " " + this.get( 'attribute1' ); } }
 					],
 					idAttribute: 'attribute1'
 				} );
@@ -980,8 +980,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute1' },
 						{ name: 'attribute2', defaultValue: "attribute2's default" },
 						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-						{ name: 'attribute5', get : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } }
+						{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+						{ name: 'attribute5', get : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -1037,14 +1037,14 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute2', defaultValue: "attribute2's default" },
 						{ 
 							name: 'attribute3', 
-							get : function( value, model ) { 
-								return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); 
+							get : function( newValue ) { 
+								return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); 
 							} 
 						},
 						{ 
 							name: 'attribute4', 
-							raw : function( value, model ) { 
-								return value + " " + model.get( 'attribute1' );
+							raw : function( newValue ) { 
+								return newValue + " " + this.get( 'attribute1' );
 							} 
 						}
 					]
@@ -1097,8 +1097,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute1' },
 						{ name: 'attribute2', defaultValue: "attribute2's default" },
 						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+						{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -1160,8 +1160,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute1' },
 						{ name: 'attribute2', defaultValue: "attribute2's default" },
 						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+						{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -1214,8 +1214,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute1' },
 						{ name: 'attribute2', defaultValue: "attribute2's default" },
 						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+						{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -1463,8 +1463,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute1' },
 						{ name: 'attribute2', defaultValue: "attribute2's default" },
 						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+						{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -1550,8 +1550,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute1' },
 						{ name: 'attribute2', defaultValue: "attribute2's default" },
 						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+						{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 					]
 				} );
 			},
@@ -1657,8 +1657,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute1' },
 						{ name: 'attribute2', defaultValue: "attribute2's default" },
 						{ name: 'attribute3', defaultValue: function() { return "attribute3's default"; } },
-						{ name: 'attribute4', set : function( value, model ) { return model.get( 'attribute1' ) + " " + model.get( 'attribute2' ); } },
-						{ name: 'attribute5', set : function( value, model ) { return value + " " + model.get( 'attribute2' ); } }
+						{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
+						{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 					]
 				} );
 			},

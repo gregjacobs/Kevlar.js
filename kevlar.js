@@ -1716,7 +1716,7 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	name : "",
 	
 	/**
-	 * @cfg {Function} type
+	 * @cfg {String} type
 	 * Specifies the type of the Attribute, in which a conversion of the raw data will be performed.
 	 * This accepts the following general types, but custom types may be added using the {@link Kevlar.attribute.Attribute#registerType} method.
 	 * 
@@ -1727,6 +1727,7 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * - {@link Kevlar.attribute.BooleanAttribute boolean} / {@link Kevlar.attribute.BooleanAttribute bool}
 	 * - {@link Kevlar.attribute.DateAttribute date}
 	 * - {@link Kevlar.attribute.ModelAttribute model}
+	 * - {@link Kevlar.attribute.CollectionAttribute collection}
 	 */
 	
 	/**
@@ -1828,12 +1829,6 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * 
 	 * The value that this function returns is the value that is used when the Model's {@link Kevlar.Model#raw raw} method is called
 	 * on the Attribute.
-	 */
-	
-	/**
-	 * @cfg {Object} scope
-	 * The scope to call the {@link #set}, {@link #get}, and {@link #raw} functions in. Defaults to the {@link Kevlar.Model Model}
-	 * instance. 
 	 */
 	
 	/**
@@ -1953,28 +1948,30 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 *   Can also be its Attribute {@link #name} provided directly as a string.
 	 */
 	constructor : function( config ) {
+		var me = this;
+		
 		// If the argument wasn't an object, it must be its attribute name
 		if( typeof config !== 'object' ) {
 			config = { name: config };
 		}
 		
 		// Copy members of the attribute definition (config) provided onto this object
-		Kevlar.apply( this, config );
+		Kevlar.apply( me, config );
 		
 		
 		// Each Attribute must have a name.
-		var name = this.name;
+		var name = me.name;
 		if( name === undefined || name === null || name === "" ) {
 			throw new Error( "no 'name' property provided to Kevlar.attribute.Attribute constructor" );
 			
-		} else if( typeof this.name === 'number' ) {  // convert to a string if it is a number
-			this.name = name.toString();
+		} else if( typeof me.name === 'number' ) {  // convert to a string if it is a number
+			me.name = name.toString();
 		}
 		
 		
 		// Normalize defaultValue
-		if( this[ 'default' ] ) {  // accept the key as simply 'default'
-			this.defaultValue = this[ 'default' ];
+		if( me[ 'default' ] ) {  // accept the key as simply 'default'
+			me.defaultValue = me[ 'default' ];
 		}
 	},
 	
@@ -2078,6 +2075,77 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * @return {Mixed} The converted value.
 	 */
 	beforeSet : function( model, newValue, oldValue ) {
+		return newValue;
+	},
+	
+	
+	/**
+	 * Indirection method that is called by a {@link Kevlar.Model} when the {@link #method-set} method is to be called. This method provides
+	 * a wrapping function that allows for `this._super( arguments )` to be called when a {@link #cfg-set} config is provided, to call the 
+	 * original conversion method from a {@link #cfg-set} config function.
+	 * 
+	 * Basically, it allows:
+	 *     var MyModel = Kevlar.Model.extend( {
+	 *         attributes: [
+	 *             {
+	 *                 name: 'myAttr',
+	 *                 type: 'int',
+	 *                 set: function( newValue, oldValue ) {
+	 *                     // Preprocess the new value (if desired)
+	 *                     
+	 *                     newValue = this._super( [ newValue, oldValue ] );  // run original conversion provided by 'int' attribute
+	 *                     
+	 *                     // post process the new value (if desired)
+	 *                 }
+	 *             }
+	 *         ]
+	 *     } );
+	 * 
+	 * @method doSet
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method, after it has been processed
+	 *   by the {@link #beforeSet} method..
+	 * @param {Mixed} oldValue The old (previous) value that the model held.
+	 */
+	doSet : function( model, newValue, oldValue ) {
+		var me = this, 
+		    tmp,
+		    ret;
+		
+		if( me.hasOwnProperty( 'set' ) ) {  // a 'set' config was provided
+			tmp = model._super;  // store the current model._super, so we can restore it after the 'set' config function is called
+			
+			model._super = function( args ) {  // 'args' should be an array, or arguments object
+				return me.constructor.prototype.set.apply( me, [ model ].concat( Array.prototype.slice.call( args || [], 0 ) ) );  // call the prototype method in the scope of the Attribute, with model as the first arg, followed by anything else provided
+			};
+			
+			// Now call the provided 'set' function in the scope of the model
+			ret = me.set.call( model, newValue, oldValue );
+			
+			model._super = tmp;  // restore old model._super, if there was one
+			return ret;
+			
+		} else {
+			// No 'set' config provided, just call the set() method on the prototype
+			return me.set( model, newValue, oldValue );
+		}
+	},
+	
+	
+	
+	/**
+	 * Method that allows processing of the value that is to be set to a {@link Kevlar.Model}. This method is executed after
+	 * the {@link #beforeSet} method, and before the {@link #afterSet} method. 
+	 * 
+	 * @method set
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method, after it has been processed
+	 *   by the {@link #beforeSet} method..
+	 * @param {Mixed} oldValue The old (previous) value that the model held.
+	 */
+	set : function( model, newValue, oldValue ) {
 		return newValue;
 	},
 	
@@ -4235,28 +4303,26 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			// Allow the Attribute to pre-process the newValue
 			newValue = attribute.beforeSet( this, newValue, oldValue );
 			
-			// If the attribute has a 'set' function defined, call it to convert the data
-			if( typeof attribute.set === 'function' ) {
-				newValue = attribute.set.call( attribute.scope || this, newValue, this );  // provided the newValue, and the Model instance
-				
-				// *** Temporary workaround to get the 'change' event to fire on an Attribute whose set() function does not
-				// return a new value to set to the underlying data. This will be resolved once dependencies are 
-				// automatically resolved in the Attribute's get() function
-				if( newValue === undefined ) {
-					// This is to make the following block below think that there is already data in for the attribute, and
-					// that it has the same value. If we don't have this, the change event will fire twice, the
-					// the model will be set as 'dirty', and the old value will be put into the `modifiedData` hash.
-					if( !( attributeName in this.data ) ) {
-						this.data[ attributeName ] = undefined;
-					}
-					
-					// Fire the events with the value of the Attribute after it has been processed by any Attribute-specific `get()` function.
-					newValue = this.get( attributeName );
-					
-					// Now manually fire the events
-					this.fireEvent( 'change:' + attributeName, this, newValue, oldGetterValue );  // model, newValue, oldValue
-					this.fireEvent( 'change', this, attributeName, newValue, oldGetterValue );    // model, attributeName, newValue, oldValue
+			// Now call the Attribute's set() method (or user-provided 'set' config function)
+			newValue = attribute.doSet( this, newValue, oldValue );  // doSet() is a method which provides a level of indirection for calling the 'set' config function, or set() method
+			
+			// *** Temporary workaround to get the 'change' event to fire on an Attribute whose set() config function does not
+			// return a new value to set to the underlying data. This will be resolved once dependencies are 
+			// automatically resolved in the Attribute's get() function. 
+			if( attribute.hasOwnProperty( 'set' ) && newValue === undefined ) {
+				// This is to make the following block below think that there is already data in for the attribute, and
+				// that it has the same value. If we don't have this, the change event will fire twice, the
+				// the model will be set as 'dirty', and the old value will be put into the `modifiedData` hash.
+				if( !( attributeName in this.data ) ) {
+					this.data[ attributeName ] = undefined;
 				}
+				
+				// Fire the events with the value of the Attribute after it has been processed by any Attribute-specific `get()` function.
+				newValue = this.get( attributeName );
+				
+				// Now manually fire the events
+				this.fireEvent( 'change:' + attributeName, this, newValue, oldGetterValue );  // model, newValue, oldValue
+				this.fireEvent( 'change', this, attributeName, newValue, oldGetterValue );    // model, attributeName, newValue, oldValue
 			}
 			
 			// Allow the Attribute to post-process the newValue
@@ -4312,7 +4378,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		
 		// If there is a `get` function on the Attribute, run it now to convert the value before it is returned.
 		if( typeof attribute.get === 'function' ) {
-			value = attribute.get.call( attribute.scope || this, value, this );  // provided the value, and the Model instance
+			value = attribute.get.call( this, value, this );  // provided the value, and the Model instance
 		}
 		
 		return value;
@@ -4341,7 +4407,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		    
 		// If there is a `raw` function on the Attribute, run it now to convert the value before it is returned.
 		if( typeof attribute.raw === 'function' ) {
-			value = attribute.raw.call( attribute.scope || this, value, this );  // provided the value, and the Model instance
+			value = attribute.raw.call( this, value, this );  // provided the value, and the Model instance
 		}
 		
 		return value;
