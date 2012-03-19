@@ -146,7 +146,7 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * @cfg {Mixed} get.value The value that the Attribute currently has stored in the {@link Kevlar.Model Model}.
 	 * 
 	 * For example, if we had a {@link Kevlar.Model Model} with `firstName` and `lastName` Attributes, and we wanted to create a `fullName` 
-	 * Attribute, this could be done as in the example below. Note that just as with {@link #set}, the `get` function is called in the 
+	 * Attribute, this could be done as in the example below. Note that just as with {@link #cfg-set}, the `get` function is called in the 
 	 * scope of the {@link Kevlar.Model Model} that owns the attribute. 
 	 * 
 	 *     {
@@ -157,9 +157,9 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 *     }
 	 * 
 	 * Note: if the intention is to convert a provided value which needs to be stored on the {@link Kevlar.Model Model} in a different way,
-	 * use a {@link #set} function instead. 
+	 * use a {@link #cfg-set} function instead. 
 	 * 
-	 * However, also note that both a {@link #set} and a `get` function can be used in conjunction.
+	 * However, also note that both a {@link #cfg-set} and a `get` function can be used in conjunction.
 	 */
 	
 	/**
@@ -415,9 +415,10 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	
 	/**
 	 * Method that allows pre-processing for the value that is to be set to a {@link Kevlar.Model}.
-	 * After this method has processed the value, it is provided to the {@link #set} function (if
-	 * one exists), and then finally, the return value from the {@link #set} function will be provided
-	 * to {@link #afterSet}, and then set as the data on the {@link Kevlar.Model Model}.
+	 * After this method has processed the value, it is provided to the {@link #cfg-set} function (if
+	 * one exists) or the {@link #method-set set} method, and then finally, the return value from 
+	 * {@link #cfg-set set} will be provided to {@link #afterSet}, and then set as the data on the 
+	 * {@link Kevlar.Model Model}.
 	 * 
 	 * Note that the default implementation simply returns the raw value unchanged, but this may be overridden
 	 * in subclasses to provide a conversion.
@@ -507,8 +508,8 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	
 	/**
 	 * Method that allows post-processing for the value that is to be set to a {@link Kevlar.Model}.
-	 * This method is executed after the {@link #beforeSet} method, and the {@link #set} function (if one is provided), and is given 
-	 * the value that the {@link #set} function returns. If no {@link #set} function exists, this will simply be executed 
+	 * This method is executed after the {@link #beforeSet} method, and the {@link #cfg-set} function (if one is provided), and is given 
+	 * the value that the {@link #cfg-set} function returns. If no {@link #cfg-set} function exists, this will simply be executed 
 	 * immediately after {@link #beforeSet}, after which the return from this method will be set as the data on the {@link Kevlar.Model Model}.
 	 * 
 	 * Note that the default implementation simply returns the value unchanged, but this may be overridden
@@ -518,7 +519,7 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
 	 *   but is provided in case any model processing is needed.
 	 * @param {Mixed} value The value provided to the {@link Kevlar.Model#set} method, after it has been processed by the
-	 *   {@link #beforeSet} method, and any provided {@link #set} function.
+	 *   {@link #beforeSet} method, and any provided {@link #cfg-set} function.
 	 * @return {Mixed} The converted value.
 	 */
 	afterSet : function( model, value ) {

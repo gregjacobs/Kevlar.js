@@ -3020,7 +3020,7 @@ tests.unit.data.add( new Ext.test.TestSuite( {
 				var Model = Kevlar.Model.extend( {
 					addAttributes : [ 
 						'attribute1', 
-						{ name: 'attribute2', get: function( value, model ) { return "42 " + model.get( 'attribute1' ); } }
+						{ name: 'attribute2', get: function( valuel ) { return "42 " + this.get( 'attribute1' ); } }
 					]
 				} );
 				var model = new Model( { attribute1: 'value1', attribute2: 'value2' } );
@@ -3039,8 +3039,8 @@ tests.unit.data.add( new Ext.test.TestSuite( {
 				var Model = Kevlar.Model.extend( {
 					addAttributes : [ 
 						'attribute1', 
-						{ name: 'attribute2', get: function( value, model ) { return "42 " + model.get( 'attribute1' ); } },
-						{ name: 'attribute3', raw: function( value, model ) { return value + " " + model.get( 'attribute1' ); } }
+						{ name: 'attribute2', get: function( value ) { return "42 " + this.get( 'attribute1' ); } },
+						{ name: 'attribute3', raw: function( value ) { return value + " " + this.get( 'attribute1' ); } }
 					]
 				} );
 				var model = new Model( { attribute1: 'value1', attribute2: 'value2', attribute3: 'value3' } );
@@ -7191,7 +7191,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 						var Model = Kevlar.Model.extend( {
 							addAttributes : [ 
 								'attribute1', 
-								{ name: 'attribute2', get: function( value, model ) { return "42 " + model.get( 'attribute1' ); } }
+								{ name: 'attribute2', get: function( value ) { return "42 " + this.get( 'attribute1' ); } }
 							]
 						} );
 						var model = new Model( { attribute1: 'value1', attribute2: 'value2' } );
@@ -7210,8 +7210,8 @@ tests.integration.add( new Ext.test.TestSuite( {
 						var Model = Kevlar.Model.extend( {
 							addAttributes : [ 
 								'attribute1', 
-								{ name: 'attribute2', get: function( value, model ) { return "42 " + model.get( 'attribute1' ); } },
-								{ name: 'attribute3', raw: function( value, model ) { return value + " " + model.get( 'attribute1' ); } }
+								{ name: 'attribute2', get: function( value ) { return "42 " + this.get( 'attribute1' ); } },
+								{ name: 'attribute3', raw: function( value ) { return value + " " + this.get( 'attribute1' ); } }
 							]
 						} );
 						var model = new Model( { attribute1: 'value1', attribute2: 'value2', attribute3: 'value3' } );
@@ -7285,7 +7285,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 						var Model = Kevlar.Model.extend( {
 							addAttributes : [ 
 								'attribute1', 
-								{ name: 'attribute2', get: function( value, model ) { return "42 " + model.get( 'attribute1' ); } },
+								{ name: 'attribute2', get: function( value ) { return "42 " + this.get( 'attribute1' ); } },
 								'attribute3'
 							]
 						} );
@@ -7308,8 +7308,8 @@ tests.integration.add( new Ext.test.TestSuite( {
 						var Model = Kevlar.Model.extend( {
 							addAttributes : [
 								'attribute1', 
-								{ name: 'attribute2', get: function( value, model ) { return "42 " + model.get( 'attribute1' ); } },
-								{ name: 'attribute3', raw: function( value, model ) { return value + " " + model.get( 'attribute1' ); } },
+								{ name: 'attribute2', get: function( value ) { return "42 " + this.get( 'attribute1' ); } },
+								{ name: 'attribute3', raw: function( value ) { return value + " " + this.get( 'attribute1' ); } },
 								{ name: 'attribute4', defaultValue: 'value4' }
 							]
 						} );

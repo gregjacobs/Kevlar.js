@@ -419,9 +419,9 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * 
 	 *     model.set( { key1: 'value1', key2: 'value2' } );
 	 * 
-	 * Note that in this form, the method will ignore any property in the object (hash) that don't have associated Attributes.<br><br>
+	 * Note that in this form, the method will ignore any property in the object (hash) that don't have associated Attributes.
 	 * 
-	 * When attributes are set, their {@link Kevlar.attribute.Attribute#set} method is run, if they have one defined.
+	 * When attributes are set, their {@link Kevlar.attribute.Attribute#cfg-set} method is run, if they have one defined.
 	 * 
 	 * @method set
 	 * @param {String/Object} attributeName The attribute name for the Attribute to set, or an object (hash) of name/value pairs.

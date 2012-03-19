@@ -1700,7 +1700,7 @@ KevlarUTIL.Event.prototype = {
  * @extends Object
  * 
  * Base attribute definition class for {@link Kevlar.Model Models}. The Attribute itself does not store data, but instead simply
- * defines the behaviors of a {@link Kevlar.Model Model's} attributes. A {@link Kevlar.Model Model} is made up of Attributes. 
+ * defines the behavior of a {@link Kevlar.Model Model's} attributes. A {@link Kevlar.Model Model} is made up of Attributes. 
  * 
  * Note: You will most likely not instantiate Attribute objects directly. This is used by {@link Kevlar.Model} with its
  * {@link Kevlar.Model#cfg-attributes attributes} prototype config. Anonymous config objects provided to {@link Kevlar.Model#cfg-attributes attributes}
@@ -1751,60 +1751,111 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	
 	/**
 	 * @cfg {Function} set
-	 * A function that can be used to convert the value provided to the attribute, to a new value which will be stored
+	 * A function that can be used to convert the raw value provided to the attribute, to a new value which will be stored
 	 * on the {@link Kevlar.Model Model}. This function is passed the following arguments:
 	 * 
-	 * @cfg {Mixed} set.value The provided data value to the attribute. If the attribute has no initial data value, its {@link #defaultValue}
+	 * @cfg {Mixed} set.newValue The provided new data value to the attribute. If the attribute has no initial data value, its {@link #defaultValue}
 	 *   will be provided to this argument upon instantiation of the {@link Kevlar.Model Model}.
-	 * @cfg {Kevlar.Model} set.model The Model instance that this Attribute belongs to.
+	 * @cfg {Mixed} set.oldValue The old value that the attribute held (if any).
 	 * 
 	 * The function should then do any processing that is necessary, and return the value that the Attribute should hold. For example,
 	 * this `set` function will convert a string value to a 
 	 * <a href="https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Date" target="_blank">Date</a>
 	 * object. Otherwise, it will return the value unchanged:
 	 *     
-	 *     set : function( value, model ) {
-	 *         if( typeof value === 'string' ) {
-	 *             value = new Date( value );
+	 *     {
+	 *         name : 'myDateAttr',
+	 *         
+	 *         set : function( newValue, oldValue ) {
+	 *             if( typeof value === 'string' ) {
+	 *                 value = new Date( value );
+	 *             }
+	 *             return value;
 	 *         }
-	 *         return value;
 	 *     }
 	 * 
-	 * The {@link Kevlar.Model Model} instance is passed to this function as well, in case other Attributes need to be queried, or need
-	 * to be {@link Kevlar.Model#set set} by the `set` function. However, in the case of querying other Attributes for their value, be 
-	 * careful in that they may not be set to the expected value when the `set` function executes. For creating computed Attributes that 
-	 * rely on other Attributes' values, use a {@link #get} function instead.
+	 * Just as with {@link #get}, the `set` function is called in the scope of the {@link Kevlar.Model Model} that owns the attribute. 
+	 * This can be used to set other attributes of a "computed" attribute. Ex:
+	 * 
+	 *     {
+	 *         // A "computed" attribute which combines the 'firstName' and 'lastName' attributes in this model (assuming they are there)
+	 *         name : 'fullName',
+	 *         
+	 *         set : function( newValue, oldValue ) {
+	 *             // A setter which takes the first and last name given (such as "Gregory Jacobs"), and splits them up into 
+	 *             // their appropriate parts, to set the appropriate attributes for the computed attribute
+	 *             var names = newValue.split( ' ' );  // split on the space between first and last name
+	 *             
+	 *             // Note: `this` refers to the model which is setting the value, so we can call the set() method
+	 *             this.set( 'firstName', names[ 0 ] );
+	 *             this.set( 'lastName', names[ 1 ] );
+	 *         },
+	 * 
+	 *         get : function( value ) {
+	 *             return this.get( 'firstName' ) + " " + this.get( 'lastName' );  // Combine firstName and lastName for the computed attribute. `this` refers to the model
+	 *         }
+	 *     }
+	 * 
+	 * The function is run in the context (the `this` reference) of the {@link Kevlar.Model Model} instance that owns the attribute, in the that case 
+	 * that other Attributes need to be queried, or need to be {@link Kevlar.Model#set set} by the `set` function. However, in the case of querying 
+	 * other Attributes for their value, be careful in that they may not be set to the expected value when the `set` function executes. For creating 
+	 * computed Attributes that rely on other Attributes' values, use a {@link #get} function instead.
 	 * 
 	 * Notes:
 	 * 
 	 * - Both a `set` and a {@link #get} function can be used in conjunction.
-	 * - The `set` function is called upon instantiation of the {@link Kevlar.Model Model}, if the Model is passed an initial value
+	 * - The `set` function is called upon instantiation of the {@link Kevlar.Model Model} if the Model is passed an initial value
 	 *   for the Attribute, or if the Attribute has a {@link #defaultValue}.
+	 * 
+	 * 
+	 * When using {@link #type typed} Attributes, providing a `set` function overrides the Attribute's {@link #method-set set} method, which
+	 * does the automatic conversion that the Attribute subclass advertises. If you would like to still use the original {@link #method-set set}
+	 * method in conjunction with pre-processing and/or post-processing the value, you can call the original {@link #method-set set} method as
+	 * such:
+	 * 
+	 *     {
+	 *         // Some integer value attribute, which may need to convert string values (such as "123") to an actual integer 
+	 *         // (done behind the scenes via `parseInt()`)
+	 *         name : 'myValue',
+	 *         type : 'int',
+	 *         
+	 *         set : function( newValue, oldValue ) {
+	 *             // Pre-process the raw newValue here, if desired
+	 *             
+	 *             // Call the original `set` method, which does the conversion to an integer if need be
+	 *             newValue = this._super( arguments );
+	 *             
+	 *             // Post-process the converted newValue here, if desired
+	 *             
+	 *             // And finally, return the value that should be stored for the attribute
+	 *             return newValue;
+	 *         }
+	 *     }
 	 */
 	
 	/**
 	 * @cfg {Function} get
 	 * A function that can be used to change the value that is returned when the Model's {@link Kevlar.Model#get get} method is called
 	 * on the Attribute. This is useful to create "computed" attributes, which may be created based on other Attributes' values.  The function is 
-	 * passed two arguments, and should return the computed value.
+	 * passed the argument of the underlying stored value, and should return the computed value.
 	 * 
 	 * @cfg {Mixed} get.value The value that the Attribute currently has stored in the {@link Kevlar.Model Model}.
-	 * @cfg {Kevlar.Model} get.model The Model instance that this Attribute belongs to.
 	 * 
 	 * For example, if we had a {@link Kevlar.Model Model} with `firstName` and `lastName` Attributes, and we wanted to create a `fullName` 
-	 * Attribute, this could be done as such:
+	 * Attribute, this could be done as in the example below. Note that just as with {@link #cfg-set}, the `get` function is called in the 
+	 * scope of the {@link Kevlar.Model Model} that owns the attribute. 
 	 * 
 	 *     {
 	 *         name : 'fullName',
-	 *         get : function( value, model ) {  // in this example, the Attribute has no value of its own, so we ignore the first arg
-	 *             return model.get( 'firstName' ) + " " + model.get( 'lastName' );
+	 *         get : function( value ) {  // in this example, the Attribute has no value of its own, so we ignore the arg
+	 *             return this.get( 'firstName' ) + " " + this.get( 'lastName' );   // `this` refers to the model that owns the Attribute
 	 *         }
 	 *     }
 	 * 
 	 * Note: if the intention is to convert a provided value which needs to be stored on the {@link Kevlar.Model Model} in a different way,
-	 * use a {@link #set} function instead. 
+	 * use a {@link #cfg-set} function instead. 
 	 * 
-	 * However, also note that both a {@link #set} and a `get` function can be used in conjunction.
+	 * However, also note that both a {@link #cfg-set} and a `get` function can be used in conjunction.
 	 */
 	
 	/**
@@ -2060,9 +2111,10 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	
 	/**
 	 * Method that allows pre-processing for the value that is to be set to a {@link Kevlar.Model}.
-	 * After this method has processed the value, it is provided to the {@link #set} function (if
-	 * one exists), and then finally, the return value from the {@link #set} function will be provided
-	 * to {@link #afterSet}, and then set as the data on the {@link Kevlar.Model Model}.
+	 * After this method has processed the value, it is provided to the {@link #cfg-set} function (if
+	 * one exists) or the {@link #method-set set} method, and then finally, the return value from 
+	 * {@link #cfg-set set} will be provided to {@link #afterSet}, and then set as the data on the 
+	 * {@link Kevlar.Model Model}.
 	 * 
 	 * Note that the default implementation simply returns the raw value unchanged, but this may be overridden
 	 * in subclasses to provide a conversion.
@@ -2152,8 +2204,8 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	
 	/**
 	 * Method that allows post-processing for the value that is to be set to a {@link Kevlar.Model}.
-	 * This method is executed after the {@link #beforeSet} method, and the {@link #set} function (if one is provided), and is given 
-	 * the value that the {@link #set} function returns. If no {@link #set} function exists, this will simply be executed 
+	 * This method is executed after the {@link #beforeSet} method, and the {@link #cfg-set} function (if one is provided), and is given 
+	 * the value that the {@link #cfg-set} function returns. If no {@link #cfg-set} function exists, this will simply be executed 
 	 * immediately after {@link #beforeSet}, after which the return from this method will be set as the data on the {@link Kevlar.Model Model}.
 	 * 
 	 * Note that the default implementation simply returns the value unchanged, but this may be overridden
@@ -2163,7 +2215,7 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
 	 *   but is provided in case any model processing is needed.
 	 * @param {Mixed} value The value provided to the {@link Kevlar.Model#set} method, after it has been processed by the
-	 *   {@link #beforeSet} method, and any provided {@link #set} function.
+	 *   {@link #beforeSet} method, and any provided {@link #cfg-set} function.
 	 * @return {Mixed} The converted value.
 	 */
 	afterSet : function( model, value ) {
@@ -2533,7 +2585,7 @@ Kevlar.attribute.Attribute.registerType( 'bool', Kevlar.attribute.BooleanAttribu
  * Anonymous data objects in this array will be converted to the model type provided to the collection's 
  * {@link Kevlar.Collection#model}. 
  * 
- * Otherwise, you must either provide a {@link Kevlar.Collection} subclass as the value, or use a custom {@link #set} 
+ * Otherwise, you must either provide a {@link Kevlar.Collection} subclass as the value, or use a custom {@link #cfg-set} 
  * function to convert any anonymous array to a Collection in the appropriate way. 
  */
 /*global window, Kevlar */
@@ -2757,12 +2809,12 @@ Kevlar.attribute.Attribute.registerType( 'mixed', Kevlar.attribute.MixedAttribut
  * automatically convert an anonymous data object into the appropriate {@link Kevlar.Model Model} subclass, using
  * the Model provided to the {@link #modelClass} config. 
  * 
- * Otherwise, you must either provide a {@link Kevlar.Model} subclass as the value, or use a custom {@link #set} 
+ * Otherwise, you must either provide a {@link Kevlar.Model} subclass as the value, or use a custom {@link #cfg-set} 
  * function to convert any anonymous object to a Model in the appropriate way. 
  */
 /*global window, Kevlar */
 Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend( {
-		
+	
 	/**
 	 * @cfg {Kevlar.Model/String/Function} modelClass
 	 * The specific {@link Kevlar.Model} subclass that will be used in the ModelAttribute. This config can be provided
@@ -4270,9 +4322,9 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * 
 	 *     model.set( { key1: 'value1', key2: 'value2' } );
 	 * 
-	 * Note that in this form, the method will ignore any property in the object (hash) that don't have associated Attributes.<br><br>
+	 * Note that in this form, the method will ignore any property in the object (hash) that don't have associated Attributes.
 	 * 
-	 * When attributes are set, their {@link Kevlar.attribute.Attribute#set} method is run, if they have one defined.
+	 * When attributes are set, their {@link Kevlar.attribute.Attribute#cfg-set} method is run, if they have one defined.
 	 * 
 	 * @method set
 	 * @param {String/Object} attributeName The attribute name for the Attribute to set, or an object (hash) of name/value pairs.
@@ -4309,7 +4361,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			// *** Temporary workaround to get the 'change' event to fire on an Attribute whose set() config function does not
 			// return a new value to set to the underlying data. This will be resolved once dependencies are 
 			// automatically resolved in the Attribute's get() function. 
-			if( attribute.hasOwnProperty( 'set' ) && newValue === undefined ) {
+			if( attribute.hasOwnProperty( 'set' ) && newValue === undefined ) {  // the attribute will only have a 'set' property of its own if the 'set' config was provided
 				// This is to make the following block below think that there is already data in for the attribute, and
 				// that it has the same value. If we don't have this, the change event will fire twice, the
 				// the model will be set as 'dirty', and the old value will be put into the `modifiedData` hash.
@@ -4378,7 +4430,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		
 		// If there is a `get` function on the Attribute, run it now to convert the value before it is returned.
 		if( typeof attribute.get === 'function' ) {
-			value = attribute.get.call( this, value, this );  // provided the value, and the Model instance
+			value = attribute.get.call( this, value );  // provided the underlying value
 		}
 		
 		return value;
