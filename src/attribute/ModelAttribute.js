@@ -8,12 +8,12 @@
  * automatically convert an anonymous data object into the appropriate {@link Kevlar.Model Model} subclass, using
  * the Model provided to the {@link #modelClass} config. 
  * 
- * Otherwise, you must either provide a {@link Kevlar.Model} subclass as the value, or use a custom {@link #set} 
+ * Otherwise, you must either provide a {@link Kevlar.Model} subclass as the value, or use a custom {@link #cfg-set} 
  * function to convert any anonymous object to a Model in the appropriate way. 
  */
 /*global window, Kevlar */
 Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend( {
-		
+	
 	/**
 	 * @cfg {Kevlar.Model/String/Function} modelClass
 	 * The specific {@link Kevlar.Model} subclass that will be used in the ModelAttribute. This config can be provided
@@ -90,7 +90,7 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend
 	 * @method beforeSet
 	 * @inheritdoc
 	 */
-	beforeSet : function( model, oldValue, newValue ) {
+	beforeSet : function( model, newValue, oldValue ) {
 		// First, if the oldValue was a Model, and this attribute is an "embedded" model, we need to unsubscribe it from its parent model
 		if( this.embedded && oldValue instanceof Kevlar.Model ) {
 			model.unsubscribeEmbeddedModel( this.getName(), oldValue );
