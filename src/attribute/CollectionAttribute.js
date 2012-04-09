@@ -13,7 +13,7 @@
  * Otherwise, you must either provide a {@link Kevlar.Collection} subclass as the value, or use a custom {@link #cfg-set} 
  * function to convert any anonymous array to a Collection in the appropriate way. 
  */
-/*global window, Kevlar */
+/*global window, Class, Kevlar */
 Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.extend( {
 		
 	/**
@@ -108,12 +108,12 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.e
 			
 			// Normalize the collectionClass
 			if( typeof collectionClass === 'string' ) {
-				collectionClass = this.resolveGlobalPath( collectionClass );  // changes the string "a.b.c" into the value at `a.b.c`
+				collectionClass = this.resolveGlobalPath( collectionClass );  // changes the string "a.b.c" into the value at `window.a.b.c`
 				
 				if( !collectionClass ) {
 					throw new Error( "The string value 'collectionClass' config did not resolve to a Collection class for attribute '" + this.getName() + "'" );
 				}
-			} else if( typeof collectionClass === 'function' && collectionClass.constructor === Function ) {  // it's an anonymous function, run it, so it returns the Collection reference we need
+			} else if( typeof collectionClass === 'function' && !Class.isSubclassOf( collectionClass, Kevlar.Collection ) ) {  // it's not a Kevlar.Collection subclass, so it must be an anonymous function. Run it, so it returns the Collection reference we need
 				this.collectionClass = collectionClass = collectionClass();
 				if( !collectionClass ) {
 					throw new Error( "The function value 'collectionClass' config did not resolve to a Collection class for attribute '" + this.getName() + "'" );

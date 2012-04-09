@@ -11,7 +11,7 @@
  * Otherwise, you must either provide a {@link Kevlar.Model} subclass as the value, or use a custom {@link #cfg-set} 
  * function to convert any anonymous object to a Model in the appropriate way. 
  */
-/*global window, Kevlar */
+/*global window, Class, Kevlar */
 Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend( {
 	
 	/**
@@ -104,12 +104,12 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend
 			
 			// Normalize the modelClass
 			if( typeof modelClass === 'string' ) {
-				modelClass = this.resolveGlobalPath( modelClass );  // changes the string "a.b.c" into the value at `a.b.c`
+				modelClass = this.resolveGlobalPath( modelClass );  // changes the string "a.b.c" into the value at `window.a.b.c`
 				
 				if( !modelClass ) {
 					throw new Error( "The string value 'modelClass' config did not resolve to a Model class for attribute '" + this.getName() + "'" );
 				}
-			} else if( typeof modelClass === 'function' && modelClass.constructor === Function ) {  // it's an anonymous function, run it, so it returns the Model reference we need
+			} else if( typeof modelClass === 'function' && !Class.isSubclassOf( modelClass, Kevlar.Model ) ) {  // it's not a Kevlar.Model subclass, so it must be an anonymous function. Run it, so it returns the Model reference we need
 				this.modelClass = modelClass = modelClass();
 				if( !modelClass ) {
 					throw new Error( "The function value 'modelClass' config did not resolve to a Model class for attribute '" + this.getName() + "'" );

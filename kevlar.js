@@ -9,7 +9,7 @@
  */
 /*!
  * Class.js
- * Version 0.1.3.1
+ * Version 0.3
  * 
  * Copyright(c) 2012 Gregory Jacobs.
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php
@@ -230,7 +230,21 @@ var Class = (function() {
 		}
 		return o;
 	};
-		
+	
+	
+	/**
+	 * A function which can be referenced from class definition code to specify an abstract method.
+	 * This method (function) simply throws an error if called, meaning that the method must be overridden in a
+	 * subclass. Ex:
+	 * 
+	 *     var AbstractClass = Class( {
+	 *         myMethod : Class.abstractMethod
+	 *     } );
+	 */
+	Class.abstractMethod = function() {
+		throw new Error( "method must be implemented in subclass" );
+	};
+	
 		
 	/**
 	 * Extends one class to create a subclass of it based on a passed object literal (`overrides`), and optionally any mixin 
@@ -316,25 +330,24 @@ var Class = (function() {
 	 * @method extend
 	 * @param {Function} superclass The constructor function of the class being extended. If making a brand new class with no superclass, this may
 	 *   either be omitted, or provided as `Object`.
-	 * @param {Object} overrides <p>An object literal with members that make up the subclass's properties/method. These are copied into the subclass's
-	 *   prototype, and are therefore shared between all instances of the new class.</p> <p>This may contain a special member named
-	 *   `<b>constructor</b>`, which is used to define the constructor function of the new subclass. If this property is <i>not</i> specified,
-	 *   a constructor function is generated and returned which just calls the superclass's constructor, passing on its parameters.</p>
-	 *   <p><b>It is essential that you call the superclass constructor in any provided constructor. See example code.</b></p>
+	 * @param {Object} overrides An object literal with members that make up the subclass's properties/method. These are copied into the subclass's
+	 *   prototype, and are therefore shared between all instances of the new class. This may contain a special member named
+	 *   `constructor`, which is used to define the constructor function of the new subclass. If this property is *not* specified,
+	 *   a constructor function is generated and returned which just calls the superclass's constructor, passing on its parameters.
+	 *   **It is essential that you call the superclass constructor in any provided constructor.** See example code.
 	 * @return {Function} The subclass constructor from the `overrides` parameter, or a generated one if not provided.
 	 */
 	Class.extend = (function() {
 		// Set up some private vars that will be used with the extend() method
-		var objectConstructor = Object.prototype.constructor,
-		    superclassMethodCallRegex = /xyz/.test( function(){var xyz;} ) ? /\b_super\b/ : /.*/;  // a regex to see if the _super() method is called within a function, for JS implementations that allow a function's text to be converted to a string 
+		var superclassMethodCallRegex = /xyz/.test( function(){ var xyz; } ) ? /\b_super\b/ : /.*/;  // a regex to see if the _super() method is called within a function, for JS implementations that allow a function's text to be converted to a string 
 		
-		// inline override function
-		var inlineOverride = function( o ) {
-			for( var m in o ) {
-				this[ m ] = o[ m ];
+		// inline override() function which is attached to subclass constructor functions
+		var inlineOverride = function( obj ) {
+			for( var p in obj ) {
+				this[ p ] = obj[ p ];
 			}
 		};
-			
+		
 	
 		// extend() method itself
 		return function( superclass, overrides ) {			
@@ -345,14 +358,17 @@ var Class = (function() {
 			}
 			
 			
-			var subclass, 
+			var subclass,           // the actual subclass's constructor function which will be created. This ends up being a wrapper for the subclassCtorImplFn, which the user defines
+			    subclassCtorImplFn, // the actual implementation of the subclass's constructor, which the user defines
 			    F = function(){}, 
 			    subclassPrototype,
 			    superclassPrototype = superclass.prototype,
+			    abstractClass = !!overrides.abstractClass,
 			    prop;
 			
 			
-			// Grab any special properties from the overrides
+			// Grab any special properties from the overrides, and then delete them so that they aren't
+			// applied to the subclass's prototype when we copy all of the 'overrides' properties there
 			var statics = overrides.statics,
 			    inheritedStatics = overrides.inheritedStatics,
 			    mixins = overrides.mixins;
@@ -392,8 +408,9 @@ var Class = (function() {
 			// Wrap all methods that use this._super() in the function that will allow this behavior (defined above), except
 			// for the special 'constructor' property, which needs to be handled differently for IE (done below).
 			for( prop in overrides ) {
-				if( prop !== 'constructor' &&                               // We process the constructor separately, below (which is needed for IE, because IE8 and probably all versions below it won't enumerate it in a for-in loop, for whatever reason...)
-					overrides.hasOwnProperty( prop ) &&                     // Make sure the property is on the overrides object itself (not a prototype object)
+				if( 
+				    prop !== 'constructor' &&                               // We process the constructor separately, below (which is needed for IE, because IE8 and probably all versions below it won't enumerate it in a for-in loop, for whatever reason...)
+				    overrides.hasOwnProperty( prop ) &&                     // Make sure the property is on the overrides object itself (not a prototype object)
 				    typeof overrides[ prop ] === 'function' &&              // Make sure the override property is a function (method)
 				    typeof superclassPrototype[ prop ] === 'function' &&    // Make sure the superclass has the same named function (method)
 				    superclassMethodCallRegex.test( overrides[ prop ] )     // And check to see if the string "_super" exists within the override function
@@ -404,34 +421,44 @@ var Class = (function() {
 			
 			// Process the constructor on its own, here, because IE8 (and probably all versions below it) will not enumerate it 
 			// in the for-in loop above (for whatever reason...)
-			if( overrides.hasOwnProperty( 'constructor' ) ) {  // make sure we don't get the constructor property from Object
-				if( typeof overrides.constructor === 'function' && 
-				    typeof superclassPrototype.constructor === 'function' && 
-				    superclassMethodCallRegex.test( overrides.constructor )
-				) {
-					overrides.constructor = createSuperclassCallingMethod( 'constructor', overrides.constructor );
-				}
+			if( 
+			    overrides.hasOwnProperty( 'constructor' ) &&  // make sure we don't get the constructor property from Object
+			    typeof overrides.constructor === 'function' && 
+			    typeof superclassPrototype.constructor === 'function' && 
+			    superclassMethodCallRegex.test( overrides.constructor )
+			) {
+				overrides.constructor = createSuperclassCallingMethod( 'constructor', overrides.constructor );
 			}
 			
 			// --------------------------
 			
 			
-			// Now that preprocessing is complete, define the new subclass
-			if( overrides.constructor !== objectConstructor ) {
-				subclass = overrides.constructor;
+			// Now that preprocessing is complete, define the new subclass's constructor *implementation* function. 
+			// This is going to be wrapped in the actual subclass's constructor
+			if( overrides.constructor !== Object ) {
+				subclassCtorImplFn = overrides.constructor;
+				delete overrides.constructor;  // Remove 'constructor' property from overrides here, so we don't accidentally re-apply it to the subclass prototype when we copy all properties over
 			} else {
-				subclass = ( superclass === Object ) ? function(){} : function() { return superclass.apply( this, arguments ); };   // create a "default constructor" that automatically calls the superclass's constructor, unless the superclass is Object (in which case we don't need to, as we already have a new object)
+				subclassCtorImplFn = ( superclass === Object ) ? function(){} : function() { return superclass.apply( this, arguments ); };   // create a "default constructor" that automatically calls the superclass's constructor, unless the superclass is Object (in which case we don't need to, as we already have a new object)
 			}
+			
+			// Create the actual subclass's constructor, which tests to see if the class being instantiated is abstract,
+			// and if not, calls the subclassCtorFn implementation function
+			subclass = function() {
+				var proto = this.constructor.prototype;
+				if( proto.hasOwnProperty( 'abstractClass' ) && proto.abstractClass === true ) {
+					throw new Error( "Error: Cannot instantiate abstract class" );
+				}
+				
+				// Call the actual constructor's implementation
+				return subclassCtorImplFn.apply( this, arguments );
+			};
+			
 			
 			F.prototype = superclassPrototype;
 			subclassPrototype = subclass.prototype = new F();  // set up prototype chain
 			subclassPrototype.constructor = subclass;          // fix constructor property
 			subclass.superclass = subclass.__super__ = superclassPrototype;
-			
-			// If the superclass is Object, set its constructor property to itself (`Function`, which is what the real superclass is now)
-			if( superclassPrototype.constructor === objectConstructor ) {
-				superclassPrototype.constructor = superclass;
-			}
 			
 			// Attach new static methods to the subclass
 			subclass.override = function( overrides ) { Class.override( subclass, overrides ); };
@@ -441,16 +468,28 @@ var Class = (function() {
 			// Attach new instance methods to the subclass
 			subclassPrototype.superclass = subclassPrototype.supr = function() { return superclassPrototype; };
 			subclassPrototype.override = inlineOverride;   // inlineOverride function defined above
-			subclassPrototype.hasMixin = function( mixin ) { return Class.hasMixin( this.constructor, mixin ); };   // inlineOverride function defined above
+			subclassPrototype.hasMixin = function( mixin ) { return Class.hasMixin( this.constructor, mixin ); };
 			
 			// Finally, add the properties/methods defined in the "overrides" config (which is basically the subclass's 
 			// properties/methods) onto the subclass prototype now.
 			Class.override( subclass, overrides );
 			
-			// Expose the constructor property on the class itself (as opposed to only on its prototype, which is normally only
-			// available to instances of the class)
-			subclass.constructor = subclassPrototype.constructor;
 			
+			// -----------------------------------
+			
+			// Check that if it is a concrete (i.e. non-abstract) class, that all abstract methods have been implemented
+			// (i.e. that the concrete class overrides any `Class.abstractMethod` functions from its superclass)
+			if( !abstractClass ) {
+				for( var methodName in subclassPrototype ) {
+					if( subclassPrototype[ methodName ] === Class.abstractMethod ) {  // NOTE: Do *not* filter out prototype properties; we want to test them
+						if( subclassPrototype.hasOwnProperty( methodName ) ) {
+							throw new Error( "The class being created has abstract method '" + methodName + "', but is not declared with 'abstractClass: true'" );
+						} else {
+							throw new Error( "The concrete subclass being created must implement abstract method: '" + methodName + "', or be declared abstract as well (using 'abstractClass: true')" );
+						}
+					}
+				}
+			}
 			
 			// -----------------------------------
 			
@@ -556,6 +595,51 @@ var Class = (function() {
 		} else {
 			return false;
 		}
+	};
+	
+	
+	/**
+	 * Determines if a class (i.e. constructor function) is, or is a subclass of, the given `baseClass`.
+	 * 
+	 * The order of the arguments follows how {@link #isInstanceOf} accepts them (as well as the JavaScript
+	 * `instanceof` operator. Try reading it as if there was a `subclassof` operator, i.e. `subcls subclassof supercls`.
+	 * 
+	 * Example:
+	 *     var Superclass = Class( {} );
+	 *     var Subclass = Superclass.extend( {} );
+	 *     
+	 *     Class.isSubclassOf( Subclass, Superclass );   // true - Subclass is derived from (i.e. extends) Superclass
+	 *     Class.isSubclassOf( Superclass, Superclass ); // true - Superclass is the same class as itself
+	 *     Class.isSubclassOf( Subclass, Subclass );     // true - Subclass is the same class as itself
+	 *     Class.isSubclassOf( Superclass, Subclass );   // false - Superclass is *not* derived from Subclass
+	 * 
+	 * @static
+	 * @method isSubclassOf
+	 * @param {Function} subclass The class to test.
+	 * @param {Function} superclass The class to test against.
+	 * @return {Boolean} True if the `subclass` is derived from `superclass` (or is equal to `superclass`), false otherwise.
+	 */
+	Class.isSubclassOf = function( subclass, superclass ) {
+		if( typeof subclass !== 'function' || typeof superclass !== 'function' ) {
+			return false;
+			
+		} else if( subclass === superclass ) {
+			// `subclass` is `superclass`, return true 
+			return true;
+			
+		} else {
+			// Walk the prototype chain of `subclass`, looking for `superclass`
+			var currentClass = subclass,
+			    currentClassProto = currentClass.prototype;
+			
+			while( ( currentClass = ( currentClassProto = currentClass.__super__ ) && currentClassProto.constructor ) ) {  // extra set of parens to get JSLint to stop complaining about an assignment inside a while expression
+				if( currentClassProto.constructor === superclass ) {
+					return true;
+				}
+			}
+		}
+		
+		return false;
 	};
 	
 	
@@ -2588,7 +2672,7 @@ Kevlar.attribute.Attribute.registerType( 'bool', Kevlar.attribute.BooleanAttribu
  * Otherwise, you must either provide a {@link Kevlar.Collection} subclass as the value, or use a custom {@link #cfg-set} 
  * function to convert any anonymous array to a Collection in the appropriate way. 
  */
-/*global window, Kevlar */
+/*global window, Class, Kevlar */
 Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.extend( {
 		
 	/**
@@ -2683,12 +2767,12 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.e
 			
 			// Normalize the collectionClass
 			if( typeof collectionClass === 'string' ) {
-				collectionClass = this.resolveGlobalPath( collectionClass );  // changes the string "a.b.c" into the value at `a.b.c`
+				collectionClass = this.resolveGlobalPath( collectionClass );  // changes the string "a.b.c" into the value at `window.a.b.c`
 				
 				if( !collectionClass ) {
 					throw new Error( "The string value 'collectionClass' config did not resolve to a Collection class for attribute '" + this.getName() + "'" );
 				}
-			} else if( typeof collectionClass === 'function' && collectionClass.constructor === Function ) {  // it's an anonymous function, run it, so it returns the Collection reference we need
+			} else if( typeof collectionClass === 'function' && !Class.isSubclassOf( collectionClass, Kevlar.Collection ) ) {  // it's not a Kevlar.Collection subclass, so it must be an anonymous function. Run it, so it returns the Collection reference we need
 				this.collectionClass = collectionClass = collectionClass();
 				if( !collectionClass ) {
 					throw new Error( "The function value 'collectionClass' config did not resolve to a Collection class for attribute '" + this.getName() + "'" );
@@ -2813,7 +2897,7 @@ Kevlar.attribute.Attribute.registerType( 'mixed', Kevlar.attribute.MixedAttribut
  * Otherwise, you must either provide a {@link Kevlar.Model} subclass as the value, or use a custom {@link #cfg-set} 
  * function to convert any anonymous object to a Model in the appropriate way. 
  */
-/*global window, Kevlar */
+/*global window, Class, Kevlar */
 Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend( {
 	
 	/**
@@ -2906,12 +2990,12 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend
 			
 			// Normalize the modelClass
 			if( typeof modelClass === 'string' ) {
-				modelClass = this.resolveGlobalPath( modelClass );  // changes the string "a.b.c" into the value at `a.b.c`
+				modelClass = this.resolveGlobalPath( modelClass );  // changes the string "a.b.c" into the value at `window.a.b.c`
 				
 				if( !modelClass ) {
 					throw new Error( "The string value 'modelClass' config did not resolve to a Model class for attribute '" + this.getName() + "'" );
 				}
-			} else if( typeof modelClass === 'function' && modelClass.constructor === Function ) {  // it's an anonymous function, run it, so it returns the Model reference we need
+			} else if( typeof modelClass === 'function' && !Class.isSubclassOf( modelClass, Kevlar.Model ) ) {  // it's not a Kevlar.Model subclass, so it must be an anonymous function. Run it, so it returns the Model reference we need
 				this.modelClass = modelClass = modelClass();
 				if( !modelClass ) {
 					throw new Error( "The function value 'modelClass' config did not resolve to a Model class for attribute '" + this.getName() + "'" );
