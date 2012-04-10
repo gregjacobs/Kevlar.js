@@ -4261,6 +4261,26 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	
 	/**
 	 * @private
+	 * @property {Number} setCallCount
+	 * 
+	 * This variable supports the {@link #changeset} event, by keeping track of the number of calls to {@link #method-set}.
+	 * When {@link #method-set} is called, this variable is incremented by 1. When {@link #method-set} returns, this variable is decremented
+	 * by 1. If at the end of the {@link #method-set} method, this variable reaches 0 again, the {@link #changeset} event is fired
+	 * with all of the attribute changes since the first call to {@link #method-set}. 
+	 */
+	setCallCount : 0,
+	
+	/**
+	 * @private
+	 * @property {Object} changeSetChanges
+	 * 
+	 * A hashmap which holds the changes to attributes for the {@link #changeset} event to fire with. This hashmap collects the 
+	 * changed values as calls to {@link #method-set} are made, and is used with the arguments that the {@link #changeset} event fires
+	 * with when it does fire (at the end of all of the calls to {@link #method-set}).
+	 */
+	
+	/**
+	 * @private
 	 * @property {String} id (readonly)
 	 * The id for the Model. This property is set when the attribute specified by the {@link #idAttribute} config
 	 * is {@link #set}. 
@@ -4390,6 +4410,18 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			 * @param {Mixed} oldValue The old (previous) value, processed by the attribute's {@link Kevlar.attribute.Attribute#get get} function if one exists. 
 			 */
 			'change',
+			
+			/**
+			 * Fires once at the end of one of more (i.e. a set) of Attribute changes to the model. Multiple changes may be made to the model in a "set" by
+			 * providing the first argument to {@link #method-set} as an object, and/or may also result from having {@link Kevlar.attribute.Attribute#set Attribute set} 
+			 * functions which modify other Attributes. Or, one final way that changes may be counted in a "set" is if handlers of the {@link #change} event end up
+			 * setting Attributes on the Model as well.
+			 * 
+			 * @event changeset
+			 * @param {Kevlar.Model} model This Model instance.
+			 * @param {String} attributeName The name of the attribute that was changed.
+			 */
+			'changeset',
 			
 			/**
 			 * Fires when the data in the model is {@link #method-commit committed}. This happens if the
@@ -4559,6 +4591,8 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * @param {Mixed} [newValue] The value to set to the attribute. Required if the `attributeName` argument is a string (i.e. not a hash). 
 	 */
 	set : function( attributeName, newValue ) {
+		this.setCallCount++;
+		
 		if( typeof attributeName === 'object' ) {
 			// Hash provided 
 			var values = attributeName;  // for clarity
@@ -4633,6 +4667,12 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 				this.fireEvent( 'change:' + attributeName, this, newValue, oldGetterValue );  // model, newValue, oldValue
 				this.fireEvent( 'change', this, attributeName, newValue, oldGetterValue );    // model, attributeName, newValue, oldValue
 			}
+		}
+		
+		// Handle firing the 'changeset' event, which fires once for all of the attribute changes to the Model
+		this.setCallCount--;
+		if( this.setCallCount === 0 ) {
+			this.fireEvent( 'changeset', this );
 		}
 	},
 	

@@ -942,6 +942,90 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			// ------------------------
 			
+			// Test the 'changeset' event
+			
+			"When multiple attributes are set, a generalized 'changeset' event should be fired exactly once" : function() {
+				var TestModel = Kevlar.extend( Kevlar.Model, {
+					addAttributes: [ 'attr1', 'attr2', 'attr3' ]
+				} );
+				var model = new TestModel(),
+				    changeSetEventCount = 0;
+				    
+				model.addListener( 'changeset', function( model ) {
+					changeSetEventCount++;
+				} );
+				
+				model.set( { 'attr1' : 1, 'attr2' : 2, 'attr3' : 3 } );
+				Y.Assert.areSame( 1, changeSetEventCount, "The 'changeset' event should have been fired exactly once" );
+			},
+			
+			
+			"When a computed attribute changes other attributes, the generalized 'changeset' event should still be only fired exactly once" : function() {
+				var TestModel = Kevlar.extend( Kevlar.Model, {
+					addAttributes: [ 
+						{ 
+							name : 'a', 
+							set : function( value ) {
+								this.set( 'b', 2 );
+								this.set( 'c', 3 );
+								return value;
+							}
+						}, 
+						{ name : 'b' },
+						{ name : 'c' }
+					]
+				} );
+				var model = new TestModel(),
+				    changeSetEventCount = 0;
+				    
+				model.addListener( 'changeset', function( model ) {
+					changeSetEventCount++;
+				} );
+				
+				model.set( 'a', 1 );
+				Y.Assert.areSame( 1, changeSetEventCount, "The 'changeset' event should have been fired exactly once" );
+				
+				// Double check the 'a', 'b', and 'c' attributes have been changed
+				Y.Assert.areSame( 1, model.get( 'a' ) );
+				Y.Assert.areSame( 2, model.get( 'b' ) );
+				Y.Assert.areSame( 3, model.get( 'c' ) );
+			},
+			
+			
+			"When an attribute changes, and a handler of the change ends up setting other attriubtes, the generalized 'changeset' event should still be only fired exactly once" : function() {
+				var TestModel = Kevlar.extend( Kevlar.Model, {
+					addAttributes: [ 
+						{ name : 'a' }, 
+						{ name : 'b' },
+						{ name : 'c' }
+					]
+				} );
+				var model = new TestModel(),
+				    changeSetEventCount = 0;
+				
+				// Add a 'change' listener which sets other attributes on the model
+				model.addListener( 'change:a', function( model, newValue, oldValue ) {
+					model.set( 'b', 2 );
+					model.set( 'c', 3 );
+				} );
+				
+				// Now add the 'changeset' listener for the results of the test
+				model.addListener( 'changeset', function( model ) {
+					changeSetEventCount++;
+				} );
+				
+				model.set( 'a', 1 );
+				Y.Assert.areSame( 1, changeSetEventCount, "The 'changeset' event should have been fired exactly once" );
+				
+				// Double check the 'a', 'b', and 'c' attributes have been changed
+				Y.Assert.areSame( 1, model.get( 'a' ) );
+				Y.Assert.areSame( 2, model.get( 'b' ) );
+				Y.Assert.areSame( 3, model.get( 'c' ) );
+			},
+			
+			
+			// ------------------------
+			
 			// Test Backbone Collection compatibility
 			
 			"for compatibility with Backbone's Collection, set() should set the id property to the Model object itself with the idAttribute is changed" : function() {
