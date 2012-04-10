@@ -13,6 +13,9 @@
 /*global Kevlar */
 Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	
+	abstractClass: true,
+	
+	
 	/**
 	 * @cfg {String} name (required)
 	 * The name for the attribute, which is used by the owner Model to reference it.
@@ -427,7 +430,7 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
 	 *   but is provided in case any model processing is needed.
 	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
-	 * @param {Mixed} oldValue The old (previous) value that the model held.
+	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
 	 * @return {Mixed} The converted value.
 	 */
 	beforeSet : function( model, newValue, oldValue ) {

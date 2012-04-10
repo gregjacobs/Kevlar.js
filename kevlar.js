@@ -1,6 +1,6 @@
 /*!
  * Kevlar JS Library
- * Version 0.4
+ * Version 0.5
  * 
  * Copyright(c) 2012 Gregory Jacobs.
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php
@@ -1793,6 +1793,9 @@ KevlarUTIL.Event.prototype = {
 /*global Kevlar */
 Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	
+	abstractClass: true,
+	
+	
 	/**
 	 * @cfg {String} name (required)
 	 * The name for the attribute, which is used by the owner Model to reference it.
@@ -2207,7 +2210,7 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
 	 *   but is provided in case any model processing is needed.
 	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
-	 * @param {Mixed} oldValue The old (previous) value that the model held.
+	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
 	 * @return {Mixed} The converted value.
 	 */
 	beforeSet : function( model, newValue, oldValue ) {
@@ -2309,6 +2312,41 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 } );
 
 /**
+ * @abstract
+ * @class Kevlar.attribute.IntegerAttribute
+ * @extends Kevlar.attribute.Attribute
+ * 
+ * Abstract base class for an Attribute that takes a number data value.
+ */
+/*global Kevlar */
+Kevlar.attribute.NumberAttribute = Kevlar.attribute.Attribute.extend( {
+	
+	abstractClass: true,
+	
+	
+	/**
+	 * @cfg {Boolean} useNull
+	 * Used when parsing the provided value for the Attribute. If this config is true, and the value 
+	 * cannot be "easily" parsed into an integer (i.e. if it's undefined, null, or empty string), `null` will be used 
+	 * instead of converting to 0.
+	 */
+	useNull : false,
+	
+	
+	/**
+	 * @protected
+	 * @property {RegExp} stripCharsRegex 
+	 * 
+	 * A regular expression for stripping non-numeric characters from a numeric value. Defaults to `/[\$,%]/g`.
+	 * This should be overridden for localization. A way to do this globally is, for example:
+	 * 
+	 *     Kevlar.attribute.NumberAttribute.prototype.stripCharsRegex = /newRegexHere/g;
+	 */
+	stripCharsRegex : /[\$,%]/g
+	
+} );
+
+/**
  * @class Kevlar.attribute.ObjectAttribute
  * @extends Kevlar.attribute.Attribute
  * 
@@ -2355,6 +2393,9 @@ Kevlar.attribute.Attribute.registerType( 'object', Kevlar.attribute.ObjectAttrib
  */
 /*global window, Kevlar */
 Kevlar.attribute.DataComponentAttribute = Kevlar.attribute.ObjectAttribute.extend( {
+	
+	abstractClass: true,
+	
 	
 	/**
 	 * @cfg {Boolean} embedded
@@ -2647,8 +2688,33 @@ Kevlar.DataComponent = Kevlar.util.Observable.extend( {
  */
 /*global Kevlar */
 Kevlar.attribute.BooleanAttribute = Kevlar.attribute.Attribute.extend( {
-		
 	
+	/**
+	 * @cfg {Boolean} useNull
+	 * Used when parsing the provided value for the Attribute. If this config is true, and the value 
+	 * cannot be "easily" parsed into a Boolean (i.e. if it's undefined, null, or an empty string), 
+	 * `null` will be used instead of converting to `false`.
+	 */
+	useNull : false,
+	
+	
+	/**
+	 * Converts the provided data value into a Boolean. If {@link #useNull} is true, "unparsable" values
+	 * will return null. 
+	 * 
+	 * @method beforeSet
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
+	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
+	 * @return {Boolean} The converted value.
+	 */
+	beforeSet : function( model, newValue, oldValue ) {
+		if( this.useNull && ( newValue === undefined || newValue === null || newValue === '' ) ) {
+			return null;
+		}
+		return newValue === true || newValue === 'true' || newValue == 1;
+	}
 	
 } );
 
@@ -2817,15 +2883,35 @@ Kevlar.attribute.Attribute.registerType( 'collection', Kevlar.attribute.Collecti
 
 /**
  * @class Kevlar.attribute.DateAttribute
- * @extends Kevlar.attribute.Attribute
+ * @extends Kevlar.attribute.ObjectAttribute
  * 
- * Attribute definition class for an Attribute that takes a Date data value.
+ * Attribute definition class for an Attribute that takes a JavaScript Date object.
  */
 /*global Kevlar */
-Kevlar.attribute.DateAttribute = Kevlar.attribute.Attribute.extend( {
+Kevlar.attribute.DateAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 		
-	
-	
+	/**
+	 * Converts the provided data value into a Date object. If the value provided is not a Date, or cannot be parsed
+	 * into a Date, will return null.
+	 * 
+	 * @method beforeSet
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
+	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
+	 * @return {Boolean} The converted value.
+	 */
+	beforeSet : function( model, newValue, oldValue ) {
+		if( !newValue ) {
+			return null;
+		}
+		if( Kevlar.isDate( newValue ) ) {
+			return newValue;
+		}
+		
+		var parsed = Date.parse( newValue );
+		return ( parsed ) ? new Date( parsed ) : null;
+	}
 } );
 
 
@@ -2834,31 +2920,65 @@ Kevlar.attribute.Attribute.registerType( 'date', Kevlar.attribute.DateAttribute 
 
 /**
  * @class Kevlar.attribute.FloatAttribute
- * @extends Kevlar.attribute.Attribute
+ * @extends Kevlar.attribute.NumberAttribute
  * 
- * Attribute definition class for an Attribute that takes a float (i.e. decimal, or "real") data value.
+ * Attribute definition class for an Attribute that takes a float (i.e. decimal, or "real") number data value.
  */
 /*global Kevlar */
-Kevlar.attribute.FloatAttribute = Kevlar.attribute.Attribute.extend( {
-		
+Kevlar.attribute.FloatAttribute = Kevlar.attribute.NumberAttribute.extend( {
 	
+	/**
+	 * Converts the provided data value into a float. If {@link #useNull} is true, undefined/null/empty string 
+	 * values will return null, or else will otherwise be converted to 0. If the number is simply not parsable, will 
+	 * return NaN.
+	 * 
+	 * @method beforeSet
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
+	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
+	 * @return {Boolean} The converted value.
+	 */
+	beforeSet : function( model, newValue, oldValue ) {
+		var defaultValue = ( this.useNull ) ? null : 0;
+		return ( newValue !== undefined && newValue !== null && newValue !== '' ) ? parseFloat( String( newValue ).replace( this.stripCharsRegex, '' ), 10 ) : defaultValue;
+	}
 	
 } );
 
 
 // Register the Attribute type
 Kevlar.attribute.Attribute.registerType( 'float', Kevlar.attribute.FloatAttribute );
+Kevlar.attribute.Attribute.registerType( 'number', Kevlar.attribute.FloatAttribute );
 
 /**
  * @class Kevlar.attribute.IntegerAttribute
- * @extends Kevlar.attribute.Attribute
+ * @extends Kevlar.attribute.NumberAttribute
  * 
- * Attribute definition class for an Attribute that takes an integer data value.
+ * Attribute definition class for an Attribute that takes an integer data value. If a decimal
+ * number is provided (i.e. a "float"), the decimal will be ignored, and only the integer value used.
  */
 /*global Kevlar */
-Kevlar.attribute.IntegerAttribute = Kevlar.attribute.Attribute.extend( {
-		
+Kevlar.attribute.IntegerAttribute = Kevlar.attribute.NumberAttribute.extend( {
 	
+	/**
+	 * Converts the provided data value into an integer. If {@link #useNull} is true, undefined/null/empty string 
+	 * values will return null, or else will otherwise be converted to 0. If the number is simply not parsable, will 
+	 * return NaN. 
+	 * 
+	 * This method will strip off any decimal value from a provided number.
+	 * 
+	 * @method beforeSet
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
+	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
+	 * @return {Boolean} The converted value.
+	 */
+	beforeSet : function( model, newValue, oldValue ) {
+		var defaultValue = ( this.useNull ) ? null : 0;
+		return ( newValue !== undefined && newValue !== null && newValue !== '' ) ? parseInt( String( newValue ).replace( this.stripCharsRegex, '' ), 10 ) : defaultValue;
+	}
 	
 } );
 
@@ -3045,8 +3165,31 @@ Kevlar.attribute.Attribute.registerType( 'model', Kevlar.attribute.ModelAttribut
  */
 /*global Kevlar */
 Kevlar.attribute.StringAttribute = Kevlar.attribute.Attribute.extend( {
-		
 	
+	/**
+	 * @cfg {Boolean} useNull
+	 * Used when parsing the provided value for the Attribute. If this config is true, and the value 
+	 * cannot be "easily" parsed into a String (i.e. if it's undefined, or null), `null` will be used 
+	 * instead of converting to an empty string.
+	 */
+	useNull : false,
+	
+	
+	/**
+	 * Converts the provided data value into a Boolean. If {@link #useNull} is true, "unparsable" values
+	 * will return null. 
+	 * 
+	 * @method beforeSet
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
+	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
+	 * @return {Boolean} The converted value.
+	 */
+	beforeSet : function( model, newValue, oldValue ) {
+		var defaultValue = ( this.useNull ) ? null : "";
+		return ( newValue === undefined || newValue === null ) ? defaultValue : String( newValue );
+	}
 	
 } );
 

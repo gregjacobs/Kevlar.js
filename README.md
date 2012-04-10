@@ -9,6 +9,10 @@ This is currently a work in progress, and is alpha.
 
 ## Changelog:
 
+### 0.5
+
+* Implemented automatic data conversions for the different Attribute types.
+
 ### 0.4
 
 * Implemented "embedded" collections, where change events "bubble" to parent models. 

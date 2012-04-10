@@ -27,47 +27,52 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				}
 			},
 			
+			setUp : function() {
+				// A "concrete" subclass of Kevlar.attribute.Attribute(), used for the tests
+				this.Attribute = Kevlar.attribute.Attribute.extend( {} );
+			},
+			
 			
 			// -----------------------
 			
 			// Check that the name property was provided
 			
 			"Instantiating an Attribute without a 'name' should throw an error" : function() {
-				var attribute = new Kevlar.attribute.Attribute();
+				var attribute = new this.Attribute();
 			},
 			
 			
 			"Instantiating an Attribute with an undefined 'name' argument should throw an error" : function() {
-				var attribute = new Kevlar.attribute.Attribute( undefined );
+				var attribute = new this.Attribute( undefined );
 			},
 			
 			
 			"Instantiating an Attribute with an undefined 'name' property should throw an error" : function() {
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : undefined
 				} );
 			},
 			
 			
 			"Instantiating an Attribute with a null 'name' argument should throw an error" : function() {
-				var attribute = new Kevlar.attribute.Attribute( null );
+				var attribute = new this.Attribute( null );
 			},
 			
 			
 			"Instantiating an Attribute with a null 'name' property should throw an error" : function() {
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : null
 				} );
 			},
 			
 			
 			"Instantiating an Attribute with an empty 'name' argument should throw an error" : function() {
-				var attribute = new Kevlar.attribute.Attribute( "" );
+				var attribute = new this.Attribute( "" );
 			},
 			
 			
 			"Instantiating an Attribute with an empty 'name' property should throw an error" : function() {
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : ""
 				} );
 			}
@@ -80,14 +85,21 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			 */
 			name: "Test getName()",
 			
+			
+			setUp : function() {
+				// A "concrete" subclass of Kevlar.attribute.Attribute(), used for the tests
+				this.Attribute = Kevlar.attribute.Attribute.extend( {} );
+			},
+			
+			
 			"The name property should be retrievable by getName()" : function() {
-				var attribute1 = new Kevlar.attribute.Attribute( { name: 'testName' } );
+				var attribute1 = new this.Attribute( { name: 'testName' } );
 				Y.Assert.areSame( 'testName', attribute1.getName(), "getName() not properly retriving Attribute's name. Was looking for 'testName'." );
 				
-				var attribute2 = new Kevlar.attribute.Attribute( { name: '_' } );
+				var attribute2 = new this.Attribute( { name: '_' } );
 				Y.Assert.areSame( '_', attribute2.getName(), "getName() not properly retriving Attribute's name. Was looking for '_'." );
 				
-				var attribute3 = new Kevlar.attribute.Attribute( { name: "abc" } );
+				var attribute3 = new this.Attribute( { name: "abc" } );
 				Y.Assert.areSame( "abc", attribute3.getName(), "getName() not properly retriving Attribute's name. Was looking for 'abc'." );
 			},
 		
@@ -95,12 +107,12 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			// Make sure a number provided to the constructor as the 'name' is converted to a string datatype
 			
 			"Providing the attribute name as a number directly to the constructor argument should be converted to a string for the attribute's name" : function() {
-				var attribute = new Kevlar.attribute.Attribute( 0 );
+				var attribute = new this.Attribute( 0 );
 				Y.Assert.areSame( "0", attribute.getName(), "the attribute name should have been converted to a string" );
 			},
 			
 			"Providing the attribute name as a property on the config should be converted to a string for the attribute's name" : function() {
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : 0
 				} );
 				Y.Assert.areSame( "0", attribute.getName(), "the attribute name should have been converted to a string" );
@@ -115,10 +127,16 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			name: "Test getDefaultValue()",
 			
 			
+			setUp : function() {
+				// A "concrete" subclass of Kevlar.attribute.Attribute(), used for the tests
+				this.Attribute = Kevlar.attribute.Attribute.extend( {} );
+			},
+			
+			
 			// Check that the defaultValue is handled correctly
 	
 			"A default provided as the keyword 'default' should be accepted properly as defaultValue" : function() {
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : "TestAttribute",
 					'default' : 1
 				} );
@@ -128,7 +146,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			
 			
 			"A default provided as the keyword 'default' that is a function should be executed and set properly to defaultValue" : function() {
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : "TestAttribute",
 					'default' : function() { return 1; }
 				} );
@@ -138,7 +156,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			
 			
 			"A default provided as defaultValue should be accepted properly" : function() {
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : "TestAttribute",
 					defaultValue : 1
 				} );
@@ -148,7 +166,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			
 			
 			"A default provided as defaultValue that is a function should be executed and set properly to defaultValue" : function() {
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : "TestAttribute",
 					defaultValue : function() { return 1; }
 				} );
@@ -159,7 +177,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			
 			"A default provided as defaultValue that is a function should be executed each time the default is called for" : function() {
 				var counter = 0;
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : "TestAttribute",
 					defaultValue : function() { return ++counter; }
 				} );
@@ -170,7 +188,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			
 			
 			"A defaultValue provided as an object should be recursed for functions, and those functions' return values should be used in the default" : function() {
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : 'TestAttribute',
 					'default' : { 
 						a : "A",

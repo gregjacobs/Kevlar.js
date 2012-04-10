@@ -385,47 +385,52 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				}
 			},
 			
+			setUp : function() {
+				// A "concrete" subclass of Kevlar.attribute.Attribute(), used for the tests
+				this.Attribute = Kevlar.attribute.Attribute.extend( {} );
+			},
+			
 			
 			// -----------------------
 			
 			// Check that the name property was provided
 			
 			"Instantiating an Attribute without a 'name' should throw an error" : function() {
-				var attribute = new Kevlar.attribute.Attribute();
+				var attribute = new this.Attribute();
 			},
 			
 			
 			"Instantiating an Attribute with an undefined 'name' argument should throw an error" : function() {
-				var attribute = new Kevlar.attribute.Attribute( undefined );
+				var attribute = new this.Attribute( undefined );
 			},
 			
 			
 			"Instantiating an Attribute with an undefined 'name' property should throw an error" : function() {
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : undefined
 				} );
 			},
 			
 			
 			"Instantiating an Attribute with a null 'name' argument should throw an error" : function() {
-				var attribute = new Kevlar.attribute.Attribute( null );
+				var attribute = new this.Attribute( null );
 			},
 			
 			
 			"Instantiating an Attribute with a null 'name' property should throw an error" : function() {
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : null
 				} );
 			},
 			
 			
 			"Instantiating an Attribute with an empty 'name' argument should throw an error" : function() {
-				var attribute = new Kevlar.attribute.Attribute( "" );
+				var attribute = new this.Attribute( "" );
 			},
 			
 			
 			"Instantiating an Attribute with an empty 'name' property should throw an error" : function() {
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : ""
 				} );
 			}
@@ -438,14 +443,21 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			 */
 			name: "Test getName()",
 			
+			
+			setUp : function() {
+				// A "concrete" subclass of Kevlar.attribute.Attribute(), used for the tests
+				this.Attribute = Kevlar.attribute.Attribute.extend( {} );
+			},
+			
+			
 			"The name property should be retrievable by getName()" : function() {
-				var attribute1 = new Kevlar.attribute.Attribute( { name: 'testName' } );
+				var attribute1 = new this.Attribute( { name: 'testName' } );
 				Y.Assert.areSame( 'testName', attribute1.getName(), "getName() not properly retriving Attribute's name. Was looking for 'testName'." );
 				
-				var attribute2 = new Kevlar.attribute.Attribute( { name: '_' } );
+				var attribute2 = new this.Attribute( { name: '_' } );
 				Y.Assert.areSame( '_', attribute2.getName(), "getName() not properly retriving Attribute's name. Was looking for '_'." );
 				
-				var attribute3 = new Kevlar.attribute.Attribute( { name: "abc" } );
+				var attribute3 = new this.Attribute( { name: "abc" } );
 				Y.Assert.areSame( "abc", attribute3.getName(), "getName() not properly retriving Attribute's name. Was looking for 'abc'." );
 			},
 		
@@ -453,12 +465,12 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			// Make sure a number provided to the constructor as the 'name' is converted to a string datatype
 			
 			"Providing the attribute name as a number directly to the constructor argument should be converted to a string for the attribute's name" : function() {
-				var attribute = new Kevlar.attribute.Attribute( 0 );
+				var attribute = new this.Attribute( 0 );
 				Y.Assert.areSame( "0", attribute.getName(), "the attribute name should have been converted to a string" );
 			},
 			
 			"Providing the attribute name as a property on the config should be converted to a string for the attribute's name" : function() {
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : 0
 				} );
 				Y.Assert.areSame( "0", attribute.getName(), "the attribute name should have been converted to a string" );
@@ -473,10 +485,16 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			name: "Test getDefaultValue()",
 			
 			
+			setUp : function() {
+				// A "concrete" subclass of Kevlar.attribute.Attribute(), used for the tests
+				this.Attribute = Kevlar.attribute.Attribute.extend( {} );
+			},
+			
+			
 			// Check that the defaultValue is handled correctly
 	
 			"A default provided as the keyword 'default' should be accepted properly as defaultValue" : function() {
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : "TestAttribute",
 					'default' : 1
 				} );
@@ -486,7 +504,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			
 			
 			"A default provided as the keyword 'default' that is a function should be executed and set properly to defaultValue" : function() {
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : "TestAttribute",
 					'default' : function() { return 1; }
 				} );
@@ -496,7 +514,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			
 			
 			"A default provided as defaultValue should be accepted properly" : function() {
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : "TestAttribute",
 					defaultValue : 1
 				} );
@@ -506,7 +524,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			
 			
 			"A default provided as defaultValue that is a function should be executed and set properly to defaultValue" : function() {
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : "TestAttribute",
 					defaultValue : function() { return 1; }
 				} );
@@ -517,7 +535,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			
 			"A default provided as defaultValue that is a function should be executed each time the default is called for" : function() {
 				var counter = 0;
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : "TestAttribute",
 					defaultValue : function() { return ++counter; }
 				} );
@@ -528,7 +546,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			
 			
 			"A defaultValue provided as an object should be recursed for functions, and those functions' return values should be used in the default" : function() {
-				var attribute = new Kevlar.attribute.Attribute( {
+				var attribute = new this.Attribute( {
 					name : 'TestAttribute',
 					'default' : { 
 						a : "A",
@@ -661,6 +679,119 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 		}
 	]
 	
+} ) );
+
+/*global Ext, Y, JsMockito, Kevlar, tests */
+tests.unit.attribute.add( new Ext.test.TestSuite( {
+	
+	name: 'BooleanAttribute',
+	
+	
+	items : [
+	
+		/*
+		 * Test beforeSet()
+		 */
+		{
+			name : "Test beforeSet()",
+			
+			
+			"beforeSet() should return the appropriate Boolean when provided a range of values and types, when the useNull config is false" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    attribute = new Kevlar.attribute.BooleanAttribute( { name: 'attr', useNull: false } ),
+				    oldValue,  // undefined
+				    value;
+				
+				// Test with undefined and null
+				value = attribute.beforeSet( mockModel, undefined, oldValue );
+				Y.Assert.isFalse( value, "Test with value: undefined" );
+				
+				value = attribute.beforeSet( mockModel, null, oldValue );
+				Y.Assert.isFalse( value, "Test with value: null" );
+				
+				
+				// Test with actual booleans
+				value = attribute.beforeSet( mockModel, false, oldValue );
+				Y.Assert.isFalse( value, "Test with value: false" );
+				
+				value = attribute.beforeSet( mockModel, true, oldValue );
+				Y.Assert.isTrue( value, "Test with value: true" );
+				
+				
+				// Test with numbers
+				value = attribute.beforeSet( mockModel, 0, oldValue );
+				Y.Assert.isFalse( value, "Test with value: 0" );
+				
+				value = attribute.beforeSet( mockModel, 1, oldValue );
+				Y.Assert.isTrue( value, "Test with value: 1" );
+				
+				
+				// Test with strings
+				value = attribute.beforeSet( mockModel, "", oldValue );
+				Y.Assert.isFalse( value, "Test with value: ''" );
+				
+				value = attribute.beforeSet( mockModel, "hi", oldValue );
+				Y.Assert.isFalse( value, "Test with value: 'hi'" );
+				
+				value = attribute.beforeSet( mockModel, "true", oldValue );
+				Y.Assert.isTrue( value, "Test with value: 'true'" );				
+				
+				
+				// Test with an object
+				value = attribute.beforeSet( mockModel, {}, oldValue );
+				Y.Assert.isFalse( value, "Test with value: {}" );
+			},
+			
+			
+			"beforeSet() should return null for 'unparsable' values/types, when the useNull config is true" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    attribute = new Kevlar.attribute.BooleanAttribute( { name: 'attr', useNull: true } ),
+				    oldValue,  // undefined
+				    value;
+				
+				// Test with undefined and null
+				value = attribute.beforeSet( mockModel, undefined, oldValue );
+				Y.Assert.isNull( value, "Test with value: undefined" );
+				
+				value = attribute.beforeSet( mockModel, null, oldValue );
+				Y.Assert.isNull( value, "Test with value: null" );
+				
+				
+				// Test with actual booleans
+				value = attribute.beforeSet( mockModel, false, oldValue );
+				Y.Assert.isFalse( value, "Test with value: false" );
+				
+				value = attribute.beforeSet( mockModel, true, oldValue );
+				Y.Assert.isTrue( value, "Test with value: true" );
+				
+				
+				// Test with numbers
+				value = attribute.beforeSet( mockModel, 0, oldValue );
+				Y.Assert.isFalse( value, "Test with value: 0" );
+				
+				value = attribute.beforeSet( mockModel, 1, oldValue );
+				Y.Assert.isTrue( value, "Test with value: 1" );
+				
+				
+				// Test with strings
+				value = attribute.beforeSet( mockModel, "", oldValue );
+				Y.Assert.isNull( value, "Test with value: ''" );
+				
+				value = attribute.beforeSet( mockModel, "hi", oldValue );
+				Y.Assert.isFalse( value, "Test with value: 'hi'" );
+				
+				value = attribute.beforeSet( mockModel, "true", oldValue );
+				Y.Assert.isTrue( value, "Test with value: 'true'" );				
+				
+				
+				// Test with an object
+				value = attribute.beforeSet( mockModel, {}, oldValue );
+				Y.Assert.isFalse( value, "Test with value: {}" );
+			}
+		}
+	]
+
+
 } ) );
 
 /*global window, Ext, Y, JsMockito, Kevlar, tests */
@@ -991,6 +1122,386 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 		
 	]
 	
+} ) );
+
+/*global Ext, Y, JsMockito, Kevlar, tests */
+tests.unit.attribute.add( new Ext.test.TestSuite( {
+	
+	name: 'DateAttribute',
+	
+	
+	items : [
+	
+		/*
+		 * Test beforeSet()
+		 */
+		{
+			name : "Test beforeSet()",
+			
+			
+			"beforeSet() should return null when provided invalid values" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    attribute = new Kevlar.attribute.DateAttribute( { name: 'attr', useNull: false } ),
+				    oldValue,  // undefined
+				    value;
+				
+				// Test with undefined and null
+				value = attribute.beforeSet( mockModel, undefined, oldValue );
+				Y.Assert.isNull( value, "Test with value: undefined" );
+				
+				value = attribute.beforeSet( mockModel, null, oldValue );
+				Y.Assert.isNull( value, "Test with value: null" );
+				
+				
+				// Test with booleans
+				value = attribute.beforeSet( mockModel, false, oldValue );
+				Y.Assert.isNull( value, "Test with value: false" );
+				
+				value = attribute.beforeSet( mockModel, true, oldValue );
+				Y.Assert.isNull( value, "Test with value: true" );
+				
+				
+				// Test with numbers
+				value = attribute.beforeSet( mockModel, 0, oldValue );
+				Y.Assert.isNull( value, "Test with value: 0" );
+				
+				value = attribute.beforeSet( mockModel, 1, oldValue );
+				Y.Assert.isNull( value, "Test with value: 1" );
+				
+				value = attribute.beforeSet( mockModel, 1.42, oldValue );
+				Y.Assert.isNull( value, "Test with value: 1.42" );
+				
+				
+				// Test with invalid strings
+				value = attribute.beforeSet( mockModel, "", oldValue );
+				Y.Assert.isNull( value, "Test with value: ''" );
+				
+				value = attribute.beforeSet( mockModel, "hi", oldValue );
+				Y.Assert.isNull( value, "Test with value: 'hi'" );
+				
+				value = attribute.beforeSet( mockModel, "true", oldValue );
+				Y.Assert.isNull( value, "Test with value: 'true'" );
+				
+				value = attribute.beforeSet( mockModel, "1", oldValue );
+				Y.Assert.isNull( value, "Test with value: '1'" );
+				
+				value = attribute.beforeSet( mockModel, "1.11", oldValue );
+				Y.Assert.isNull( value, "Test with value: '1.11'" );	
+				
+				// Test with an object
+				value = attribute.beforeSet( mockModel, {}, oldValue );
+				Y.Assert.isNull( value, "Test with value: {}" );
+			},
+			
+			
+			"beforeSet() should return a Date object when provided valid values" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    attribute = new Kevlar.attribute.DateAttribute( { name: 'attr', useNull: false } ),
+				    oldValue,  // undefined
+				    value;
+				
+				// Test with valid date strings
+				value = attribute.beforeSet( mockModel, "2/22/2012", oldValue );
+				Y.Assert.isInstanceOf( Date, value, "Test with value: '2/22/2012'" );
+				
+				
+				// Test with a Date object
+				var date = new Date( "2/22/2012" );
+				value = attribute.beforeSet( mockModel, date, oldValue );
+				Y.Assert.areSame( date, value, "Test with actual Date object" );
+			}
+		}
+	]
+
+
+} ) );
+
+/*global Ext, Y, JsMockito, Kevlar, tests */
+tests.unit.attribute.add( new Ext.test.TestSuite( {
+	
+	name: 'FloatAttribute',
+	
+	
+	items : [
+	
+		/*
+		 * Test beforeSet()
+		 */
+		{
+			name : "Test beforeSet()",
+			
+			
+			"beforeSet() should return the appropriate string value when provided a range of values and types, when the useNull config is false" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    attribute = new Kevlar.attribute.FloatAttribute( { name: 'attr', useNull: false } ),
+				    oldValue,  // undefined
+				    value;
+				
+				// Test with undefined and null
+				value = attribute.beforeSet( mockModel, undefined, oldValue );
+				Y.Assert.areSame( 0, value, "Test with value: undefined" );
+				
+				value = attribute.beforeSet( mockModel, null, oldValue );
+				Y.Assert.areSame( 0, value, "Test with value: null" );
+				
+				
+				// Test with booleans
+				value = attribute.beforeSet( mockModel, false, oldValue );
+				Y.Assert.isNaN( value, "Test with value: false" );
+				
+				value = attribute.beforeSet( mockModel, true, oldValue );
+				Y.Assert.isNaN( value, "Test with value: true" );
+				
+				
+				// Test with numbers
+				value = attribute.beforeSet( mockModel, 0, oldValue );
+				Y.Assert.areSame( 0, value, "Test with value: 0" );
+				
+				value = attribute.beforeSet( mockModel, 1, oldValue );
+				Y.Assert.areSame( 1, value, "Test with value: 1" );
+				
+				value = attribute.beforeSet( mockModel, 1.42, oldValue );
+				Y.Assert.areSame( 1.42, value, "Test with value: 1.42" );
+				
+				
+				// Test with actual strings
+				value = attribute.beforeSet( mockModel, "", oldValue );
+				Y.Assert.areSame( 0, value, "Test with value: ''" );
+				
+				value = attribute.beforeSet( mockModel, "hi", oldValue );
+				Y.Assert.isNaN( value, "Test with value: 'hi'" );
+				
+				value = attribute.beforeSet( mockModel, "true", oldValue );
+				Y.Assert.isNaN( value, "Test with value: 'true'" );
+				
+				value = attribute.beforeSet( mockModel, "1", oldValue );
+				Y.Assert.areSame( 1, value, "Test with value: '1'" );
+				
+				value = attribute.beforeSet( mockModel, "1.11", oldValue );
+				Y.Assert.areSame( 1.11, value, "Test with value: '1.11'" );	
+				
+				
+				// Test with an object
+				value = attribute.beforeSet( mockModel, {}, oldValue );
+				Y.Assert.isNaN( value, "Test with value: {}" );
+			},
+			
+			
+			
+			"beforeSet() should return null for 'unparsable' values/types, when the useNull config is true" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    attribute = new Kevlar.attribute.FloatAttribute( { name: 'attr', useNull: true } ),
+				    oldValue,  // undefined
+				    value;
+				
+				// Test with undefined and null
+				value = attribute.beforeSet( mockModel, undefined, oldValue );
+				Y.Assert.isNull( value, "Test with value: undefined" );
+				
+				value = attribute.beforeSet( mockModel, null, oldValue );
+				Y.Assert.isNull( value, "Test with value: null" );
+				
+				
+				// Test with booleans
+				value = attribute.beforeSet( mockModel, false, oldValue );
+				Y.Assert.isNaN( value, "Test with value: false" );
+				
+				value = attribute.beforeSet( mockModel, true, oldValue );
+				Y.Assert.isNaN( value, "Test with value: true" );
+				
+				
+				// Test with numbers
+				value = attribute.beforeSet( mockModel, 0, oldValue );
+				Y.Assert.areSame( 0, value, "Test with value: 0" );
+				
+				value = attribute.beforeSet( mockModel, 1, oldValue );
+				Y.Assert.areSame( 1, value, "Test with value: 1" );
+				
+				value = attribute.beforeSet( mockModel, 1.42, oldValue );
+				Y.Assert.areSame( 1.42, value, "Test with value: 1.42" );
+				
+				
+				// Test with actual strings
+				value = attribute.beforeSet( mockModel, "", oldValue );
+				Y.Assert.isNull( value, "Test with value: ''" );
+				
+				value = attribute.beforeSet( mockModel, "hi", oldValue );
+				Y.Assert.isNaN( value, "Test with value: 'hi'" );
+				
+				value = attribute.beforeSet( mockModel, "true", oldValue );
+				Y.Assert.isNaN( value, "Test with value: 'true'" );
+				
+				value = attribute.beforeSet( mockModel, "1", oldValue );
+				Y.Assert.areSame( 1, value, "Test with value: '1'" );
+				
+				value = attribute.beforeSet( mockModel, "1.11", oldValue );
+				Y.Assert.areSame( 1.11, value, "Test with value: '1.11'" );
+				
+				
+				// Test with an object
+				value = attribute.beforeSet( mockModel, {}, oldValue );
+				Y.Assert.isNaN( value, "Test with value: {}" );
+			},
+			
+			
+			
+			"beforeSet() should strip off $, %, and comma (',') characters from an input string, to make a float" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    attribute = new Kevlar.attribute.FloatAttribute( { name: 'attr', useNull: true } ),
+				    oldValue,  // undefined
+				    value;
+				
+				value = attribute.beforeSet( mockModel, "$1,000.32%", oldValue );
+				Y.Assert.areSame( 1000.32, value, "Test with value: $1,000.32%" );
+			}
+		}
+	]
+
+
+} ) );
+
+/*global Ext, Y, JsMockito, Kevlar, tests */
+tests.unit.attribute.add( new Ext.test.TestSuite( {
+	
+	name: 'IntegerAttribute',
+	
+	
+	items : [
+	
+		/*
+		 * Test beforeSet()
+		 */
+		{
+			name : "Test beforeSet()",
+			
+			
+			"beforeSet() should return the appropriate string value when provided a range of values and types, when the useNull config is false" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    attribute = new Kevlar.attribute.IntegerAttribute( { name: 'attr', useNull: false } ),
+				    oldValue,  // undefined
+				    value;
+				
+				// Test with undefined and null
+				value = attribute.beforeSet( mockModel, undefined, oldValue );
+				Y.Assert.areSame( 0, value, "Test with value: undefined" );
+				
+				value = attribute.beforeSet( mockModel, null, oldValue );
+				Y.Assert.areSame( 0, value, "Test with value: null" );
+				
+				
+				// Test with booleans
+				value = attribute.beforeSet( mockModel, false, oldValue );
+				Y.Assert.isNaN( value, "Test with value: false" );
+				
+				value = attribute.beforeSet( mockModel, true, oldValue );
+				Y.Assert.isNaN( value, "Test with value: true" );
+				
+				
+				// Test with numbers
+				value = attribute.beforeSet( mockModel, 0, oldValue );
+				Y.Assert.areSame( 0, value, "Test with value: 0" );
+				
+				value = attribute.beforeSet( mockModel, 1, oldValue );
+				Y.Assert.areSame( 1, value, "Test with value: 1" );
+				
+				value = attribute.beforeSet( mockModel, 1.42, oldValue );
+				Y.Assert.areSame( 1, value, "Test with value: 1.42" );
+				
+				
+				// Test with actual strings
+				value = attribute.beforeSet( mockModel, "", oldValue );
+				Y.Assert.areSame( 0, value, "Test with value: ''" );
+				
+				value = attribute.beforeSet( mockModel, "hi", oldValue );
+				Y.Assert.isNaN( value, "Test with value: 'hi'" );
+				
+				value = attribute.beforeSet( mockModel, "true", oldValue );
+				Y.Assert.isNaN( value, "Test with value: 'true'" );
+				
+				value = attribute.beforeSet( mockModel, "1", oldValue );
+				Y.Assert.areSame( 1, value, "Test with value: '1'" );
+				
+				value = attribute.beforeSet( mockModel, "1.11", oldValue );
+				Y.Assert.areSame( 1, value, "Test with value: '1.11'" );	
+				
+				
+				// Test with an object
+				value = attribute.beforeSet( mockModel, {}, oldValue );
+				Y.Assert.isNaN( value, "Test with value: {}" );
+			},
+			
+			
+			
+			"beforeSet() should return null for 'unparsable' values/types, when the useNull config is true" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    attribute = new Kevlar.attribute.IntegerAttribute( { name: 'attr', useNull: true } ),
+				    oldValue,  // undefined
+				    value;
+				
+				// Test with undefined and null
+				value = attribute.beforeSet( mockModel, undefined, oldValue );
+				Y.Assert.isNull( value, "Test with value: undefined" );
+				
+				value = attribute.beforeSet( mockModel, null, oldValue );
+				Y.Assert.isNull( value, "Test with value: null" );
+				
+				
+				// Test with booleans
+				value = attribute.beforeSet( mockModel, false, oldValue );
+				Y.Assert.isNaN( value, "Test with value: false" );
+				
+				value = attribute.beforeSet( mockModel, true, oldValue );
+				Y.Assert.isNaN( value, "Test with value: true" );
+				
+				
+				// Test with numbers
+				value = attribute.beforeSet( mockModel, 0, oldValue );
+				Y.Assert.areSame( 0, value, "Test with value: 0" );
+				
+				value = attribute.beforeSet( mockModel, 1, oldValue );
+				Y.Assert.areSame( 1, value, "Test with value: 1" );
+				
+				value = attribute.beforeSet( mockModel, 1.42, oldValue );
+				Y.Assert.areSame( 1, value, "Test with value: 1.42" );
+				
+				
+				// Test with actual strings
+				value = attribute.beforeSet( mockModel, "", oldValue );
+				Y.Assert.isNull( value, "Test with value: ''" );
+				
+				value = attribute.beforeSet( mockModel, "hi", oldValue );
+				Y.Assert.isNaN( value, "Test with value: 'hi'" );
+				
+				value = attribute.beforeSet( mockModel, "true", oldValue );
+				Y.Assert.isNaN( value, "Test with value: 'true'" );
+				
+				value = attribute.beforeSet( mockModel, "1", oldValue );
+				Y.Assert.areSame( 1, value, "Test with value: '1'" );
+				
+				value = attribute.beforeSet( mockModel, "1.11", oldValue );
+				Y.Assert.areSame( 1, value, "Test with value: '1.11'" );
+				
+				
+				// Test with an object
+				value = attribute.beforeSet( mockModel, {}, oldValue );
+				Y.Assert.isNaN( value, "Test with value: {}" );
+			},
+			
+			
+			
+			"beforeSet() should strip off $, %, and comma (',') characters from an input string, to make an integer" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    attribute = new Kevlar.attribute.IntegerAttribute( { name: 'attr', useNull: true } ),
+				    oldValue,  // undefined
+				    value;
+				
+				value = attribute.beforeSet( mockModel, "$1,000.32%", oldValue );
+				Y.Assert.areSame( 1000, value, "Test with value: $1,000.32%" );
+			}
+		}
+	]
+
+
 } ) );
 
 /*global window, Ext, Y, JsMockito, Kevlar, tests */
@@ -1382,6 +1893,120 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 		
 	]
 	
+} ) );
+
+/*global Ext, Y, JsMockito, Kevlar, tests */
+tests.unit.attribute.add( new Ext.test.TestSuite( {
+	
+	name: 'StringAttribute',
+	
+	
+	items : [
+	
+		/*
+		 * Test beforeSet()
+		 */
+		{
+			name : "Test beforeSet()",
+			
+			
+			"beforeSet() should return the appropriate string value when provided a range of values and types, when the useNull config is false" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    attribute = new Kevlar.attribute.StringAttribute( { name: 'attr', useNull: false } ),
+				    oldValue,  // undefined
+				    value;
+				
+				// Test with undefined and null
+				value = attribute.beforeSet( mockModel, undefined, oldValue );
+				Y.Assert.areSame( "", value, "Test with value: undefined" );
+				
+				value = attribute.beforeSet( mockModel, null, oldValue );
+				Y.Assert.areSame( "", value, "Test with value: null" );
+				
+				
+				// Test with booleans
+				value = attribute.beforeSet( mockModel, false, oldValue );
+				Y.Assert.areSame( "false", value, "Test with value: false" );
+				
+				value = attribute.beforeSet( mockModel, true, oldValue );
+				Y.Assert.areSame( "true", value, "Test with value: true" );
+				
+				
+				// Test with numbers
+				value = attribute.beforeSet( mockModel, 0, oldValue );
+				Y.Assert.areSame( "0", value, "Test with value: 0" );
+				
+				value = attribute.beforeSet( mockModel, 1, oldValue );
+				Y.Assert.areSame( "1", value, "Test with value: 1" );
+				
+				
+				// Test with actual strings
+				value = attribute.beforeSet( mockModel, "", oldValue );
+				Y.Assert.areSame( "", value, "Test with value: ''" );
+				
+				value = attribute.beforeSet( mockModel, "hi", oldValue );
+				Y.Assert.areSame( "hi", value, "Test with value: 'hi'" );
+				
+				value = attribute.beforeSet( mockModel, "true", oldValue );
+				Y.Assert.areSame( "true", value, "Test with value: 'true'" );				
+				
+				
+				// Test with an object
+				value = attribute.beforeSet( mockModel, {}, oldValue );
+				Y.Assert.areSame( "[object Object]", value, "Test with value: {}" );
+			},
+			
+			
+			
+			"beforeSet() should return null for 'unparsable' values/types, when the useNull config is true" : function() {
+				var mockModel = JsMockito.mock( Kevlar.Model ),
+				    attribute = new Kevlar.attribute.StringAttribute( { name: 'attr', useNull: true } ),
+				    oldValue,  // undefined
+				    value;
+				
+				// Test with undefined and null
+				value = attribute.beforeSet( mockModel, undefined, oldValue );
+				Y.Assert.isNull( value, "Test with value: undefined" );
+				
+				value = attribute.beforeSet( mockModel, null, oldValue );
+				Y.Assert.isNull( value, "Test with value: null" );
+				
+				
+				// Test with booleans
+				value = attribute.beforeSet( mockModel, false, oldValue );
+				Y.Assert.areSame( "false", value, "Test with value: false" );
+				
+				value = attribute.beforeSet( mockModel, true, oldValue );
+				Y.Assert.areSame( "true", value, "Test with value: true" );
+				
+				
+				// Test with numbers
+				value = attribute.beforeSet( mockModel, 0, oldValue );
+				Y.Assert.areSame( "0", value, "Test with value: 0" );
+				
+				value = attribute.beforeSet( mockModel, 1, oldValue );
+				Y.Assert.areSame( "1", value, "Test with value: 1" );
+				
+				
+				// Test with actual strings
+				value = attribute.beforeSet( mockModel, "", oldValue );
+				Y.Assert.areSame( "", value, "Test with value: ''" );
+				
+				value = attribute.beforeSet( mockModel, "hi", oldValue );
+				Y.Assert.areSame( "hi", value, "Test with value: 'hi'" );
+				
+				value = attribute.beforeSet( mockModel, "true", oldValue );
+				Y.Assert.areSame( "true", value, "Test with value: 'true'" );				
+				
+				
+				// Test with an object
+				value = attribute.beforeSet( mockModel, {}, oldValue );
+				Y.Assert.areSame( "[object Object]", value, "Test with value: {}" );
+			}
+		}
+	]
+
+
 } ) );
 
 /*global window, Ext, Y, JsMockito, tests, Kevlar */
@@ -4601,9 +5226,11 @@ tests.unit.add( new Ext.test.TestSuite( {
 			// Test with embedded models/collections
 			
 			"In the case of embedded DataComponents, the parent model should be considered 'modified' when a child embedded DataComponent has changes" : function() {
+				var ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} );
+				
 				var ParentModel = Kevlar.Model.extend( {
 					attributes : [
-						new Kevlar.attribute.DataComponentAttribute( { name: 'child', embedded: true } )
+						new ConcreteDataComponentAttribute( { name: 'child', embedded: true } )
 					]
 				} );
 				
@@ -4620,9 +5247,11 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			
 			"The parent model should *not* have changes when a child model has changes, but is not 'embedded'" : function() {
+				var ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} );
+				
 				var ParentModel = Kevlar.Model.extend( {
 					attributes : [
-						new Kevlar.attribute.DataComponentAttribute( { name: 'child', embedded: false } )  // note: NOT embedded
+						new ConcreteDataComponentAttribute( { name: 'child', embedded: false } )  // note: NOT embedded
 					]
 				} );
 				
@@ -4715,13 +5344,15 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			
 			"getChanges() should delegate to the singleton NativeObjectConverter to create an Object representation of its data, but only provide changed attributes for the attributes that should be returned" : function() {
+				var ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} );
+				
 				var Model = Kevlar.Model.extend( {
 					attributes: [ 
 						'attr1', 
 						'attr2', 
 						'attr3',
-						new Kevlar.attribute.DataComponentAttribute( { name: 'nestedDataComponent', embedded: false } ),  // this one NOT embedded
-						new Kevlar.attribute.DataComponentAttribute( { name: 'embeddedDataComponent', embedded: true } )  // this one IS embedded
+						new ConcreteDataComponentAttribute( { name: 'nestedDataComponent', embedded: false } ),  // this one NOT embedded
+						new ConcreteDataComponentAttribute( { name: 'embeddedDataComponent', embedded: true } )  // this one IS embedded
 					]
 				} );
 				
@@ -4819,11 +5450,14 @@ tests.unit.add( new Ext.test.TestSuite( {
 			// Test with embedded DataComponents (Models and Collections)
 			
 			"committing a parent model should also commit any embedded child DataComponent that the model holds" : function() {
+				// A concrete subclass for testing
+				var ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} ); 
+				
 				var Model = Kevlar.Model.extend( {
-					attributes : [ new Kevlar.attribute.DataComponentAttribute( { name: 'childDataComponent', embedded: true } ) ]
+					attributes : [ new ConcreteDataComponentAttribute( { name: 'childDataComponent', embedded: true } ) ]
 				} );
 				
-				var mockDataComponent = JsMockito.mock( Kevlar.DataComponent );
+				var mockDataComponent = JsMockito.mock( Kevlar.DataComponent.extend( {} ) );
 				var model = new Model();
 				
 				model.set( 'childDataComponent', mockDataComponent );

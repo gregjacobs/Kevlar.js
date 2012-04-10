@@ -8,6 +8,9 @@
 /*global window, Kevlar */
 Kevlar.attribute.DataComponentAttribute = Kevlar.attribute.ObjectAttribute.extend( {
 	
+	abstractClass: true,
+	
+	
 	/**
 	 * @cfg {Boolean} embedded
 	 * Setting this config to true has the parent {@link Kevlar.Model Model} treat the child {@link Kevlar.DataComponent DataComponent} as if it is a part of itself. 

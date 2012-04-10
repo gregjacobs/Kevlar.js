@@ -1298,9 +1298,11 @@ tests.unit.add( new Ext.test.TestSuite( {
 			// Test with embedded models/collections
 			
 			"In the case of embedded DataComponents, the parent model should be considered 'modified' when a child embedded DataComponent has changes" : function() {
+				var ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} );
+				
 				var ParentModel = Kevlar.Model.extend( {
 					attributes : [
-						new Kevlar.attribute.DataComponentAttribute( { name: 'child', embedded: true } )
+						new ConcreteDataComponentAttribute( { name: 'child', embedded: true } )
 					]
 				} );
 				
@@ -1317,9 +1319,11 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			
 			"The parent model should *not* have changes when a child model has changes, but is not 'embedded'" : function() {
+				var ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} );
+				
 				var ParentModel = Kevlar.Model.extend( {
 					attributes : [
-						new Kevlar.attribute.DataComponentAttribute( { name: 'child', embedded: false } )  // note: NOT embedded
+						new ConcreteDataComponentAttribute( { name: 'child', embedded: false } )  // note: NOT embedded
 					]
 				} );
 				
@@ -1412,13 +1416,15 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			
 			"getChanges() should delegate to the singleton NativeObjectConverter to create an Object representation of its data, but only provide changed attributes for the attributes that should be returned" : function() {
+				var ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} );
+				
 				var Model = Kevlar.Model.extend( {
 					attributes: [ 
 						'attr1', 
 						'attr2', 
 						'attr3',
-						new Kevlar.attribute.DataComponentAttribute( { name: 'nestedDataComponent', embedded: false } ),  // this one NOT embedded
-						new Kevlar.attribute.DataComponentAttribute( { name: 'embeddedDataComponent', embedded: true } )  // this one IS embedded
+						new ConcreteDataComponentAttribute( { name: 'nestedDataComponent', embedded: false } ),  // this one NOT embedded
+						new ConcreteDataComponentAttribute( { name: 'embeddedDataComponent', embedded: true } )  // this one IS embedded
 					]
 				} );
 				
@@ -1516,11 +1522,14 @@ tests.unit.add( new Ext.test.TestSuite( {
 			// Test with embedded DataComponents (Models and Collections)
 			
 			"committing a parent model should also commit any embedded child DataComponent that the model holds" : function() {
+				// A concrete subclass for testing
+				var ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} ); 
+				
 				var Model = Kevlar.Model.extend( {
-					attributes : [ new Kevlar.attribute.DataComponentAttribute( { name: 'childDataComponent', embedded: true } ) ]
+					attributes : [ new ConcreteDataComponentAttribute( { name: 'childDataComponent', embedded: true } ) ]
 				} );
 				
-				var mockDataComponent = JsMockito.mock( Kevlar.DataComponent );
+				var mockDataComponent = JsMockito.mock( Kevlar.DataComponent.extend( {} ) );
 				var model = new Model();
 				
 				model.set( 'childDataComponent', mockDataComponent );
