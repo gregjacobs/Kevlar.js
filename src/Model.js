@@ -136,7 +136,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * When {@link #method-set} is called, this variable is incremented by 1. Just before {@link #method-set} returns, this variable is decremented
 	 * by 1. If at the end of the {@link #method-set} method this variable reaches 0 again, the {@link #changeset} event is fired
 	 * with all of the attribute changes since the first call to {@link #method-set}. This handles the recursive nature of the {@link #method-set} method,
-	 * and the fact that {@link #method-set} may be called by Attribute {@link Kevlar.attribute.Attribute#set set} functions, and handlers of the
+	 * and the fact that {@link #method-set} may be called by Attribute {@link Kevlar.attribute.Attribute#cfg-set set} functions, and handlers of the
 	 * {@link #change} event.
 	 */
 	setCallCount : 0,
@@ -293,7 +293,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			
 			/**
 			 * Fires once at the end of one of more (i.e. a set) of Attribute changes to the model. Multiple changes may be made to the model in a "set" by
-			 * providing the first argument to {@link #method-set} as an object, and/or may also result from having {@link Kevlar.attribute.Attribute#set Attribute set} 
+			 * providing the first argument to {@link #method-set} as an object, and/or may also result from having {@link Kevlar.attribute.Attribute#cfg-set Attribute set} 
 			 * functions which modify other Attributes. Or, one final way that changes may be counted in a "set" is if handlers of the {@link #change} event end up
 			 * setting Attributes on the Model as well.
 			 * 
