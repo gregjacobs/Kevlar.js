@@ -1,6 +1,6 @@
 /*!
  * Kevlar JS Library
- * Version 0.5
+ * Version 0.5.1
  * 
  * Copyright(c) 2012 Gregory Jacobs.
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php
@@ -4264,19 +4264,30 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * @property {Number} setCallCount
 	 * 
 	 * This variable supports the {@link #changeset} event, by keeping track of the number of calls to {@link #method-set}.
-	 * When {@link #method-set} is called, this variable is incremented by 1. When {@link #method-set} returns, this variable is decremented
-	 * by 1. If at the end of the {@link #method-set} method, this variable reaches 0 again, the {@link #changeset} event is fired
-	 * with all of the attribute changes since the first call to {@link #method-set}. 
+	 * When {@link #method-set} is called, this variable is incremented by 1. Just before {@link #method-set} returns, this variable is decremented
+	 * by 1. If at the end of the {@link #method-set} method this variable reaches 0 again, the {@link #changeset} event is fired
+	 * with all of the attribute changes since the first call to {@link #method-set}. This handles the recursive nature of the {@link #method-set} method,
+	 * and the fact that {@link #method-set} may be called by Attribute {@link Kevlar.attribute.Attribute#set set} functions, and handlers of the
+	 * {@link #change} event.
 	 */
 	setCallCount : 0,
 	
 	/**
 	 * @private
-	 * @property {Object} changeSetChanges
+	 * @property {Object} changeSetNewValues
 	 * 
 	 * A hashmap which holds the changes to attributes for the {@link #changeset} event to fire with. This hashmap collects the 
 	 * changed values as calls to {@link #method-set} are made, and is used with the arguments that the {@link #changeset} event fires
-	 * with when it does fire (at the end of all of the calls to {@link #method-set}).
+	 * with (when it does fire, at the end of all of the calls to {@link #method-set}).
+	 */
+	
+	/**
+	 * @private
+	 * @property {Object} changeSetOldValues
+	 * 
+	 * A hashmap which holds the changes to attributes for the {@link #changeset} event to fire with. This hashmap collects the 
+	 * previous ("old") values as calls to {@link #method-set} are made, and is used with the arguments that the {@link #changeset} event fires
+	 * with (when it does fire, at the end of all of the calls to {@link #method-set}).
 	 */
 	
 	/**
@@ -4419,7 +4430,10 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			 * 
 			 * @event changeset
 			 * @param {Kevlar.Model} model This Model instance.
-			 * @param {String} attributeName The name of the attribute that was changed.
+			 * @param {Object} newValues An object (hashmap) of the new values of the Attributes that changed. The object's keys (property names) are the
+			 *   {@link Kevlar.attribute.Attribute#name Attribute names}, and the object's values are the new values for those Attributes.
+			 * @param {Object} oldValues An object (hashmap) of the old values of the Attributes that changed. The object's keys (property names) are the
+			 *   {@link Kevlar.attribute.Attribute#name Attribute names}, and the object's values are the old values that were held for those Attributes.
 			 */
 			'changeset',
 			
@@ -4591,7 +4605,18 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * @param {Mixed} [newValue] The value to set to the attribute. Required if the `attributeName` argument is a string (i.e. not a hash). 
 	 */
 	set : function( attributeName, newValue ) {
+		// If coming into the set() method for the first time (non-recursively, not from an attribute setter, not from a 'change' handler, etc),
+		// reset the hashmaps which will hold the newValues and oldValues that will be provided to the 'changeset' event.
+		if( this.setCallCount === 0 ) {
+			this.changeSetNewValues = {};
+			this.changeSetOldValues = {};
+		}
+		
+		// Increment the setCallCount, for use with the 'changeset' event. The 'changeset' event only fires when all calls to set() have exited.
 		this.setCallCount++;
+		
+		var changeSetNewValues = this.changeSetNewValues,
+		    changeSetOldValues = this.changeSetOldValues;
 		
 		if( typeof attributeName === 'object' ) {
 			// Hash provided 
@@ -4612,8 +4637,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			// Get the current (old) value of the attribute, and its current "getter" value (to provide to the 'change' event as the oldValue)
 			var oldValue = this.data[ attributeName ],
 			    oldGetterValue = this.get( attributeName );
-			
-			
+						
 			// Allow the Attribute to pre-process the newValue
 			newValue = attribute.beforeSet( this, newValue, oldValue );
 			
@@ -4634,6 +4658,12 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 				// Fire the events with the value of the Attribute after it has been processed by any Attribute-specific `get()` function.
 				newValue = this.get( attributeName );
 				
+				// Store the 'change' in the 'changeset' hashmaps
+				this.changeSetNewValues[ attributeName ] = newValue;
+				if( !( attributeName in changeSetOldValues ) ) {  // only store the "old" value if we don't have an "old" value for the attribute already. This leaves us with the real "old" value when multiple sets occur for an attribute during the changeset.
+					this.changeSetOldValues[ attributeName ] = oldGetterValue;
+				}
+				
 				// Now manually fire the events
 				this.fireEvent( 'change:' + attributeName, this, newValue, oldGetterValue );  // model, newValue, oldValue
 				this.fireEvent( 'change', this, attributeName, newValue, oldGetterValue );    // model, attributeName, newValue, oldValue
@@ -4641,7 +4671,6 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			
 			// Allow the Attribute to post-process the newValue
 			newValue = attribute.afterSet( this, newValue );
-			
 			
 			// Only change if there is no current value for the attribute, or if newValue is different from the current
 			if( !( attributeName in this.data ) || !attribute.valuesAreEqual( oldValue, newValue ) ) {   // let the Attribute itself determine if two values of its datatype are equal
@@ -4664,15 +4693,22 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 					this.id = newValue;
 				}
 				
+				// Store the 'change' values in the changeset hashmaps, for use when the 'changeset' event fires
+				changeSetNewValues[ attributeName ] = newValue;
+				if( !( attributeName in changeSetOldValues ) ) {  // Only store the "old" value if we don't have an "old" value for the attribute already. This leaves us with the real "old" value when multiple set()'s occur for an attribute during the changeset.
+					changeSetOldValues[ attributeName ] = oldGetterValue;
+				}
+				
+				// And finally, fire the 'change' events
 				this.fireEvent( 'change:' + attributeName, this, newValue, oldGetterValue );  // model, newValue, oldValue
 				this.fireEvent( 'change', this, attributeName, newValue, oldGetterValue );    // model, attributeName, newValue, oldValue
 			}
 		}
 		
-		// Handle firing the 'changeset' event, which fires once for all of the attribute changes to the Model
+		// Handle firing the 'changeset' event, which fires once for all of the attribute changes to the Model (i.e. when all calls to set() have exited)
 		this.setCallCount--;
 		if( this.setCallCount === 0 ) {
-			this.fireEvent( 'changeset', this );
+			this.fireEvent( 'changeset', this, changeSetNewValues, changeSetOldValues );
 		}
 	},
 	

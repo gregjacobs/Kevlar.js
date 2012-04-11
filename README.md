@@ -9,6 +9,10 @@ This is currently a work in progress, and is alpha.
 
 ## Changelog:
 
+### 0.5.1
+
+* Added a 'changeset' event, for handling a set of changes to a model all at once.
+
 ### 0.5
 
 * Implemented automatic data conversions for the different Attribute types.

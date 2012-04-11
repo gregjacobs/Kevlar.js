@@ -946,17 +946,43 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			"When multiple attributes are set, a generalized 'changeset' event should be fired exactly once" : function() {
 				var TestModel = Kevlar.extend( Kevlar.Model, {
-					addAttributes: [ 'attr1', 'attr2', 'attr3' ]
+					addAttributes: [
+						'a',
+						'b',
+						'c',
+						'unModifiedAttr'
+					]
 				} );
-				var model = new TestModel(),
-				    changeSetEventCount = 0;
+				var model = new TestModel( { 'a': 1, 'b': 2, 'c': 3 } ),
+				    changeSetEventCount = 0,
+				    changeSetNewValues,
+				    changeSetOldValues;
+				
+				// Check the initial 'a', 'b', and 'c' values
+				Y.Assert.areSame( 1, model.get( 'a' ), "initial value for a" );
+				Y.Assert.areSame( 2, model.get( 'b' ), "initial value for b" );
+				Y.Assert.areSame( 3, model.get( 'c' ), "initial value for c" );
 				    
-				model.addListener( 'changeset', function( model ) {
+				model.addListener( 'changeset', function( model, newValues, oldValues ) {
 					changeSetEventCount++;
+					changeSetNewValues = newValues;
+					changeSetOldValues = oldValues;
 				} );
 				
-				model.set( { 'attr1' : 1, 'attr2' : 2, 'attr3' : 3 } );
+				// Modify attr1, attr2, and attr3
+				model.set( { 'a': 11, 'b': 22, 'c': 33 } );
 				Y.Assert.areSame( 1, changeSetEventCount, "The 'changeset' event should have been fired exactly once" );
+				
+				Y.Assert.areSame( 3, Kevlar.util.Object.length( changeSetNewValues ), "The changeset's newValues should have exactly 3 properties" );
+				Y.Assert.areSame( 3, Kevlar.util.Object.length( changeSetOldValues ), "The changeset's oldValues should have exactly 3 properties" );
+				
+				Y.Assert.areSame( 11, changeSetNewValues.a, "newValue for 'a'" );
+				Y.Assert.areSame( 22, changeSetNewValues.b, "newValue for 'b'" );
+				Y.Assert.areSame( 33, changeSetNewValues.c, "newValue for 'c'" );
+				
+				Y.Assert.areSame( 1, changeSetOldValues.a, "oldValue for 'a'" );
+				Y.Assert.areSame( 2, changeSetOldValues.b, "oldValue for 'b'" );
+				Y.Assert.areSame( 3, changeSetOldValues.c, "oldValue for 'c'" );
 			},
 			
 			
@@ -966,29 +992,50 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ 
 							name : 'a', 
 							set : function( value ) {
-								this.set( 'b', 2 );
-								this.set( 'c', 3 );
+								this.set( 'b', 22 );
+								this.set( 'c', 33 );
 								return value;
 							}
 						}, 
 						{ name : 'b' },
-						{ name : 'c' }
+						{ name : 'c' },
+						{ name : 'unModifiedAttr' }
 					]
 				} );
-				var model = new TestModel(),
-				    changeSetEventCount = 0;
+				var model = new TestModel( { 'a': 1, 'b': 2, 'c': 3 } ),
+				    changeSetEventCount = 0,
+				    changeSetNewValues,
+				    changeSetOldValues;
+				
+				// Check the initial 'a', 'b', and 'c' values
+				Y.Assert.areSame( 1, model.get( 'a' ), "initial value for a" );
+				Y.Assert.areSame( 2, model.get( 'b' ), "initial value for b" );
+				Y.Assert.areSame( 3, model.get( 'c' ), "initial value for c" );
 				    
-				model.addListener( 'changeset', function( model ) {
+				model.addListener( 'changeset', function( model, newValues, oldValues ) {
 					changeSetEventCount++;
+					changeSetNewValues = newValues;
+					changeSetOldValues = oldValues;
 				} );
 				
-				model.set( 'a', 1 );
+				model.set( 'a', 11 );
 				Y.Assert.areSame( 1, changeSetEventCount, "The 'changeset' event should have been fired exactly once" );
 				
 				// Double check the 'a', 'b', and 'c' attributes have been changed
-				Y.Assert.areSame( 1, model.get( 'a' ) );
-				Y.Assert.areSame( 2, model.get( 'b' ) );
-				Y.Assert.areSame( 3, model.get( 'c' ) );
+				Y.Assert.areSame( 11, model.get( 'a' ) );
+				Y.Assert.areSame( 22, model.get( 'b' ) );
+				Y.Assert.areSame( 33, model.get( 'c' ) );
+				
+				Y.Assert.areSame( 3, Kevlar.util.Object.length( changeSetNewValues ), "The changeset's newValues should have exactly 3 properties" );
+				Y.Assert.areSame( 3, Kevlar.util.Object.length( changeSetOldValues ), "The changeset's oldValues should have exactly 3 properties" );
+				
+				Y.Assert.areSame( 11, changeSetNewValues.a, "newValue for 'a'" );
+				Y.Assert.areSame( 22, changeSetNewValues.b, "newValue for 'b'" );
+				Y.Assert.areSame( 33, changeSetNewValues.c, "newValue for 'c'" );
+				
+				Y.Assert.areSame( 1, changeSetOldValues.a, "oldValue for 'a'" );
+				Y.Assert.areSame( 2, changeSetOldValues.b, "oldValue for 'b'" );
+				Y.Assert.areSame( 3, changeSetOldValues.c, "oldValue for 'c'" );
 			},
 			
 			
@@ -997,34 +1044,164 @@ tests.unit.add( new Ext.test.TestSuite( {
 					addAttributes: [ 
 						{ name : 'a' }, 
 						{ name : 'b' },
-						{ name : 'c' }
+						{ name : 'c' },
+						{ name : 'unModifiedAttr' }
 					]
 				} );
-				var model = new TestModel(),
-				    changeSetEventCount = 0;
+				var model = new TestModel( { 'a': 1, 'b': 2, 'c': 3 } ),
+				    changeSetEventCount = 0,
+				    changeSetNewValues,
+				    changeSetOldValues;
+				
+				// Check the initial 'a', 'b', and 'c' values
+				Y.Assert.areSame( 1, model.get( 'a' ), "initial value for a" );
+				Y.Assert.areSame( 2, model.get( 'b' ), "initial value for b" );
+				Y.Assert.areSame( 3, model.get( 'c' ), "initial value for c" );
 				
 				// Add a 'change' listener which sets other attributes on the model
 				model.addListener( 'change:a', function( model, newValue, oldValue ) {
-					model.set( 'b', 2 );
-					model.set( 'c', 3 );
+					model.set( 'b', 22 );
+					model.set( 'c', 33 );
 				} );
 				
 				// Now add the 'changeset' listener for the results of the test
-				model.addListener( 'changeset', function( model ) {
+				model.addListener( 'changeset', function( model, newValues, oldValues ) {
 					changeSetEventCount++;
+					changeSetNewValues = newValues;
+					changeSetOldValues = oldValues;
 				} );
 				
-				model.set( 'a', 1 );
+				model.set( 'a', 11 );
 				Y.Assert.areSame( 1, changeSetEventCount, "The 'changeset' event should have been fired exactly once" );
 				
 				// Double check the 'a', 'b', and 'c' attributes have been changed
-				Y.Assert.areSame( 1, model.get( 'a' ) );
-				Y.Assert.areSame( 2, model.get( 'b' ) );
-				Y.Assert.areSame( 3, model.get( 'c' ) );
+				Y.Assert.areSame( 11, model.get( 'a' ) );
+				Y.Assert.areSame( 22, model.get( 'b' ) );
+				Y.Assert.areSame( 33, model.get( 'c' ) );
+				
+				Y.Assert.areSame( 3, Kevlar.util.Object.length( changeSetNewValues ), "The changeset's newValues should have exactly 3 properties" );
+				Y.Assert.areSame( 3, Kevlar.util.Object.length( changeSetOldValues ), "The changeset's oldValues should have exactly 3 properties" );
+				
+				Y.Assert.areSame( 11, changeSetNewValues.a, "newValue for 'a'" );
+				Y.Assert.areSame( 22, changeSetNewValues.b, "newValue for 'b'" );
+				Y.Assert.areSame( 33, changeSetNewValues.c, "newValue for 'c'" );
+				
+				Y.Assert.areSame( 1, changeSetOldValues.a, "oldValue for 'a'" );
+				Y.Assert.areSame( 2, changeSetOldValues.b, "oldValue for 'b'" );
+				Y.Assert.areSame( 3, changeSetOldValues.c, "oldValue for 'c'" );
+			},
+			
+			
+			"When an attribute is changed multiple times within a single 'changeset', its oldValue value should have its *original* value (not any intermediate values)" : function() {
+				var TestModel = Kevlar.extend( Kevlar.Model, {
+					addAttributes: [ 
+						{ name : 'a' }
+					]
+				} );
+				var model = new TestModel( { 'a': 1 } ),
+				    changeSetEventCount = 0,
+				    changeSetNewValues,
+				    changeSetOldValues;
+				
+				// Check the initial 'a' value
+				Y.Assert.areSame( 1, model.get( 'a' ), "initial value for a" );
+				
+				// Add a 'change' listener which sets other attributes on the model
+				// Note that this event handler only happens once, so it doesn't get recursively called from the extra sets to 'a'
+				model.addListener( 'change:a', function( model, newValue, oldValue ) {
+					model.set( 'a', 3 );
+					model.set( 'a', 4 );
+				}, this, { single: true } );
+				
+				// Now add the 'changeset' listener for the results of the test
+				model.addListener( 'changeset', function( model, newValues, oldValues ) {
+					changeSetEventCount++;
+					changeSetNewValues = newValues;
+					changeSetOldValues = oldValues;
+				} );
+				
+				model.set( 'a', 2 );  // will eventually result in 'a' getting set to 4
+				Y.Assert.areSame( 1, changeSetEventCount, "The 'changeset' event should have been fired exactly once" );
+				
+				// Double check the 'a' attribute has been changed to the last set value
+				Y.Assert.areSame( 4, model.get( 'a' ) );
+				
+				Y.Assert.areSame( 1, Kevlar.util.Object.length( changeSetNewValues ), "The changeset's newValues should have exactly 1 property" );
+				Y.Assert.areSame( 1, Kevlar.util.Object.length( changeSetOldValues ), "The changeset's oldValues should have exactly 1 property" );
+				
+				Y.Assert.areSame( 4, changeSetNewValues.a, "newValue for 'a'" );
+				Y.Assert.areSame( 1, changeSetOldValues.a, "oldValue for 'a'" );
+			},
+			
+			
+			"multiple 'changeset' events should work correctly, providing the correct newValues and oldValues each time" : function() {
+				var TestModel = Kevlar.extend( Kevlar.Model, {
+					addAttributes: [ 
+						{ name : 'a' }, 
+						{ name : 'b' },
+						{ name : 'c' },
+						{ name : 'unModifiedAttr' }
+					]
+				} );
+				var model = new TestModel( { 'a': 1, 'b': 2, 'c': 3 } ),
+				    changeSetEventCount = 0,
+				    changeSetNewValues,
+				    changeSetOldValues;
+				
+				// Check the initial 'a', 'b', and 'c' values
+				Y.Assert.areSame( 1, model.get( 'a' ), "initial value for a" );
+				Y.Assert.areSame( 2, model.get( 'b' ), "initial value for b" );
+				Y.Assert.areSame( 3, model.get( 'c' ), "initial value for c" );
+				
+				// Now add the 'changeset' listener for the results of the test
+				model.addListener( 'changeset', function( model, newValues, oldValues ) {
+					changeSetEventCount++;
+					changeSetNewValues = newValues;
+					changeSetOldValues = oldValues;
+				} );
+				
+				model.set( { 'a': 11, 'b': 22, 'c': 33 } );
+				Y.Assert.areSame( 1, changeSetEventCount, "The 'changeset' event should have been fired exactly once" );
+				
+				// Double check the 'a', 'b', and 'c' attributes have been changed
+				Y.Assert.areSame( 11, model.get( 'a' ) );
+				Y.Assert.areSame( 22, model.get( 'b' ) );
+				Y.Assert.areSame( 33, model.get( 'c' ) );
+				
+				Y.Assert.areSame( 3, Kevlar.util.Object.length( changeSetNewValues ), "The changeset's newValues should have exactly 3 properties" );
+				Y.Assert.areSame( 3, Kevlar.util.Object.length( changeSetOldValues ), "The changeset's oldValues should have exactly 3 properties" );
+				
+				Y.Assert.areSame( 11, changeSetNewValues.a, "newValue for 'a'" );
+				Y.Assert.areSame( 22, changeSetNewValues.b, "newValue for 'b'" );
+				Y.Assert.areSame( 33, changeSetNewValues.c, "newValue for 'c'" );
+				
+				Y.Assert.areSame( 1, changeSetOldValues.a, "oldValue for 'a'" );
+				Y.Assert.areSame( 2, changeSetOldValues.b, "oldValue for 'b'" );
+				Y.Assert.areSame( 3, changeSetOldValues.c, "oldValue for 'c'" );
+				
+				
+				// Now just change 'b' and 'c' manually
+				model.set( { 'b': 222, 'c': 333 } );
+				Y.Assert.areSame( 2, changeSetEventCount, "The 'changeset' event should have been fired exactly twice at this point (one more than the last test)" );
+				
+				// Double check the 'b', and 'c' attributes have been changed (and that 'a' hasn't)
+				Y.Assert.areSame( 11, model.get( 'a' ) );
+				Y.Assert.areSame( 222, model.get( 'b' ) );
+				Y.Assert.areSame( 333, model.get( 'c' ) );
+				
+				Y.Assert.areSame( 2, Kevlar.util.Object.length( changeSetNewValues ), "The changeset's newValues should have exactly 2 properties" );
+				Y.Assert.areSame( 2, Kevlar.util.Object.length( changeSetOldValues ), "The changeset's oldValues should have exactly 2 properties" );
+				
+				Y.Assert.areSame( 222, changeSetNewValues.b, "newValue for 'b'" );
+				Y.Assert.areSame( 333, changeSetNewValues.c, "newValue for 'c'" );
+				
+				Y.Assert.areSame( 22, changeSetOldValues.b, "oldValue for 'b'" );
+				Y.Assert.areSame( 33, changeSetOldValues.c, "oldValue for 'c'" );
 			},
 			
 			
 			// ------------------------
+			
 			
 			// Test Backbone Collection compatibility
 			
