@@ -229,37 +229,44 @@ tests.unit.add( new Ext.test.TestSuite( {
 			// Test the 'add' event
 			
 			
-			"insert() should fire the 'add' event with the array of inserted models, even if only one model is inserted" : function() {
+			"insert() should fire the 'add' event for a single inserted model" : function() {
 				var collection = new this.Collection(),
 				    model = new this.Model( { attr: 'value' } ),
 				    models;
 				
-				var addedModels;
-				collection.on( 'add', function( collection, models ) {
-					addedModels = models;
+				var addEventCount = 0,
+				    addedModel;
+				    
+				collection.on( 'add', function( collection, model ) {
+					addEventCount++;
+					addedModel = model;
 				} );
 				collection.insert( model );
 				
-				Y.Assert.areSame( 1, addedModels.length, "1 model should have been provided to the 'add' event" );
-				Y.Assert.areSame( model, addedModels[ 0 ], "The model provided with the 'add' event should be the model added to the collection" );
+				Y.Assert.areSame( 1, addEventCount, "The 'add' event should have been fired exactly once" );
+				Y.Assert.areSame( model, addedModel, "The model provided with the 'add' event should be the model added to the collection" );
 			},
 			
 			
-			"insert() should fire the 'add' event with the array of inserted models when multiple models are inserted" : function() {
+			"insert() should fire the 'add' event one time for each of multiple inserted models" : function() {
 				var collection = new this.Collection(),
 				    model1 = new this.Model( { attr: 'value1' } ),
 				    model2 = new this.Model( { attr: 'value2' } ),
 				    models;
 				
-				var addedModels;
-				collection.on( 'add', function( collection, models ) {
-					addedModels = models;
+				
+				var addEventCount = 0,
+				    addedModels = [];
+				    
+				collection.on( 'add', function( collection, model ) {
+					addEventCount++;
+					addedModels.push( model );
 				} );
 				collection.insert( [ model1, model2 ] );
 				
-				Y.Assert.areSame( 2, addedModels.length, "2 models should have been provided to the 'add' event" );
-				Y.Assert.areSame( model1, addedModels[ 0 ], "The first model added in the array should be the first model added to the collection" );
-				Y.Assert.areSame( model2, addedModels[ 1 ], "The second model added in the array should be the second model added to the collection" );
+				Y.Assert.areSame( 2, addEventCount, "The 'add' event should have been fired exactly twice" );
+				Y.Assert.areSame( model1, addedModels[ 0 ], "The first model added should be the first model added to the collection" );
+				Y.Assert.areSame( model2, addedModels[ 1 ], "The second model added should be the second model added to the collection" );
 			},
 			
 			
@@ -268,7 +275,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				    collection = new this.Collection( [ model ] );  // initally add the model
 				
 				var addEventFired = false;
-				collection.on( 'add', function( collection, models ) {
+				collection.on( 'add', function( collection, model ) {
 					addEventFired = true;
 				} );
 				collection.insert( model );
@@ -277,18 +284,90 @@ tests.unit.add( new Ext.test.TestSuite( {
 			},
 			
 			
-			"insert() should *not* fire the 'add' event for a model that is already in the Collection when multiple models are inserted, and only some exist already" : function() {
+			"insert() should *not* fire the 'add' event for models that are already in the Collection when multiple models are inserted, and only some exist already" : function() {
+				var model1 = new this.Model( { attr: 'value1' } ),
+				    model2 = new this.Model( { attr: 'value2' } ),
+				    collection = new this.Collection( [ model1 ] );  // initally add model1
+				
+				var addEventCount = 0,
+				    addedModels = [];
+				    
+				collection.on( 'add', function( collection, model ) {
+					addEventCount++;
+					addedModels.push( model );
+				} );
+				collection.insert( [ model1, model2 ] );  // now insert model1 and model2. Only model2 should really have been "added"
+				
+				Y.Assert.areSame( 1, addEventCount, "The 'add' event should have been fired exactly once" );
+				Y.ArrayAssert.itemsAreSame( [ model2 ], addedModels, "The 'add' event should have only fired with the model that was actually added" );
+			},
+			
+			
+			// -------------------------
+			
+			// Test the 'addset' event
+			
+			
+			"insert() should fire the 'addset' event with the array of inserted models, even if only one model is inserted" : function() {
+				var collection = new this.Collection(),
+				    model = new this.Model( { attr: 'value' } ),
+				    models;
+				
+				var addedModels;
+				collection.on( 'addset', function( collection, models ) {
+					addedModels = models;
+				} );
+				collection.insert( model );
+				
+				Y.Assert.areSame( 1, addedModels.length, "1 model should have been provided to the 'addset' event" );
+				Y.Assert.areSame( model, addedModels[ 0 ], "The model provided with the 'addset' event should be the model added to the collection" );
+			},
+			
+			
+			"insert() should fire the 'addset' event with the array of inserted models when multiple models are inserted" : function() {
+				var collection = new this.Collection(),
+				    model1 = new this.Model( { attr: 'value1' } ),
+				    model2 = new this.Model( { attr: 'value2' } ),
+				    models;
+				
+				var addedModels;
+				collection.on( 'addset', function( collection, models ) {
+					addedModels = models;
+				} );
+				collection.insert( [ model1, model2 ] );
+				
+				Y.Assert.areSame( 2, addedModels.length, "2 models should have been provided to the 'addset' event" );
+				Y.Assert.areSame( model1, addedModels[ 0 ], "The first model added in the array should be the first model added to the collection" );
+				Y.Assert.areSame( model2, addedModels[ 1 ], "The second model added in the array should be the second model added to the collection" );
+			},
+			
+			
+			"insert() should *not* fire the 'addset' event for a model that is already in the Collection" : function() {
+				var model = new this.Model( { attr: 'value1' } ),
+				    collection = new this.Collection( [ model ] );  // initally add the model
+				
+				var addEventFired = false;
+				collection.on( 'addset', function( collection, models ) {
+					addEventFired = true;
+				} );
+				collection.insert( model );
+				
+				Y.Assert.isFalse( addEventFired, "The 'addset' event should not have been fired for another insert of the same model" );
+			},
+			
+			
+			"insert() should *not* fire the 'addset' event for models that are already in the Collection when multiple models are inserted, and only some exist already" : function() {
 				var model1 = new this.Model( { attr: 'value1' } ),
 				    model2 = new this.Model( { attr: 'value2' } ),
 				    collection = new this.Collection( [ model1 ] );  // initally add model1
 				
 				var addedModels;
-				collection.on( 'add', function( collection, models ) {
+				collection.on( 'addset', function( collection, models ) {
 					addedModels = models;
 				} );
 				collection.insert( [ model1, model2 ] );  // now insert model1 and model2. Only model2 should really have been "added"
 				
-				Y.ArrayAssert.itemsAreSame( [ model2 ], addedModels, "The 'add' event should have only fired with the model that was actually added" );
+				Y.ArrayAssert.itemsAreSame( [ model2 ], addedModels, "The 'addset' event should have only fired with the model that was actually added" );
 			},
 			
 			
@@ -434,18 +513,18 @@ tests.unit.add( new Ext.test.TestSuite( {
 			},
 			
 			
-			"insert() should fire the 'add' event with instantiated models for any anonymous config objects" : function() {
+			"insert() should fire the 'addset' event with instantiated models for any anonymous config objects" : function() {
 				var collection = new this.Collection(),  // note: this.Collection is configured with this.Model as the 'model'
 				    modelData1 = { attr: 'value1' },
 				    modelData2 = { attr: 'value2' };
 				
 				var addedModels;
-				collection.on( 'add', function( collection, models ) {
+				collection.on( 'addset', function( collection, models ) {
 					addedModels = models;
 				} );
 				collection.insert( [ modelData1, modelData2 ] );
 				
-				Y.Assert.areSame( 2, addedModels.length, "2 models should have been provided to the 'add' event" );
+				Y.Assert.areSame( 2, addedModels.length, "2 models should have been provided to the 'addset' event" );
 				Y.Assert.areSame( 'value1', addedModels[ 0 ].get( 'attr' ), "The first model added in the array should have the data provided from modelData1" );
 				Y.Assert.areSame( 'value2', addedModels[ 1 ].get( 'attr' ), "The second model added in the array should have the data provided from modelData2" );
 			},
@@ -658,20 +737,89 @@ tests.unit.add( new Ext.test.TestSuite( {
 				Y.ArrayAssert.itemsAreSame( [ model1, model3 ], models, "Only model1 and model3 should remain" );
 			},
 			
+						
 			
 			// -------------------------
 			
-			// Test converting anonymous configs to Model instances
+			// Test the 'remove' event
+			
+			"remove() should fire the 'remove' event for a single model that is removed" : function() {
+				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
+				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } );
+				    
+				var collection = new this.Collection( [ model1, model2 ] );
+				
+				var removeEventCount = 0,
+				    removedModel,
+				    removedIndex;
+				    
+				collection.on( 'remove', function( collection, model, index ) {
+					removeEventCount++;
+					removedModel = model;
+					removedIndex = index;
+				} );
+				
+				collection.remove( model2 );
+				Y.Assert.areSame( 1, removeEventCount, "The 'remove' event should have been fired exactly once" );
+				Y.Assert.areSame( model2, removedModel, "The removed model should have been model2" );
+				Y.Assert.areSame( 1, removedIndex, "model2 should have been removed from index 1" );
+			},
 			
 			
-			"remove() should fire the 'remove' event with the array of removed models, even if only one model has been removed" : function() {
+			"remove() should fire the 'remove' event once for each of the removed models when multiple models are removed" : function() {
+				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
+				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } );
+				    
+				var collection = new this.Collection( [ model1, model2 ] );
+				
+				var removeEventCount = 0,
+				    removedModels = [],
+				    removedIndexes = [];
+				    
+				collection.on( 'remove', function( collection, model, index ) {
+					removeEventCount++;
+					removedModels.push( model );
+					removedIndexes.push( index );
+				} );
+				
+				collection.remove( [ model1, model2 ] );
+				
+				Y.Assert.areSame( 2, removeEventCount, "The 'remove' event should have been fired exactly twice" );
+				Y.ArrayAssert.itemsAreSame( [ model1, model2 ], removedModels, "model1 and model2 should have been removed" );
+				Y.ArrayAssert.itemsAreSame( [ 0, 0 ], removedIndexes, "The indexes for each model's removal should have both been 0, as after the first one is removed (at index 0), model2 is moved to index 0, and then removed itself" );
+			},
+			
+			
+			"remove() should *not* fire the 'remove' event if no models are actually removed" : function() {
+				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
+				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } );
+				    
+				var collection = new this.Collection( [ model1 ] );  // only putting model1 on the collection
+				
+				var removeEventCalled = false;
+				collection.on( 'removeset', function( collection, models ) {
+					removeEventCalled = true;
+				} );
+				
+				collection.remove( model2 );  // model2 doesn't exist on the Collection
+				Y.Assert.isFalse( removeEventCalled, "The 'remove' event should not have been called" );
+			},
+			
+			
+			
+			// -------------------------
+			
+			// Test the 'removeset' event
+			
+			
+			"remove() should fire the 'removeset' event with the array of removed models, even if only one model has been removed" : function() {
 				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
 				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } );
 				    
 				var collection = new this.Collection( [ model1, model2 ] );
 				
 				var removedModels;
-				collection.on( 'remove', function( collection, models ) {
+				collection.on( 'removeset', function( collection, models ) {
 					removedModels = models;
 				} );
 				
@@ -680,14 +828,14 @@ tests.unit.add( new Ext.test.TestSuite( {
 			},
 			
 			
-			"remove() should fire the 'remove' event with the array of removed models when multiple models are removed" : function() {
+			"remove() should fire the 'removeset' event with the array of removed models when multiple models are removed" : function() {
 				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
 				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } );
 				    
 				var collection = new this.Collection( [ model1, model2 ] );
 				
 				var removedModels;
-				collection.on( 'remove', function( collection, models ) {
+				collection.on( 'removeset', function( collection, models ) {
 					removedModels = models;
 				} );
 				
@@ -696,14 +844,14 @@ tests.unit.add( new Ext.test.TestSuite( {
 			},
 			
 			
-			"remove() should *not* fire the 'remove' event if no models are actually removed" : function() {
+			"remove() should *not* fire the 'removeset' event if no models are actually removed" : function() {
 				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
 				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } );
 				    
 				var collection = new this.Collection( [ model1 ] );
 				
 				var removeEventCallCount = 0;
-				collection.on( 'remove', function( collection, models ) {
+				collection.on( 'removeset', function( collection, models ) {
 					removeEventCallCount++;
 				} );
 				
@@ -795,6 +943,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 		},
 		
 		
+		
 		{
 			/*
 			 * Test removeAll()
@@ -834,7 +983,25 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			
 			
-			"removeAll() should fire the 'remove' event with the array of removed models when multiple models are removed" : function() {
+			"removeAll() should fire the 'remove' event for each of the removed models" : function() {
+				var model1 = new this.Model(),
+				    model2 = new this.Model(),
+				    model3 = new this.Model(),
+				    model4 = new this.Model();
+				    
+				var collection = new this.Collection( [ model1, model2, model3, model4 ] );
+				
+				var removedModels = [];
+				collection.on( 'remove', function( collection, model ) {
+					removedModels.push( model );
+				} );
+				
+				collection.removeAll();
+				Y.ArrayAssert.itemsAreSame( [ model1, model2, model3, model4 ], removedModels );
+			},
+			
+			
+			"removeAll() should fire the 'removeset' event with the array of removed models when multiple models are removed" : function() {
 				var model1 = new this.Model(),
 				    model2 = new this.Model(),
 				    model3 = new this.Model(),
@@ -843,7 +1010,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 				var collection = new this.Collection( [ model1, model2, model3, model4 ] );
 				
 				var removedModels;
-				collection.on( 'remove', function( collection, models ) {
+				collection.on( 'removeset', function( collection, models ) {
 					removedModels = models;
 				} );
 				
@@ -853,11 +1020,11 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			
 			
-			"removeAll() should *not* fire the 'remove' event if no models are actually removed" : function() {
+			"removeAll() should *not* fire the 'removeset' event if no models are actually removed" : function() {
 				var collection = new this.Collection();  // no models
 				
 				var removeEventCallCount = 0;
-				collection.on( 'remove', function( collection, models ) {
+				collection.on( 'removeset', function( collection, models ) {
 					removeEventCallCount++;
 				} );
 				

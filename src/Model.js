@@ -713,9 +713,9 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		};
 		this.embeddedCollectionAddRemoveReorderHandlers[ attributeName ] = addRemoveReorderHandler;
 		embeddedCollection.on( {
-			'add'     : addRemoveReorderHandler,
-			'remove'  : addRemoveReorderHandler,
-			'reorder' : addRemoveReorderHandler,
+			'addset'    : addRemoveReorderHandler,
+			'removeset' : addRemoveReorderHandler,
+			'reorder'   : addRemoveReorderHandler,
 			scope : this
 		} );
 	},
@@ -750,9 +750,9 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		
 		var addRemoveReorderHandler = this.embeddedCollectionAddRemoveReorderHandlers[ attributeName ];
 		embeddedCollection.un( {
-			'add'     : addRemoveReorderHandler,
-			'remove'  : addRemoveReorderHandler,
-			'reorder' : addRemoveReorderHandler,
+			'addset'    : addRemoveReorderHandler,
+			'removeset' : addRemoveReorderHandler,
+			'reorder'   : addRemoveReorderHandler,
 			scope : this
 		} );
 	},

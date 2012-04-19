@@ -154,15 +154,27 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 		
 		this.addEvents(
 			/**
-			 * Fires when one or more models has been added to the Collection.
+			 * Fires when one or more models have been added to the Collection. This event is fired once for each
+			 * model that is added. To respond to a set of model adds all at once, use the {@link #event-addset} 
+			 * event instead. 
 			 * 
 			 * @event add
 			 * @param {Kevlar.Collection} collection This Collection instance.
-			 * @param {Kevlar.Model[]} models The array of model instances that were added. This will be an
-			 *   array even in the case that a single model is added, so that handlers can consistently
-			 *   handle both cases of single/multiple model addition.
+			 * @param {Kevlar.Model} model The model instance that was added. 
 			 */
 			'add',
+			
+			/**
+			 * Responds to a set of model additions by firing after one or more models have been added to the Collection. 
+			 * This event fires with an array of the added model(s), so that the additions may be processed all at 
+			 * once. To respond to each addition individually, use the {@link #event-add} event instead. 
+			 * 
+			 * @event addset
+			 * @param {Kevlar.Collection} collection This Collection instance.
+			 * @param {Kevlar.Model[]} models The array of model instances that were added. This will be an
+			 *   array of the added models, even in the case that a single model is added.
+			 */
+			'addset',
 			
 			/**
 			 * Fires when a model is reordered within the Collection. A reorder can be performed
@@ -181,15 +193,28 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 			'reorder',
 			
 			/**
-			 * Fires when one or more models have been removed from the Collection.
+			 * Fires when one or more models have been removed from the Collection. This event is fired once for each
+			 * model that is removed. To respond to a set of model removals all at once, use the {@link #event-removeset} 
+			 * event instead.
 			 * 
 			 * @event remove
 			 * @param {Kevlar.Collection} collection This Collection instance.
-			 * @param {Kevlar.Model[]} models The array of model instances that were removed. This will be an
-			 *   array even in the case that a single model is removed, so that handlers can consistently
-			 *   handle both cases of single/multiple model removal.
+			 * @param {Kevlar.Model} model The model instances that was removed.
+			 * @param {Number} index The index that the model was removed from.
 			 */
-			'remove'
+			'remove',
+			
+			/**
+			 * Responds to a set of model removals by firing after one or more models have been removed from the Collection. 
+			 * This event fires with an array of the removed model(s), so that the removals may be processed all at once. 
+			 * To respond to each removal individually, use the {@link #event-remove} event instead.
+			 * 
+			 * @event removeset
+			 * @param {Kevlar.Collection} collection This Collection instance.
+			 * @param {Kevlar.Model[]} models The array of model instances that were removed. This will be an
+			 *   array of the removed models, even in the case that a single model is removed.
+			 */
+			'removeset'
 		);
 		
 		
@@ -300,7 +325,7 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 	 */
 	insert : function( models, index ) {
 		var indexSpecified = ( typeof index !== 'undefined' ),
-		    i, len, model, modelClientId, modelId,
+		    i, len, model, modelId,
 		    addedModels = [];
 		
 		// First, normalize the `index` if it is out of the bounds of the models array
@@ -327,15 +352,13 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 			if( !( model instanceof Kevlar.Model ) ) {
 				model = this.createModel( model );
 			}
-			
-			modelClientId = model.getClientId();
-			
+						
 			// Only add if the model does not already exist in the collection
-			if( !this.modelsByClientId[ modelClientId ] ) {
+			if( !this.has( model ) ) {
 				this.modified = true;  // model is being added, then the Collection has been modified
 				
 				addedModels.push( model );
-				this.modelsByClientId[ modelClientId ] = model;
+				this.modelsByClientId[ model.getClientId() ] = model;
 				
 				// Insert the model into the models array at the correct position
 				this.models.splice( index, 0, model );  // 0 elements to remove
@@ -351,8 +374,10 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 					model.on( 'change:' + model.getIdAttribute().getName(), this.onModelIdChange, this );
 				}
 				
-				// Subscribe to the special 'all' event on the model, so that the Collection can relay all of its events
+				// Subscribe to the special 'all' event on the model, so that the Collection can relay all of the model's events
 				model.on( 'all', this.onModelEvent, this );
+				
+				this.fireEvent( 'add', this, model );
 				
 			} else {
 				// Handle a reorder, but only actually move the model if a new index was specified.
@@ -382,7 +407,7 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 		// exist in the collection). Don't fire the event though if none were actually inserted (there could have been models
 		// that were simply reordered).
 		if( addedModels.length > 0 ) {
-			this.fireEvent( 'add', this, addedModels );
+			this.fireEvent( 'addset', this, addedModels );
 		}
 	},
 	
@@ -398,22 +423,22 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 	remove : function( models ) {
 		var collectionModels = this.models,
 		    removedModels = [],
-		    i, ilen, j, jlen, model, modelClientId;
+		    i, len, model, modelIndex;
 		
 		// Normalize the argument to an array
 		if( !Kevlar.isArray( models ) ) {
 			models = [ models ];
 		}
 		
-		for( i = 0, ilen = models.length; i < ilen; i++ ) {
+		for( i = 0, len = models.length; i < len; i++ ) {
 			model = models[ i ];
-			modelClientId = model.getClientId();
+			modelIndex = this.indexOf( model );
 			
-			// Don't bother searching to remove the model if we know it doesn't exist in the Collection
-			if( this.modelsByClientId[ modelClientId ] ) {
+			// Don't bother doing anything to remove the model if we know it doesn't exist in the Collection
+			if( modelIndex > -1 ) {
 				this.modified = true;  // model is being removed, then the Collection has been modified
 				
-				delete this.modelsByClientId[ modelClientId ];
+				delete this.modelsByClientId[ model.getClientId() ];
 				
 				if( model.hasIdAttribute() ) {   // make sure the model actually has a valid idAttribute first, before trying to call getId()
 					delete this.modelsById[ model.getId() ];
@@ -426,19 +451,15 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 				model.un( 'all', this.onModelEvent, this );
 				
 				// Remove the model from the models array
-				for( j = 0, jlen = collectionModels.length; j < jlen; j++ ) {
-					if( collectionModels[ j ] === model ) {
-						collectionModels.splice( j, 1 );						
-						break;
-					}
-				}
+				collectionModels.splice( modelIndex, 1 );
+				this.fireEvent( 'remove', this, model, modelIndex );
 				
 				removedModels.push( model );
 			}
 		}
 		
 		if( removedModels.length > 0 ) {
-			this.fireEvent( 'remove', this, removedModels );
+			this.fireEvent( 'removeset', this, removedModels );
 		}
 	},
 	
