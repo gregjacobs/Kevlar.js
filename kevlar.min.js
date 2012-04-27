@@ -1,6 +1,6 @@
 /*!
  * Kevlar JS Library
- * Version 0.6
+ * Version 0.6.1
  * 
  * Copyright(c) 2012 Gregory Jacobs.
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php

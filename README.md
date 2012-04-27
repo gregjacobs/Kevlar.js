@@ -9,6 +9,10 @@ This is currently a work in progress, and is alpha.
 
 ## Changelog:
 
+### 0.6.1
+
+* Merge pull request to fix URL appending in RestProxy.
+
 ### 0.6
 
 * Changed the behavior of Collection's 'add' and 'remove' events. The 'add' and 'remove' events are now fired once for each addition or removal of one or more models. Added 'addset' and 'removeset' events for responding to a set of additions/removals all at once.
