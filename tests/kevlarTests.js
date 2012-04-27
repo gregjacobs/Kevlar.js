@@ -7023,7 +7023,7 @@ tests.unit.persistence.add( new Ext.test.TestSuite( {
 			name: 'Test buildUrl()',
 			
 			
-			"buildUrl() should return simply the configured urlRoot, if the 'appendId' config is false" : function() {
+			"buildUrl() should handle a urlRoot without a trailing slash" : function() {
 				var mockModel = JsMockito.mock( Kevlar.Model );
 				JsMockito.when( mockModel ).getId().thenReturn( 42 );
 				
@@ -7032,29 +7032,26 @@ tests.unit.persistence.add( new Ext.test.TestSuite( {
 					appendId : false
 				} );
 				
-				Y.Assert.areSame( '/testUrl', proxy.buildUrl( mockModel ), "buildUrl() should have simply still returned the url" );
+				Y.Assert.areSame( '/testUrl', proxy.buildUrl( mockModel, 'create' ), "buildUrl() should have returned the urlRoot when doing a 'create'" );
+				Y.Assert.areSame( '/testUrl/42', proxy.buildUrl( mockModel, 'read' ), "buildUrl() should have appended the ID when doing a 'read'" );
+				Y.Assert.areSame( '/testUrl/42', proxy.buildUrl( mockModel, 'update' ), "buildUrl() should have appended the ID when doing a 'update'" );
+				Y.Assert.areSame( '/testUrl/42', proxy.buildUrl( mockModel, 'delete' ), "buildUrl() should have appended the ID when doing a 'delete'" );
 			},
-			
-			
-			"buildUrl() should return the configured urlRoot with the model's id, if the 'appendId' config is true" : function() {
+
+
+			"buildUrl() should handle a urlRoot with a trailing slash" : function() {
 				var mockModel = JsMockito.mock( Kevlar.Model );
 				JsMockito.when( mockModel ).getId().thenReturn( 42 );
 				
-				// Try with no trailing slash on the url
-				var proxy1 = new Kevlar.persistence.RestProxy( {
-					urlRoot : '/testUrl',  // note: no trailing slash
-					appendId : true
+				var proxy = new Kevlar.persistence.RestProxy( {
+					urlRoot : '/testUrl/',
+					appendId : false
 				} );
 				
-				Y.Assert.areSame( '/testUrl/42', proxy1.buildUrl( mockModel ), "buildUrl() should have returned the url with the id appended" );
-				
-				// Try with a trailing slash on the url
-				var proxy2 = new Kevlar.persistence.RestProxy( {
-					urlRoot : '/testUrl/',  // note: trailing slash exists
-					appendId : true
-				} );
-				
-				Y.Assert.areSame( '/testUrl/42', proxy2.buildUrl( mockModel ), "buildUrl() should have returned the url with the id appended" );
+				Y.Assert.areSame( '/testUrl/', proxy.buildUrl( mockModel, 'create' ), "buildUrl() should have returned the urlRoot when doing a 'create'" );
+				Y.Assert.areSame( '/testUrl/42', proxy.buildUrl( mockModel, 'read' ), "buildUrl() should have appended the ID when doing a 'read'" );
+				Y.Assert.areSame( '/testUrl/42', proxy.buildUrl( mockModel, 'update' ), "buildUrl() should have appended the ID when doing a 'update'" );
+				Y.Assert.areSame( '/testUrl/42', proxy.buildUrl( mockModel, 'delete' ), "buildUrl() should have appended the ID when doing a 'delete'" );
 			}
 		}
 	]
