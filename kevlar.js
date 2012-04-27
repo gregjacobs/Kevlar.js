@@ -6176,7 +6176,7 @@ Kevlar.util.Object = {
 	
 	
 	/**
-	 * Takes each of the keys (property names) of an object, and puts them into an array.
+	 * Takes each of the keys (property names) of an object, and returns them in an array.
 	 * 
 	 * @method keysToArray
 	 * @param {Object} obj
