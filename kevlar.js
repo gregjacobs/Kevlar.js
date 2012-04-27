@@ -5617,13 +5617,6 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	urlRoot : "",
 	
 	/**
-	 * @cfg {Boolean} appendId
-	 * True to automatically append the ID of the Model to the {@link #urlRoot} when
-	 * performing 'read', 'update', and 'delete' actions. 
-	 */
-	appendId: true,
-	
-	/**
 	 * @cfg {Boolean} incremental
 	 * True to have the RestProxy only provide data that has changed to the server when
 	 * updating a model. By using this, it isn't exactly following REST per se, but can
@@ -5897,7 +5890,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		var url = this.urlRoot;
 		
 		// And now, use the model's ID to set the url.
-		if( this.appendId ) {
+		if( action !== 'create' ) {
 			if( !url.match( /\/$/ ) ) {
 				url += '/';
 			}
