@@ -560,6 +560,10 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 				// If the attribute is the "idAttribute", set the `id` property on the model for compatibility with Backbone's Collection
 				if( attributeName === this.idAttribute ) {
 					this.id = newValue;
+
+					// Re-submit to ModelCache, so new ID will be used.  This is particularly relevant on 'create', where the ID isn't known
+					// at the time the model is instantiated.
+					Kevlar.ModelCache.get( this, newValue );
 				}
 				
 				// Store the 'change' values in the changeset hashmaps, for use when the 'changeset' event fires

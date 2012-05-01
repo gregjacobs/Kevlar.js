@@ -8198,6 +8198,22 @@ tests.integration.add( new Ext.test.TestSuite( {
 				// Make sure that only one model was created for id 1
 				Y.Assert.areSame( model1, model2, "model1 and model2 should point to the same object" );
 			},
+
+
+			"Instantiating one model and setting the ID later, then instantiating another with the same ID, the two models should point to the same instance" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 'id' ],
+					idAttribute : 'id'
+				} );
+				
+				var model1 = new Model();
+				model1.set( 'id', 1 );
+
+				var model2 = new Model( { id: 1 } );
+				
+				// Make sure that only one model was created for id 1
+				Y.Assert.areSame( model1, model2, "model1 and model2 should point to the same object" );
+			},
 			
 			
 			"Instantiating two models with the same ID should combine the initial data, with still, only one actual instance should be created" : function() {
