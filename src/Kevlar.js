@@ -37,23 +37,6 @@ Kevlar.prototype = {
 	emptyFn : function() {},
 	
 	
-	/**
-	 * An abstract function (method). This can be referred to in cases where you want a function
-	 * that is abstract, but do not want to create a new function object with a new thrown
-	 * error string (which can bloat the code when repeated over many abstract classes/functions).
-	 * One should check the call stack when this error is thrown to determine which abstract
-	 * method they forgot to implement. 
-	 * 
-	 * Ex in a class's prototype object literal definition:
-	 *     someMethod: Kevlar.abstractFn
-	 *
-	 * @method abstractFn
-	 */
-	abstractFn : function() {
-		throw new Error( "method must be implemented in subclass" );
-	},
-	
-	
 	// --------------------------------
 	
 

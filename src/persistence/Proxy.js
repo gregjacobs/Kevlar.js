@@ -7,8 +7,11 @@
  * 
  * @param {Object} config The configuration options for this class, specified in an object (hash).
  */
-/*global Kevlar */
+/*global Class, Kevlar */
 Kevlar.persistence.Proxy = Kevlar.extend( Kevlar.util.Observable, {
+	
+	abstractClass : true,
+	
 	
 	constructor : function( config ) {
 		// Apply the config
@@ -23,7 +26,7 @@ Kevlar.persistence.Proxy = Kevlar.extend( Kevlar.util.Observable, {
 	 * @method create
 	 * @param {Kevlar.Model} model The Model instance to create on the server.
 	 */
-	create : Kevlar.abstractFn,
+	create : Class.abstractMethod,
 	
 	
 	/**
@@ -33,7 +36,7 @@ Kevlar.persistence.Proxy = Kevlar.extend( Kevlar.util.Observable, {
 	 * @method read
 	 * @param {Kevlar.Model} model The Model instance to read from the server.
 	 */
-	read : Kevlar.abstractFn,
+	read : Class.abstractMethod,
 	
 	
 	/**
@@ -43,7 +46,7 @@ Kevlar.persistence.Proxy = Kevlar.extend( Kevlar.util.Observable, {
 	 * @method update
 	 * @param {Kevlar.Model} model The model to persist to the server. 
 	 */
-	update : Kevlar.abstractFn,
+	update : Class.abstractMethod,
 	
 	
 	/**
@@ -53,7 +56,7 @@ Kevlar.persistence.Proxy = Kevlar.extend( Kevlar.util.Observable, {
 	 * @method destroy
 	 * @param {Kevlar.Model} model The Model instance to delete on the server.
 	 */
-	destroy : Kevlar.abstractFn
+	destroy : Class.abstractMethod
 	
 } );
 

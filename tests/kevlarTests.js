@@ -3869,6 +3869,41 @@ tests.unit.data.add( new Ext.test.TestSuite( {
 			},
 			
 			
+			"convert() should only retrieve the data for the persisted attributes in nested models (i.e. attributes with persist: true) with the `persistedOnly` option set to true" : function() {
+				var ParentModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'id', type: 'string' },
+						{ name: 'child', type: 'model', embedded: true }
+					]
+				} );
+				
+				var ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'persistedAttr', type: 'string' },
+						{ name : 'unpersistedAttr', type: 'string', persist: false }
+					]
+				} );
+				
+				var childModel = new ChildModel( {
+					persistedAttr: 'persisted',
+					unpersistedAttr: 'unpersisted'
+				} );
+				var parentModel = new ParentModel( {
+					id: 1,
+					child: childModel
+				} );
+				childModel.set( 'unpersistedAttr', 'newValue' );
+				
+				
+				var persistedData = Kevlar.data.NativeObjectConverter.convert( parentModel, { persistedOnly: true } );
+				Y.ObjectAssert.ownsKeys( [ 'id', 'child' ], persistedData, "The persisted data for the parent model should have 'id' and 'child' attributes" );
+				
+				var childAttrs = persistedData.child;
+				Y.Assert.areSame( 1, Kevlar.util.Object.length( childAttrs ), "The child data shoud only have 1 property in the data (the persisted one)" );
+				Y.ObjectAssert.ownsKeys( [ 'persistedAttr' ], childAttrs, "The child data should only have the 'persistedAttr' attribute" );
+			},
+			
+			
 			// -------------------------------
 			
 			// Test with specific `attributeNames`
@@ -4436,7 +4471,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 						
 						var model = new Model( { attribute1: 'value1', attribute2: 'value2' } );
 						Y.Assert.isFalse( model.isDirty(), "The model should not be dirty upon initialization" );
-						Y.Assert.isTrue( Kevlar.util.Object.isEmpty( model.getChanges ), "There should not be any 'changes' upon initialization" );
+						Y.Assert.isTrue( Kevlar.util.Object.isEmpty( model.getChanges() ), "There should not be any 'changes' upon initialization" );
 					}
 				},				
 				
@@ -5577,6 +5612,16 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 					]
 				} );
+				
+				this.ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} );
+				
+				this.ConcreteDataComponent = Kevlar.DataComponent.extend( {
+					// Implementation of abstract interface
+					getData : Kevlar.emptyFn,
+					isModified : Kevlar.emptyFn,
+					commit : Kevlar.emptyFn,
+					rollback : Kevlar.emptyFn
+				} );
 			},
 			
 			// -------------------------------------
@@ -5657,15 +5702,13 @@ tests.unit.add( new Ext.test.TestSuite( {
 			// Test with embedded models/collections
 			
 			"In the case of embedded DataComponents, the parent model should be considered 'modified' when a child embedded DataComponent has changes" : function() {
-				var ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} );
-				
 				var ParentModel = Kevlar.Model.extend( {
 					attributes : [
-						new ConcreteDataComponentAttribute( { name: 'child', embedded: true } )
+						new this.ConcreteDataComponentAttribute( { name: 'child', embedded: true } )
 					]
 				} );
 				
-				var childDataComponent = JsMockito.mock( Kevlar.DataComponent );
+				var childDataComponent = JsMockito.mock( this.ConcreteDataComponent );
 				JsMockito.when( childDataComponent ).isModified().thenReturn( true );
 				
 				var parentModel = new ParentModel( {
@@ -5678,15 +5721,13 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			
 			"The parent model should *not* have changes when a child model has changes, but is not 'embedded'" : function() {
-				var ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} );
-				
 				var ParentModel = Kevlar.Model.extend( {
 					attributes : [
-						new ConcreteDataComponentAttribute( { name: 'child', embedded: false } )  // note: NOT embedded
+						new this.ConcreteDataComponentAttribute( { name: 'child', embedded: false } )  // note: NOT embedded
 					]
 				} );
 				
-				var childDataComponent = JsMockito.mock( Kevlar.DataComponent );
+				var childDataComponent = JsMockito.mock( this.ConcreteDataComponent );
 				JsMockito.when( childDataComponent ).isModified().thenReturn( true );
 				
 				var parentModel = new ParentModel( {
@@ -5694,7 +5735,58 @@ tests.unit.add( new Ext.test.TestSuite( {
 				} );
 				
 				Y.Assert.isFalse( parentModel.isModified(), "The parent model should not be considered 'modified' even though its child model is 'modified', because the child is not 'embedded'" );
+			},
+			
+			
+			
+			// -------------------------
+			
+			// Test with the 'persistedOnly' option set to true
+			
+			"If the persistedOnly option is provided as true, isModified() should return true only if a persisted attribute is modified" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'persistedAttr', type: 'string' },
+						{ name : 'unpersistedAttr', type: 'string', persist: false }
+					]
+				} );
+				
+				var model = new Model();
+				
+				Y.Assert.isFalse( model.isModified(), "Initial condition: the model should not be considered modified" );
+				
+				model.set( 'unpersistedAttr', 'value1' );
+				Y.Assert.isTrue( model.isModified(), "The model should be considered 'modified' in general" );
+				Y.Assert.isFalse( model.isModified( { persistedOnly: true } ), "The model only has unpersisted attributes modified, so this call should return false" );
+				
+				model.set( 'persistedAttr', 'value1' );
+				Y.Assert.isTrue( model.isModified(), "The model should still be considered 'modified' in general" );
+				Y.Assert.isTrue( model.isModified( { persistedOnly: true } ), "The model now has a persisted attribute that is modified. This should return true." );
+			},
+			
+			
+			"If the persistedOnly option is provided as true and a specific attribute name is given, isModified() should return true only if the attribute is both modified, and persisted" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'persistedAttr', type: 'string' },
+						{ name : 'unpersistedAttr', type: 'string', persist: false }
+					]
+				} );
+				
+				var model = new Model();
+				
+				Y.Assert.isFalse( model.isModified( 'persistedAttr' ), "Initial condition: the 'persistedAttr' should not be considered modified" );
+				Y.Assert.isFalse( model.isModified( 'unpersistedAttr' ), "Initial condition: the 'unpersistedAttr' should not be considered modified" );
+				
+				model.set( 'unpersistedAttr', 'value1' );
+				Y.Assert.isTrue( model.isModified( 'unpersistedAttr' ), "The 'unpersistedAttr' should be considered 'modified' in general" );
+				Y.Assert.isFalse( model.isModified( 'unpersistedAttr', { persistedOnly: true } ), "The 'unpersistedAttr' is not persisted, so this call should return false, even though it has been changed" );
+				
+				model.set( 'persistedAttr', 'value1' );
+				Y.Assert.isTrue( model.isModified( 'persistedAttr' ), "The 'persistedAttr' should still be considered 'modified' in general" );
+				Y.Assert.isTrue( model.isModified( 'persistedAttr', { persistedOnly: true } ), "The 'persistedAttr' is both modified, and persisted. This should return true." );
 			}
+			
 		},
 		
 		
@@ -5763,6 +5855,16 @@ tests.unit.add( new Ext.test.TestSuite( {
 						args[ 1 ] = arguments[ 1 ];
 					}
 				};
+				
+				
+				this.ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} );
+				this.ConcreteDataComponent = Kevlar.DataComponent.extend( { 
+					// Implementation of abstract interface
+					getData : Kevlar.emptyFn,
+					isModified : Kevlar.emptyFn,
+					commit : Kevlar.emptyFn,
+					rollback : Kevlar.emptyFn
+				} );
 			},
 			
 			tearDown : function() {
@@ -5775,20 +5877,18 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			
 			"getChanges() should delegate to the singleton NativeObjectConverter to create an Object representation of its data, but only provide changed attributes for the attributes that should be returned" : function() {
-				var ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} );
-				
 				var Model = Kevlar.Model.extend( {
 					attributes: [ 
 						'attr1', 
 						'attr2', 
 						'attr3',
-						new ConcreteDataComponentAttribute( { name: 'nestedDataComponent', embedded: false } ),  // this one NOT embedded
-						new ConcreteDataComponentAttribute( { name: 'embeddedDataComponent', embedded: true } )  // this one IS embedded
+						new this.ConcreteDataComponentAttribute( { name: 'nestedDataComponent', embedded: false } ),  // this one NOT embedded
+						new this.ConcreteDataComponentAttribute( { name: 'embeddedDataComponent', embedded: true } )  // this one IS embedded
 					]
 				} );
 				
 				
-				var mockDataComponent = JsMockito.mock( Kevlar.DataComponent );
+				var mockDataComponent = JsMockito.mock( this.ConcreteDataComponent );
 				JsMockito.when( mockDataComponent ).isModified().thenReturn( true );
 				
 				var model = new Model( {
@@ -5831,6 +5931,15 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
 						{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 					]
+				} );
+				
+				
+				this.ConcreteDataComponent = Kevlar.DataComponent.extend( { 
+					// Implementation of abstract interface
+					getData : Kevlar.emptyFn,
+					isModified : Kevlar.emptyFn,
+					commit : Kevlar.emptyFn,
+					rollback : Kevlar.emptyFn
 				} );
 			},
 				
@@ -5882,13 +5991,19 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			"committing a parent model should also commit any embedded child DataComponent that the model holds" : function() {
 				// A concrete subclass for testing
-				var ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} ); 
+				var ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {
+					// Implementation of abstract interface
+					getData : Kevlar.emptyFn,
+					isModified : Kevlar.emptyFn,
+					commit : Kevlar.emptyFn,
+					rollback : Kevlar.emptyFn
+				} );
 				
 				var Model = Kevlar.Model.extend( {
 					attributes : [ new ConcreteDataComponentAttribute( { name: 'childDataComponent', embedded: true } ) ]
 				} );
 				
-				var mockDataComponent = JsMockito.mock( Kevlar.DataComponent.extend( {} ) );
+				var mockDataComponent = JsMockito.mock( this.ConcreteDataComponent );
 				var model = new Model();
 				
 				model.set( 'childDataComponent', mockDataComponent );
@@ -6050,23 +6165,28 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			
 			"load() should delegate to its persistenceProxy's read() method to retrieve the data" : function() {
-				var readCallCount = 0;
-				var MockProxy = Kevlar.persistence.Proxy.extend( {
-					read : function( model, options ) {
-						readCallCount++;
-					}
-				} );
+				var proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
+					// Implementation of abstract interface
+					create : Kevlar.emptyFn,
+					read : Kevlar.emptyFn,
+					update : Kevlar.emptyFn,
+					destroy : Kevlar.emptyFn
+				} ) );
 				
 				var MyModel = this.TestModel.extend( {
-					persistenceProxy : new MockProxy()
+					persistenceProxy : proxy
 				} );
 				
-				var model = new MyModel();
 				
-				// Run the load() method to delegate 
+				// Instantiate and run the load() method to delegate
+				var model = new MyModel(); 
 				model.load();
 				
-				Y.Assert.areSame( 1, readCallCount, "The persistenceProxy's read() method should have been called exactly once" );
+				try {
+					JsMockito.verify( proxy ).read();
+				} catch( msg ) {
+					Y.Assert.fail( msg );
+				}
 			}
 		},
 		
@@ -6081,6 +6201,17 @@ tests.unit.add( new Ext.test.TestSuite( {
 			items : [
 				{
 					name : "General save() tests",
+					
+					setUp : function() {
+						this.proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
+							// Implementation of abstract interface
+							create: Kevlar.emptyFn,
+							read: Kevlar.emptyFn,
+							update: Kevlar.emptyFn,
+							destroy: Kevlar.emptyFn
+						} ) );
+					},
+					
 					
 					// Special instructions
 					_should : {
@@ -6101,13 +6232,11 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 					
 					"save() should delegate to its persistenceProxy's create() method to persist changes when the Model does not have an id set" : function() {
-						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
-						
 						var Model = Kevlar.Model.extend( {
 							addAttributes : [ 'id' ],
 							idAttribute : 'id',
 							
-							persistenceProxy : mockProxy
+							persistenceProxy : this.proxy
 						} );
 						
 						var model = new Model();  // note: no 'id' set
@@ -6116,21 +6245,19 @@ tests.unit.add( new Ext.test.TestSuite( {
 						model.save();
 						
 						try {
-							JsMockito.verify( mockProxy ).create();
-						} catch( message ) {
-							Y.Assert.fail( "The persistenceProxy's update() method should have been called exactly once. " + message );
+							JsMockito.verify( this.proxy ).create();
+						} catch( msg ) {
+							Y.Assert.fail( msg );
 						}
 					},
 					
 					
 					"save() should delegate to its persistenceProxy's update() method to persist changes, when the Model has an id" : function() {
-						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
-						
 						var Model = Kevlar.Model.extend( {
 							addAttributes : [ 'id' ],
 							idAttribute : 'id',
 							
-							persistenceProxy : mockProxy
+							persistenceProxy : this.proxy
 						} );
 						
 						var model = new Model( { id: 1 } );
@@ -6139,9 +6266,9 @@ tests.unit.add( new Ext.test.TestSuite( {
 						model.save();
 						
 						try {
-							JsMockito.verify( mockProxy, JsMockito.Verifiers.once() ).update();
-						} catch( message ) {
-							Y.Assert.fail( "The persistenceProxy's update() method should have been called exactly once. " + message );
+							JsMockito.verify( this.proxy ).update();
+						} catch( msg ) {
+							Y.Assert.fail( msg );
 						}
 					}
 				},
@@ -6151,10 +6278,16 @@ tests.unit.add( new Ext.test.TestSuite( {
 					name : "save() callbacks tests",
 					
 					setUp : function() {
-						this.mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
+						this.proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
+							// Implementation of abstract interface
+							create: Kevlar.emptyFn,
+							read: Kevlar.emptyFn,
+							update: Kevlar.emptyFn,
+							destroy: Kevlar.emptyFn
+						} ) );
 						
 						// Note: setting both create() and update() methods here
-						this.mockProxy.create = this.mockProxy.update = function( model, options ) {
+						this.proxy.create = this.proxy.update = function( model, options ) {
 							if( options.success ) { options.success.call( options.scope || window ); }
 							if( options.error ) { options.error.call( options.scope || window ); }
 							if( options.complete ) { options.complete( options.scope || window ); }
@@ -6162,7 +6295,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 						
 						this.Model = Kevlar.Model.extend( {
 							addAttributes : [ 'id', 'attribute1' ],
-							persistenceProxy  : this.mockProxy
+							persistenceProxy  : this.proxy
 						} );
 					},
 					
@@ -6246,14 +6379,19 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 					"Model attributes that have been persisted should not be persisted again if they haven't changed since the last persist" : function() {
 						var dataToPersist;
-						var MockProxy = Kevlar.persistence.Proxy.extend( {
-							update : function( model, options ) {
-								dataToPersist = model.getChanges();
-								options.success.call( options.scope );
-							}
+						var proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
+							create  : Kevlar.emptyFn,
+							read    : Kevlar.emptyFn,
+							update  : Kevlar.emptyFn,
+							destroy : Kevlar.emptyFn
+						} ) );
+						JsMockito.when( proxy ).update().then( function( model, options ) {
+							dataToPersist = model.getChanges();
+							options.success.call( options.scope );
 						} );
+						
 						var MyModel = this.Model.extend( {
-							persistenceProxy : new MockProxy()
+							persistenceProxy : proxy
 						} );
 						var model = new MyModel( { id: 1 } );
 						
@@ -6283,18 +6421,22 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 					// Creates a test Model with a mock persistenceProxy, which fires its 'success' callback after the given timeout
 					createModel : function( timeout ) {
-						var MockProxy = Kevlar.persistence.Proxy.extend( {
-							update : function( model, options ) {
-								// update method just calls 'success' callback in 50ms
-								window.setTimeout( function() {
-									options.success.call( options.scope || window );
-								}, timeout );
-							}
+						var proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
+							create  : Kevlar.emptyFn,
+							read    : Kevlar.emptyFn,
+							update  : Kevlar.emptyFn,
+							destroy : Kevlar.emptyFn
+						} ) );
+						JsMockito.when( proxy ).update().then( function( model, options ) {
+							// update method just calls 'success' callback in 50ms
+							window.setTimeout( function() {
+								options.success.call( options.scope || window );
+							}, timeout );
 						} );
 						
 						return Kevlar.Model.extend( {
 							addAttributes : [ 'id', 'attribute1', 'attribute2' ],
-							persistenceProxy : new MockProxy()
+							persistenceProxy : proxy
 						} );
 					},
 					
@@ -6415,10 +6557,16 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 					
 					"destroy() should delegate to its persistenceProxy's destroy() method to persist the destruction of the model" : function() {
-						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );				
+						var proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
+							create  : Kevlar.emptyFn,
+							read    : Kevlar.emptyFn,
+							update  : Kevlar.emptyFn,
+							destroy : Kevlar.emptyFn
+						} ) );
+						
 						var Model = Kevlar.Model.extend( {
 							attributes : [ 'id' ],
-							persistenceProxy : mockProxy
+							persistenceProxy : proxy
 						} );
 						
 						var model = new Model( { id: 1 } );  // the model needs an id to be considered as persisted on the server
@@ -6427,7 +6575,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 						model.destroy();
 						
 						try {
-							JsMockito.verify( mockProxy, JsMockito.Verifiers.once() ).destroy();
+							JsMockito.verify( proxy ).destroy();
 						} catch( e ) {
 							Y.Assert.fail( "The model should have delegated to the destroy method exactly once." );
 						}
@@ -6435,14 +6583,19 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 					
 					"upon successful destruction of the Model, the Model should fire its 'destroy' event" : function() {
-						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
-						mockProxy.destroy = function( model, options ) {
+						var proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
+							create  : Kevlar.emptyFn,
+							read    : Kevlar.emptyFn,
+							update  : Kevlar.emptyFn,
+							destroy : Kevlar.emptyFn
+						} ) );
+						JsMockito.when( proxy ).destroy().then( function( model, options ) {
 							options.success.call( options.scope );
-						};
+						} );
 						
 						var Model = Kevlar.Model.extend( {
 							attributes : [ 'id' ],
-							persistenceProxy : mockProxy
+							persistenceProxy : proxy
 						} );
 						
 						var model = new Model( { id: 1 } );  // the model needs an id to be considered as persisted on the server
@@ -6463,12 +6616,13 @@ tests.unit.add( new Ext.test.TestSuite( {
 					name : "destroy() callbacks tests",
 					
 					setUp : function() {
-						this.mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
-						this.mockProxy.destroy = function( model, options ) {
-							if( options.success )  { options.success.call( options.scope ); }
-							if( options.error )    { options.error.call( options.scope ); }
-							if( options.complete ) { options.complete( options.scope ); }
-						};
+						this.proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
+							// Implementation of abstract interface
+							create: Kevlar.emptyFn,
+							read: Kevlar.emptyFn,
+							update: Kevlar.emptyFn,
+							destroy: Kevlar.emptyFn
+						} ) );
 					},
 					
 			
@@ -6476,9 +6630,14 @@ tests.unit.add( new Ext.test.TestSuite( {
 						var successCallCount = 0,
 						    completeCallCount = 0;
 						
+						JsMockito.when( this.proxy ).destroy().then( function( model, options ) {
+							if( options.success )  { options.success.call( options.scope ); }
+							if( options.complete ) { options.complete( options.scope ); }
+						} );
+						
 						var Model = Kevlar.Model.extend( {
 							attributes : [ 'id' ],
-							persistenceProxy  : this.mockProxy
+							persistenceProxy  : this.proxy
 						} );
 						var model = new Model( { id: 1 } );  // the model needs an id to be considered as persisted on the server
 						
@@ -6496,16 +6655,15 @@ tests.unit.add( new Ext.test.TestSuite( {
 					"destroy() should call its 'error' and 'complete' callbacks if the persistenceProxy encounters an error" : function() {
 						var errorCallCount = 0,
 						    completeCallCount = 0;
-						    
-						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
-						mockProxy.destroy = function( model, options ) {
+						
+						JsMockito.when( this.proxy ).destroy().then( function( model, options ) {
 							options.error.call( options.scope );
 							options.complete( options.scope );
-						};
+						} );
 						
 						var Model = Kevlar.Model.extend( {
 							attributes : [ 'id' ],
-							persistenceProxy  : this.mockProxy
+							persistenceProxy  : this.proxy
 						} );
 						var model = new Model( { id: 1 } );  // the model needs an id to be considered as persisted on the server
 						
@@ -7793,7 +7951,7 @@ tests.unit.util.add( new Ext.test.TestSuite( {
 /*global Ext, tests */
 (function() {
 	tests.integration               = new Ext.test.TestSuite( 'integration' );
-	//tests.integration.persistence = new Ext.test.TestSuite( 'persistence' ) .addTo( tests.integration );
+	tests.integration.persistence   = new Ext.test.TestSuite( 'persistence' ) .addTo( tests.integration );
 	//tests.integration.util        = new Ext.test.TestSuite( 'util' )        .addTo( tests.integration );
 	
 	Ext.test.Session.addSuite( tests.integration );
@@ -7985,15 +8143,21 @@ tests.integration.add( new Ext.test.TestSuite( {
 			 */
 			name : "Test isModified()",
 			
+			
 			setUp : function() {
 				this.Model = Kevlar.Model.extend( {
-					attributes : [ 'attr' ]
+					attributes : [ 
+						{ name : 'attr' },
+						{ name : 'persistedAttr', type: 'string' },
+						{ name : 'unpersistedAttr', type: 'string', persist: false } 
+					]
 				} );
 				
 				this.Collection = Kevlar.Collection.extend( {
 					model : this.Model
 				} );
 			},
+			
 			
 			"isModified() should return false if no Models within the collection have been modified" : function() {
 				var model1 = new this.Model( { attr: 1 } ),
@@ -8002,6 +8166,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 								
 				Y.Assert.isFalse( collection.isModified() );
 			},
+			
 			
 			"isModified() should return true if a Model within the collection has been modified" : function() {
 				var model1 = new this.Model( { attr: 1 } ),
@@ -8012,6 +8177,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				
 				Y.Assert.isTrue( collection.isModified() );
 			},
+			
 			
 			"isModified() should return false if a Model within the collection has been modified, but then rolled back or committed" : function() {
 				var model1 = new this.Model( { attr: 1 } ),
@@ -8028,6 +8194,37 @@ tests.integration.add( new Ext.test.TestSuite( {
 				Y.Assert.isTrue( collection.isModified(), "Just double checking that the collection is considered modified again, before committing" );
 				model1.commit();
 				Y.Assert.isFalse( collection.isModified(), "Should be false after commit" );
+			},
+			
+			
+			// -------------------------
+			
+			// Test with the 'persistedOnly' option
+			
+			
+			"With the 'persistedOnly' option, isModified() should only return true if one of its models has a persisted attribute that has been changed" : function() {
+				var model1 = new this.Model(),
+				    model2 = new this.Model(),
+				    collection = new this.Collection( [ model1, model2 ] );
+				
+				Y.Assert.isFalse( collection.isModified(), "Initial condition: the collection should not be considered modified" );
+				Y.Assert.isFalse( collection.isModified( { persistedOnly: true } ), "Initial condition: the collection should not be considered modified with the 'persistedOnly' option set" );
+				
+				model2.set( 'persistedAttr', 'newValue' );
+				Y.Assert.isTrue( collection.isModified( { persistedOnly: true } ), "The collection should now be considered modified, as it has a model with a persisted attribute that has been modified" );
+			},
+			
+			
+			"With the 'persistedOnly' option, isModified() should return false if none of its models have a persisted attribute that has been changed" : function() {
+				var model1 = new this.Model(),
+				    model2 = new this.Model(),
+				    collection = new this.Collection( [ model1, model2 ] );
+				
+				Y.Assert.isFalse( collection.isModified(), "Initial condition: the collection should not be considered modified" );
+				Y.Assert.isFalse( collection.isModified( { persistedOnly: true } ), "Initial condition: the collection should not be considered modified with the 'persistedOnly' option set" );
+				
+				model2.set( 'unpersistedAttr', 'newValue' );
+				Y.Assert.isFalse( collection.isModified( { persistedOnly: true } ), "The collection should *not* be considered modified, as its models only have unpersisted attribute changes" );
 			}
 		},
 		
@@ -9396,25 +9593,36 @@ tests.integration.add( new Ext.test.TestSuite( {
 		
 		{
 			/*
-			 * Test that the parent model "has changes" when an embedded model is changed 
+			 * Test that the parent model "has changes" (is modified) when an embedded model is changed 
 			 */
-			name : "Test that the parent model \"has changes\" when an embedded model is changed",
+			name : "Test that the parent model \"has changes\" (is modified) when an embedded model is changed",
 			
-			"The parent model should have changes when a child embedded model has changes" : function() {
-				var ParentModel = Kevlar.Model.extend( {
+			setUp : function() {
+				this.ParentWithEmbeddedChildModel = Kevlar.Model.extend( {
 					attributes : [
 						{ name: 'child', type: 'model', embedded: true }
 					]
 				} );
 				
-				var ChildModel = Kevlar.Model.extend( {
+				this.ParentWithNonEmbeddedChildModel = Kevlar.Model.extend( {
 					attributes : [
-						{ name : 'attr', type: 'string' }
+						{ name: 'child', type: 'model', embedded: false }  // Note: *not* embedded 
 					]
 				} );
 				
-				var childModel = new ChildModel();
-				var parentModel = new ParentModel( {
+				this.ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'attr', type: 'string' },
+						{ name : 'persistedAttr', type: 'string' },
+						{ name : 'unpersistedAttr', type: 'string', persist: false }
+					]
+				} );
+			},
+			
+			
+			"The parent model should have changes when a child embedded model has changes" : function() {
+				var childModel = new this.ChildModel();
+				var parentModel = new this.ParentWithEmbeddedChildModel( {
 					child: childModel
 				} );
 				
@@ -9426,27 +9634,170 @@ tests.integration.add( new Ext.test.TestSuite( {
 			
 			
 			"The parent model should *not* have changes when a child model has changes, but is not 'embedded'" : function() {
-				var ParentModel = Kevlar.Model.extend( {
-					attributes : [
-						{ name: 'child', type: 'model', embedded: false }  // note: NOT embedded
-					]
-				} );
-				
-				var ChildModel = Kevlar.Model.extend( {
-					attributes : [
-						{ name : 'attr', type: 'string' }
-					]
-				} );
-				
-				var childModel = new ChildModel();
-				var parentModel = new ParentModel( {
+				var childModel = new this.ChildModel();
+				var parentModel = new this.ParentWithNonEmbeddedChildModel( {
 					child: childModel
 				} );
 				
 				childModel.set( 'attr', 'newValue' );
 				Y.Assert.isFalse( parentModel.isModified(), "The parent model should not be considered 'modified' even though its child model is 'modified', because the child is not 'embedded'" );
+			},
+			
+			
+			// ---------------------------
+			
+			// Test with 'persistedOnly' option to isModified()
+			
+			
+			"Using the persistedOnly option, the parent model should be considered modified if an embedded child model has a persisted attribute change" : function() {
+				var childModel = new this.ChildModel( {
+					persistedAttr: 'persisted',
+					unpersistedAttr: 'unpersisted'
+				} );
+				var parentModel = new this.ParentWithEmbeddedChildModel( {
+					child: childModel
+				} );
+				childModel.set( 'persistedAttr', 'newValue' );
+				
+				Y.Assert.isTrue( parentModel.isModified( { persistedOnly: true } ), "The parent model should be considered modified because its child model has a change on a persisted attribute" );
+			},
+			
+			
+			"Using the persistedOnly option, the parent model should *not* be considered modified if an embedded child model only has unpersisted attribute changes" : function() {
+				var childModel = new this.ChildModel( {
+					persistedAttr: 'persisted',
+					unpersistedAttr: 'unpersisted'
+				} );
+				var parentModel = new this.ParentWithEmbeddedChildModel( {
+					child: childModel
+				} );
+				childModel.set( 'unpersistedAttr', 'newValue' );
+				
+				Y.Assert.isFalse( parentModel.isModified( { persistedOnly: true } ), "The parent model should *not* be considered modified because its child model only has a change on an unpersisted attribute" );
+			},
+			
+			
+			// Test with specific attributes
+			
+			"Using the persistedOnly option and providing a specific attribute, the parent model should be considered modified if an embedded child model has a persisted attribute change" : function() {
+				var childModel = new this.ChildModel( {
+					persistedAttr: 'persisted',
+					unpersistedAttr: 'unpersisted'
+				} );
+				var parentModel = new this.ParentWithEmbeddedChildModel( {
+					child: childModel
+				} );
+				childModel.set( 'persistedAttr', 'newValue' );
+				
+				Y.Assert.isTrue( parentModel.isModified( 'child', { persistedOnly: true } ), "The parent model should be considered modified because its child model has a change on a persisted attribute" );
+			},
+			
+			
+			"Using the persistedOnly option and providing a specific attribute, the parent model should *not* be considered modified if an embedded child model only has unpersisted attribute changes" : function() {
+				var childModel = new this.ChildModel( {
+					persistedAttr: 'persisted',
+					unpersistedAttr: 'unpersisted'
+				} );
+				var parentModel = new this.ParentWithEmbeddedChildModel( {
+					child: childModel
+				} );
+				childModel.set( 'unpersistedAttr', 'newValue' );
+				
+				Y.Assert.isFalse( parentModel.isModified( 'child', { persistedOnly: true } ), "The parent model should *not* be considered modified because its child model only has a change on an unpersisted attribute" );
+			}
+		},
+		
+		
+		{
+			/*
+			 * Test getting changes from a parent model when an embedded model is changed 
+			 */
+			name : "Test getting changes from a parent model when an embedded model is changed",
+			
+			setUp : function() {
+				this.ParentModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'child', type: 'model', embedded: true }
+					]
+				} );
+				
+				this.ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'persistedAttr', type: 'string' },
+						{ name : 'unpersistedAttr', type: 'string', persist: false }
+					]
+				} );
+			},
+			
+			
+			"A child model with changes should be retrieved (with all of its data, because it is embedded) when any of its attributes has a change" : function() {
+				var childModel = new this.ChildModel( {
+					persistedAttr: 'persistedValue',
+					unpersistedAttr: 'unpersistedValue' 
+				} );
+				var parentModel = new this.ParentModel( {
+					child: childModel
+				} );
+				
+				Y.Assert.areSame( 0, Kevlar.util.Object.length( parentModel.getChanges() ), "Initial condition: there should be no changes" );
+				
+				childModel.set( 'persistedAttr', 'newPersistedValue' );
+				
+				var changes = parentModel.getChanges();
+				Y.Assert.areSame( 1, Kevlar.util.Object.length( changes ), "There should be 1 property in the 'changes' object" );
+				Y.ObjectAssert.hasKeys( [ 'child' ], changes, "'child' should be the property in the 'changes' object" );
+				
+				Y.Assert.areSame( 2, Kevlar.util.Object.length( changes.child ), "There should be 2 properties in the 'child' changes object" );
+				Y.Assert.areSame( 'newPersistedValue', changes.child.persistedAttr, "persistedAttr should exist in the 'child' changes, with the new value" );
+				Y.Assert.areSame( 'unpersistedValue', changes.child.unpersistedAttr, "unpersistedAttr should exist in the 'child' changes, with its original value" );
+			},
+			
+			
+			// -------------------------
+			
+			// Test with the 'persistedOnly' option
+			
+			
+			"With the 'persistedOnly' option, a child model with changes should only be retrieved (with all of its persisted data, because it is embedded) when any of its *persisted* attributes has a change" : function() {
+				var childModel = new this.ChildModel( {
+					persistedAttr: 'persistedValue',
+					unpersistedAttr: 'unpersistedValue' 
+				} );
+				var parentModel = new this.ParentModel( {
+					child: childModel
+				} );
+				
+				Y.Assert.areSame( 0, Kevlar.util.Object.length( parentModel.getChanges() ), "Initial condition: there should be no changes" );
+				
+				childModel.set( 'persistedAttr', 'newPersistedValue' );
+				
+				var changes = parentModel.getChanges( { persistedOnly: true } );
+				Y.Assert.areSame( 1, Kevlar.util.Object.length( changes ), "There should be 1 property in the 'changes' object" );
+				Y.ObjectAssert.hasKeys( [ 'child' ], changes, "'child' should be the property in the 'changes' object" );
+				
+				Y.Assert.areSame( 1, Kevlar.util.Object.length( changes.child ), "There should be only 1 property (for the persisted one) in the 'child' changes object" );
+				Y.Assert.areSame( 'newPersistedValue', changes.child.persistedAttr, "persistedAttr should exist in the 'child' changes, with the new value" );
+			},
+			
+			
+			"With the 'persistedOnly' option, a child model that only has changes to non-persisted attributes should *not* be retrieved with getChanges()" : function() {
+				var childModel = new this.ChildModel( {
+					persistedAttr: 'persistedValue',
+					unpersistedAttr: 'unpersistedValue' 
+				} );
+				var parentModel = new this.ParentModel( {
+					child: childModel
+				} );
+				
+				Y.Assert.areSame( 0, Kevlar.util.Object.length( parentModel.getChanges() ), "Initial condition: there should be no changes" );
+				
+				childModel.set( 'unpersistedAttr', 'newUnpersistedValue' );
+				
+				var changes = parentModel.getChanges( { persistedOnly: true } );
+				Y.Assert.areSame( 0, Kevlar.util.Object.length( changes ), "There should be no properties in the 'changes' object" );
 			}
 		}
+		
 	]
 	
 } ) );
@@ -9479,6 +9830,68 @@ tests.integration.add( new Ext.test.TestSuite( {
 				Y.Assert.isNull( model.get( 'attr' ) );
 			}
 		}
+	]
+	
+} ) );
+
+/*global window, Ext, Y, JsMockito, tests, Kevlar */
+tests.integration.persistence.add( new Ext.test.TestSuite( {
+	
+	name: 'RestProxy with Nested Models',
+	
+	
+	items : [
+		
+		{
+			/*
+			 * Test updating when nested model attributes are changed
+			 */
+			name : "Test updating when nested model attributes are changed",
+			
+			setUp : function() {
+				// A RestProxy subclass used for testing
+				this.ajaxCallCount = 0;
+				this.RestProxy = Kevlar.persistence.RestProxy.extend( {
+					ajax : function() { 
+						this.ajaxCallCount++; 
+						return {};  // just an anonymous "ajax" object 
+					}.createDelegate( this )
+				} );
+				
+				this.ParentModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'id', type: 'string' },
+						{ name: 'child', type: 'model', embedded: true }
+					]
+				} );
+				
+				this.ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'persistedAttr', type: 'string' },
+						{ name : 'unpersistedAttr', type: 'string', persist: false }
+					]
+				} );
+			},
+			
+			
+			"The parent model should *not* be persisted when only a non-persisted attribute of a nested model is changed" : function() {
+				var ajaxCallCount = 0;
+				
+				var childModel = new this.ChildModel();
+				var parentModel = new this.ParentModel( {
+					id: 1,
+					child: childModel
+				} );
+				childModel.set( 'unpersistedAttr', 'newValue' );
+				
+				var proxy = new this.RestProxy(),
+				    result = proxy.update( parentModel );
+				
+				Y.Assert.isNull( result, "The update() method should have returned null, because there should have been nothing to persist" );
+			}
+			
+		}
+	
 	]
 	
 } ) );

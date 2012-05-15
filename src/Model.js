@@ -948,17 +948,33 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * @method isModified
 	 * @param {String} [attributeName] Provide this argument to test if a particular attribute has been modified. If this is not 
 	 *   provided, the model itself will be checked to see if there are any modified attributes. 
+	 * 
+	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This may be provided as the first argument to the
+	 *   method if no `attributeName` is to be provided. Options may include:
+	 * @param {Boolean} [options.persistedOnly=false] True to have the method only return true if a {@link Kevlar.attribute.Attribute#persist persisted} 
+	 *   attribute is modified. 
+	 * 
 	 * @return {Boolean} True if the attribute has been modified, false otherwise.
 	 */
-	isModified : function( attributeName ) {
+	isModified : function( attributeName, options ) {
+		if( typeof attributeName === 'object' ) {  // 'options' provided as first argument, fix the parameter variables
+			options = attributeName;
+			attributeName = undefined;
+		}
+		
+		options = options || {};
+		
 		var attributes = this.attributes,
-		    data = this.data;
+		    data = this.data,
+		    modifiedData = this.modifiedData;
 		
 		if( !attributeName ) {
-			// First, check if there are any modifications to primitives (i.e. non-nested Models/Collections)
-			var hasLocalModifications = !Kevlar.util.Object.isEmpty( this.modifiedData );
-			if( hasLocalModifications ) {
-				return true;
+			// First, check if there are any modifications to primitives (i.e. non-nested Models/Collections).
+			// If the 'persistedOnly' option is true, we only consider attributes that are persisted.
+			for( var attr in modifiedData ) {
+				if( modifiedData.hasOwnProperty( attr ) && ( !options.persistedOnly || ( options.persistedOnly && attributes[ attr ].isPersisted() ) ) ) {
+					return true;  // there is any property in the modifiedData hashmap, return true (unless 'persistedOnly' option is set, in which case we only consider persisted attributes)
+				}
 			}
 			
 			// No local modifications to primitives, check all embedded collections/models to see if they have changes
@@ -968,16 +984,23 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			for( var i = 0, len = embeddedDataComponentAttrs.length; i < len; i++ ) {
 				var attrName = embeddedDataComponentAttrs[ i ].getName();
 				
-				if( ( dataComponent = data[ attrName ] ) && dataComponent.isModified() ) {
+				if( ( dataComponent = data[ attrName ] ) && dataComponent.isModified( options ) ) {
 					return true;
 				}
 			}
 			return false;
 			
 		} else {
-			var attribute = this.attributes[ attributeName ];
+			// Handle an attributeName being provided to this method
+			var attribute = attributes[ attributeName ];
 			
-			return ( attributeName in this.modifiedData ) || ( attribute instanceof Kevlar.attribute.DataComponentAttribute && attribute.isEmbedded() && data[ attributeName ].isModified() );
+			if( attribute instanceof Kevlar.attribute.DataComponentAttribute && attribute.isEmbedded() && data[ attributeName ].isModified( options ) ) {   // DataComponent (Model or Collection) attribute is modified
+				return true;
+			} else if( modifiedData.hasOwnProperty( attributeName ) && ( !options.persistedOnly || ( options.persistedOnly && attributes[ attributeName ].isPersisted() ) ) ) {  // primitive (non Model or Collection) attribute is modified
+				return true;
+			}
+			
+			return false;
 		}
 	},
 	
@@ -989,6 +1012,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * 
 	 * @override
 	 * @method getData
+	 * 
 	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This object is sent to
 	 *   the {@link Kevlar.data.NativeObjectConverter#convert NativeObjectConverter's convert method}, and accepts all of the options
 	 *   that the {@link Kevlar.data.NativeObjectConverter#convert} method does. See that method for details.
@@ -1007,9 +1031,14 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * unless the `raw` option is set to true, in which case the Model attributes are retrieved via {@link #raw}.
 	 * 
 	 * @method getChanges
+	 * 
 	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This object is sent to
 	 *   the {@link Kevlar.data.NativeObjectConverter#convert NativeObjectConverter's convert method}, and accepts all of the options
-	 *   that the {@link Kevlar.data.NativeObjectConverter#convert} method does. See that method for details.
+	 *   that the {@link Kevlar.data.NativeObjectConverter#convert} method does. See that method for details. Options specific to this method include:
+	 * @param {Boolean} [options.persistedOnly=false] True to have the method only return only changed attributes that are 
+	 *   {@link Kevlar.attribute.Attribute#persist persisted}. In the case of nested models, a nested model will only be returned in the resulting
+	 *   hashmap if one if its {@link Kevlar.attribute.Attribute#persist persisted} attributes are modified. 
+	 * 
 	 * @return {Object} A hash of the attributes that have been changed since the last {@link #method-commit} or {@link #method-rollback}.
 	 *   The hash's property names are the attribute names, and the hash's values are the new values.
 	 */
@@ -1028,7 +1057,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		for( var i = 0, len = embeddedDataComponentAttrs.length; i < len; i++ ) {
 			var attrName = embeddedDataComponentAttrs[ i ].getName();
 			
-			if( ( dataComponent = data[ attrName ] ) && dataComponent.isModified() ) {
+			if( ( dataComponent = data[ attrName ] ) && dataComponent.isModified( options ) ) {
 				options.attributeNames.push( attrName );
 			}
 		}

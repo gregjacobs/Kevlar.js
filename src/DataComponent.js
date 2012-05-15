@@ -8,8 +8,11 @@
  * 
  * This class is used internally by the framework, and shouldn't be used directly.
  */
-/*global Kevlar */
+/*global Class, Kevlar */
 Kevlar.DataComponent = Kevlar.util.Observable.extend( {
+	
+	abstractClass : true,
+	
 	
 	/**
 	 * @protected
@@ -50,7 +53,7 @@ Kevlar.DataComponent = Kevlar.util.Observable.extend( {
 	 *   that the {@link Kevlar.data.NativeObjectConverter#convert} method does. See that method for details.
 	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.attribute.Attribute Attribute} values.
 	 */
-	getData : Kevlar.abstractFn,
+	getData : Class.abstractMethod,
 	
 	
 	/**
@@ -58,9 +61,14 @@ Kevlar.DataComponent = Kevlar.util.Observable.extend( {
 	 * 
 	 * @abstract
 	 * @method isModified
+	 * 
+	 * @param {Object} [options] An object (hash) of options to change the behavior of this method.  Options may include:
+	 * @param {Boolean} [options.persistedOnly=false] True to have the method only return true if a {@link Kevlar.attribute.Attribute#persist persisted} 
+	 *   attribute of a Model is modified within the DataComponent. 
+	 * 
 	 * @return {Boolean}
 	 */
-	isModified : Kevlar.abstractFn,
+	isModified : Class.abstractMethod,
 	
 	
 	/**
@@ -69,7 +77,7 @@ Kevlar.DataComponent = Kevlar.util.Observable.extend( {
 	 * @abstract
 	 * @method commit
 	 */
-	commit : Kevlar.abstractFn,
+	commit : Class.abstractMethod,
 	
 	
 	/**
@@ -79,6 +87,6 @@ Kevlar.DataComponent = Kevlar.util.Observable.extend( {
 	 * @abstract
 	 * @method rollback
 	 */
-	rollback : Kevlar.abstractFn
+	rollback : Class.abstractMethod
 	
 } );

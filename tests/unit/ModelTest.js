@@ -338,7 +338,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 						
 						var model = new Model( { attribute1: 'value1', attribute2: 'value2' } );
 						Y.Assert.isFalse( model.isDirty(), "The model should not be dirty upon initialization" );
-						Y.Assert.isTrue( Kevlar.util.Object.isEmpty( model.getChanges ), "There should not be any 'changes' upon initialization" );
+						Y.Assert.isTrue( Kevlar.util.Object.isEmpty( model.getChanges() ), "There should not be any 'changes' upon initialization" );
 					}
 				},				
 				
@@ -1479,6 +1479,16 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 					]
 				} );
+				
+				this.ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} );
+				
+				this.ConcreteDataComponent = Kevlar.DataComponent.extend( {
+					// Implementation of abstract interface
+					getData : Kevlar.emptyFn,
+					isModified : Kevlar.emptyFn,
+					commit : Kevlar.emptyFn,
+					rollback : Kevlar.emptyFn
+				} );
 			},
 			
 			// -------------------------------------
@@ -1559,15 +1569,13 @@ tests.unit.add( new Ext.test.TestSuite( {
 			// Test with embedded models/collections
 			
 			"In the case of embedded DataComponents, the parent model should be considered 'modified' when a child embedded DataComponent has changes" : function() {
-				var ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} );
-				
 				var ParentModel = Kevlar.Model.extend( {
 					attributes : [
-						new ConcreteDataComponentAttribute( { name: 'child', embedded: true } )
+						new this.ConcreteDataComponentAttribute( { name: 'child', embedded: true } )
 					]
 				} );
 				
-				var childDataComponent = JsMockito.mock( Kevlar.DataComponent );
+				var childDataComponent = JsMockito.mock( this.ConcreteDataComponent );
 				JsMockito.when( childDataComponent ).isModified().thenReturn( true );
 				
 				var parentModel = new ParentModel( {
@@ -1580,15 +1588,13 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			
 			"The parent model should *not* have changes when a child model has changes, but is not 'embedded'" : function() {
-				var ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} );
-				
 				var ParentModel = Kevlar.Model.extend( {
 					attributes : [
-						new ConcreteDataComponentAttribute( { name: 'child', embedded: false } )  // note: NOT embedded
+						new this.ConcreteDataComponentAttribute( { name: 'child', embedded: false } )  // note: NOT embedded
 					]
 				} );
 				
-				var childDataComponent = JsMockito.mock( Kevlar.DataComponent );
+				var childDataComponent = JsMockito.mock( this.ConcreteDataComponent );
 				JsMockito.when( childDataComponent ).isModified().thenReturn( true );
 				
 				var parentModel = new ParentModel( {
@@ -1596,7 +1602,58 @@ tests.unit.add( new Ext.test.TestSuite( {
 				} );
 				
 				Y.Assert.isFalse( parentModel.isModified(), "The parent model should not be considered 'modified' even though its child model is 'modified', because the child is not 'embedded'" );
+			},
+			
+			
+			
+			// -------------------------
+			
+			// Test with the 'persistedOnly' option set to true
+			
+			"If the persistedOnly option is provided as true, isModified() should return true only if a persisted attribute is modified" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'persistedAttr', type: 'string' },
+						{ name : 'unpersistedAttr', type: 'string', persist: false }
+					]
+				} );
+				
+				var model = new Model();
+				
+				Y.Assert.isFalse( model.isModified(), "Initial condition: the model should not be considered modified" );
+				
+				model.set( 'unpersistedAttr', 'value1' );
+				Y.Assert.isTrue( model.isModified(), "The model should be considered 'modified' in general" );
+				Y.Assert.isFalse( model.isModified( { persistedOnly: true } ), "The model only has unpersisted attributes modified, so this call should return false" );
+				
+				model.set( 'persistedAttr', 'value1' );
+				Y.Assert.isTrue( model.isModified(), "The model should still be considered 'modified' in general" );
+				Y.Assert.isTrue( model.isModified( { persistedOnly: true } ), "The model now has a persisted attribute that is modified. This should return true." );
+			},
+			
+			
+			"If the persistedOnly option is provided as true and a specific attribute name is given, isModified() should return true only if the attribute is both modified, and persisted" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'persistedAttr', type: 'string' },
+						{ name : 'unpersistedAttr', type: 'string', persist: false }
+					]
+				} );
+				
+				var model = new Model();
+				
+				Y.Assert.isFalse( model.isModified( 'persistedAttr' ), "Initial condition: the 'persistedAttr' should not be considered modified" );
+				Y.Assert.isFalse( model.isModified( 'unpersistedAttr' ), "Initial condition: the 'unpersistedAttr' should not be considered modified" );
+				
+				model.set( 'unpersistedAttr', 'value1' );
+				Y.Assert.isTrue( model.isModified( 'unpersistedAttr' ), "The 'unpersistedAttr' should be considered 'modified' in general" );
+				Y.Assert.isFalse( model.isModified( 'unpersistedAttr', { persistedOnly: true } ), "The 'unpersistedAttr' is not persisted, so this call should return false, even though it has been changed" );
+				
+				model.set( 'persistedAttr', 'value1' );
+				Y.Assert.isTrue( model.isModified( 'persistedAttr' ), "The 'persistedAttr' should still be considered 'modified' in general" );
+				Y.Assert.isTrue( model.isModified( 'persistedAttr', { persistedOnly: true } ), "The 'persistedAttr' is both modified, and persisted. This should return true." );
 			}
+			
 		},
 		
 		
@@ -1665,6 +1722,16 @@ tests.unit.add( new Ext.test.TestSuite( {
 						args[ 1 ] = arguments[ 1 ];
 					}
 				};
+				
+				
+				this.ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} );
+				this.ConcreteDataComponent = Kevlar.DataComponent.extend( { 
+					// Implementation of abstract interface
+					getData : Kevlar.emptyFn,
+					isModified : Kevlar.emptyFn,
+					commit : Kevlar.emptyFn,
+					rollback : Kevlar.emptyFn
+				} );
 			},
 			
 			tearDown : function() {
@@ -1677,20 +1744,18 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			
 			"getChanges() should delegate to the singleton NativeObjectConverter to create an Object representation of its data, but only provide changed attributes for the attributes that should be returned" : function() {
-				var ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} );
-				
 				var Model = Kevlar.Model.extend( {
 					attributes: [ 
 						'attr1', 
 						'attr2', 
 						'attr3',
-						new ConcreteDataComponentAttribute( { name: 'nestedDataComponent', embedded: false } ),  // this one NOT embedded
-						new ConcreteDataComponentAttribute( { name: 'embeddedDataComponent', embedded: true } )  // this one IS embedded
+						new this.ConcreteDataComponentAttribute( { name: 'nestedDataComponent', embedded: false } ),  // this one NOT embedded
+						new this.ConcreteDataComponentAttribute( { name: 'embeddedDataComponent', embedded: true } )  // this one IS embedded
 					]
 				} );
 				
 				
-				var mockDataComponent = JsMockito.mock( Kevlar.DataComponent );
+				var mockDataComponent = JsMockito.mock( this.ConcreteDataComponent );
 				JsMockito.when( mockDataComponent ).isModified().thenReturn( true );
 				
 				var model = new Model( {
@@ -1733,6 +1798,15 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name: 'attribute4', set : function( newValue ) { return this.get( 'attribute1' ) + " " + this.get( 'attribute2' ); } },
 						{ name: 'attribute5', set : function( newValue ) { return newValue + " " + this.get( 'attribute2' ); } }
 					]
+				} );
+				
+				
+				this.ConcreteDataComponent = Kevlar.DataComponent.extend( { 
+					// Implementation of abstract interface
+					getData : Kevlar.emptyFn,
+					isModified : Kevlar.emptyFn,
+					commit : Kevlar.emptyFn,
+					rollback : Kevlar.emptyFn
 				} );
 			},
 				
@@ -1784,13 +1858,19 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			"committing a parent model should also commit any embedded child DataComponent that the model holds" : function() {
 				// A concrete subclass for testing
-				var ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {} ); 
+				var ConcreteDataComponentAttribute = Kevlar.attribute.DataComponentAttribute.extend( {
+					// Implementation of abstract interface
+					getData : Kevlar.emptyFn,
+					isModified : Kevlar.emptyFn,
+					commit : Kevlar.emptyFn,
+					rollback : Kevlar.emptyFn
+				} );
 				
 				var Model = Kevlar.Model.extend( {
 					attributes : [ new ConcreteDataComponentAttribute( { name: 'childDataComponent', embedded: true } ) ]
 				} );
 				
-				var mockDataComponent = JsMockito.mock( Kevlar.DataComponent.extend( {} ) );
+				var mockDataComponent = JsMockito.mock( this.ConcreteDataComponent );
 				var model = new Model();
 				
 				model.set( 'childDataComponent', mockDataComponent );
@@ -1952,23 +2032,28 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			
 			"load() should delegate to its persistenceProxy's read() method to retrieve the data" : function() {
-				var readCallCount = 0;
-				var MockProxy = Kevlar.persistence.Proxy.extend( {
-					read : function( model, options ) {
-						readCallCount++;
-					}
-				} );
+				var proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
+					// Implementation of abstract interface
+					create : Kevlar.emptyFn,
+					read : Kevlar.emptyFn,
+					update : Kevlar.emptyFn,
+					destroy : Kevlar.emptyFn
+				} ) );
 				
 				var MyModel = this.TestModel.extend( {
-					persistenceProxy : new MockProxy()
+					persistenceProxy : proxy
 				} );
 				
-				var model = new MyModel();
 				
-				// Run the load() method to delegate 
+				// Instantiate and run the load() method to delegate
+				var model = new MyModel(); 
 				model.load();
 				
-				Y.Assert.areSame( 1, readCallCount, "The persistenceProxy's read() method should have been called exactly once" );
+				try {
+					JsMockito.verify( proxy ).read();
+				} catch( msg ) {
+					Y.Assert.fail( msg );
+				}
 			}
 		},
 		
@@ -1983,6 +2068,17 @@ tests.unit.add( new Ext.test.TestSuite( {
 			items : [
 				{
 					name : "General save() tests",
+					
+					setUp : function() {
+						this.proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
+							// Implementation of abstract interface
+							create: Kevlar.emptyFn,
+							read: Kevlar.emptyFn,
+							update: Kevlar.emptyFn,
+							destroy: Kevlar.emptyFn
+						} ) );
+					},
+					
 					
 					// Special instructions
 					_should : {
@@ -2003,13 +2099,11 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 					
 					"save() should delegate to its persistenceProxy's create() method to persist changes when the Model does not have an id set" : function() {
-						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
-						
 						var Model = Kevlar.Model.extend( {
 							addAttributes : [ 'id' ],
 							idAttribute : 'id',
 							
-							persistenceProxy : mockProxy
+							persistenceProxy : this.proxy
 						} );
 						
 						var model = new Model();  // note: no 'id' set
@@ -2018,21 +2112,19 @@ tests.unit.add( new Ext.test.TestSuite( {
 						model.save();
 						
 						try {
-							JsMockito.verify( mockProxy ).create();
-						} catch( message ) {
-							Y.Assert.fail( "The persistenceProxy's update() method should have been called exactly once. " + message );
+							JsMockito.verify( this.proxy ).create();
+						} catch( msg ) {
+							Y.Assert.fail( msg );
 						}
 					},
 					
 					
 					"save() should delegate to its persistenceProxy's update() method to persist changes, when the Model has an id" : function() {
-						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
-						
 						var Model = Kevlar.Model.extend( {
 							addAttributes : [ 'id' ],
 							idAttribute : 'id',
 							
-							persistenceProxy : mockProxy
+							persistenceProxy : this.proxy
 						} );
 						
 						var model = new Model( { id: 1 } );
@@ -2041,9 +2133,9 @@ tests.unit.add( new Ext.test.TestSuite( {
 						model.save();
 						
 						try {
-							JsMockito.verify( mockProxy, JsMockito.Verifiers.once() ).update();
-						} catch( message ) {
-							Y.Assert.fail( "The persistenceProxy's update() method should have been called exactly once. " + message );
+							JsMockito.verify( this.proxy ).update();
+						} catch( msg ) {
+							Y.Assert.fail( msg );
 						}
 					}
 				},
@@ -2053,10 +2145,16 @@ tests.unit.add( new Ext.test.TestSuite( {
 					name : "save() callbacks tests",
 					
 					setUp : function() {
-						this.mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
+						this.proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
+							// Implementation of abstract interface
+							create: Kevlar.emptyFn,
+							read: Kevlar.emptyFn,
+							update: Kevlar.emptyFn,
+							destroy: Kevlar.emptyFn
+						} ) );
 						
 						// Note: setting both create() and update() methods here
-						this.mockProxy.create = this.mockProxy.update = function( model, options ) {
+						this.proxy.create = this.proxy.update = function( model, options ) {
 							if( options.success ) { options.success.call( options.scope || window ); }
 							if( options.error ) { options.error.call( options.scope || window ); }
 							if( options.complete ) { options.complete( options.scope || window ); }
@@ -2064,7 +2162,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 						
 						this.Model = Kevlar.Model.extend( {
 							addAttributes : [ 'id', 'attribute1' ],
-							persistenceProxy  : this.mockProxy
+							persistenceProxy  : this.proxy
 						} );
 					},
 					
@@ -2148,14 +2246,19 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 					"Model attributes that have been persisted should not be persisted again if they haven't changed since the last persist" : function() {
 						var dataToPersist;
-						var MockProxy = Kevlar.persistence.Proxy.extend( {
-							update : function( model, options ) {
-								dataToPersist = model.getChanges();
-								options.success.call( options.scope );
-							}
+						var proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
+							create  : Kevlar.emptyFn,
+							read    : Kevlar.emptyFn,
+							update  : Kevlar.emptyFn,
+							destroy : Kevlar.emptyFn
+						} ) );
+						JsMockito.when( proxy ).update().then( function( model, options ) {
+							dataToPersist = model.getChanges();
+							options.success.call( options.scope );
 						} );
+						
 						var MyModel = this.Model.extend( {
-							persistenceProxy : new MockProxy()
+							persistenceProxy : proxy
 						} );
 						var model = new MyModel( { id: 1 } );
 						
@@ -2185,18 +2288,22 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 					// Creates a test Model with a mock persistenceProxy, which fires its 'success' callback after the given timeout
 					createModel : function( timeout ) {
-						var MockProxy = Kevlar.persistence.Proxy.extend( {
-							update : function( model, options ) {
-								// update method just calls 'success' callback in 50ms
-								window.setTimeout( function() {
-									options.success.call( options.scope || window );
-								}, timeout );
-							}
+						var proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
+							create  : Kevlar.emptyFn,
+							read    : Kevlar.emptyFn,
+							update  : Kevlar.emptyFn,
+							destroy : Kevlar.emptyFn
+						} ) );
+						JsMockito.when( proxy ).update().then( function( model, options ) {
+							// update method just calls 'success' callback in 50ms
+							window.setTimeout( function() {
+								options.success.call( options.scope || window );
+							}, timeout );
 						} );
 						
 						return Kevlar.Model.extend( {
 							addAttributes : [ 'id', 'attribute1', 'attribute2' ],
-							persistenceProxy : new MockProxy()
+							persistenceProxy : proxy
 						} );
 					},
 					
@@ -2317,10 +2424,16 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 					
 					"destroy() should delegate to its persistenceProxy's destroy() method to persist the destruction of the model" : function() {
-						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );				
+						var proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
+							create  : Kevlar.emptyFn,
+							read    : Kevlar.emptyFn,
+							update  : Kevlar.emptyFn,
+							destroy : Kevlar.emptyFn
+						} ) );
+						
 						var Model = Kevlar.Model.extend( {
 							attributes : [ 'id' ],
-							persistenceProxy : mockProxy
+							persistenceProxy : proxy
 						} );
 						
 						var model = new Model( { id: 1 } );  // the model needs an id to be considered as persisted on the server
@@ -2329,7 +2442,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 						model.destroy();
 						
 						try {
-							JsMockito.verify( mockProxy, JsMockito.Verifiers.once() ).destroy();
+							JsMockito.verify( proxy ).destroy();
 						} catch( e ) {
 							Y.Assert.fail( "The model should have delegated to the destroy method exactly once." );
 						}
@@ -2337,14 +2450,19 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 					
 					"upon successful destruction of the Model, the Model should fire its 'destroy' event" : function() {
-						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
-						mockProxy.destroy = function( model, options ) {
+						var proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
+							create  : Kevlar.emptyFn,
+							read    : Kevlar.emptyFn,
+							update  : Kevlar.emptyFn,
+							destroy : Kevlar.emptyFn
+						} ) );
+						JsMockito.when( proxy ).destroy().then( function( model, options ) {
 							options.success.call( options.scope );
-						};
+						} );
 						
 						var Model = Kevlar.Model.extend( {
 							attributes : [ 'id' ],
-							persistenceProxy : mockProxy
+							persistenceProxy : proxy
 						} );
 						
 						var model = new Model( { id: 1 } );  // the model needs an id to be considered as persisted on the server
@@ -2365,12 +2483,13 @@ tests.unit.add( new Ext.test.TestSuite( {
 					name : "destroy() callbacks tests",
 					
 					setUp : function() {
-						this.mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
-						this.mockProxy.destroy = function( model, options ) {
-							if( options.success )  { options.success.call( options.scope ); }
-							if( options.error )    { options.error.call( options.scope ); }
-							if( options.complete ) { options.complete( options.scope ); }
-						};
+						this.proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
+							// Implementation of abstract interface
+							create: Kevlar.emptyFn,
+							read: Kevlar.emptyFn,
+							update: Kevlar.emptyFn,
+							destroy: Kevlar.emptyFn
+						} ) );
 					},
 					
 			
@@ -2378,9 +2497,14 @@ tests.unit.add( new Ext.test.TestSuite( {
 						var successCallCount = 0,
 						    completeCallCount = 0;
 						
+						JsMockito.when( this.proxy ).destroy().then( function( model, options ) {
+							if( options.success )  { options.success.call( options.scope ); }
+							if( options.complete ) { options.complete( options.scope ); }
+						} );
+						
 						var Model = Kevlar.Model.extend( {
 							attributes : [ 'id' ],
-							persistenceProxy  : this.mockProxy
+							persistenceProxy  : this.proxy
 						} );
 						var model = new Model( { id: 1 } );  // the model needs an id to be considered as persisted on the server
 						
@@ -2398,16 +2522,15 @@ tests.unit.add( new Ext.test.TestSuite( {
 					"destroy() should call its 'error' and 'complete' callbacks if the persistenceProxy encounters an error" : function() {
 						var errorCallCount = 0,
 						    completeCallCount = 0;
-						    
-						var mockProxy = JsMockito.mock( Kevlar.persistence.Proxy );
-						mockProxy.destroy = function( model, options ) {
+						
+						JsMockito.when( this.proxy ).destroy().then( function( model, options ) {
 							options.error.call( options.scope );
 							options.complete( options.scope );
-						};
+						} );
 						
 						var Model = Kevlar.Model.extend( {
 							attributes : [ 'id' ],
-							persistenceProxy  : this.mockProxy
+							persistenceProxy  : this.proxy
 						} );
 						var model = new Model( { id: 1 } );  // the model needs an id to be considered as persisted on the server
 						

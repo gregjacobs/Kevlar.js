@@ -184,15 +184,21 @@ tests.integration.add( new Ext.test.TestSuite( {
 			 */
 			name : "Test isModified()",
 			
+			
 			setUp : function() {
 				this.Model = Kevlar.Model.extend( {
-					attributes : [ 'attr' ]
+					attributes : [ 
+						{ name : 'attr' },
+						{ name : 'persistedAttr', type: 'string' },
+						{ name : 'unpersistedAttr', type: 'string', persist: false } 
+					]
 				} );
 				
 				this.Collection = Kevlar.Collection.extend( {
 					model : this.Model
 				} );
 			},
+			
 			
 			"isModified() should return false if no Models within the collection have been modified" : function() {
 				var model1 = new this.Model( { attr: 1 } ),
@@ -201,6 +207,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 								
 				Y.Assert.isFalse( collection.isModified() );
 			},
+			
 			
 			"isModified() should return true if a Model within the collection has been modified" : function() {
 				var model1 = new this.Model( { attr: 1 } ),
@@ -211,6 +218,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				
 				Y.Assert.isTrue( collection.isModified() );
 			},
+			
 			
 			"isModified() should return false if a Model within the collection has been modified, but then rolled back or committed" : function() {
 				var model1 = new this.Model( { attr: 1 } ),
@@ -227,6 +235,37 @@ tests.integration.add( new Ext.test.TestSuite( {
 				Y.Assert.isTrue( collection.isModified(), "Just double checking that the collection is considered modified again, before committing" );
 				model1.commit();
 				Y.Assert.isFalse( collection.isModified(), "Should be false after commit" );
+			},
+			
+			
+			// -------------------------
+			
+			// Test with the 'persistedOnly' option
+			
+			
+			"With the 'persistedOnly' option, isModified() should only return true if one of its models has a persisted attribute that has been changed" : function() {
+				var model1 = new this.Model(),
+				    model2 = new this.Model(),
+				    collection = new this.Collection( [ model1, model2 ] );
+				
+				Y.Assert.isFalse( collection.isModified(), "Initial condition: the collection should not be considered modified" );
+				Y.Assert.isFalse( collection.isModified( { persistedOnly: true } ), "Initial condition: the collection should not be considered modified with the 'persistedOnly' option set" );
+				
+				model2.set( 'persistedAttr', 'newValue' );
+				Y.Assert.isTrue( collection.isModified( { persistedOnly: true } ), "The collection should now be considered modified, as it has a model with a persisted attribute that has been modified" );
+			},
+			
+			
+			"With the 'persistedOnly' option, isModified() should return false if none of its models have a persisted attribute that has been changed" : function() {
+				var model1 = new this.Model(),
+				    model2 = new this.Model(),
+				    collection = new this.Collection( [ model1, model2 ] );
+				
+				Y.Assert.isFalse( collection.isModified(), "Initial condition: the collection should not be considered modified" );
+				Y.Assert.isFalse( collection.isModified( { persistedOnly: true } ), "Initial condition: the collection should not be considered modified with the 'persistedOnly' option set" );
+				
+				model2.set( 'unpersistedAttr', 'newValue' );
+				Y.Assert.isFalse( collection.isModified( { persistedOnly: true } ), "The collection should *not* be considered modified, as its models only have unpersisted attribute changes" );
 			}
 		},
 		

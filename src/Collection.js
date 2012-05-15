@@ -757,11 +757,19 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 	 * Determines if the Collection has been added to, removed from, reordered, or 
 	 * has any {@link Kevlar.Model models} which are modified.
 	 * 
-	 * @override
 	 * @method isModified
+	 * 
+	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This may be provided as the first argument to the
+	 *   method if no `attributeName` is to be provided. Options may include:
+	 * @param {Boolean} [options.persistedOnly=false] True to have the method only return true only if a Model exists within it that has a 
+	 *   {@link Kevlar.attribute.Attribute#persist persisted} attribute which is modified. However, if the Collection itself has been modified
+	 *   (by adding/reordering/removing a Model), this method will still return true.
+	 * 
 	 * @return {Boolean} True if the Collection has any modified models, false otherwise.
 	 */
-	isModified : function() {
+	isModified : function( options ) {
+		options = options || {};
+		
 		// First, if the collection itself has been added to / removed from / reordered, then it is modified
 		if( this.modified ) {
 			return true;
@@ -771,7 +779,7 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 			    i, len;
 			
 			for( i = 0, len = models.length; i < len; i++ ) {
-				if( models[ i ].isModified() ) {
+				if( models[ i ].isModified( options ) ) {
 					return true;
 				}
 			}

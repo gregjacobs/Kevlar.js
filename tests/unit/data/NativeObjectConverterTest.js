@@ -82,6 +82,41 @@ tests.unit.data.add( new Ext.test.TestSuite( {
 			},
 			
 			
+			"convert() should only retrieve the data for the persisted attributes in nested models (i.e. attributes with persist: true) with the `persistedOnly` option set to true" : function() {
+				var ParentModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'id', type: 'string' },
+						{ name: 'child', type: 'model', embedded: true }
+					]
+				} );
+				
+				var ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'persistedAttr', type: 'string' },
+						{ name : 'unpersistedAttr', type: 'string', persist: false }
+					]
+				} );
+				
+				var childModel = new ChildModel( {
+					persistedAttr: 'persisted',
+					unpersistedAttr: 'unpersisted'
+				} );
+				var parentModel = new ParentModel( {
+					id: 1,
+					child: childModel
+				} );
+				childModel.set( 'unpersistedAttr', 'newValue' );
+				
+				
+				var persistedData = Kevlar.data.NativeObjectConverter.convert( parentModel, { persistedOnly: true } );
+				Y.ObjectAssert.ownsKeys( [ 'id', 'child' ], persistedData, "The persisted data for the parent model should have 'id' and 'child' attributes" );
+				
+				var childAttrs = persistedData.child;
+				Y.Assert.areSame( 1, Kevlar.util.Object.length( childAttrs ), "The child data shoud only have 1 property in the data (the persisted one)" );
+				Y.ObjectAssert.ownsKeys( [ 'persistedAttr' ], childAttrs, "The child data should only have the 'persistedAttr' attribute" );
+			},
+			
+			
 			// -------------------------------
 			
 			// Test with specific `attributeNames`

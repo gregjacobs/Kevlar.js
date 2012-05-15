@@ -401,25 +401,36 @@ tests.integration.add( new Ext.test.TestSuite( {
 		
 		{
 			/*
-			 * Test that the parent model "has changes" when an embedded model is changed 
+			 * Test that the parent model "has changes" (is modified) when an embedded model is changed 
 			 */
-			name : "Test that the parent model \"has changes\" when an embedded model is changed",
+			name : "Test that the parent model \"has changes\" (is modified) when an embedded model is changed",
 			
-			"The parent model should have changes when a child embedded model has changes" : function() {
-				var ParentModel = Kevlar.Model.extend( {
+			setUp : function() {
+				this.ParentWithEmbeddedChildModel = Kevlar.Model.extend( {
 					attributes : [
 						{ name: 'child', type: 'model', embedded: true }
 					]
 				} );
 				
-				var ChildModel = Kevlar.Model.extend( {
+				this.ParentWithNonEmbeddedChildModel = Kevlar.Model.extend( {
 					attributes : [
-						{ name : 'attr', type: 'string' }
+						{ name: 'child', type: 'model', embedded: false }  // Note: *not* embedded 
 					]
 				} );
 				
-				var childModel = new ChildModel();
-				var parentModel = new ParentModel( {
+				this.ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'attr', type: 'string' },
+						{ name : 'persistedAttr', type: 'string' },
+						{ name : 'unpersistedAttr', type: 'string', persist: false }
+					]
+				} );
+			},
+			
+			
+			"The parent model should have changes when a child embedded model has changes" : function() {
+				var childModel = new this.ChildModel();
+				var parentModel = new this.ParentWithEmbeddedChildModel( {
 					child: childModel
 				} );
 				
@@ -431,27 +442,170 @@ tests.integration.add( new Ext.test.TestSuite( {
 			
 			
 			"The parent model should *not* have changes when a child model has changes, but is not 'embedded'" : function() {
-				var ParentModel = Kevlar.Model.extend( {
-					attributes : [
-						{ name: 'child', type: 'model', embedded: false }  // note: NOT embedded
-					]
-				} );
-				
-				var ChildModel = Kevlar.Model.extend( {
-					attributes : [
-						{ name : 'attr', type: 'string' }
-					]
-				} );
-				
-				var childModel = new ChildModel();
-				var parentModel = new ParentModel( {
+				var childModel = new this.ChildModel();
+				var parentModel = new this.ParentWithNonEmbeddedChildModel( {
 					child: childModel
 				} );
 				
 				childModel.set( 'attr', 'newValue' );
 				Y.Assert.isFalse( parentModel.isModified(), "The parent model should not be considered 'modified' even though its child model is 'modified', because the child is not 'embedded'" );
+			},
+			
+			
+			// ---------------------------
+			
+			// Test with 'persistedOnly' option to isModified()
+			
+			
+			"Using the persistedOnly option, the parent model should be considered modified if an embedded child model has a persisted attribute change" : function() {
+				var childModel = new this.ChildModel( {
+					persistedAttr: 'persisted',
+					unpersistedAttr: 'unpersisted'
+				} );
+				var parentModel = new this.ParentWithEmbeddedChildModel( {
+					child: childModel
+				} );
+				childModel.set( 'persistedAttr', 'newValue' );
+				
+				Y.Assert.isTrue( parentModel.isModified( { persistedOnly: true } ), "The parent model should be considered modified because its child model has a change on a persisted attribute" );
+			},
+			
+			
+			"Using the persistedOnly option, the parent model should *not* be considered modified if an embedded child model only has unpersisted attribute changes" : function() {
+				var childModel = new this.ChildModel( {
+					persistedAttr: 'persisted',
+					unpersistedAttr: 'unpersisted'
+				} );
+				var parentModel = new this.ParentWithEmbeddedChildModel( {
+					child: childModel
+				} );
+				childModel.set( 'unpersistedAttr', 'newValue' );
+				
+				Y.Assert.isFalse( parentModel.isModified( { persistedOnly: true } ), "The parent model should *not* be considered modified because its child model only has a change on an unpersisted attribute" );
+			},
+			
+			
+			// Test with specific attributes
+			
+			"Using the persistedOnly option and providing a specific attribute, the parent model should be considered modified if an embedded child model has a persisted attribute change" : function() {
+				var childModel = new this.ChildModel( {
+					persistedAttr: 'persisted',
+					unpersistedAttr: 'unpersisted'
+				} );
+				var parentModel = new this.ParentWithEmbeddedChildModel( {
+					child: childModel
+				} );
+				childModel.set( 'persistedAttr', 'newValue' );
+				
+				Y.Assert.isTrue( parentModel.isModified( 'child', { persistedOnly: true } ), "The parent model should be considered modified because its child model has a change on a persisted attribute" );
+			},
+			
+			
+			"Using the persistedOnly option and providing a specific attribute, the parent model should *not* be considered modified if an embedded child model only has unpersisted attribute changes" : function() {
+				var childModel = new this.ChildModel( {
+					persistedAttr: 'persisted',
+					unpersistedAttr: 'unpersisted'
+				} );
+				var parentModel = new this.ParentWithEmbeddedChildModel( {
+					child: childModel
+				} );
+				childModel.set( 'unpersistedAttr', 'newValue' );
+				
+				Y.Assert.isFalse( parentModel.isModified( 'child', { persistedOnly: true } ), "The parent model should *not* be considered modified because its child model only has a change on an unpersisted attribute" );
+			}
+		},
+		
+		
+		{
+			/*
+			 * Test getting changes from a parent model when an embedded model is changed 
+			 */
+			name : "Test getting changes from a parent model when an embedded model is changed",
+			
+			setUp : function() {
+				this.ParentModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'child', type: 'model', embedded: true }
+					]
+				} );
+				
+				this.ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name : 'persistedAttr', type: 'string' },
+						{ name : 'unpersistedAttr', type: 'string', persist: false }
+					]
+				} );
+			},
+			
+			
+			"A child model with changes should be retrieved (with all of its data, because it is embedded) when any of its attributes has a change" : function() {
+				var childModel = new this.ChildModel( {
+					persistedAttr: 'persistedValue',
+					unpersistedAttr: 'unpersistedValue' 
+				} );
+				var parentModel = new this.ParentModel( {
+					child: childModel
+				} );
+				
+				Y.Assert.areSame( 0, Kevlar.util.Object.length( parentModel.getChanges() ), "Initial condition: there should be no changes" );
+				
+				childModel.set( 'persistedAttr', 'newPersistedValue' );
+				
+				var changes = parentModel.getChanges();
+				Y.Assert.areSame( 1, Kevlar.util.Object.length( changes ), "There should be 1 property in the 'changes' object" );
+				Y.ObjectAssert.hasKeys( [ 'child' ], changes, "'child' should be the property in the 'changes' object" );
+				
+				Y.Assert.areSame( 2, Kevlar.util.Object.length( changes.child ), "There should be 2 properties in the 'child' changes object" );
+				Y.Assert.areSame( 'newPersistedValue', changes.child.persistedAttr, "persistedAttr should exist in the 'child' changes, with the new value" );
+				Y.Assert.areSame( 'unpersistedValue', changes.child.unpersistedAttr, "unpersistedAttr should exist in the 'child' changes, with its original value" );
+			},
+			
+			
+			// -------------------------
+			
+			// Test with the 'persistedOnly' option
+			
+			
+			"With the 'persistedOnly' option, a child model with changes should only be retrieved (with all of its persisted data, because it is embedded) when any of its *persisted* attributes has a change" : function() {
+				var childModel = new this.ChildModel( {
+					persistedAttr: 'persistedValue',
+					unpersistedAttr: 'unpersistedValue' 
+				} );
+				var parentModel = new this.ParentModel( {
+					child: childModel
+				} );
+				
+				Y.Assert.areSame( 0, Kevlar.util.Object.length( parentModel.getChanges() ), "Initial condition: there should be no changes" );
+				
+				childModel.set( 'persistedAttr', 'newPersistedValue' );
+				
+				var changes = parentModel.getChanges( { persistedOnly: true } );
+				Y.Assert.areSame( 1, Kevlar.util.Object.length( changes ), "There should be 1 property in the 'changes' object" );
+				Y.ObjectAssert.hasKeys( [ 'child' ], changes, "'child' should be the property in the 'changes' object" );
+				
+				Y.Assert.areSame( 1, Kevlar.util.Object.length( changes.child ), "There should be only 1 property (for the persisted one) in the 'child' changes object" );
+				Y.Assert.areSame( 'newPersistedValue', changes.child.persistedAttr, "persistedAttr should exist in the 'child' changes, with the new value" );
+			},
+			
+			
+			"With the 'persistedOnly' option, a child model that only has changes to non-persisted attributes should *not* be retrieved with getChanges()" : function() {
+				var childModel = new this.ChildModel( {
+					persistedAttr: 'persistedValue',
+					unpersistedAttr: 'unpersistedValue' 
+				} );
+				var parentModel = new this.ParentModel( {
+					child: childModel
+				} );
+				
+				Y.Assert.areSame( 0, Kevlar.util.Object.length( parentModel.getChanges() ), "Initial condition: there should be no changes" );
+				
+				childModel.set( 'unpersistedAttr', 'newUnpersistedValue' );
+				
+				var changes = parentModel.getChanges( { persistedOnly: true } );
+				Y.Assert.areSame( 0, Kevlar.util.Object.length( changes ), "There should be no properties in the 'changes' object" );
 			}
 		}
+		
 	]
 	
 } ) );
