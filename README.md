@@ -9,6 +9,10 @@ This is currently a work in progress, and is alpha.
 
 ## Changelog:
 
+### 0.6.3
+
+* Updated to Class.js 0.3.1
+
 ### 0.6.2
 
 * Added the ability for Model::isModified() and Collection::isModified() to only return true if persisted attributes are modified. Using this fixes an issue where a parent model might be persisted even though the only change to it was an unpersisted attribute in a nested child model.

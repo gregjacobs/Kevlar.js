@@ -1,6 +1,6 @@
 /*!
  * Kevlar JS Library
- * Version 0.6.2
+ * Version 0.6.3
  * 
  * Copyright(c) 2012 Gregory Jacobs.
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php
@@ -9,7 +9,7 @@
  */
 /*!
  * Class.js
- * Version 0.3
+ * Version 0.3.1
  * 
  * Copyright(c) 2012 Gregory Jacobs.
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php
@@ -339,7 +339,7 @@ var Class = (function() {
 	 */
 	Class.extend = (function() {
 		// Set up some private vars that will be used with the extend() method
-		var superclassMethodCallRegex = /xyz/.test( function(){ var xyz; } ) ? /\b_super\b/ : /.*/;  // a regex to see if the _super() method is called within a function, for JS implementations that allow a function's text to be converted to a string 
+		var superclassMethodCallRegex = /xyz/.test( function(){ var a = "xyz"; } ) ? /\b_super\b/ : /.*/;  // a regex to see if the _super() method is called within a function, for JS implementations that allow a function's text to be converted to a string. Note, need to keep the "xyz" as a string, so minifiers don't re-write it. 
 		
 		// inline override() function which is attached to subclass constructor functions
 		var inlineOverride = function( obj ) {
@@ -350,7 +350,7 @@ var Class = (function() {
 		
 	
 		// extend() method itself
-		return function( superclass, overrides ) {			
+		return function( superclass, overrides ) {	
 			// The first argument may be omitted, making Object the superclass
 			if( arguments.length === 1 ) {
 				overrides = superclass;
@@ -413,6 +413,7 @@ var Class = (function() {
 				    overrides.hasOwnProperty( prop ) &&                     // Make sure the property is on the overrides object itself (not a prototype object)
 				    typeof overrides[ prop ] === 'function' &&              // Make sure the override property is a function (method)
 				    typeof superclassPrototype[ prop ] === 'function' &&    // Make sure the superclass has the same named function (method)
+				    !overrides[ prop ].hasOwnProperty( '__Class' ) &&       // We don't want to wrap a constructor function of another class being provided as a prototype property to the class being created
 				    superclassMethodCallRegex.test( overrides[ prop ] )     // And check to see if the string "_super" exists within the override function
 				) {
 					overrides[ prop ] = createSuperclassCallingMethod( prop, overrides[ prop ] );
@@ -459,6 +460,7 @@ var Class = (function() {
 			subclassPrototype = subclass.prototype = new F();  // set up prototype chain
 			subclassPrototype.constructor = subclass;          // fix constructor property
 			subclass.superclass = subclass.__super__ = superclassPrototype;
+			subclass.__Class = true;  // a flag for testing if a given function is a class or not
 			
 			// Attach new static methods to the subclass
 			subclass.override = function( overrides ) { Class.override( subclass, overrides ); };
