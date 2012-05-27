@@ -2043,9 +2043,9 @@ tests.unit.add( new Ext.test.TestSuite( {
 		
 		{
 			/*
-			 * Test load()
+			 * Test reload()
 			 */
-			name: 'Test load()',
+			name: 'Test reload()',
 			
 			setUp : function() {
 				this.TestModel = Kevlar.extend( Kevlar.Model, {
@@ -2063,21 +2063,21 @@ tests.unit.add( new Ext.test.TestSuite( {
 			// Special instructions
 			_should : {
 				error : {
-					"load() should throw an error if there is no configured persistenceProxy" : "Kevlar.Model::load() error: Cannot load. No persistenceProxy."
+					"reload() should throw an error if there is no configured persistenceProxy" : "Kevlar.Model::reload() error: Cannot load. No persistenceProxy."
 				}
 			},
 			
 			
-			"load() should throw an error if there is no configured persistenceProxy" : function() {
+			"reload() should throw an error if there is no configured persistenceProxy" : function() {
 				var model = new this.TestModel( {
 					// note: no configured persistenceProxy
 				} );
-				model.load();
-				Y.Assert.fail( "load() should have thrown an error with no configured persistenceProxy" );
+				model.reload();
+				Y.Assert.fail( "reload() should have thrown an error with no configured persistenceProxy" );
 			},
 			
 			
-			"load() should delegate to its persistenceProxy's read() method to retrieve the data" : function() {
+			"reload() should delegate to its persistenceProxy's read() method to retrieve the data" : function() {
 				var proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
 					// Implementation of abstract interface
 					create : Kevlar.emptyFn,
@@ -2091,9 +2091,9 @@ tests.unit.add( new Ext.test.TestSuite( {
 				} );
 				
 				
-				// Instantiate and run the load() method to delegate
+				// Instantiate and run the reload() method to delegate
 				var model = new MyModel(); 
-				model.load();
+				model.reload();
 				
 				try {
 					JsMockito.verify( proxy ).read();

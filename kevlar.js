@@ -1,6 +1,6 @@
 /*!
  * Kevlar JS Library
- * Version 0.8
+ * Version 0.8.1
  * 
  * Copyright(c) 2012 Gregory Jacobs.
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php
@@ -5422,9 +5422,9 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	
 	
 	/**
-	 * Loads the Model data from the server, using the configured {@link #persistenceProxy}.
+	 * Reloads the Model data from the server (discarding any changed data), using the configured {@link #persistenceProxy}.
 	 * 
-	 * @method load
+	 * @method reload
 	 * @param {Object} [options] An object which may contain the following properties:
 	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
 	 * @param {Function} [options.success] Function to call if the save is successful.
@@ -5432,12 +5432,12 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * @param {Function} [options.complete] Function to call when the operation is complete, regardless of a success or fail state.
 	 * @param {Object} [options.scope=window] The object to call the `success`, `failure`, and `complete` callbacks in.
 	 */
-	load : function( options ) {
+	reload : function( options ) {
 		options = options || {};
 		
 		// No persistenceProxy, cannot load. Throw an error
 		if( !this.persistenceProxy ) {
-			throw new Error( "Kevlar.Model::load() error: Cannot load. No persistenceProxy." );
+			throw new Error( "Kevlar.Model::reload() error: Cannot load. No persistenceProxy." );
 		}
 		
 		var proxyOptions = {
@@ -5630,11 +5630,18 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 
 
 /**
- * Alias of {@link #load}. See {@link #load} for description and arguments.
+ * Alias of {@link #reload}. See {@link #reload} for description and arguments.
  * 
  * @method fetch
  */
-Kevlar.Model.prototype.fetch = Kevlar.Model.prototype.load;
+Kevlar.Model.prototype.fetch = Kevlar.Model.prototype.reload;
+
+/**
+ * Backward compatibility alias of {@link #reload}. See {@link #reload} for description and arguments.
+ * 
+ * @method load
+ */
+Kevlar.Model.prototype.load = Kevlar.Model.prototype.reload;
 
 
 /**
