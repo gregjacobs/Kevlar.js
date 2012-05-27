@@ -1,6 +1,6 @@
 /*!
  * Kevlar JS Library
- * Version 0.7.1
+ * Version 0.8
  * 
  * Copyright(c) 2012 Gregory Jacobs.
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php
@@ -4405,6 +4405,9 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		
 		
 		// Subclass-specific setup
+		/**
+		 * @ignore 
+		 */
 		onClassExtended : function( newModelClass ) {
 			// Assign a unique id to this class, which is used in hashmaps that hold the class
 			newModelClass.__Kevlar_modelTypeId = Kevlar.newId();
@@ -4442,7 +4445,24 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			}
 			
 			newModelClass.prototype.attributes = Kevlar.apply( {}, newAttributes, superclassAttributes );  // newAttributes take precedence; superclassAttributes are used in the case that a newAttribute doesn't exist for a given attributeName
+		},
+		
+		
+		/**
+		 * Retrieves the Attribute objects that are present for the Model, in an object (hashmap) where the keys
+		 * are the Attribute names, and the values are the {@link Kevlar.attribute.Attribute} objects themselves.
+		 * 
+		 * @inheritable
+		 * @static
+		 * @method getAttributes
+		 * @return {Object} An Object (hashmap) where the keys are the attribute {@link Kevlar.attribute.Attribute#name names},
+		 *   and the values are the {@link Kevlar.attribute.Attribute Attribute} instances themselves.
+		 */
+		getAttributes : function() {
+			// Note: `this` refers to the class (constructor function) that the static method was called on
+			return this.prototype.attributes;
 		}
+		
 	},
 	
 	
@@ -4612,7 +4632,8 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * are the Attribute names, and the values are the {@link Kevlar.attribute.Attribute} objects themselves.
 	 * 
 	 * @method getAttributes
-	 * @return {Object} 
+	 * @return {Object} An Object (hashmap) where the keys are the attribute {@link Kevlar.attribute.Attribute#name names},
+	 *   and the values are the {@link Kevlar.attribute.Attribute Attribute} instances themselves.
 	 */
 	getAttributes : function() {
 		return this.attributes;

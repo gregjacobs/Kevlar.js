@@ -9,6 +9,10 @@ This is currently a work in progress, and is alpha.
 
 ## Changelog:
 
+### 0.8
+
+* Added a static method to Model (and all of its subclasses) called getAttributes(), to statically retrieve the Attributes defined for a given Model class without needing an instance.
+
 ### 0.7.1
 
 * Removed the ability to call the this._super() method in a provided set config function to Attribute. Was really unnecessary.
