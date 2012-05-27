@@ -475,26 +475,13 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * @param {Mixed} oldValue The old (previous) value that the model held.
 	 */
 	doSet : function( model, newValue, oldValue ) {
-		var me = this, 
-		    tmp,
-		    ret;
-		
-		if( me.hasOwnProperty( 'set' ) ) {  // a 'set' config was provided
-			tmp = model._super;  // store the current model._super, so we can restore it after the 'set' config function is called
-			
-			model._super = function( args ) {  // 'args' should be an array, or arguments object
-				return me.constructor.prototype.set.apply( me, [ model ].concat( Array.prototype.slice.call( args || [], 0 ) ) );  // call the prototype method in the scope of the Attribute, with model as the first arg, followed by anything else provided
-			};
-			
-			// Now call the provided 'set' function in the scope of the model
-			ret = me.set.call( model, newValue, oldValue );
-			
-			model._super = tmp;  // restore old model._super, if there was one
-			return ret;
+		if( this.hasOwnProperty( 'set' ) ) {  // a 'set' config was provided
+			// Call the provided 'set' function in the scope of the model
+			return this.set.call( model, newValue, oldValue );
 			
 		} else {
 			// No 'set' config provided, just call the set() method on the prototype
-			return me.set( model, newValue, oldValue );
+			return this.set( model, newValue, oldValue );
 		}
 	},
 	
@@ -502,7 +489,8 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	
 	/**
 	 * Method that allows processing of the value that is to be set to a {@link Kevlar.Model}. This method is executed after
-	 * the {@link #beforeSet} method, and before the {@link #afterSet} method. 
+	 * the {@link #beforeSet} method, and before the {@link #afterSet} method, and can be overridden by the {@link #cfg-set set}
+	 * config. 
 	 * 
 	 * @method set
 	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
