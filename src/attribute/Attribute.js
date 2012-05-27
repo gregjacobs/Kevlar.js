@@ -47,9 +47,16 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * 
 	 *     MyModel = Kevlar.Model.extend( {
 	 *         attributes : [
-	 *             { name: 'uniqueId', defaultValue: function() { return Kevlar.newId(); } }
+	 *             {
+	 *                 name: 'uniqueId', 
+	 *                 defaultValue: function( attribute ) {
+	 *                     return Kevlar.newId(); 
+	 *                 }
+	 *             }
 	 *         ]
 	 *     } );
+	 * 
+	 * Note that the function is passed the Attribute as its first argument, which may be used to query Attribute properties/configs.
 	 * 
 	 * If an Object is provided as the defaultValue, its properties will be recursed and searched for functions. The functions will
 	 * be executed to provide default values for nested properties of the object in the same way that providing a Function for this config
@@ -355,7 +362,7 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 		var defaultValue = this.defaultValue;
 		
 		if( typeof defaultValue === "function" ) {
-			defaultValue = defaultValue();
+			defaultValue = defaultValue( this );
 		}
 		
 		// If defaultValue is an object, recurse through it and execute any functions, using their return values as the defaults

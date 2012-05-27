@@ -175,6 +175,24 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			},
 			
 			
+			"A default provided as defaultValue that is a function should be provided the Attribute instance as its first argument" : function() {
+				var argToDefaultValueFn;
+				
+				var attribute = new this.Attribute( {
+					name : "TestAttribute",
+					defaultValue : function( arg ) {
+						argToDefaultValueFn = arg;
+						return 1;
+					}
+				} );
+				
+				// Run getDefaultValue() which will call the anonymous function provided as the defaultValue config
+				attribute.getDefaultValue();
+				
+				Y.Assert.areSame( attribute, argToDefaultValueFn );
+			},
+			
+			
 			"A default provided as defaultValue that is a function should be executed each time the default is called for" : function() {
 				var counter = 0;
 				var attribute = new this.Attribute( {

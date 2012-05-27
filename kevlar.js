@@ -1,6 +1,6 @@
 /*!
  * Kevlar JS Library
- * Version 0.6.3
+ * Version 0.7
  * 
  * Copyright(c) 2012 Gregory Jacobs.
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php
@@ -1812,9 +1812,16 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * 
 	 *     MyModel = Kevlar.Model.extend( {
 	 *         attributes : [
-	 *             { name: 'uniqueId', defaultValue: function() { return Kevlar.newId(); } }
+	 *             {
+	 *                 name: 'uniqueId', 
+	 *                 defaultValue: function( attribute ) {
+	 *                     return Kevlar.newId(); 
+	 *                 }
+	 *             }
 	 *         ]
 	 *     } );
+	 * 
+	 * Note that the function is passed the Attribute as its first argument, which may be used to query Attribute properties/configs.
 	 * 
 	 * If an Object is provided as the defaultValue, its properties will be recursed and searched for functions. The functions will
 	 * be executed to provide default values for nested properties of the object in the same way that providing a Function for this config
@@ -2120,7 +2127,7 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 		var defaultValue = this.defaultValue;
 		
 		if( typeof defaultValue === "function" ) {
-			defaultValue = defaultValue();
+			defaultValue = defaultValue( this );
 		}
 		
 		// If defaultValue is an object, recurse through it and execute any functions, using their return values as the defaults
@@ -2298,20 +2305,60 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 
 /**
  * @abstract
- * @class Kevlar.attribute.IntegerAttribute
+ * @class Kevlar.attribute.PrimitiveAttribute
  * @extends Kevlar.attribute.Attribute
+ * 
+ * Base Attribute definition class for an Attribute that holds a JavaScript primitive value 
+ * (i.e. A Boolean, Number, or String).
+ */
+/*global Kevlar */
+Kevlar.attribute.PrimitiveAttribute = Kevlar.attribute.Attribute.extend( {
+	
+	abstractClass: true,
+	
+	/**
+	 * @cfg {Boolean} useNull
+	 * True to allow `null` to be set to the Attribute (which is usually used to denote that the 
+	 * Attribute is "unset", and it shouldn't take an actual default value).
+	 * 
+	 * This is also used when parsing the provided value for the Attribute. If this config is true, and the value 
+	 * cannot be "easily" parsed into a valid representation of its primitive type, `null` will be used 
+	 * instead of converting to the primitive type's default.
+	 */
+	useNull : false
+	
+} );
+
+/**
+ * @abstract
+ * @class Kevlar.attribute.IntegerAttribute
+ * @extends Kevlar.attribute.PrimitiveAttribute
  * 
  * Abstract base class for an Attribute that takes a number data value.
  */
 /*global Kevlar */
-Kevlar.attribute.NumberAttribute = Kevlar.attribute.Attribute.extend( {
+Kevlar.attribute.NumberAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
 	
 	abstractClass: true,
+	
+	/**
+	 * @cfg {Mixed/Function} defaultValue
+	 * @inheritdoc
+	 * 
+	 * The NumberAttribute defaults to 0, unless the {@link #useNull} config is 
+	 * set to `true`, in which case it defaults to `null` (to denote the Attribute being "unset").
+	 */
+	defaultValue: function( attribute ) {
+		return attribute.useNull ? null : 0;
+	},
 	
 	
 	/**
 	 * @cfg {Boolean} useNull
-	 * Used when parsing the provided value for the Attribute. If this config is true, and the value 
+	 * True to allow `null` to be set to the Attribute (which is usually used to denote that the 
+	 * Attribute is "unset", and it shouldn't take an actual default value).
+	 * 
+	 * This is also used when parsing the provided value for the Attribute. If this config is true, and the value 
 	 * cannot be "easily" parsed into an integer (i.e. if it's undefined, null, or empty string), `null` will be used 
 	 * instead of converting to 0.
 	 */
@@ -2678,20 +2725,35 @@ Kevlar.DataComponent = Kevlar.util.Observable.extend( {
 
 /**
  * @class Kevlar.attribute.BooleanAttribute
- * @extends Kevlar.attribute.Attribute
+ * @extends Kevlar.attribute.PrimitiveAttribute
  * 
  * Attribute definition class for an Attribute that takes a boolean (i.e. true/false) data value.
  */
 /*global Kevlar */
-Kevlar.attribute.BooleanAttribute = Kevlar.attribute.Attribute.extend( {
+Kevlar.attribute.BooleanAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
+	
+	/**
+	 * @cfg {Mixed/Function} defaultValue
+	 * @inheritdoc
+	 * 
+	 * The BooleanAttribute defaults to `false`, unless the {@link #useNull} config is set to `true`, 
+	 * in which case it defaults to `null` (to denote the Attribute being "unset").
+	 */
+	defaultValue: function( attribute ) {
+		return attribute.useNull ? null : false;
+	},
+	
 	
 	/**
 	 * @cfg {Boolean} useNull
-	 * Used when parsing the provided value for the Attribute. If this config is true, and the value 
+	 * True to allow `null` to be set to the Attribute (which is usually used to denote that the 
+	 * Attribute is "unset", and it shouldn't take an actual default value).
+	 * 
+	 * This is also used when parsing the provided value for the Attribute. If this config is true, and the value 
 	 * cannot be "easily" parsed into a Boolean (i.e. if it's undefined, null, or an empty string), 
 	 * `null` will be used instead of converting to `false`.
 	 */
-	useNull : false,
+	useNull: false,
 	
 	
 	/**
@@ -2992,7 +3054,7 @@ Kevlar.attribute.Attribute.registerType( 'integer', Kevlar.attribute.IntegerAttr
 /*global Kevlar */
 Kevlar.attribute.MixedAttribute = Kevlar.attribute.Attribute.extend( {
 		
-	
+	// No specific implementation at this time. All handled by the base class Attribute.
 	
 } );
 
@@ -3155,16 +3217,31 @@ Kevlar.attribute.Attribute.registerType( 'model', Kevlar.attribute.ModelAttribut
 
 /**
  * @class Kevlar.attribute.StringAttribute
- * @extends Kevlar.attribute.Attribute
+ * @extends Kevlar.attribute.PrimitiveAttribute
  * 
  * Attribute definition class for an Attribute that takes a string data value.
  */
 /*global Kevlar */
-Kevlar.attribute.StringAttribute = Kevlar.attribute.Attribute.extend( {
+Kevlar.attribute.StringAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
+	
+	/**
+	 * @cfg {Mixed/Function} defaultValue
+	 * @inheritdoc
+	 * 
+	 * The StringAttribute defaults to `""` (empty string), unless the {@link #useNull} config is 
+	 * set to `true`, in which case it defaults to `null` (to denote the Attribute being "unset").
+	 */
+	defaultValue: function( attribute ) {
+		return attribute.useNull ? null : "";
+	},
+	
 	
 	/**
 	 * @cfg {Boolean} useNull
-	 * Used when parsing the provided value for the Attribute. If this config is true, and the value 
+	 * True to allow `null` to be set to the Attribute (which is usually used to denote that the 
+	 * Attribute is "unset", and it shouldn't take an actual default value).
+	 * 
+	 * This is also used when parsing the provided value for the Attribute. If this config is true, and the value 
 	 * cannot be "easily" parsed into a String (i.e. if it's undefined, or null), `null` will be used 
 	 * instead of converting to an empty string.
 	 */
@@ -4488,7 +4565,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			 */
 			'destroy'
 		);
-				
+		
 		
 		// Set the default values for attributes that don't have an initial value.
 		var attributes = me.attributes,  // me.attributes is a hash of the Attribute objects, keyed by their name

@@ -1,15 +1,30 @@
 /**
  * @class Kevlar.attribute.StringAttribute
- * @extends Kevlar.attribute.Attribute
+ * @extends Kevlar.attribute.PrimitiveAttribute
  * 
  * Attribute definition class for an Attribute that takes a string data value.
  */
 /*global Kevlar */
-Kevlar.attribute.StringAttribute = Kevlar.attribute.Attribute.extend( {
+Kevlar.attribute.StringAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
+	
+	/**
+	 * @cfg {Mixed/Function} defaultValue
+	 * @inheritdoc
+	 * 
+	 * The StringAttribute defaults to `""` (empty string), unless the {@link #useNull} config is 
+	 * set to `true`, in which case it defaults to `null` (to denote the Attribute being "unset").
+	 */
+	defaultValue: function( attribute ) {
+		return attribute.useNull ? null : "";
+	},
+	
 	
 	/**
 	 * @cfg {Boolean} useNull
-	 * Used when parsing the provided value for the Attribute. If this config is true, and the value 
+	 * True to allow `null` to be set to the Attribute (which is usually used to denote that the 
+	 * Attribute is "unset", and it shouldn't take an actual default value).
+	 * 
+	 * This is also used when parsing the provided value for the Attribute. If this config is true, and the value 
 	 * cannot be "easily" parsed into a String (i.e. if it's undefined, or null), `null` will be used 
 	 * instead of converting to an empty string.
 	 */

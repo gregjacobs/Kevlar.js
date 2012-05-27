@@ -533,6 +533,24 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			},
 			
 			
+			"A default provided as defaultValue that is a function should be provided the Attribute instance as its first argument" : function() {
+				var argToDefaultValueFn;
+				
+				var attribute = new this.Attribute( {
+					name : "TestAttribute",
+					defaultValue : function( arg ) {
+						argToDefaultValueFn = arg;
+						return 1;
+					}
+				} );
+				
+				// Run getDefaultValue() which will call the anonymous function provided as the defaultValue config
+				attribute.getDefaultValue();
+				
+				Y.Assert.areSame( attribute, argToDefaultValueFn );
+			},
+			
+			
 			"A default provided as defaultValue that is a function should be executed each time the default is called for" : function() {
 				var counter = 0;
 				var attribute = new this.Attribute( {
@@ -688,7 +706,27 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 	
 	
 	items : [
-	
+		
+		/*
+		 * Test getDefaultValue()
+		 */
+		{
+			name : "Test getDefaultValue()",
+			
+			"getDefaultValue() should return false in the default case (i.e. when the `useNull` config is false)" : function() {
+				var attribute = new Kevlar.attribute.BooleanAttribute( { name: 'attr', useNull: false } );
+				
+				Y.Assert.isFalse( attribute.getDefaultValue() );
+			},
+			
+			"getDefaultValue() should return null when the `useNull` config is true" : function() {
+				var attribute = new Kevlar.attribute.BooleanAttribute( { name: 'attr', useNull: true } );
+				
+				Y.Assert.isNull( attribute.getDefaultValue() );
+			}
+		},
+		
+		
 		/*
 		 * Test beforeSet()
 		 */
@@ -1226,6 +1264,26 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 	
 	
 	items : [
+		
+		/*
+		 * Test getDefaultValue()
+		 */
+		{
+			name : "Test getDefaultValue()",
+			
+			"getDefaultValue() should return 0 in the default case (i.e. when the `useNull` config is false)" : function() {
+				var attribute = new Kevlar.attribute.FloatAttribute( { name: 'attr', useNull: false } );
+				
+				Y.Assert.areSame( 0, attribute.getDefaultValue() );
+			},
+			
+			"getDefaultValue() should return null when the `useNull` config is true" : function() {
+				var attribute = new Kevlar.attribute.FloatAttribute( { name: 'attr', useNull: true } );
+				
+				Y.Assert.isNull( attribute.getDefaultValue() );
+			}
+		},
+	
 	
 		/*
 		 * Test beforeSet()
@@ -1370,6 +1428,26 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 	
 	
 	items : [
+		
+		/*
+		 * Test getDefaultValue()
+		 */
+		{
+			name : "Test getDefaultValue()",
+			
+			"getDefaultValue() should return 0 in the default case (i.e. when the `useNull` config is false)" : function() {
+				var attribute = new Kevlar.attribute.IntegerAttribute( { name: 'attr', useNull: false } );
+				
+				Y.Assert.areSame( 0, attribute.getDefaultValue() );
+			},
+			
+			"getDefaultValue() should return null when the `useNull` config is true" : function() {
+				var attribute = new Kevlar.attribute.IntegerAttribute( { name: 'attr', useNull: true } );
+				
+				Y.Assert.isNull( attribute.getDefaultValue() );
+			}
+		},
+	
 	
 		/*
 		 * Test beforeSet()
@@ -1905,6 +1983,25 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 	
 	
 	items : [
+		
+		/*
+		 * Test getDefaultValue()
+		 */
+		{
+			name : "Test getDefaultValue()",
+			
+			"getDefaultValue() should return an empty string in the default case (i.e. when the `useNull` config is false)" : function() {
+				var attribute = new Kevlar.attribute.StringAttribute( { name: 'attr', useNull: false } );
+				
+				Y.Assert.areSame( "", attribute.getDefaultValue() );
+			},
+			
+			"getDefaultValue() should return null when the `useNull` config is true" : function() {
+				var attribute = new Kevlar.attribute.StringAttribute( { name: 'attr', useNull: true } );
+				
+				Y.Assert.isNull( attribute.getDefaultValue() );
+			}
+		},
 	
 		/*
 		 * Test beforeSet()
@@ -9277,7 +9374,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				
 				var ChildModel = Kevlar.Model.extend( {
 					attributes : [
-						{ name : 'attr', type: 'string' }
+						{ name : 'attr' }
 					]
 				} );
 				
@@ -9377,7 +9474,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				
 				var ChildModel = Kevlar.Model.extend( {
 					attributes : [
-						{ name : 'attr', type: 'string' }
+						{ name : 'attr' }
 					]
 				} );
 				
@@ -9407,7 +9504,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				
 				var ChildModel = Kevlar.Model.extend( {
 					attributes : [
-						{ name : 'attr', type: 'string' }
+						{ name : 'attr' }
 					]
 				} );
 				
@@ -9460,7 +9557,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				
 				var ChildModel = Kevlar.Model.extend( {
 					attributes : [
-						{ name : 'attr', type: 'string' }
+						{ name : 'attr' }
 					],
 					
 					toString : function() { return "(ChildModel)"; }  // for debugging

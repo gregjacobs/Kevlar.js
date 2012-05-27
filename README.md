@@ -9,6 +9,10 @@ This is currently a work in progress, and is alpha.
 
 ## Changelog:
 
+### 0.7
+
+* Added default values for each of the "primitive" attribute types. Boolean attributes default to `false`, Number attributes default to `0`, and String attributes default to the empty string (`""`), *unless* the `useNull` config is set to true, in which case they will default to `null` (to denote an "unset" attribute).
+
 ### 0.6.3
 
 * Updated to Class.js 0.3.1
