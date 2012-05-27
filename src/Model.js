@@ -1174,21 +1174,6 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	
 	
 	/**
-	 * Sets the {@link #persistenceProxy} to use to persist the Model's data. Note that this is set
-	 * to the *prototype* of the Model, for use with all instances of the Model. Because
-	 * of this, it is usually best to define the {@link #persistenceProxy} on the prototype of a Model
-	 * subclass.
-	 * 
-	 * @method setProxy
-	 * @param {Kevlar.persistence.Proxy} persistenceProxy
-	 */
-	setProxy : function( persistenceProxy ) {
-		// Proxy's get placed on the prototype, so they are shared between instances
-		this.constructor.prototype.persistenceProxy = persistenceProxy;
-	},
-	
-	
-	/**
 	 * Gets the {@link #persistenceProxy} that is currently configured for this Model. Note that
 	 * the same persistenceProxy instance is shared between all instances of the model.
 	 * 
