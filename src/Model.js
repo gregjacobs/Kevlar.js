@@ -484,24 +484,39 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		// Increment the setCallCount, for use with the 'changeset' event. The 'changeset' event only fires when all calls to set() have exited.
 		this.setCallCount++;
 		
-		var changeSetNewValues = this.changeSetNewValues,
+		var attributes = this.attributes,
+		    changeSetNewValues = this.changeSetNewValues,
 		    changeSetOldValues = this.changeSetOldValues;
 		
 		if( typeof attributeName === 'object' ) {
-			// Hash provided 
-			var values = attributeName;  // for clarity
+			// Hash provided
+			var values = attributeName,  // for clarity
+			    attrsWithSetters = [];
+			
 			for( var fldName in values ) {  // a new variable, 'fldName' instead of 'attributeName', so that JSLint stops whining about "Bad for in variable 'attributeName'" (for whatever reason it does that...)
 				if( values.hasOwnProperty( fldName ) ) {
-					this.set( fldName, values[ fldName ] );
+					if( attributes[ fldName ].hasUserDefinedSetter() ) {   // defer setting the values on attributes with user-defined setters until all attributes without user-defined setters have been set
+						attrsWithSetters.push( fldName );
+					} else {
+						this.set( fldName, values[ fldName ] );
+					}
 				}
+			}
+			
+			for( var i = 0, len = attrsWithSetters.length; i < len; i++ ) {
+				fldName = attrsWithSetters[ i ];
+				this.set( fldName, values[ fldName ] );
 			}
 			
 		} else {
 			// attributeName and newValue provided
-			var attribute = this.attributes[ attributeName ];
+			var attribute = attributes[ attributeName ];
+			
+			// <debug>
 			if( !attribute ) {
 				throw new Error( "Kevlar.Model.set(): An attribute with the attributeName '" + attributeName + "' was not found." );
 			}
+			// </debug>
 			
 			// Get the current (old) value of the attribute, and its current "getter" value (to provide to the 'change' event as the oldValue)
 			var oldValue = this.data[ attributeName ],
@@ -598,9 +613,11 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * function, and the value has never been set.  
 	 */
 	get : function( attributeName ) {
+		// <debug>
 		if( !( attributeName in this.attributes ) ) {
 			throw new Error( "Kevlar.Model::get() error: attribute '" + attributeName + "' was not found on the Model." );
 		}
+		// </debug>
 		
 		var value = this.data[ attributeName ],
 		    attribute = this.attributes[ attributeName ];
@@ -627,9 +644,11 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * function, and the value has never been set.
 	 */
 	raw : function( attributeName ) {
+		// <debug>
 		if( !( attributeName in this.attributes ) ) {
 			throw new Error( "Kevlar.Model::raw() error: attribute '" + attributeName + "' was not found on the Model." );
 		}
+		// </debug>
 		
 		var value = this.data[ attributeName ],
 		    attribute = this.attributes[ attributeName ];

@@ -9,6 +9,10 @@ This is currently a work in progress, and is alpha.
 
 ## Changelog:
 
+### 0.6.4
+
+* Made attributes with user-defined 'setters' be updated after attributes with no user-defined setter when providing a set of values to update the Model with.
+
 ### 0.6.3
 
 * Updated to Class.js 0.3.1

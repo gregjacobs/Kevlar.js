@@ -706,6 +706,28 @@ tests.unit.add( new Ext.test.TestSuite( {
 			},
 			
 			
+			"When set() is provided an Object (hashmap) of data to set, the attributes with user-provided 'set' methods should be run after ones with out any (in case they rely on the ones without setters)" : function() {
+				var TestModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'attr_with_setter1', set: function( value ) { return this.get( 'attr_without_setter' ) + value; } },
+						{ name: 'attr_without_setter' },
+						{ name: 'attr_with_setter2', set: function( value ) { return this.get( 'attr_without_setter' ) + value; } }
+					]
+				} );
+				
+				var model = new TestModel();
+				model.set( {
+					attr_with_setter1: 1,
+					attr_without_setter: 2,
+					attr_with_setter2: 3
+				} );
+				
+				Y.Assert.areSame( 3, model.get( 'attr_with_setter1' ), "The value should have been added from the attr_without_setter" );
+				Y.Assert.areSame( 2, model.get( 'attr_without_setter' ), "The value should have been simply provided to attr_without_setter" );
+				Y.Assert.areSame( 5, model.get( 'attr_with_setter2' ), "The value should have been added from the attr_without_setter" );
+			},
+			 
+			
 			// ------------------------
 			
 			
@@ -992,8 +1014,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ 
 							name : 'a', 
 							set : function( value ) {
-								this.set( 'b', 22 );
-								this.set( 'c', 33 );
+								this.set( 'b', value + 1 );
+								this.set( 'c', value + 2 );
 								return value;
 							}
 						}, 
@@ -1002,16 +1024,16 @@ tests.unit.add( new Ext.test.TestSuite( {
 						{ name : 'unModifiedAttr' }
 					]
 				} );
-				var model = new TestModel( { 'a': 1, 'b': 2, 'c': 3 } ),
+				var model = new TestModel( { 'a': 1 } ),  // setting 'a' will set 'b' and 'c'
 				    changeSetEventCount = 0,
 				    changeSetNewValues,
 				    changeSetOldValues;
 				
 				// Check the initial 'a', 'b', and 'c' values
 				Y.Assert.areSame( 1, model.get( 'a' ), "initial value for a" );
-				Y.Assert.areSame( 2, model.get( 'b' ), "initial value for b" );
-				Y.Assert.areSame( 3, model.get( 'c' ), "initial value for c" );
-				    
+				Y.Assert.areSame( 2, model.get( 'b' ), "initial value for b. Should be set by the 'a' attribute's setter" );
+				Y.Assert.areSame( 3, model.get( 'c' ), "initial value for c. Should be set by the 'a' attribute's setter" );
+				
 				model.addListener( 'changeset', function( model, newValues, oldValues ) {
 					changeSetEventCount++;
 					changeSetNewValues = newValues;
@@ -1023,15 +1045,15 @@ tests.unit.add( new Ext.test.TestSuite( {
 				
 				// Double check the 'a', 'b', and 'c' attributes have been changed
 				Y.Assert.areSame( 11, model.get( 'a' ) );
-				Y.Assert.areSame( 22, model.get( 'b' ) );
-				Y.Assert.areSame( 33, model.get( 'c' ) );
+				Y.Assert.areSame( 12, model.get( 'b' ) );
+				Y.Assert.areSame( 13, model.get( 'c' ) );
 				
 				Y.Assert.areSame( 3, Kevlar.util.Object.length( changeSetNewValues ), "The changeset's newValues should have exactly 3 properties" );
 				Y.Assert.areSame( 3, Kevlar.util.Object.length( changeSetOldValues ), "The changeset's oldValues should have exactly 3 properties" );
 				
 				Y.Assert.areSame( 11, changeSetNewValues.a, "newValue for 'a'" );
-				Y.Assert.areSame( 22, changeSetNewValues.b, "newValue for 'b'" );
-				Y.Assert.areSame( 33, changeSetNewValues.c, "newValue for 'c'" );
+				Y.Assert.areSame( 12, changeSetNewValues.b, "newValue for 'b'" );
+				Y.Assert.areSame( 13, changeSetNewValues.c, "newValue for 'c'" );
 				
 				Y.Assert.areSame( 1, changeSetOldValues.a, "oldValue for 'a'" );
 				Y.Assert.areSame( 2, changeSetOldValues.b, "oldValue for 'b'" );
@@ -1039,7 +1061,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			},
 			
 			
-			"When an attribute changes, and a handler of the change ends up setting other attriubtes, the generalized 'changeset' event should still be only fired exactly once" : function() {
+			"When an attribute changes, and a handler of the change ends up setting other attributes, the generalized 'changeset' event should still be only fired exactly once" : function() {
 				var TestModel = Kevlar.extend( Kevlar.Model, {
 					addAttributes: [ 
 						{ name : 'a' }, 
