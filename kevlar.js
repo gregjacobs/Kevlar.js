@@ -2372,7 +2372,6 @@ Kevlar.attribute.NumberAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
 	 * cannot be "easily" parsed into an integer (i.e. if it's undefined, null, or empty string), `null` will be used 
 	 * instead of converting to 0.
 	 */
-	useNull : false,
 	
 	
 	/**
@@ -2763,7 +2762,6 @@ Kevlar.attribute.BooleanAttribute = Kevlar.attribute.PrimitiveAttribute.extend( 
 	 * cannot be "easily" parsed into a Boolean (i.e. if it's undefined, null, or an empty string), 
 	 * `null` will be used instead of converting to `false`.
 	 */
-	useNull: false,
 	
 	
 	/**
@@ -3255,7 +3253,6 @@ Kevlar.attribute.StringAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
 	 * cannot be "easily" parsed into a String (i.e. if it's undefined, or null), `null` will be used 
 	 * instead of converting to an empty string.
 	 */
-	useNull : false,
 	
 	
 	/**

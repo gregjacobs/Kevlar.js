@@ -28,7 +28,6 @@ Kevlar.attribute.StringAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
 	 * cannot be "easily" parsed into a String (i.e. if it's undefined, or null), `null` will be used 
 	 * instead of converting to an empty string.
 	 */
-	useNull : false,
 	
 	
 	/**
