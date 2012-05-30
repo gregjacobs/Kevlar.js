@@ -5460,7 +5460,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * @method save
 	 * @param {Object} [options] An object which may contain the following properties:
 	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
-	 * @param {Function} [options.success] Function to call if the save is successful.
+	 * @param {Function} [options.success] Function to call if the save is successful - called with `model` and `data`.
 	 * @param {Function} [options.error] Function to call if the save fails.
 	 * @param {Function} [options.complete] Function to call when the operation is complete, regardless of a success or fail state.
 	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in. This may also
@@ -5489,7 +5489,9 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		// while the persistence operation was being attempted.
 		var persistedData = Kevlar.util.Object.clone( this.getData() );
 		
-		var successCallback = function() {
+		var successCallback = function( data ) {
+			data = data || this.getData();
+
 			// The request to persist the data was successful, commit the Model
 			this.commit();
 			
@@ -5505,7 +5507,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			
 			
 			if( typeof options.success === 'function' ) {
-				options.success.call( scope );
+				options.success.call( scope, this, data );
 			}
 		};
 		
