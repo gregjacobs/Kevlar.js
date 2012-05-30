@@ -1,6 +1,6 @@
 /*!
  * Kevlar JS Library
- * Version 0.6.4
+ * Version 0.8.1
  * 
  * Copyright(c) 2012 Gregory Jacobs.
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php
@@ -1812,9 +1812,16 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * 
 	 *     MyModel = Kevlar.Model.extend( {
 	 *         attributes : [
-	 *             { name: 'uniqueId', defaultValue: function() { return Kevlar.newId(); } }
+	 *             {
+	 *                 name: 'uniqueId', 
+	 *                 defaultValue: function( attribute ) {
+	 *                     return Kevlar.newId(); 
+	 *                 }
+	 *             }
 	 *         ]
 	 *     } );
+	 * 
+	 * Note that the function is passed the Attribute as its first argument, which may be used to query Attribute properties/configs.
 	 * 
 	 * If an Object is provided as the defaultValue, its properties will be recursed and searched for functions. The functions will
 	 * be executed to provide default values for nested properties of the object in the same way that providing a Function for this config
@@ -2120,7 +2127,7 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 		var defaultValue = this.defaultValue;
 		
 		if( typeof defaultValue === "function" ) {
-			defaultValue = defaultValue();
+			defaultValue = defaultValue( this );
 		}
 		
 		// If defaultValue is an object, recurse through it and execute any functions, using their return values as the defaults
@@ -2255,26 +2262,13 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	 * @param {Mixed} oldValue The old (previous) value that the model held.
 	 */
 	doSet : function( model, newValue, oldValue ) {
-		var me = this, 
-		    tmp,
-		    ret;
-		
-		if( me.hasOwnProperty( 'set' ) ) {  // a 'set' config was provided
-			tmp = model._super;  // store the current model._super, so we can restore it after the 'set' config function is called
-			
-			model._super = function( args ) {  // 'args' should be an array, or arguments object
-				return me.constructor.prototype.set.apply( me, [ model ].concat( Array.prototype.slice.call( args || [], 0 ) ) );  // call the prototype method in the scope of the Attribute, with model as the first arg, followed by anything else provided
-			};
-			
-			// Now call the provided 'set' function in the scope of the model
-			ret = me.set.call( model, newValue, oldValue );
-			
-			model._super = tmp;  // restore old model._super, if there was one
-			return ret;
+		if( this.hasOwnProperty( 'set' ) ) {  // a 'set' config was provided
+			// Call the provided 'set' function in the scope of the model
+			return this.set.call( model, newValue, oldValue );
 			
 		} else {
 			// No 'set' config provided, just call the set() method on the prototype
-			return me.set( model, newValue, oldValue );
+			return this.set( model, newValue, oldValue );
 		}
 	},
 	
@@ -2282,7 +2276,8 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	
 	/**
 	 * Method that allows processing of the value that is to be set to a {@link Kevlar.Model}. This method is executed after
-	 * the {@link #beforeSet} method, and before the {@link #afterSet} method. 
+	 * the {@link #beforeSet} method, and before the {@link #afterSet} method, and can be overridden by the {@link #cfg-set set}
+	 * config. 
 	 * 
 	 * @method set
 	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
@@ -2320,20 +2315,60 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 
 /**
  * @abstract
- * @class Kevlar.attribute.IntegerAttribute
+ * @class Kevlar.attribute.PrimitiveAttribute
  * @extends Kevlar.attribute.Attribute
+ * 
+ * Base Attribute definition class for an Attribute that holds a JavaScript primitive value 
+ * (i.e. A Boolean, Number, or String).
+ */
+/*global Kevlar */
+Kevlar.attribute.PrimitiveAttribute = Kevlar.attribute.Attribute.extend( {
+	
+	abstractClass: true,
+	
+	/**
+	 * @cfg {Boolean} useNull
+	 * True to allow `null` to be set to the Attribute (which is usually used to denote that the 
+	 * Attribute is "unset", and it shouldn't take an actual default value).
+	 * 
+	 * This is also used when parsing the provided value for the Attribute. If this config is true, and the value 
+	 * cannot be "easily" parsed into a valid representation of its primitive type, `null` will be used 
+	 * instead of converting to the primitive type's default.
+	 */
+	useNull : false
+	
+} );
+
+/**
+ * @abstract
+ * @class Kevlar.attribute.IntegerAttribute
+ * @extends Kevlar.attribute.PrimitiveAttribute
  * 
  * Abstract base class for an Attribute that takes a number data value.
  */
 /*global Kevlar */
-Kevlar.attribute.NumberAttribute = Kevlar.attribute.Attribute.extend( {
+Kevlar.attribute.NumberAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
 	
 	abstractClass: true,
+	
+	/**
+	 * @cfg {Mixed/Function} defaultValue
+	 * @inheritdoc
+	 * 
+	 * The NumberAttribute defaults to 0, unless the {@link #useNull} config is 
+	 * set to `true`, in which case it defaults to `null` (to denote the Attribute being "unset").
+	 */
+	defaultValue: function( attribute ) {
+		return attribute.useNull ? null : 0;
+	},
 	
 	
 	/**
 	 * @cfg {Boolean} useNull
-	 * Used when parsing the provided value for the Attribute. If this config is true, and the value 
+	 * True to allow `null` to be set to the Attribute (which is usually used to denote that the 
+	 * Attribute is "unset", and it shouldn't take an actual default value).
+	 * 
+	 * This is also used when parsing the provided value for the Attribute. If this config is true, and the value 
 	 * cannot be "easily" parsed into an integer (i.e. if it's undefined, null, or empty string), `null` will be used 
 	 * instead of converting to 0.
 	 */
@@ -2700,20 +2735,35 @@ Kevlar.DataComponent = Kevlar.util.Observable.extend( {
 
 /**
  * @class Kevlar.attribute.BooleanAttribute
- * @extends Kevlar.attribute.Attribute
+ * @extends Kevlar.attribute.PrimitiveAttribute
  * 
  * Attribute definition class for an Attribute that takes a boolean (i.e. true/false) data value.
  */
 /*global Kevlar */
-Kevlar.attribute.BooleanAttribute = Kevlar.attribute.Attribute.extend( {
+Kevlar.attribute.BooleanAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
+	
+	/**
+	 * @cfg {Mixed/Function} defaultValue
+	 * @inheritdoc
+	 * 
+	 * The BooleanAttribute defaults to `false`, unless the {@link #useNull} config is set to `true`, 
+	 * in which case it defaults to `null` (to denote the Attribute being "unset").
+	 */
+	defaultValue: function( attribute ) {
+		return attribute.useNull ? null : false;
+	},
+	
 	
 	/**
 	 * @cfg {Boolean} useNull
-	 * Used when parsing the provided value for the Attribute. If this config is true, and the value 
+	 * True to allow `null` to be set to the Attribute (which is usually used to denote that the 
+	 * Attribute is "unset", and it shouldn't take an actual default value).
+	 * 
+	 * This is also used when parsing the provided value for the Attribute. If this config is true, and the value 
 	 * cannot be "easily" parsed into a Boolean (i.e. if it's undefined, null, or an empty string), 
 	 * `null` will be used instead of converting to `false`.
 	 */
-	useNull : false,
+	useNull: false,
 	
 	
 	/**
@@ -3014,7 +3064,7 @@ Kevlar.attribute.Attribute.registerType( 'integer', Kevlar.attribute.IntegerAttr
 /*global Kevlar */
 Kevlar.attribute.MixedAttribute = Kevlar.attribute.Attribute.extend( {
 		
-	
+	// No specific implementation at this time. All handled by the base class Attribute.
 	
 } );
 
@@ -3177,16 +3227,31 @@ Kevlar.attribute.Attribute.registerType( 'model', Kevlar.attribute.ModelAttribut
 
 /**
  * @class Kevlar.attribute.StringAttribute
- * @extends Kevlar.attribute.Attribute
+ * @extends Kevlar.attribute.PrimitiveAttribute
  * 
  * Attribute definition class for an Attribute that takes a string data value.
  */
 /*global Kevlar */
-Kevlar.attribute.StringAttribute = Kevlar.attribute.Attribute.extend( {
+Kevlar.attribute.StringAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
+	
+	/**
+	 * @cfg {Mixed/Function} defaultValue
+	 * @inheritdoc
+	 * 
+	 * The StringAttribute defaults to `""` (empty string), unless the {@link #useNull} config is 
+	 * set to `true`, in which case it defaults to `null` (to denote the Attribute being "unset").
+	 */
+	defaultValue: function( attribute ) {
+		return attribute.useNull ? null : "";
+	},
+	
 	
 	/**
 	 * @cfg {Boolean} useNull
-	 * Used when parsing the provided value for the Attribute. If this config is true, and the value 
+	 * True to allow `null` to be set to the Attribute (which is usually used to denote that the 
+	 * Attribute is "unset", and it shouldn't take an actual default value).
+	 * 
+	 * This is also used when parsing the provided value for the Attribute. If this config is true, and the value 
 	 * cannot be "easily" parsed into a String (i.e. if it's undefined, or null), `null` will be used 
 	 * instead of converting to an empty string.
 	 */
@@ -4362,6 +4427,9 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		
 		
 		// Subclass-specific setup
+		/**
+		 * @ignore 
+		 */
 		onClassExtended : function( newModelClass ) {
 			// Assign a unique id to this class, which is used in hashmaps that hold the class
 			newModelClass.__Kevlar_modelTypeId = Kevlar.newId();
@@ -4399,7 +4467,24 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			}
 			
 			newModelClass.prototype.attributes = Kevlar.apply( {}, newAttributes, superclassAttributes );  // newAttributes take precedence; superclassAttributes are used in the case that a newAttribute doesn't exist for a given attributeName
+		},
+		
+		
+		/**
+		 * Retrieves the Attribute objects that are present for the Model, in an object (hashmap) where the keys
+		 * are the Attribute names, and the values are the {@link Kevlar.attribute.Attribute} objects themselves.
+		 * 
+		 * @inheritable
+		 * @static
+		 * @method getAttributes
+		 * @return {Object} An Object (hashmap) where the keys are the attribute {@link Kevlar.attribute.Attribute#name names},
+		 *   and the values are the {@link Kevlar.attribute.Attribute Attribute} instances themselves.
+		 */
+		getAttributes : function() {
+			// Note: `this` refers to the class (constructor function) that the static method was called on
+			return this.prototype.attributes;
 		}
+		
 	},
 	
 	
@@ -4510,7 +4595,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			 */
 			'destroy'
 		);
-				
+		
 		
 		// Set the default values for attributes that don't have an initial value.
 		var attributes = me.attributes,  // me.attributes is a hash of the Attribute objects, keyed by their name
@@ -4569,7 +4654,8 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * are the Attribute names, and the values are the {@link Kevlar.attribute.Attribute} objects themselves.
 	 * 
 	 * @method getAttributes
-	 * @return {Object} 
+	 * @return {Object} An Object (hashmap) where the keys are the attribute {@link Kevlar.attribute.Attribute#name names},
+	 *   and the values are the {@link Kevlar.attribute.Attribute Attribute} instances themselves.
 	 */
 	getAttributes : function() {
 		return this.attributes;
@@ -5415,7 +5501,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * @method save
 	 * @param {Object} [options] An object which may contain the following properties:
 	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
-	 * @param {Function} [options.success] Function to call if the save is successful.
+	 * @param {Function} [options.success] Function to call if the save is successful - called with `model` and `data`.
 	 * @param {Function} [options.error] Function to call if the save fails.
 	 * @param {Function} [options.complete] Function to call when the operation is complete, regardless of a success or fail state.
 	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in. This may also
@@ -5444,7 +5530,9 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		// while the persistence operation was being attempted.
 		var persistedData = Kevlar.util.Object.clone( this.getData() );
 		
-		var successCallback = function() {
+		var successCallback = function( data ) {
+			data = data || this.getData();
+
 			// The request to persist the data was successful, commit the Model
 			this.commit();
 			
@@ -5460,7 +5548,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			
 			
 			if( typeof options.success === 'function' ) {
-				options.success.call( scope );
+				options.success.call( scope, this, data );
 			}
 		};
 		
