@@ -533,6 +533,24 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			},
 			
 			
+			"A default provided as defaultValue that is a function should be provided the Attribute instance as its first argument" : function() {
+				var argToDefaultValueFn;
+				
+				var attribute = new this.Attribute( {
+					name : "TestAttribute",
+					defaultValue : function( arg ) {
+						argToDefaultValueFn = arg;
+						return 1;
+					}
+				} );
+				
+				// Run getDefaultValue() which will call the anonymous function provided as the defaultValue config
+				attribute.getDefaultValue();
+				
+				Y.Assert.areSame( attribute, argToDefaultValueFn );
+			},
+			
+			
 			"A default provided as defaultValue that is a function should be executed each time the default is called for" : function() {
 				var counter = 0;
 				var attribute = new this.Attribute( {
@@ -630,51 +648,6 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				Y.Assert.areSame( mockModel, contextCalledIn, "The 'set' config should have been called in the context of the mock model" );
 				Y.Assert.areSame( newValue, providedNewValue, "The new value should have been provided as the first arg to the set() method" );
 				Y.Assert.areSame( oldValue, providedOldValue, "The old value should have been provided as the second arg to the set() method" );
-			},
-			
-			
-			"doSet() should wrap the provided 'set' config function if provided to the Attribute so that this._super() can be called from it for the original conversion" : function() {
-				var mockModel = JsMockito.mock( Kevlar.Model ),
-				    newValue = 42,
-				    oldValue = 27;
-				
-				var setMethodModel,
-				    setMethodNewValue,
-				    setMethodOldValue,
-				    
-				    setConfigContext,
-				    setConfigNewValue,
-				    setConfigOldValue;
-				
-				var Attribute = Kevlar.attribute.Attribute.extend( {
-					set : function( model, newValue, oldValue ) {
-						setMethodModel = model;
-						setMethodNewValue = newValue;
-						setMethodOldValue = oldValue;
-					}
-				} );
-				
-				var attribute = new Attribute( {
-					name: 'attr',
-					set: function( newValue, oldValue ) {   // the 'set' config
-						setConfigContext = this;
-						setConfigNewValue = newValue;
-						setConfigOldValue = oldValue;
-						
-						this._super( arguments );
-					}
-				} );
-				
-				attribute.doSet( mockModel, newValue, oldValue );
-				
-				
-				Y.Assert.areSame( mockModel, setMethodModel, "The mock model should have been provided as the first arg to the set() method" );
-				Y.Assert.areSame( newValue, setMethodNewValue, "The new value should have been provided as the second arg to the set() method" );
-				Y.Assert.areSame( oldValue, setMethodOldValue, "The old value should have been provided as the third arg to the set() method" );
-				
-				Y.Assert.areSame( mockModel, setConfigContext, "The 'set' config should have been called in the context of the mock model" );
-				Y.Assert.areSame( newValue, setConfigNewValue, "The new value should have been provided as the first arg to the set() method" );
-				Y.Assert.areSame( oldValue, setConfigOldValue, "The old value should have been provided as the second arg to the set() method" );
 			}
 		}
 	]
@@ -688,7 +661,27 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 	
 	
 	items : [
-	
+		
+		/*
+		 * Test getDefaultValue()
+		 */
+		{
+			name : "Test getDefaultValue()",
+			
+			"getDefaultValue() should return false in the default case (i.e. when the `useNull` config is false)" : function() {
+				var attribute = new Kevlar.attribute.BooleanAttribute( { name: 'attr', useNull: false } );
+				
+				Y.Assert.isFalse( attribute.getDefaultValue() );
+			},
+			
+			"getDefaultValue() should return null when the `useNull` config is true" : function() {
+				var attribute = new Kevlar.attribute.BooleanAttribute( { name: 'attr', useNull: true } );
+				
+				Y.Assert.isNull( attribute.getDefaultValue() );
+			}
+		},
+		
+		
 		/*
 		 * Test beforeSet()
 		 */
@@ -1226,6 +1219,26 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 	
 	
 	items : [
+		
+		/*
+		 * Test getDefaultValue()
+		 */
+		{
+			name : "Test getDefaultValue()",
+			
+			"getDefaultValue() should return 0 in the default case (i.e. when the `useNull` config is false)" : function() {
+				var attribute = new Kevlar.attribute.FloatAttribute( { name: 'attr', useNull: false } );
+				
+				Y.Assert.areSame( 0, attribute.getDefaultValue() );
+			},
+			
+			"getDefaultValue() should return null when the `useNull` config is true" : function() {
+				var attribute = new Kevlar.attribute.FloatAttribute( { name: 'attr', useNull: true } );
+				
+				Y.Assert.isNull( attribute.getDefaultValue() );
+			}
+		},
+	
 	
 		/*
 		 * Test beforeSet()
@@ -1370,6 +1383,26 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 	
 	
 	items : [
+		
+		/*
+		 * Test getDefaultValue()
+		 */
+		{
+			name : "Test getDefaultValue()",
+			
+			"getDefaultValue() should return 0 in the default case (i.e. when the `useNull` config is false)" : function() {
+				var attribute = new Kevlar.attribute.IntegerAttribute( { name: 'attr', useNull: false } );
+				
+				Y.Assert.areSame( 0, attribute.getDefaultValue() );
+			},
+			
+			"getDefaultValue() should return null when the `useNull` config is true" : function() {
+				var attribute = new Kevlar.attribute.IntegerAttribute( { name: 'attr', useNull: true } );
+				
+				Y.Assert.isNull( attribute.getDefaultValue() );
+			}
+		},
+	
 	
 		/*
 		 * Test beforeSet()
@@ -1905,6 +1938,25 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 	
 	
 	items : [
+		
+		/*
+		 * Test getDefaultValue()
+		 */
+		{
+			name : "Test getDefaultValue()",
+			
+			"getDefaultValue() should return an empty string in the default case (i.e. when the `useNull` config is false)" : function() {
+				var attribute = new Kevlar.attribute.StringAttribute( { name: 'attr', useNull: false } );
+				
+				Y.Assert.areSame( "", attribute.getDefaultValue() );
+			},
+			
+			"getDefaultValue() should return null when the `useNull` config is true" : function() {
+				var attribute = new Kevlar.attribute.StringAttribute( { name: 'attr', useNull: true } );
+				
+				Y.Assert.isNull( attribute.getDefaultValue() );
+			}
+		},
 	
 		/*
 		 * Test beforeSet()
@@ -4293,9 +4345,55 @@ tests.unit.add( new Ext.test.TestSuite( {
 				Y.ObjectAssert.hasKey( 'c', attributes, "SubSubClassModel should have the 'c' attribute defined in its final 'attributes' hash." );
 			}
 		},
+		
+		
+		{
+			/*
+			 * Test the getAttributes() static method 
+			 */
+			name : "Test the getAttributes() static method",
+			
+			
+			"The getAttributes() static method should retrieve a hashmap of the attributes for the model" : function() {
+				var SuperclassModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'id', type: 'number' },
+						{ name: 'superclassAttr', type: 'string' }
+					]
+				} );
+				
+				var SubclassModel = SuperclassModel.extend( {
+					attributes : [
+						{ name: 'subclassAttr', type: 'boolean' }
+					]
+				} );
+				
+				
+				var superclassModelAttrs = SuperclassModel.getAttributes();   // call the static method
+				var superclassModelAttrKeys = Kevlar.util.Object.keysToArray( superclassModelAttrs );
+				Y.Assert.areSame( 2, superclassModelAttrKeys.length, "There should have been 2 keys in the array for the superclassModelAttrKeys" );
+				Y.Assert.areSame( 'id', superclassModelAttrKeys[ 0 ], "The first attribute in the superclass should be 'id'" );
+				Y.Assert.areSame( 'superclassAttr', superclassModelAttrKeys[ 1 ], "The second attribute in the superclass should be 'superclassAttr'" );
+				Y.Assert.isInstanceOf( Kevlar.attribute.NumberAttribute, superclassModelAttrs.id, "The `id` Attribute should have been an instance of NumberAttribute" );
+				Y.Assert.isInstanceOf( Kevlar.attribute.StringAttribute, superclassModelAttrs.superclassAttr, "The `superclassAttr` Attribute should have been an instance of StringAttribute" );
+				
+				var subclassModelAttrs = SubclassModel.getAttributes();    // call the static method on the subclass (which should be statically inherited by the subclass)
+				var subclassModelAttrKeys = Kevlar.util.Object.keysToArray( subclassModelAttrs );
+				Y.Assert.areSame( 3, subclassModelAttrKeys.length, "There should have been 3 keys in the array for the subclassModelAttrKeys" );
+				Y.Assert.areSame( 'id', subclassModelAttrKeys[ 0 ], "The first attribute in the sublass should be 'id'" );
+				Y.Assert.areSame( 'superclassAttr', subclassModelAttrKeys[ 1 ], "The second attribute in the subclass should be 'superclassAttr'" );
+				Y.Assert.areSame( 'subclassAttr', subclassModelAttrKeys[ 2 ], "The third attribute in the subclass should be 'subclassAttr'" );
+				Y.Assert.isInstanceOf( Kevlar.attribute.NumberAttribute, subclassModelAttrs.id, "The `id` Attribute should have been an instance of NumberAttribute" );
+				Y.Assert.isInstanceOf( Kevlar.attribute.StringAttribute, subclassModelAttrs.superclassAttr, "The `superclassAttr` Attribute should have been an instance of StringAttribute" );
+				Y.Assert.isInstanceOf( Kevlar.attribute.BooleanAttribute, subclassModelAttrs.subclassAttr, "The `subclassAttr` Attribute should have been an instance of BooleanAttribute" );
+			}
+			
+		},
 	
 	
-	
+		// ----------------------------------------------------------
+		
+		
 		{
 			/*
 			 * Test Initialization (constructor)
@@ -9299,7 +9397,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				
 				var ChildModel = Kevlar.Model.extend( {
 					attributes : [
-						{ name : 'attr', type: 'string' }
+						{ name : 'attr' }
 					]
 				} );
 				
@@ -9399,7 +9497,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				
 				var ChildModel = Kevlar.Model.extend( {
 					attributes : [
-						{ name : 'attr', type: 'string' }
+						{ name : 'attr' }
 					]
 				} );
 				
@@ -9429,7 +9527,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				
 				var ChildModel = Kevlar.Model.extend( {
 					attributes : [
-						{ name : 'attr', type: 'string' }
+						{ name : 'attr' }
 					]
 				} );
 				
@@ -9482,7 +9580,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				
 				var ChildModel = Kevlar.Model.extend( {
 					attributes : [
-						{ name : 'attr', type: 'string' }
+						{ name : 'attr' }
 					],
 					
 					toString : function() { return "(ChildModel)"; }  // for debugging

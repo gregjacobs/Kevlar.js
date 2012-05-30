@@ -175,6 +175,24 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 			},
 			
 			
+			"A default provided as defaultValue that is a function should be provided the Attribute instance as its first argument" : function() {
+				var argToDefaultValueFn;
+				
+				var attribute = new this.Attribute( {
+					name : "TestAttribute",
+					defaultValue : function( arg ) {
+						argToDefaultValueFn = arg;
+						return 1;
+					}
+				} );
+				
+				// Run getDefaultValue() which will call the anonymous function provided as the defaultValue config
+				attribute.getDefaultValue();
+				
+				Y.Assert.areSame( attribute, argToDefaultValueFn );
+			},
+			
+			
 			"A default provided as defaultValue that is a function should be executed each time the default is called for" : function() {
 				var counter = 0;
 				var attribute = new this.Attribute( {
@@ -272,51 +290,6 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				Y.Assert.areSame( mockModel, contextCalledIn, "The 'set' config should have been called in the context of the mock model" );
 				Y.Assert.areSame( newValue, providedNewValue, "The new value should have been provided as the first arg to the set() method" );
 				Y.Assert.areSame( oldValue, providedOldValue, "The old value should have been provided as the second arg to the set() method" );
-			},
-			
-			
-			"doSet() should wrap the provided 'set' config function if provided to the Attribute so that this._super() can be called from it for the original conversion" : function() {
-				var mockModel = JsMockito.mock( Kevlar.Model ),
-				    newValue = 42,
-				    oldValue = 27;
-				
-				var setMethodModel,
-				    setMethodNewValue,
-				    setMethodOldValue,
-				    
-				    setConfigContext,
-				    setConfigNewValue,
-				    setConfigOldValue;
-				
-				var Attribute = Kevlar.attribute.Attribute.extend( {
-					set : function( model, newValue, oldValue ) {
-						setMethodModel = model;
-						setMethodNewValue = newValue;
-						setMethodOldValue = oldValue;
-					}
-				} );
-				
-				var attribute = new Attribute( {
-					name: 'attr',
-					set: function( newValue, oldValue ) {   // the 'set' config
-						setConfigContext = this;
-						setConfigNewValue = newValue;
-						setConfigOldValue = oldValue;
-						
-						this._super( arguments );
-					}
-				} );
-				
-				attribute.doSet( mockModel, newValue, oldValue );
-				
-				
-				Y.Assert.areSame( mockModel, setMethodModel, "The mock model should have been provided as the first arg to the set() method" );
-				Y.Assert.areSame( newValue, setMethodNewValue, "The new value should have been provided as the second arg to the set() method" );
-				Y.Assert.areSame( oldValue, setMethodOldValue, "The old value should have been provided as the third arg to the set() method" );
-				
-				Y.Assert.areSame( mockModel, setConfigContext, "The 'set' config should have been called in the context of the mock model" );
-				Y.Assert.areSame( newValue, setConfigNewValue, "The new value should have been provided as the first arg to the set() method" );
-				Y.Assert.areSame( oldValue, setConfigOldValue, "The old value should have been provided as the second arg to the set() method" );
 			}
 		}
 	]

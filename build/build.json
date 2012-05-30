@@ -1,6 +1,6 @@
 {
 	projectName: "Kevlar",
-	licenseText: "Kevlar JS Library\nVersion 0.6.4\n\nCopyright(c) 2012 Gregory Jacobs.\nMIT Licensed. http://www.opensource.org/licenses/mit-license.php\n\nhttps://github.com/gregjacobs/Kevlar.js",
+	licenseText: "Kevlar JS Library\nVersion 0.8.1\n\nCopyright(c) 2012 Gregory Jacobs.\nMIT Licensed. http://www.opensource.org/licenses/mit-license.php\n\nhttps://github.com/gregjacobs/Kevlar.js",
 	pkgs: [
 		{
 			name: "Kevlar JS",
@@ -14,6 +14,7 @@
 				{ file: "../src/util/Observable.js" },
 				
 				{ file: "../src/attribute/Attribute.js" },
+				{ file: "../src/attribute/PrimitiveAttribute.js" },
 				{ file: "../src/attribute/NumberAttribute.js" },
 				{ file: "../src/attribute/ObjectAttribute.js" },
 				{ file: "../src/attribute/DataComponentAttribute.js" },

@@ -7,7 +7,7 @@
 /*global Kevlar */
 Kevlar.attribute.MixedAttribute = Kevlar.attribute.Attribute.extend( {
 		
-	
+	// No specific implementation at this time. All handled by the base class Attribute.
 	
 } );
 

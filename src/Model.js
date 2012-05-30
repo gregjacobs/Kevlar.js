@@ -184,6 +184,9 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		
 		
 		// Subclass-specific setup
+		/**
+		 * @ignore 
+		 */
 		onClassExtended : function( newModelClass ) {
 			// Assign a unique id to this class, which is used in hashmaps that hold the class
 			newModelClass.__Kevlar_modelTypeId = Kevlar.newId();
@@ -221,7 +224,24 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			}
 			
 			newModelClass.prototype.attributes = Kevlar.apply( {}, newAttributes, superclassAttributes );  // newAttributes take precedence; superclassAttributes are used in the case that a newAttribute doesn't exist for a given attributeName
+		},
+		
+		
+		/**
+		 * Retrieves the Attribute objects that are present for the Model, in an object (hashmap) where the keys
+		 * are the Attribute names, and the values are the {@link Kevlar.attribute.Attribute} objects themselves.
+		 * 
+		 * @inheritable
+		 * @static
+		 * @method getAttributes
+		 * @return {Object} An Object (hashmap) where the keys are the attribute {@link Kevlar.attribute.Attribute#name names},
+		 *   and the values are the {@link Kevlar.attribute.Attribute Attribute} instances themselves.
+		 */
+		getAttributes : function() {
+			// Note: `this` refers to the class (constructor function) that the static method was called on
+			return this.prototype.attributes;
 		}
+		
 	},
 	
 	
@@ -332,7 +352,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			 */
 			'destroy'
 		);
-				
+		
 		
 		// Set the default values for attributes that don't have an initial value.
 		var attributes = me.attributes,  // me.attributes is a hash of the Attribute objects, keyed by their name
@@ -391,7 +411,8 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * are the Attribute names, and the values are the {@link Kevlar.attribute.Attribute} objects themselves.
 	 * 
 	 * @method getAttributes
-	 * @return {Object} 
+	 * @return {Object} An Object (hashmap) where the keys are the attribute {@link Kevlar.attribute.Attribute#name names},
+	 *   and the values are the {@link Kevlar.attribute.Attribute Attribute} instances themselves.
 	 */
 	getAttributes : function() {
 		return this.attributes;
@@ -1237,7 +1258,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * @method save
 	 * @param {Object} [options] An object which may contain the following properties:
 	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
-	 * @param {Function} [options.success] Function to call if the save is successful.
+	 * @param {Function} [options.success] Function to call if the save is successful - called with `model` and `data`.
 	 * @param {Function} [options.error] Function to call if the save fails.
 	 * @param {Function} [options.complete] Function to call when the operation is complete, regardless of a success or fail state.
 	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in. This may also
@@ -1266,7 +1287,9 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		// while the persistence operation was being attempted.
 		var persistedData = Kevlar.util.Object.clone( this.getData() );
 		
-		var successCallback = function() {
+		var successCallback = function( data ) {
+			data = data || this.getData();
+
 			// The request to persist the data was successful, commit the Model
 			this.commit();
 			
@@ -1282,7 +1305,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			
 			
 			if( typeof options.success === 'function' ) {
-				options.success.call( scope );
+				options.success.call( scope, this, data );
 			}
 		};
 		

@@ -5,7 +5,27 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 	
 	
 	items : [
-	
+		
+		/*
+		 * Test getDefaultValue()
+		 */
+		{
+			name : "Test getDefaultValue()",
+			
+			"getDefaultValue() should return false in the default case (i.e. when the `useNull` config is false)" : function() {
+				var attribute = new Kevlar.attribute.BooleanAttribute( { name: 'attr', useNull: false } );
+				
+				Y.Assert.isFalse( attribute.getDefaultValue() );
+			},
+			
+			"getDefaultValue() should return null when the `useNull` config is true" : function() {
+				var attribute = new Kevlar.attribute.BooleanAttribute( { name: 'attr', useNull: true } );
+				
+				Y.Assert.isNull( attribute.getDefaultValue() );
+			}
+		},
+		
+		
 		/*
 		 * Test beforeSet()
 		 */

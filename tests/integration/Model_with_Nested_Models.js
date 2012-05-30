@@ -85,7 +85,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				
 				var ChildModel = Kevlar.Model.extend( {
 					attributes : [
-						{ name : 'attr', type: 'string' }
+						{ name : 'attr' }
 					]
 				} );
 				
@@ -185,7 +185,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				
 				var ChildModel = Kevlar.Model.extend( {
 					attributes : [
-						{ name : 'attr', type: 'string' }
+						{ name : 'attr' }
 					]
 				} );
 				
@@ -215,7 +215,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				
 				var ChildModel = Kevlar.Model.extend( {
 					attributes : [
-						{ name : 'attr', type: 'string' }
+						{ name : 'attr' }
 					]
 				} );
 				
@@ -268,7 +268,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				
 				var ChildModel = Kevlar.Model.extend( {
 					attributes : [
-						{ name : 'attr', type: 'string' }
+						{ name : 'attr' }
 					],
 					
 					toString : function() { return "(ChildModel)"; }  // for debugging
