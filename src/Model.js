@@ -1362,9 +1362,11 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			
 		} else {
 			// No persistenceProxy, cannot destroy. Throw an error
+			// <debug>
 			if( !this.persistenceProxy ) {
 				throw new Error( "Kevlar.Model::destroy() error: Cannot destroy model on server. No persistenceProxy." );
 			}
+			// </debug>
 			
 			var successCallback = function() {
 				this.fireEvent( 'destroy', this );
