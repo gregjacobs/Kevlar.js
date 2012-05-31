@@ -8415,7 +8415,9 @@ tests.integration.add( new Ext.test.TestSuite( {
 			 */
 			name : "Test destroying a model. It should be removed from the collection.",
 			
-			"When a model is destroyed, it should be removed from the collection" : function() {
+			"When a model is destroyed, it should be removed from the collection. The collection should also fire the 'remove' event" : function() {
+				var removeEventCount = 0;
+				
 				var Model = Kevlar.Model.extend( {
 					attributes : [ 'attr' ]
 				} );
@@ -8428,10 +8430,15 @@ tests.integration.add( new Ext.test.TestSuite( {
 				    model2 = new Model( { attr: 2 } ),
 				    collection = new Collection( [ model1, model2 ] );
 				
+				collection.on( 'remove', function() {
+					removeEventCount++;
+				} );
+				
 				Y.Assert.isTrue( collection.has( model1 ), "Initial condition: the collection should have model1" );
 				
 				model1.destroy();
 				Y.Assert.isFalse( collection.has( model1 ), "model1 should have been removed from the collection upon destruction" );
+				Y.Assert.areSame( 1, removeEventCount, "The 'remove' event should have been fired exactly once by the Collection" );
 			}
 		}
 	]
