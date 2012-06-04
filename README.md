@@ -11,6 +11,7 @@ This is currently a work in progress, and is alpha.
 
 ### 0.8.1
 
+* Made attributes with user-defined 'setters' be updated after attributes with no user-defined setter when providing a set of values to update the Model with.
 * Changed the name of the Model's load() method to reload() (and provided a backward compatibility alias).
 
 ### 0.8

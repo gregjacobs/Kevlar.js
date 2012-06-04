@@ -28,7 +28,6 @@ Kevlar.attribute.BooleanAttribute = Kevlar.attribute.PrimitiveAttribute.extend( 
 	 * cannot be "easily" parsed into a Boolean (i.e. if it's undefined, null, or an empty string), 
 	 * `null` will be used instead of converting to `false`.
 	 */
-	useNull: false,
 	
 	
 	/**

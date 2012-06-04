@@ -397,6 +397,28 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	},
 	
 	
+	/**
+	 * Determines if the Attribute has a user-defined setter (i.e. the {@link #cfg-set set} config was provided).
+	 * 
+	 * @method hasUserDefinedSetter
+	 * @return {Boolean} True if the Attribute was provided a user-defined {@link #cfg-set set} function. 
+	 */
+	hasUserDefinedSetter : function() {
+		return this.hasOwnProperty( 'set' );
+	},
+	
+	
+	/**
+	 * Determines if the Attribute has a user-defined getter (i.e. the {@link #cfg-get get} config was provided).
+	 * 
+	 * @method hasUserDefinedGetter
+	 * @return {Boolean} True if the Attribute was provided a user-defined {@link #cfg-get get} function. 
+	 */
+	hasUserDefinedGetter : function() {
+		return this.hasOwnProperty( 'get' );
+	},
+	
+	
 	// ---------------------------
 	
 	

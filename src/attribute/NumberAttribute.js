@@ -31,7 +31,6 @@ Kevlar.attribute.NumberAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
 	 * cannot be "easily" parsed into an integer (i.e. if it's undefined, null, or empty string), `null` will be used 
 	 * instead of converting to 0.
 	 */
-	useNull : false,
 	
 	
 	/**

@@ -2162,6 +2162,28 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 	},
 	
 	
+	/**
+	 * Determines if the Attribute has a user-defined setter (i.e. the {@link #cfg-set set} config was provided).
+	 * 
+	 * @method hasUserDefinedSetter
+	 * @return {Boolean} True if the Attribute was provided a user-defined {@link #cfg-set set} function. 
+	 */
+	hasUserDefinedSetter : function() {
+		return this.hasOwnProperty( 'set' );
+	},
+	
+	
+	/**
+	 * Determines if the Attribute has a user-defined getter (i.e. the {@link #cfg-get get} config was provided).
+	 * 
+	 * @method hasUserDefinedGetter
+	 * @return {Boolean} True if the Attribute was provided a user-defined {@link #cfg-get get} function. 
+	 */
+	hasUserDefinedGetter : function() {
+		return this.hasOwnProperty( 'get' );
+	},
+	
+	
 	// ---------------------------
 	
 	
@@ -2350,7 +2372,6 @@ Kevlar.attribute.NumberAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
 	 * cannot be "easily" parsed into an integer (i.e. if it's undefined, null, or empty string), `null` will be used 
 	 * instead of converting to 0.
 	 */
-	useNull : false,
 	
 	
 	/**
@@ -2741,7 +2762,6 @@ Kevlar.attribute.BooleanAttribute = Kevlar.attribute.PrimitiveAttribute.extend( 
 	 * cannot be "easily" parsed into a Boolean (i.e. if it's undefined, null, or an empty string), 
 	 * `null` will be used instead of converting to `false`.
 	 */
-	useNull: false,
 	
 	
 	/**
@@ -3233,7 +3253,6 @@ Kevlar.attribute.StringAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
 	 * cannot be "easily" parsed into a String (i.e. if it's undefined, or null), `null` will be used 
 	 * instead of converting to an empty string.
 	 */
-	useNull : false,
 	
 	
 	/**
@@ -4726,24 +4745,39 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		// Increment the setCallCount, for use with the 'changeset' event. The 'changeset' event only fires when all calls to set() have exited.
 		this.setCallCount++;
 		
-		var changeSetNewValues = this.changeSetNewValues,
+		var attributes = this.attributes,
+		    changeSetNewValues = this.changeSetNewValues,
 		    changeSetOldValues = this.changeSetOldValues;
 		
 		if( typeof attributeName === 'object' ) {
-			// Hash provided 
-			var values = attributeName;  // for clarity
+			// Hash provided
+			var values = attributeName,  // for clarity
+			    attrsWithSetters = [];
+			
 			for( var fldName in values ) {  // a new variable, 'fldName' instead of 'attributeName', so that JSLint stops whining about "Bad for in variable 'attributeName'" (for whatever reason it does that...)
 				if( values.hasOwnProperty( fldName ) ) {
-					this.set( fldName, values[ fldName ] );
+					if( attributes[ fldName ].hasUserDefinedSetter() ) {   // defer setting the values on attributes with user-defined setters until all attributes without user-defined setters have been set
+						attrsWithSetters.push( fldName );
+					} else {
+						this.set( fldName, values[ fldName ] );
+					}
 				}
+			}
+			
+			for( var i = 0, len = attrsWithSetters.length; i < len; i++ ) {
+				fldName = attrsWithSetters[ i ];
+				this.set( fldName, values[ fldName ] );
 			}
 			
 		} else {
 			// attributeName and newValue provided
-			var attribute = this.attributes[ attributeName ];
+			var attribute = attributes[ attributeName ];
+			
+			// <debug>
 			if( !attribute ) {
 				throw new Error( "Kevlar.Model.set(): An attribute with the attributeName '" + attributeName + "' was not found." );
 			}
+			// </debug>
 			
 			// Get the current (old) value of the attribute, and its current "getter" value (to provide to the 'change' event as the oldValue)
 			var oldValue = this.data[ attributeName ],
@@ -4840,9 +4874,11 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * function, and the value has never been set.  
 	 */
 	get : function( attributeName ) {
+		// <debug>
 		if( !( attributeName in this.attributes ) ) {
 			throw new Error( "Kevlar.Model::get() error: attribute '" + attributeName + "' was not found on the Model." );
 		}
+		// </debug>
 		
 		var value = this.data[ attributeName ],
 		    attribute = this.attributes[ attributeName ];
@@ -4869,9 +4905,11 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * function, and the value has never been set.
 	 */
 	raw : function( attributeName ) {
+		// <debug>
 		if( !( attributeName in this.attributes ) ) {
 			throw new Error( "Kevlar.Model::raw() error: attribute '" + attributeName + "' was not found on the Model." );
 		}
+		// </debug>
 		
 		var value = this.data[ attributeName ],
 		    attribute = this.attributes[ attributeName ];
@@ -5445,7 +5483,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * @method save
 	 * @param {Object} [options] An object which may contain the following properties:
 	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
-	 * @param {Function} [options.success] Function to call if the save is successful.
+	 * @param {Function} [options.success] Function to call if the save is successful - called with `model` and `data`.
 	 * @param {Function} [options.error] Function to call if the save fails.
 	 * @param {Function} [options.complete] Function to call when the operation is complete, regardless of a success or fail state.
 	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in. This may also
@@ -5474,7 +5512,9 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		// while the persistence operation was being attempted.
 		var persistedData = Kevlar.util.Object.clone( this.getData() );
 		
-		var successCallback = function() {
+		var successCallback = function( data ) {
+			data = data || this.getData();
+
 			// The request to persist the data was successful, commit the Model
 			this.commit();
 			
@@ -5490,7 +5530,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			
 			
 			if( typeof options.success === 'function' ) {
-				options.success.call( scope );
+				options.success.call( scope, this, data );
 			}
 		};
 		
@@ -5547,9 +5587,11 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			
 		} else {
 			// No persistenceProxy, cannot destroy. Throw an error
+			// <debug>
 			if( !this.persistenceProxy ) {
 				throw new Error( "Kevlar.Model::destroy() error: Cannot destroy model on server. No persistenceProxy." );
 			}
+			// </debug>
 			
 			var successCallback = function() {
 				this.fireEvent( 'destroy', this );
@@ -5973,12 +6015,13 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 */
 	destroy : function( model, options ) {
 		options = options || {};
-		
+	
 		return this.ajax( {
 			async    : ( typeof options.async === 'undefined' ) ? true : options.async,  // async defaults to true.
 			
 			url      : this.buildUrl( model, 'destroy' ),
 			type     : this.getMethod( 'destroy' ),
+			dataType : 'text', // in case the server returns nothing. Otherwise, jQuery might make a guess as to the wrong data type (such as JSON), and try to parse it, causing the `error` callback to be executed instead of `success`
 			
 			success  : options.success  || Kevlar.emptyFn,
 			error    : options.error    || Kevlar.emptyFn,

@@ -261,12 +261,13 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 */
 	destroy : function( model, options ) {
 		options = options || {};
-		
+	
 		return this.ajax( {
 			async    : ( typeof options.async === 'undefined' ) ? true : options.async,  // async defaults to true.
 			
 			url      : this.buildUrl( model, 'destroy' ),
 			type     : this.getMethod( 'destroy' ),
+			dataType : 'text', // in case the server returns nothing. Otherwise, jQuery might make a guess as to the wrong data type (such as JSON), and try to parse it, causing the `error` callback to be executed instead of `success`
 			
 			success  : options.success  || Kevlar.emptyFn,
 			error    : options.error    || Kevlar.emptyFn,

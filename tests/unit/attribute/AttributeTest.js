@@ -122,6 +122,66 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 		
 		{
 			/*
+			 * Test hasUserDefinedSetter()
+			 */
+			name : "Test hasUserDefinedSetter()",
+			
+			setUp : function() {
+				// A "concrete" subclass of Kevlar.attribute.Attribute(), used for the tests
+				this.Attribute = Kevlar.attribute.Attribute.extend( {} );
+			},
+			
+			"hasUserDefinedSetter() should return false when there is no user-defined setter" : function() {
+				var attribute = new this.Attribute( {
+					name : 'myAttr'
+				} );
+				
+				Y.Assert.isFalse( attribute.hasUserDefinedSetter() );
+			},
+			
+			"hasUserDefinedSetter() should return true when there is a user-defined setter" : function() {
+				var attribute = new this.Attribute( {
+					name : 'myAttr',
+					set : function( v ) { return v; }
+				} );
+				
+				Y.Assert.isTrue( attribute.hasUserDefinedSetter() );
+			}
+		},
+		
+		
+		{
+			/*
+			 * Test hasUserDefinedGetter()
+			 */
+			name : "Test hasUserDefinedGetter()",
+			
+			setUp : function() {
+				// A "concrete" subclass of Kevlar.attribute.Attribute(), used for the tests
+				this.Attribute = Kevlar.attribute.Attribute.extend( {} );
+			},
+			
+			"hasUserDefinedGetter() should return false when there is no user-defined getter" : function() {
+				var attribute = new this.Attribute( {
+					name : 'myAttr'
+				} );
+				
+				Y.Assert.isFalse( attribute.hasUserDefinedGetter() );
+			},
+			
+			"hasUserDefinedGetter() should return true when there is a user-defined getter" : function() {
+				var attribute = new this.Attribute( {
+					name : 'myAttr',
+					get : function( v ) { return v; }
+				} );
+				
+				Y.Assert.isTrue( attribute.hasUserDefinedGetter() );
+			}
+		},
+		
+		
+		{
+			/*
 			 * Test getDefaultValue()
 			 */
 			name: "Test getDefaultValue()",
