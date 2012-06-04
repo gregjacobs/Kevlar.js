@@ -287,16 +287,15 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 	 * @method buildUrl
 	 * @param {Kevlar.Model} model The model that a url is being built for.
 	 * @param {String} [action] The action being taken. This will be one of: 'create', 'read', 'update', or 'destroy'.
-	 *   At this time, this parameter is not used by the buildUrl method, but can be used by subclasses of RestProxy.
 	 * @return {String} The url to use.
 	 */
 	buildUrl : function( model, action ) {
 		var url = this.urlRoot;
 		
-		// And now, use the model's ID to set the url.
+		// Use the model's ID to set the url if we're not creating
 		if( action !== 'create' ) {
 			if( !url.match( /\/$/ ) ) {
-				url += '/';
+				url += '/';  // append trailing slash if it's not there
 			}
 			
 			url += encodeURIComponent( model.getId() );
