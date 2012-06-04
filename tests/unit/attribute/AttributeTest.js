@@ -262,32 +262,6 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 				
 				Y.Assert.areSame( 1, attribute.getDefaultValue() );
 				Y.Assert.areSame( 2, attribute.getDefaultValue() );
-			},
-			
-			
-			"A defaultValue provided as an object should be recursed for functions, and those functions' return values should be used in the default" : function() {
-				var attribute = new this.Attribute( {
-					name : 'TestAttribute',
-					'default' : { 
-						a : "A",
-						b : {
-							innerB1 : function() {
-								return "B1";
-							},
-							innerB2 : "B2"
-						},
-						c : {
-							innerC1 : "C",
-							innerC2 : function() {
-								return "C2";
-							}
-						}
-					}
-				} );
-				var defaultData = attribute.getDefaultValue();
-				Y.Assert.areSame( "A", defaultData.a, "The 'default' config provided as an object should have had the value 'A' for property 'a'." );
-				Y.Assert.areSame( "B1", defaultData.b.innerB1, "The 'default' config provided as an object should have been recursed for functions, and their return values used as the properties." );
-				Y.Assert.areSame( "C2", defaultData.c.innerC2, "The 'default' config provided as an object should have been recursed for functions, and their return values used as the properties." );
 			}
 		},
 		

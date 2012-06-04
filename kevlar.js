@@ -1,6 +1,6 @@
 /*!
  * Kevlar JS Library
- * Version 0.8.1
+ * Version 0.8.2
  * 
  * Copyright(c) 2012 Gregory Jacobs.
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php
@@ -2130,20 +2130,9 @@ Kevlar.attribute.Attribute = Kevlar.extend( Object, {
 			defaultValue = defaultValue( this );
 		}
 		
-		// If defaultValue is an object, recurse through it and execute any functions, using their return values as the defaults
+		// If defaultValue is an object, clone it, to not edit the original object structure
 		if( typeof defaultValue === 'object' ) {
-			defaultValue = Kevlar.util.Object.clone( defaultValue );  // clone it, to not edit the original object structure
-			(function recurse( obj ) {
-				for( var prop in obj ) {
-					if( obj.hasOwnProperty( prop ) ) {
-						if( typeof obj[ prop ] === 'function' ) {
-							obj[ prop ] = obj[ prop ]();
-						} else if( typeof obj[ prop ] === 'object' ) {
-							recurse( obj[ prop ] );
-						}
-					}
-				}
-			})( defaultValue );
+			defaultValue = Kevlar.util.Object.clone( defaultValue );
 		}
 		
 		return defaultValue;

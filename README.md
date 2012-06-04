@@ -9,6 +9,10 @@ This is currently a work in progress, and is alpha.
 
 ## Changelog:
 
+### 0.8.2
+
+* Removed recursive search for functions from `defaultValue` functionality in attributes.
+
 ### 0.8.1
 
 * Made attributes with user-defined 'setters' be updated after attributes with no user-defined setter when providing a set of values to update the Model with.
