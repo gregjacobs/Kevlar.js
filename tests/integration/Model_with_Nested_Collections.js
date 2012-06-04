@@ -7,6 +7,32 @@ tests.integration.add( new Ext.test.TestSuite( {
 	items : [
 		{
 			/*
+			 * Test default nested Collection initialization
+			 */
+			name : "Test default nested Collection initialization",
+			
+			// Special instructions
+			_should : {
+				ignore: {
+					"A nested Collection attribute should default to be an empty collection" : true
+				}
+			},
+			
+			"A nested Collection attribute should default to be an empty collection" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'nestedCollection', type: 'collection' }  // note: no specific defaultValue
+					]
+				} );
+				var model = new Model();
+				
+				Y.Assert.isInstanceOf( Kevlar.Collection, model.get( 'nestedCollection' ), "The 'nestedCollection' should have been an instance of Kevlar.Collection" );
+				Y.Assert.areSame( 0, model.get( 'nestedCollection' ).getCount(), "The 'nestedCollection' should be empty" );
+			} 
+		},
+		
+		{
+			/*
 			 * Test setting nested Collections
 			 */
 			name : "Test setting nested Collections",

@@ -8,7 +8,7 @@
 Kevlar.attribute.ObjectAttribute = Kevlar.attribute.Attribute.extend( {
 	
 	/**
-	 * @cfg {Kevlar.Model} defaultValue
+	 * @cfg {Object} defaultValue
 	 * @inheritdoc
 	 */
 	defaultValue : null,

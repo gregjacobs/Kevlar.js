@@ -17,15 +17,28 @@
 Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.extend( {
 		
 	/**
-	 * @cfg {Kevlar.Collection/String/Function} collectionClass
-	 * The specific {@link Kevlar.Collection} subclass that will be used in the CollectionAttribute. This config can be provided
+	 * @cfg {Array/Kevlar.Collection} defaultValue
+	 * @inheritdoc
+	 * 
+	 * Defaults to an empty array, to create an empty Collection of the given {@link #collectionClass} type.
+	 */
+	//defaultValue : [],  -- Not yet fully implemented on a general level. Can use this in code though.
+	
+	/**
+	 * @cfg {Kevlar.Collection/String/Function} collectionClass (required)
+	 * The specific {@link Kevlar.Collection} subclass that will be used in the CollectionAttribute. This config is needed
 	 * to perform automatic conversion of an array of models / anonymous data objects into the approperiate Collection subclass.
 	 * 
-	 * This config may be provided as a reference to a Collection, a String which specifies the object path to the Collection (which
-	 * must be able to be referenced from the global scope, ex: 'myApp.MyModel'), or a function, which will return a reference
-	 * to the Collection that should be used. The reason that this config may be specified as a String or a Function is to allow
-	 * for late binding to the Collection class that is used, where the Collection class that is to be used does not have to exist in the
-	 * source code until a value is actually set to the Attribute. This allows for the handling of circular dependencies as well.
+	 * This config may be provided as:
+	 * 
+	 * - A direct reference to a Collection (ex: `myApp.collections.MyCollection`),
+	 * - A String which specifies the object path to the Collection (which must be able to be referenced from the global scope, 
+	 * 	 ex: 'myApp.collections.MyCollection'), 
+	 * - Or a function, which will return a reference to the Collection that should be used. 
+	 * 
+	 * The reason that this config may be specified as a String or a Function is to allow for late binding to the Collection class 
+	 * that is used, where the Collection class that is to be used does not have to exist in the source code until a value is 
+	 * actually set to the Attribute. This allows for the handling of circular dependencies as well.
 	 */
 	
 	/**
@@ -60,12 +73,14 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.e
 	constructor : function() {
 		this._super( arguments );
 		
-		// Check if the user provided a modelClass, but the value is undefined. This means that they specified
-		// a class that either doesn't exist, or doesn't exist yet, and we should give them a warning.
+		// Check if the user did not provide a collectionClass, or the value is undefined (which means that they specified
+		// a class that either doesn't exist, or doesn't exist yet, and we should give them an error to alert them).
+		// <debug>
 		if( 'collectionClass' in this && this.collectionClass === undefined ) {
 			throw new Error( "The 'collectionClass' config provided to an Attribute with the name '" + this.getName() + "' either doesn't exist, or doesn't " +
 			                 "exist just yet. Consider using the String or Function form of the collectionClass config for late binding, if needed" );
 		}
+		// </debug>
 	},
 	
 	

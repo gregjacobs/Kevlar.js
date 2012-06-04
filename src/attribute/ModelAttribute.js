@@ -19,11 +19,16 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend
 	 * The specific {@link Kevlar.Model} subclass that will be used in the ModelAttribute. This config can be provided
 	 * to perform automatic conversion of anonymous data objects into the approperiate Model subclass.
 	 * 
-	 * This config may be provided as a reference to a Model, a String which specifies the object path to the Model (which
-	 * must be able to be referenced from the global scope, ex: 'myApp.MyModel'), or a function, which will return a reference
-	 * to the Model that should be used. The reason that this config may be specified as a String or a Function is to allow
-	 * for late binding to the Model class that is used, where the Model class that is to be used does not have to exist in the
-	 * source code until a value is actually set to the Attribute. This allows for the handling of circular dependencies as well.
+	 * This config may be provided as:
+	 * 
+	 * - A direct reference to a Model (ex: `myApp.models.MyModel`),
+	 * - A String which specifies the object path to the Model (which must be able to be referenced from the global scope, 
+	 * 	 ex: 'myApp.models.MyModel'), 
+	 * - Or a function, which will return a reference to the Model that should be used. 
+	 * 
+	 * The reason that this config may be specified as a String or a Function is to allow for late binding to the Model class 
+	 * that is used, where the Model class that is to be used does not have to exist in the source code until a value is 
+	 * actually set to the Attribute. This allows for the handling of circular dependencies as well.
 	 */
 	
 	/**

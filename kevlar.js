@@ -1765,734 +1765,6 @@ KevlarUTIL.Event.prototype = {
 
 /**
  * @abstract
- * @class Kevlar.attribute.Attribute
- * @extends Object
- * 
- * Base attribute definition class for {@link Kevlar.Model Models}. The Attribute itself does not store data, but instead simply
- * defines the behavior of a {@link Kevlar.Model Model's} attributes. A {@link Kevlar.Model Model} is made up of Attributes. 
- * 
- * Note: You will most likely not instantiate Attribute objects directly. This is used by {@link Kevlar.Model} with its
- * {@link Kevlar.Model#cfg-attributes attributes} prototype config. Anonymous config objects provided to {@link Kevlar.Model#cfg-attributes attributes}
- * will be passed to the Attribute constructor.
- */
-/*global Kevlar */
-Kevlar.attribute.Attribute = Kevlar.extend( Object, {
-	
-	abstractClass: true,
-	
-	
-	/**
-	 * @cfg {String} name (required)
-	 * The name for the attribute, which is used by the owner Model to reference it.
-	 */
-	name : "",
-	
-	/**
-	 * @cfg {String} type
-	 * Specifies the type of the Attribute, in which a conversion of the raw data will be performed.
-	 * This accepts the following general types, but custom types may be added using the {@link Kevlar.attribute.Attribute#registerType} method.
-	 * 
-	 * - {@link Kevlar.attribute.MixedAttribute mixed}: Performs no conversions, and no special processing of given values. This is the default Attribute type (not recommended).
-	 * - {@link Kevlar.attribute.StringAttribute string}
-	 * - {@link Kevlar.attribute.IntegerAttribute int} / {@link Kevlar.attribute.IntegerAttribute integer}
-	 * - {@link Kevlar.attribute.FloatAttribute float} (really a "double")
-	 * - {@link Kevlar.attribute.BooleanAttribute boolean} / {@link Kevlar.attribute.BooleanAttribute bool}
-	 * - {@link Kevlar.attribute.DateAttribute date}
-	 * - {@link Kevlar.attribute.ModelAttribute model}
-	 * - {@link Kevlar.attribute.CollectionAttribute collection}
-	 */
-	
-	/**
-	 * @cfg {Mixed/Function} defaultValue
-	 * The default value for the Attribute, if it has no value of its own. This can also be specified as the config 'default', 
-	 * but must be wrapped in quotes (as `default` is a reserved word in JavaScript).
-	 *
-	 * If the defaultValue is a function, the function will be executed each time a Model is created, and its return value used as 
-	 * the defaultValue. This is useful, for example, to assign a new unique number to an attribute of a model. Ex:
-	 * 
-	 *     MyModel = Kevlar.Model.extend( {
-	 *         attributes : [
-	 *             {
-	 *                 name: 'uniqueId', 
-	 *                 defaultValue: function( attribute ) {
-	 *                     return Kevlar.newId(); 
-	 *                 }
-	 *             }
-	 *         ]
-	 *     } );
-	 * 
-	 * Note that the function is passed the Attribute as its first argument, which may be used to query Attribute properties/configs.
-	 * 
-	 * If an Object is provided as the defaultValue, its properties will be recursed and searched for functions. The functions will
-	 * be executed to provide default values for nested properties of the object in the same way that providing a Function for this config
-	 * will do.
-	 */
-	
-	/**
-	 * @cfg {Function} set
-	 * A function that can be used to convert the raw value provided to the attribute, to a new value which will be stored
-	 * on the {@link Kevlar.Model Model}. This function is passed the following arguments:
-	 * 
-	 * @cfg {Mixed} set.newValue The provided new data value to the attribute. If the attribute has no initial data value, its {@link #defaultValue}
-	 *   will be provided to this argument upon instantiation of the {@link Kevlar.Model Model}.
-	 * @cfg {Mixed} set.oldValue The old value that the attribute held (if any).
-	 * 
-	 * The function should then do any processing that is necessary, and return the value that the Attribute should hold. For example,
-	 * this `set` function will convert a string value to a 
-	 * <a href="https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Date" target="_blank">Date</a>
-	 * object. Otherwise, it will return the value unchanged:
-	 *     
-	 *     {
-	 *         name : 'myDateAttr',
-	 *         
-	 *         set : function( newValue, oldValue ) {
-	 *             if( typeof value === 'string' ) {
-	 *                 value = new Date( value );
-	 *             }
-	 *             return value;
-	 *         }
-	 *     }
-	 * 
-	 * Just as with {@link #get}, the `set` function is called in the scope of the {@link Kevlar.Model Model} that owns the attribute. 
-	 * This can be used to set other attributes of a "computed" attribute. Ex:
-	 * 
-	 *     {
-	 *         // A "computed" attribute which combines the 'firstName' and 'lastName' attributes in this model (assuming they are there)
-	 *         name : 'fullName',
-	 *         
-	 *         set : function( newValue, oldValue ) {
-	 *             // A setter which takes the first and last name given (such as "Gregory Jacobs"), and splits them up into 
-	 *             // their appropriate parts, to set the appropriate attributes for the computed attribute
-	 *             var names = newValue.split( ' ' );  // split on the space between first and last name
-	 *             
-	 *             // Note: `this` refers to the model which is setting the value, so we can call the set() method
-	 *             this.set( 'firstName', names[ 0 ] );
-	 *             this.set( 'lastName', names[ 1 ] );
-	 *         },
-	 * 
-	 *         get : function( value ) {
-	 *             return this.get( 'firstName' ) + " " + this.get( 'lastName' );  // Combine firstName and lastName for the computed attribute. `this` refers to the model
-	 *         }
-	 *     }
-	 * 
-	 * The function is run in the context (the `this` reference) of the {@link Kevlar.Model Model} instance that owns the attribute, in the that case 
-	 * that other Attributes need to be queried, or need to be {@link Kevlar.Model#set set} by the `set` function. However, in the case of querying 
-	 * other Attributes for their value, be careful in that they may not be set to the expected value when the `set` function executes. For creating 
-	 * computed Attributes that rely on other Attributes' values, use a {@link #get} function instead.
-	 * 
-	 * Notes:
-	 * 
-	 * - Both a `set` and a {@link #get} function can be used in conjunction.
-	 * - The `set` function is called upon instantiation of the {@link Kevlar.Model Model} if the Model is passed an initial value
-	 *   for the Attribute, or if the Attribute has a {@link #defaultValue}.
-	 * 
-	 * 
-	 * When using {@link #type typed} Attributes, providing a `set` function overrides the Attribute's {@link #method-set set} method, which
-	 * does the automatic conversion that the Attribute subclass advertises. If you would like to still use the original {@link #method-set set}
-	 * method in conjunction with pre-processing and/or post-processing the value, you can call the original {@link #method-set set} method as
-	 * such:
-	 * 
-	 *     {
-	 *         // Some integer value attribute, which may need to convert string values (such as "123") to an actual integer 
-	 *         // (done behind the scenes via `parseInt()`)
-	 *         name : 'myValue',
-	 *         type : 'int',
-	 *         
-	 *         set : function( newValue, oldValue ) {
-	 *             // Pre-process the raw newValue here, if desired
-	 *             
-	 *             // Call the original `set` method, which does the conversion to an integer if need be
-	 *             newValue = this._super( arguments );
-	 *             
-	 *             // Post-process the converted newValue here, if desired
-	 *             
-	 *             // And finally, return the value that should be stored for the attribute
-	 *             return newValue;
-	 *         }
-	 *     }
-	 */
-	
-	/**
-	 * @cfg {Function} get
-	 * A function that can be used to change the value that is returned when the Model's {@link Kevlar.Model#get get} method is called
-	 * on the Attribute. This is useful to create "computed" attributes, which may be created based on other Attributes' values.  The function is 
-	 * passed the argument of the underlying stored value, and should return the computed value.
-	 * 
-	 * @cfg {Mixed} get.value The value that the Attribute currently has stored in the {@link Kevlar.Model Model}.
-	 * 
-	 * For example, if we had a {@link Kevlar.Model Model} with `firstName` and `lastName` Attributes, and we wanted to create a `fullName` 
-	 * Attribute, this could be done as in the example below. Note that just as with {@link #cfg-set}, the `get` function is called in the 
-	 * scope of the {@link Kevlar.Model Model} that owns the attribute. 
-	 * 
-	 *     {
-	 *         name : 'fullName',
-	 *         get : function( value ) {  // in this example, the Attribute has no value of its own, so we ignore the arg
-	 *             return this.get( 'firstName' ) + " " + this.get( 'lastName' );   // `this` refers to the model that owns the Attribute
-	 *         }
-	 *     }
-	 * 
-	 * Note: if the intention is to convert a provided value which needs to be stored on the {@link Kevlar.Model Model} in a different way,
-	 * use a {@link #cfg-set} function instead. 
-	 * 
-	 * However, also note that both a {@link #cfg-set} and a `get` function can be used in conjunction.
-	 */
-	
-	/**
-	 * @cfg {Function} raw
-	 * A function that can be used to convert an Attribute's value to a raw representation, usually for persisting data on a server.
-	 * This function is automatically called (if it exists) when a persistence {@link Kevlar.persistence.Proxy proxy} is collecting
-	 * the data to send to the server. The function is passed two arguments, and should return the raw value.
-	 * 
-	 * @cfg {Mixed} raw.value The underlying value that the Attribute currently has stored in the {@link Kevlar.Model Model}.
-	 * @cfg {Kevlar.Model} raw.model The Model instance that this Attribute belongs to.
-	 * 
-	 * For example, a Date object is normally converted to JSON with both its date and time components in a serialized string (such
-	 * as "2012-01-26T01:20:54.619Z"). To instead persist the Date in m/d/yyyy format, one could create an Attribute such as this:
-	 * 
-	 *     {
-	 *         name : 'eventDate',
-	 *         set : function( value, model ) { return new Date( value ); },  // so the value is stored as a Date object when used client-side
-	 *         raw : function( value, model ) {
-	 *             return (value.getMonth()+1) + '/' + value.getDate() + '/' + value.getFullYear();  // m/d/yyyy format 
-	 *         }
-	 *     }
-	 * 
-	 * The value that this function returns is the value that is used when the Model's {@link Kevlar.Model#raw raw} method is called
-	 * on the Attribute.
-	 */
-	
-	/**
-	 * @cfg {Boolean} persist
-	 * True if the attribute should be persisted by its {@link Kevlar.Model Model} using the Model's {@link Kevlar.Model#persistenceProxy persistenceProxy}.
-	 * Set to false to prevent the attribute from being persisted.
-	 */
-	persist : true,
-	
-	
-	
-	
-	statics : {
-		/**
-		 * An object (hashmap) which stores the registered Attribute types. It maps type names to Attribute subclasses.
-		 * 
-		 * @private
-		 * @static
-		 * @property {Object} attributeTypes
-		 */
-		attributeTypes : {},
-		
-		
-		/**
-		 * Static method to instantiate the appropriate Attribute subclass based on a configuration object, based on its `type` property.
-		 * 
-		 * @static
-		 * @method create
-		 * @param {Object} config The configuration object for the Attribute. Config objects should have the property `type`, 
-		 *   which determines which type of Attribute will be instantiated. If the object does not have a `type` property, it will default 
-		 *   to `mixed`, which accepts any data type, but does not provide any type checking / data consistency. Note that already-instantiated 
-		 *   Attributes will simply be returned unchanged. 
-		 * @return {Kevlar.attribute.Attribute} The instantiated Attribute.
-		 */
-		create : function( config ) {
-			var type = config.type ? config.type.toLowerCase() : undefined;
-		
-			if( config instanceof Kevlar.attribute.Attribute ) {
-				// Already an Attribute instance, return it
-				return config;
-				
-			} else if( this.hasType( type || "mixed" ) ) {
-				return new this.attributeTypes[ type || "mixed" ]( config );
-				
-			} else {
-				// No registered type with the given config's `type`, throw an error
-				throw new Error( "Kevlar.attribute.Attribute: Unknown Attribute type: '" + type + "'" );
-			}
-		},
-		
-		
-		/**
-		 * Static method used to register implementation Attribute subclass types. When creating an Attribute subclass, it 
-		 * should be registered with the Attribute superclass (this class), so that it can be instantiated by a string `type` 
-		 * name in an anonymous configuration object. Note that type names are case-insensitive.
-		 * 
-		 * This method will throw an error if a type name is already registered, to assist in making sure that we don't get
-		 * unexpected behavior from a type name being overwritten.
-		 * 
-		 * @static
-		 * @method registerType
-		 * @param {String} typeName The type name of the registered class. Note that this is case-insensitive.
-		 * @param {Function} jsClass The Attribute subclass (constructor function) to register.
-		 */
-		registerType : function( type, jsClass ) {
-			type = type.toLowerCase();
-			
-			if( !this.attributeTypes[ type ] ) { 
-				this.attributeTypes[ type ] = jsClass;
-			} else {
-				throw new Error( "Error: Attribute type '" + type + "' already exists" );
-			}
-		},
-		
-		
-		/**
-		 * Retrieves the Component class (constructor function) that has been registered by the supplied `type` name. 
-		 * 
-		 * @method getType
-		 * @param {String} type The type name of the registered class.
-		 * @return {Function} The class (constructor function) that has been registered under the given type name.
-		 */
-		getType : function( type ) {
-			return this.attributeTypes[ type.toLowerCase() ];
-		},
-		
-		
-		/**
-		 * Determines if there is a registered Attribute type with the given `typeName`.
-		 * 
-		 * @method hasType
-		 * @param {String} typeName
-		 * @return {Boolean}
-		 */
-		hasType : function( typeName ) {
-			if( !typeName ) {  // any falsy type value given, return false
-				return false;
-			} else {
-				return !!this.attributeTypes[ typeName.toLowerCase() ];
-			}
-		}
-	},
-	
-	
-	// End Statics
-	
-	// -------------------------------
-	
-	
-	
-	/**
-	 * Creates a new Attribute instance. Note: You will normally not be using this constructor function, as this class
-	 * is only used internally by {@link Kevlar.Model}.
-	 * 
-	 * @constructor 
-	 * @param {Object/String} config An object (hashmap) of the Attribute object's configuration options, which is its definition. 
-	 *   Can also be its Attribute {@link #name} provided directly as a string.
-	 */
-	constructor : function( config ) {
-		var me = this;
-		
-		// If the argument wasn't an object, it must be its attribute name
-		if( typeof config !== 'object' ) {
-			config = { name: config };
-		}
-		
-		// Copy members of the attribute definition (config) provided onto this object
-		Kevlar.apply( me, config );
-		
-		
-		// Each Attribute must have a name.
-		var name = me.name;
-		if( name === undefined || name === null || name === "" ) {
-			throw new Error( "no 'name' property provided to Kevlar.attribute.Attribute constructor" );
-			
-		} else if( typeof me.name === 'number' ) {  // convert to a string if it is a number
-			me.name = name.toString();
-		}
-		
-		
-		// Normalize defaultValue
-		if( me[ 'default' ] ) {  // accept the key as simply 'default'
-			me.defaultValue = me[ 'default' ];
-		}
-	},
-	
-	
-	/**
-	 * Retrieves the name for the Attribute.
-	 * 
-	 * @method getName
-	 * @return {String}
-	 */
-	getName : function() {
-		return this.name;
-	},
-	
-	
-	/**
-	 * Retrieves the default value for the Attribute. 
-	 * 
-	 * @method getDefaultValue
-	 * @return {Mixed}
-	 */
-	getDefaultValue : function() {
-		var defaultValue = this.defaultValue;
-		
-		if( typeof defaultValue === "function" ) {
-			defaultValue = defaultValue( this );
-		}
-		
-		// If defaultValue is an object, clone it, to not edit the original object structure
-		if( typeof defaultValue === 'object' ) {
-			defaultValue = Kevlar.util.Object.clone( defaultValue );
-		}
-		
-		return defaultValue;
-	},
-	
-	
-	
-	/**
-	 * Determines if the Attribute should be persisted.
-	 * 
-	 * @method isPersisted
-	 * @return {Boolean}
-	 */
-	isPersisted : function() {
-		return this.persist;
-	},
-	
-	
-	/**
-	 * Determines if the Attribute has a user-defined setter (i.e. the {@link #cfg-set set} config was provided).
-	 * 
-	 * @method hasUserDefinedSetter
-	 * @return {Boolean} True if the Attribute was provided a user-defined {@link #cfg-set set} function. 
-	 */
-	hasUserDefinedSetter : function() {
-		return this.hasOwnProperty( 'set' );
-	},
-	
-	
-	/**
-	 * Determines if the Attribute has a user-defined getter (i.e. the {@link #cfg-get get} config was provided).
-	 * 
-	 * @method hasUserDefinedGetter
-	 * @return {Boolean} True if the Attribute was provided a user-defined {@link #cfg-get get} function. 
-	 */
-	hasUserDefinedGetter : function() {
-		return this.hasOwnProperty( 'get' );
-	},
-	
-	
-	// ---------------------------
-	
-	
-	/**
-	 * Allows the Attribute to determine if two values of its data type are equal, and the model
-	 * should consider itself as "changed". This method is passed the "old" value and the "new" value
-	 * when a value is {@link Kevlar.Model#set set} to the Model, and if this method returns `false`, the
-	 * new value is taken as a "change".
-	 * 
-	 * This may be overridden by subclasses to provide custom comparisons, but the default implementation is
-	 * to directly compare primitives, and deep compare arrays and objects.
-	 * 
-	 * @method valuesAreEqual
-	 * @param {Mixed} oldValue
-	 * @param {Mixed} newValue
-	 * @return {Boolean} True if the values are equal, and the Model should *not* consider the new value as a 
-	 *   change of the old value, or false if the values are different, and the new value should be taken as a change.
-	 */
-	valuesAreEqual : function( oldValue, newValue ) {
-		return Kevlar.util.Object.isEqual( oldValue, newValue );
-	},
-	
-	
-	// ---------------------------
-	
-	
-	/**
-	 * Method that allows pre-processing for the value that is to be set to a {@link Kevlar.Model}.
-	 * After this method has processed the value, it is provided to the {@link #cfg-set} function (if
-	 * one exists) or the {@link #method-set set} method, and then finally, the return value from 
-	 * {@link #cfg-set set} will be provided to {@link #afterSet}, and then set as the data on the 
-	 * {@link Kevlar.Model Model}.
-	 * 
-	 * Note that the default implementation simply returns the raw value unchanged, but this may be overridden
-	 * in subclasses to provide a conversion.
-	 * 
-	 * @method beforeSet
-	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
-	 *   but is provided in case any model processing is needed.
-	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
-	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
-	 * @return {Mixed} The converted value.
-	 */
-	beforeSet : function( model, newValue, oldValue ) {
-		return newValue;
-	},
-	
-	
-	/**
-	 * Indirection method that is called by a {@link Kevlar.Model} when the {@link #method-set} method is to be called. This method provides
-	 * a wrapping function that allows for `this._super( arguments )` to be called when a {@link #cfg-set} config is provided, to call the 
-	 * original conversion method from a {@link #cfg-set} config function.
-	 * 
-	 * Basically, it allows:
-	 *     var MyModel = Kevlar.Model.extend( {
-	 *         attributes: [
-	 *             {
-	 *                 name: 'myAttr',
-	 *                 type: 'int',
-	 *                 set: function( newValue, oldValue ) {
-	 *                     // Preprocess the new value (if desired)
-	 *                     
-	 *                     newValue = this._super( [ newValue, oldValue ] );  // run original conversion provided by 'int' attribute
-	 *                     
-	 *                     // post process the new value (if desired)
-	 *                 }
-	 *             }
-	 *         ]
-	 *     } );
-	 * 
-	 * @method doSet
-	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
-	 *   but is provided in case any model processing is needed.
-	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method, after it has been processed
-	 *   by the {@link #beforeSet} method..
-	 * @param {Mixed} oldValue The old (previous) value that the model held.
-	 */
-	doSet : function( model, newValue, oldValue ) {
-		if( this.hasOwnProperty( 'set' ) ) {  // a 'set' config was provided
-			// Call the provided 'set' function in the scope of the model
-			return this.set.call( model, newValue, oldValue );
-			
-		} else {
-			// No 'set' config provided, just call the set() method on the prototype
-			return this.set( model, newValue, oldValue );
-		}
-	},
-	
-	
-	
-	/**
-	 * Method that allows processing of the value that is to be set to a {@link Kevlar.Model}. This method is executed after
-	 * the {@link #beforeSet} method, and before the {@link #afterSet} method, and can be overridden by the {@link #cfg-set set}
-	 * config. 
-	 * 
-	 * @method set
-	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
-	 *   but is provided in case any model processing is needed.
-	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method, after it has been processed
-	 *   by the {@link #beforeSet} method..
-	 * @param {Mixed} oldValue The old (previous) value that the model held.
-	 */
-	set : function( model, newValue, oldValue ) {
-		return newValue;
-	},
-	
-	
-	/**
-	 * Method that allows post-processing for the value that is to be set to a {@link Kevlar.Model}.
-	 * This method is executed after the {@link #beforeSet} method, and the {@link #cfg-set} function (if one is provided), and is given 
-	 * the value that the {@link #cfg-set} function returns. If no {@link #cfg-set} function exists, this will simply be executed 
-	 * immediately after {@link #beforeSet}, after which the return from this method will be set as the data on the {@link Kevlar.Model Model}.
-	 * 
-	 * Note that the default implementation simply returns the value unchanged, but this may be overridden
-	 * in subclasses to provide a conversion.
-	 * 
-	 * @method afterSet
-	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
-	 *   but is provided in case any model processing is needed.
-	 * @param {Mixed} value The value provided to the {@link Kevlar.Model#set} method, after it has been processed by the
-	 *   {@link #beforeSet} method, and any provided {@link #cfg-set} function.
-	 * @return {Mixed} The converted value.
-	 */
-	afterSet : function( model, value ) {
-		return value;
-	}
-	
-} );
-
-/**
- * @abstract
- * @class Kevlar.attribute.PrimitiveAttribute
- * @extends Kevlar.attribute.Attribute
- * 
- * Base Attribute definition class for an Attribute that holds a JavaScript primitive value 
- * (i.e. A Boolean, Number, or String).
- */
-/*global Kevlar */
-Kevlar.attribute.PrimitiveAttribute = Kevlar.attribute.Attribute.extend( {
-	
-	abstractClass: true,
-	
-	/**
-	 * @cfg {Boolean} useNull
-	 * True to allow `null` to be set to the Attribute (which is usually used to denote that the 
-	 * Attribute is "unset", and it shouldn't take an actual default value).
-	 * 
-	 * This is also used when parsing the provided value for the Attribute. If this config is true, and the value 
-	 * cannot be "easily" parsed into a valid representation of its primitive type, `null` will be used 
-	 * instead of converting to the primitive type's default.
-	 */
-	useNull : false
-	
-} );
-
-/**
- * @abstract
- * @class Kevlar.attribute.IntegerAttribute
- * @extends Kevlar.attribute.PrimitiveAttribute
- * 
- * Abstract base class for an Attribute that takes a number data value.
- */
-/*global Kevlar */
-Kevlar.attribute.NumberAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
-	
-	abstractClass: true,
-	
-	/**
-	 * @cfg {Mixed/Function} defaultValue
-	 * @inheritdoc
-	 * 
-	 * The NumberAttribute defaults to 0, unless the {@link #useNull} config is 
-	 * set to `true`, in which case it defaults to `null` (to denote the Attribute being "unset").
-	 */
-	defaultValue: function( attribute ) {
-		return attribute.useNull ? null : 0;
-	},
-	
-	
-	/**
-	 * @cfg {Boolean} useNull
-	 * True to allow `null` to be set to the Attribute (which is usually used to denote that the 
-	 * Attribute is "unset", and it shouldn't take an actual default value).
-	 * 
-	 * This is also used when parsing the provided value for the Attribute. If this config is true, and the value 
-	 * cannot be "easily" parsed into an integer (i.e. if it's undefined, null, or empty string), `null` will be used 
-	 * instead of converting to 0.
-	 */
-	
-	
-	/**
-	 * @protected
-	 * @property {RegExp} stripCharsRegex 
-	 * 
-	 * A regular expression for stripping non-numeric characters from a numeric value. Defaults to `/[\$,%]/g`.
-	 * This should be overridden for localization. A way to do this globally is, for example:
-	 * 
-	 *     Kevlar.attribute.NumberAttribute.prototype.stripCharsRegex = /newRegexHere/g;
-	 */
-	stripCharsRegex : /[\$,%]/g
-	
-} );
-
-/**
- * @class Kevlar.attribute.ObjectAttribute
- * @extends Kevlar.attribute.Attribute
- * 
- * Attribute definition class for an Attribute that takes an object value.
- */
-/*global Kevlar */
-Kevlar.attribute.ObjectAttribute = Kevlar.attribute.Attribute.extend( {
-	
-	/**
-	 * @cfg {Kevlar.Model} defaultValue
-	 * @inheritdoc
-	 */
-	defaultValue : null,
-	
-	
-	/**
-	 * Overridden `beforeSet` method used to normalize the value provided. All non-object values are converted to null,
-	 * while object values are returned unchanged.
-	 * 
-	 * @override
-	 * @method beforeSet
-	 * @inheritdoc
-	 */
-	beforeSet : function( model, newValue, oldValue ) {
-		if( typeof newValue !== 'object' ) {
-			newValue = null;  // convert all non-object values to null
-		}
-		
-		return newValue;
-	}
-	
-} );
-
-
-// Register the Attribute type
-Kevlar.attribute.Attribute.registerType( 'object', Kevlar.attribute.ObjectAttribute );
-
-/**
- * @abstract
- * @class Kevlar.attribute.DataComponentAttribute
- * @extends Kevlar.attribute.ObjectAttribute
- * 
- * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.DataComponent} value.
- */
-/*global window, Kevlar */
-Kevlar.attribute.DataComponentAttribute = Kevlar.attribute.ObjectAttribute.extend( {
-	
-	abstractClass: true,
-	
-	
-	/**
-	 * @cfg {Boolean} embedded
-	 * Setting this config to true has the parent {@link Kevlar.Model Model} treat the child {@link Kevlar.DataComponent DataComponent} as if it is a part of itself. 
-	 * Normally, a child DataComponent that is not embedded is treated as a "relation", where it is considered as independent from the parent Model.
-	 * 
-	 * What this means is that, when true:
-	 * 
-	 * - The parent Model is considered as "changed" when there is a change in the child DataComponent is changed. This Attribute 
-	 *   (the attribute that holds the child DataComponent) is the "change".
-	 * - The parent Model's {@link Kevlar.Model#change change} event is fired when an attribute on the child DataComponent (Model or Collection) has changed.
-	 * - The child DataComponent's data is persisted with the parent Model's data, unless the {@link #persistIdOnly} config is set to true,
-	 *   in which case just the child DataComponent's {@link Kevlar.Model#idAttribute id} is persisted with the parent Model. In the case of a {@link Kevlar.Collection},
-	 *   the ID's of the models are only persisted if {@link #persistIdOnly} is true.
-	 */
-	embedded : false,
-	
-	/**
-	 * @cfg {Boolean} persistIdOnly
-	 * In the case that the {@link #embedded} config is true, set this to true to only have the {@link Kevlar.Model#idAttribute id} of the embedded 
-	 * model(s) be persisted, rather than all of the Model/Collection data. Normally, when {@link #embedded} is false (the default), the child 
-	 * {@link Kevlar.DataComponent DataComponent} is treated as a relation, and only its {@link Kevlar.Model#idAttribute ids} is/are persisted.
-	 */
-	persistIdOnly : false,
-	
-	
-	// -------------------------------
-	
-	
-	/**
-	 * Determines if the Attribute is an {@link #embedded} Attribute.
-	 * 
-	 * @method isEmbedded
-	 * @return {Boolean}
-	 */
-	isEmbedded : function() {
-		return this.embedded;
-	},
-	
-	
-	
-	/**
-	 * Utility method to resolve a string path to an object from the global scope to the
-	 * actual object.
-	 * 
-	 * @protected
-	 * @method resolveGlobalPath
-	 * @param {String} path A string in the form "a.b.c" which will be resolved to the actual `a.b.c` object
-	 *   from the global scope (`window`).
-	 * @return {Mixed} The value at the given path under the global scope. Returns undefined if the value at the
-	 *   path was not found (or this method errors if an intermediate path is not found).
-	 */
-	resolveGlobalPath : function( path ) {
-		var paths = path.split( '.' );
-		
-		// Loop through the namespaces down to the end of the path, and return the value.
-		var value;
-		for( var i = 0, len = paths.length; i < len; i++ ) {
-			value = ( value || window )[ paths[ i ] ];
-		}
-		return value;
-	}
-	
-} );
-
-/**
- * @abstract
  * @class Kevlar.persistence.Proxy
  * @extends Kevlar.util.Observable
  * 
@@ -2720,1512 +1992,6 @@ Kevlar.DataComponent = Kevlar.util.Observable.extend( {
 	rollback : Class.abstractMethod
 	
 } );
-
-/**
- * @class Kevlar.attribute.BooleanAttribute
- * @extends Kevlar.attribute.PrimitiveAttribute
- * 
- * Attribute definition class for an Attribute that takes a boolean (i.e. true/false) data value.
- */
-/*global Kevlar */
-Kevlar.attribute.BooleanAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
-	
-	/**
-	 * @cfg {Mixed/Function} defaultValue
-	 * @inheritdoc
-	 * 
-	 * The BooleanAttribute defaults to `false`, unless the {@link #useNull} config is set to `true`, 
-	 * in which case it defaults to `null` (to denote the Attribute being "unset").
-	 */
-	defaultValue: function( attribute ) {
-		return attribute.useNull ? null : false;
-	},
-	
-	
-	/**
-	 * @cfg {Boolean} useNull
-	 * True to allow `null` to be set to the Attribute (which is usually used to denote that the 
-	 * Attribute is "unset", and it shouldn't take an actual default value).
-	 * 
-	 * This is also used when parsing the provided value for the Attribute. If this config is true, and the value 
-	 * cannot be "easily" parsed into a Boolean (i.e. if it's undefined, null, or an empty string), 
-	 * `null` will be used instead of converting to `false`.
-	 */
-	
-	
-	/**
-	 * Converts the provided data value into a Boolean. If {@link #useNull} is true, "unparsable" values
-	 * will return null. 
-	 * 
-	 * @method beforeSet
-	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
-	 *   but is provided in case any model processing is needed.
-	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
-	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
-	 * @return {Boolean} The converted value.
-	 */
-	beforeSet : function( model, newValue, oldValue ) {
-		if( this.useNull && ( newValue === undefined || newValue === null || newValue === '' ) ) {
-			return null;
-		}
-		return newValue === true || newValue === 'true' || newValue == 1;
-	}
-	
-} );
-
-
-// Register the Attribute type
-Kevlar.attribute.Attribute.registerType( 'boolean', Kevlar.attribute.BooleanAttribute );
-Kevlar.attribute.Attribute.registerType( 'bool', Kevlar.attribute.BooleanAttribute );
-
-/**
- * @class Kevlar.attribute.CollectionAttribute
- * @extends Kevlar.attribute.DataComponentAttribute
- * 
- * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.Collection} value.
- * 
- * This class enforces that the Attribute hold a {@link Kevlar.Collection Collection} value, or null. However, it will
- * automatically convert an array of {@link Kevlar.Model models} or anonymous data objects into the appropriate 
- * {@link Kevlar.Collection Collection} subclass, using the Collection provided to the {@link #collectionClass} config.
- * Anonymous data objects in this array will be converted to the model type provided to the collection's 
- * {@link Kevlar.Collection#model}. 
- * 
- * Otherwise, you must either provide a {@link Kevlar.Collection} subclass as the value, or use a custom {@link #cfg-set} 
- * function to convert any anonymous array to a Collection in the appropriate way. 
- */
-/*global window, Class, Kevlar */
-Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.extend( {
-		
-	/**
-	 * @cfg {Kevlar.Collection/String/Function} collectionClass
-	 * The specific {@link Kevlar.Collection} subclass that will be used in the CollectionAttribute. This config can be provided
-	 * to perform automatic conversion of an array of models / anonymous data objects into the approperiate Collection subclass.
-	 * 
-	 * This config may be provided as a reference to a Collection, a String which specifies the object path to the Collection (which
-	 * must be able to be referenced from the global scope, ex: 'myApp.MyModel'), or a function, which will return a reference
-	 * to the Collection that should be used. The reason that this config may be specified as a String or a Function is to allow
-	 * for late binding to the Collection class that is used, where the Collection class that is to be used does not have to exist in the
-	 * source code until a value is actually set to the Attribute. This allows for the handling of circular dependencies as well.
-	 */
-	
-	/**
-	 * @cfg {Boolean} embedded
-	 * Setting this config to true has the parent {@link Kevlar.Model Model} treat the child {@link Kevlar.Collection Collection} as if it is 
-	 * a part of itself. Normally, a child Collection that is not embedded is treated as a "relation", where it is considered as independent 
-	 * from the parent Model.
-	 * 
-	 * What this means is that, when true:
-	 * 
-	 * - The parent Model is considered as "changed" when a model in the child Collection is changed, or one has been added/removed. This Attribute 
-	 *   (the attribute that holds the child collection) is the "change".
-	 * - The parent Model's {@link Kevlar.Model#change change} event is fired when a model on the child Collection has changed, or one has 
-	 *   been added/removed.
-	 * - The child Collection's model data is persisted with the parent Collection's data, unless the {@link #persistIdOnly} config is set to true,
-	 *   in which case just the child Collection's models' {@link Kevlar.Model#idAttribute ids} are persisted with the parent Model.
-	 */
-	embedded : false,
-	
-	/**
-	 * @cfg {Boolean} persistIdOnly
-	 * In the case that the {@link #embedded} config is true, set this to true to only have the {@link Kevlar.Model#idAttribute id} of the embedded 
-	 * collection's models be persisted, rather than all of the collection's model data. Normally, when {@link #embedded} is false (the default), 
-	 * the child {@link Kevlar.Collection Collection} is treated as a relation, and only its model's {@link Kevlar.Model#idAttribute ids} are persisted.
-	 */
-	persistIdOnly : false,
-	
-	
-	// -------------------------------
-	
-	
-	constructor : function() {
-		this._super( arguments );
-		
-		// Check if the user provided a modelClass, but the value is undefined. This means that they specified
-		// a class that either doesn't exist, or doesn't exist yet, and we should give them a warning.
-		if( 'collectionClass' in this && this.collectionClass === undefined ) {
-			throw new Error( "The 'collectionClass' config provided to an Attribute with the name '" + this.getName() + "' either doesn't exist, or doesn't " +
-			                 "exist just yet. Consider using the String or Function form of the collectionClass config for late binding, if needed" );
-		}
-	},
-	
-	
-	/**
-	 * Overridden method used to determine if two collections are equal.
-	 * @inheritdoc
-	 * 
-	 * @override
-	 * @method valuesAreEqual
-	 * @param {Mixed} oldValue
-	 * @param {Mixed} newValue
-	 * @return {Boolean} True if the values are equal, and the Model should *not* consider the new value as a 
-	 *   change of the old value, or false if the values are different, and the new value should be taken as a change.
-	 */
-	valuesAreEqual : function( oldValue, newValue ) {
-		// If the references are the same, they are equal. Many collections can be made to hold the same models.
-		return oldValue === newValue;
-	},
-	
-	
-	/**
-	 * Overridden `beforeSet` method used to convert any arrays into the specified {@link #collectionClass}. The array
-	 * will be provided to the {@link #collectionClass collectionClass's} constructor.
-	 * 
-	 * @override
-	 * @method beforeSet
-	 * @inheritdoc
-	 */
-	beforeSet : function( model, newValue, oldValue ) {
-		// First, if the oldValue was a Model, and this attribute is an "embedded" collection, we need to unsubscribe it from its parent model
-		if( this.embedded && oldValue instanceof Kevlar.Collection ) {
-			model.unsubscribeEmbeddedCollection( this.getName(), oldValue );
-		}
-		
-		// Now, normalize the newValue to an object, or null
-		newValue = this._super( arguments );
-		
-		if( newValue !== null ) {
-			var collectionClass = this.collectionClass;
-			
-			// Normalize the collectionClass
-			if( typeof collectionClass === 'string' ) {
-				collectionClass = this.resolveGlobalPath( collectionClass );  // changes the string "a.b.c" into the value at `window.a.b.c`
-				
-				if( !collectionClass ) {
-					throw new Error( "The string value 'collectionClass' config did not resolve to a Collection class for attribute '" + this.getName() + "'" );
-				}
-			} else if( typeof collectionClass === 'function' && !Class.isSubclassOf( collectionClass, Kevlar.Collection ) ) {  // it's not a Kevlar.Collection subclass, so it must be an anonymous function. Run it, so it returns the Collection reference we need
-				this.collectionClass = collectionClass = collectionClass();
-				if( !collectionClass ) {
-					throw new Error( "The function value 'collectionClass' config did not resolve to a Collection class for attribute '" + this.getName() + "'" );
-				}
-			}
-			
-			if( newValue && typeof collectionClass === 'function' && !( newValue instanceof collectionClass ) ) {
-				newValue = new collectionClass( newValue );
-			}
-		}
-		
-		return newValue;
-	},
-	
-	
-	/**
-	 * Overridden `afterSet` method used to subscribe to add/remove/change events on a set child {@link Kevlar.Collection Collection}, 
-	 * if {@link #embedded} is true.
-	 * 
-	 * @override
-	 * @method afterSet
-	 * @inheritdoc
-	 */
-	afterSet : function( model, value ) {
-		// Enforce that the value is either null, or a Kevlar.Collection
-		if( value !== null && !( value instanceof Kevlar.Collection ) ) {
-			throw new Error( "A value set to the attribute '" + this.getName() + "' was not a Kevlar.Collection subclass" );
-		}
-		
-		if( this.embedded && value instanceof Kevlar.Collection ) {
-			model.subscribeEmbeddedCollection( this.getName(), value );
-		}
-		
-		return value;
-	}
-	
-} );
-
-
-// Register the Attribute type
-Kevlar.attribute.Attribute.registerType( 'collection', Kevlar.attribute.CollectionAttribute );
-
-/**
- * @class Kevlar.attribute.DateAttribute
- * @extends Kevlar.attribute.ObjectAttribute
- * 
- * Attribute definition class for an Attribute that takes a JavaScript Date object.
- */
-/*global Kevlar */
-Kevlar.attribute.DateAttribute = Kevlar.attribute.ObjectAttribute.extend( {
-		
-	/**
-	 * Converts the provided data value into a Date object. If the value provided is not a Date, or cannot be parsed
-	 * into a Date, will return null.
-	 * 
-	 * @method beforeSet
-	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
-	 *   but is provided in case any model processing is needed.
-	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
-	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
-	 * @return {Boolean} The converted value.
-	 */
-	beforeSet : function( model, newValue, oldValue ) {
-		if( !newValue ) {
-			return null;
-		}
-		if( Kevlar.isDate( newValue ) ) {
-			return newValue;
-		}
-		
-		var parsed = Date.parse( newValue );
-		return ( parsed ) ? new Date( parsed ) : null;
-	}
-} );
-
-
-// Register the Attribute type
-Kevlar.attribute.Attribute.registerType( 'date', Kevlar.attribute.DateAttribute );
-
-/**
- * @class Kevlar.attribute.FloatAttribute
- * @extends Kevlar.attribute.NumberAttribute
- * 
- * Attribute definition class for an Attribute that takes a float (i.e. decimal, or "real") number data value.
- */
-/*global Kevlar */
-Kevlar.attribute.FloatAttribute = Kevlar.attribute.NumberAttribute.extend( {
-	
-	/**
-	 * Converts the provided data value into a float. If {@link #useNull} is true, undefined/null/empty string 
-	 * values will return null, or else will otherwise be converted to 0. If the number is simply not parsable, will 
-	 * return NaN.
-	 * 
-	 * @method beforeSet
-	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
-	 *   but is provided in case any model processing is needed.
-	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
-	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
-	 * @return {Boolean} The converted value.
-	 */
-	beforeSet : function( model, newValue, oldValue ) {
-		var defaultValue = ( this.useNull ) ? null : 0;
-		return ( newValue !== undefined && newValue !== null && newValue !== '' ) ? parseFloat( String( newValue ).replace( this.stripCharsRegex, '' ), 10 ) : defaultValue;
-	}
-	
-} );
-
-
-// Register the Attribute type
-Kevlar.attribute.Attribute.registerType( 'float', Kevlar.attribute.FloatAttribute );
-Kevlar.attribute.Attribute.registerType( 'number', Kevlar.attribute.FloatAttribute );
-
-/**
- * @class Kevlar.attribute.IntegerAttribute
- * @extends Kevlar.attribute.NumberAttribute
- * 
- * Attribute definition class for an Attribute that takes an integer data value. If a decimal
- * number is provided (i.e. a "float"), the decimal will be ignored, and only the integer value used.
- */
-/*global Kevlar */
-Kevlar.attribute.IntegerAttribute = Kevlar.attribute.NumberAttribute.extend( {
-	
-	/**
-	 * Converts the provided data value into an integer. If {@link #useNull} is true, undefined/null/empty string 
-	 * values will return null, or else will otherwise be converted to 0. If the number is simply not parsable, will 
-	 * return NaN. 
-	 * 
-	 * This method will strip off any decimal value from a provided number.
-	 * 
-	 * @method beforeSet
-	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
-	 *   but is provided in case any model processing is needed.
-	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
-	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
-	 * @return {Boolean} The converted value.
-	 */
-	beforeSet : function( model, newValue, oldValue ) {
-		var defaultValue = ( this.useNull ) ? null : 0;
-		return ( newValue !== undefined && newValue !== null && newValue !== '' ) ? parseInt( String( newValue ).replace( this.stripCharsRegex, '' ), 10 ) : defaultValue;
-	}
-	
-} );
-
-
-// Register the Attribute type
-Kevlar.attribute.Attribute.registerType( 'int', Kevlar.attribute.IntegerAttribute );
-Kevlar.attribute.Attribute.registerType( 'integer', Kevlar.attribute.IntegerAttribute );
-
-/**
- * @class Kevlar.attribute.MixedAttribute
- * @extends Kevlar.attribute.Attribute
- * 
- * Attribute definition class for an Attribute that takes any data value.
- */
-/*global Kevlar */
-Kevlar.attribute.MixedAttribute = Kevlar.attribute.Attribute.extend( {
-		
-	// No specific implementation at this time. All handled by the base class Attribute.
-	
-} );
-
-
-// Register the Attribute type
-Kevlar.attribute.Attribute.registerType( 'mixed', Kevlar.attribute.MixedAttribute );
-
-/**
- * @class Kevlar.attribute.ModelAttribute
- * @extends Kevlar.attribute.DataComponentAttribute
- * 
- * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.Model} value.
- * 
- * This class enforces that the Attribute hold a {@link Kevlar.Model Model} value, or null. However, it will
- * automatically convert an anonymous data object into the appropriate {@link Kevlar.Model Model} subclass, using
- * the Model provided to the {@link #modelClass} config. 
- * 
- * Otherwise, you must either provide a {@link Kevlar.Model} subclass as the value, or use a custom {@link #cfg-set} 
- * function to convert any anonymous object to a Model in the appropriate way. 
- */
-/*global window, Class, Kevlar */
-Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend( {
-	
-	/**
-	 * @cfg {Kevlar.Model/String/Function} modelClass
-	 * The specific {@link Kevlar.Model} subclass that will be used in the ModelAttribute. This config can be provided
-	 * to perform automatic conversion of anonymous data objects into the approperiate Model subclass.
-	 * 
-	 * This config may be provided as a reference to a Model, a String which specifies the object path to the Model (which
-	 * must be able to be referenced from the global scope, ex: 'myApp.MyModel'), or a function, which will return a reference
-	 * to the Model that should be used. The reason that this config may be specified as a String or a Function is to allow
-	 * for late binding to the Model class that is used, where the Model class that is to be used does not have to exist in the
-	 * source code until a value is actually set to the Attribute. This allows for the handling of circular dependencies as well.
-	 */
-	
-	/**
-	 * @cfg {Boolean} embedded
-	 * Setting this config to true has the parent {@link Kevlar.Model Model} treat the child {@link Kevlar.Model Model} as if it is a part of itself. 
-	 * Normally, a child Model that is not embedded is treated as a "relation", where it is considered as independent from the parent Model.
-	 * 
-	 * What this means is that, when true:
-	 * 
-	 * - The parent Model is considered as "changed" when an attribute in the child Model is changed. This Attribute (the attribute that holds the child
-	 *   model) is the "change".
-	 * - The parent Model's {@link Kevlar.Model#change change} event is fired when an attribute on the child Model has changed.
-	 * - The child Model's data is persisted with the parent Model's data, unless the {@link #persistIdOnly} config is set to true,
-	 *   in which case just the child Model's {@link Kevlar.Model#idAttribute id} is persisted with the parent Model.
-	 */
-	embedded : false,
-	
-	/**
-	 * @cfg {Boolean} persistIdOnly
-	 * In the case that the {@link #embedded} config is true, set this to true to only have the {@link Kevlar.Model#idAttribute id} of the embedded 
-	 * model be persisted, rather than all of the Model data. Normally, when {@link #embedded} is false (the default), the child {@link Kevlar.Model Model}
-	 * is treated as a relation, and only its {@link Kevlar.Model#idAttribute id} is persisted.
-	 */
-	persistIdOnly : false,
-	
-	
-	// -------------------------------
-	
-	
-	constructor : function() {
-		this._super( arguments );
-		
-		// Check if the user provided a modelClass, but the value is undefined. This means that they specified
-		// a class that either doesn't exist, or doesn't exist yet, and we should give them a warning.
-		if( 'modelClass' in this && this.modelClass === undefined ) {
-			throw new Error( "The 'modelClass' config provided to an Attribute with the name '" + this.getName() + "' either doesn't exist, or doesn't " +
-			                 "exist just yet. Consider using the String or Function form of the modelClass config for late binding, if needed" );
-		}
-	},
-	
-	
-	/**
-	 * Overridden method used to determine if two models are equal.
-	 * @inheritdoc
-	 * 
-	 * @override
-	 * @method valuesAreEqual
-	 * @param {Mixed} oldValue
-	 * @param {Mixed} newValue
-	 * @return {Boolean} True if the values are equal, and the Model should *not* consider the new value as a 
-	 *   change of the old value, or false if the values are different, and the new value should be taken as a change.
-	 */
-	valuesAreEqual : function( oldValue, newValue ) {
-		// We can't instantiate two different Models with the same id that have different references, so if the references are the same, they are equal
-		return oldValue === newValue;
-	},
-	
-	
-	/**
-	 * Overridden `beforeSet` method used to convert any anonymous objects into the specified {@link #modelClass}. The anonymous object
-	 * will be provided to the {@link #modelClass modelClass's} constructor.
-	 * 
-	 * @override
-	 * @method beforeSet
-	 * @inheritdoc
-	 */
-	beforeSet : function( model, newValue, oldValue ) {
-		// First, if the oldValue was a Model, and this attribute is an "embedded" model, we need to unsubscribe it from its parent model
-		if( this.embedded && oldValue instanceof Kevlar.Model ) {
-			model.unsubscribeEmbeddedModel( this.getName(), oldValue );
-		}
-		
-		// Now, normalize the newValue to an object, or null
-		newValue = this._super( arguments );
-		
-		if( newValue !== null ) {
-			var modelClass = this.modelClass;
-			
-			// Normalize the modelClass
-			if( typeof modelClass === 'string' ) {
-				modelClass = this.resolveGlobalPath( modelClass );  // changes the string "a.b.c" into the value at `window.a.b.c`
-				
-				if( !modelClass ) {
-					throw new Error( "The string value 'modelClass' config did not resolve to a Model class for attribute '" + this.getName() + "'" );
-				}
-			} else if( typeof modelClass === 'function' && !Class.isSubclassOf( modelClass, Kevlar.Model ) ) {  // it's not a Kevlar.Model subclass, so it must be an anonymous function. Run it, so it returns the Model reference we need
-				this.modelClass = modelClass = modelClass();
-				if( !modelClass ) {
-					throw new Error( "The function value 'modelClass' config did not resolve to a Model class for attribute '" + this.getName() + "'" );
-				}
-			}
-			
-			if( newValue && typeof modelClass === 'function' && !( newValue instanceof modelClass ) ) {
-				newValue = new modelClass( newValue );
-			}
-		}
-		
-		return newValue;
-	},
-	
-	
-	/**
-	 * Overridden `afterSet` method used to subscribe to change events on a set child {@link Kevlar.Model Model}, if {@link #embedded} is true.
-	 * 
-	 * @override
-	 * @method afterSet
-	 * @inheritdoc
-	 */
-	afterSet : function( model, value ) {
-		// Enforce that the value is either null, or a Kevlar.Model
-		if( value !== null && !( value instanceof Kevlar.Model ) ) {
-			throw new Error( "A value set to the attribute '" + this.getName() + "' was not a Kevlar.Model subclass" );
-		}
-		
-		if( this.embedded && value instanceof Kevlar.Model ) {
-			model.subscribeEmbeddedModel( this.getName(), value );
-		}
-		
-		return value;
-	}
-	
-} );
-
-
-// Register the Attribute type
-Kevlar.attribute.Attribute.registerType( 'model', Kevlar.attribute.ModelAttribute );
-
-/**
- * @class Kevlar.attribute.StringAttribute
- * @extends Kevlar.attribute.PrimitiveAttribute
- * 
- * Attribute definition class for an Attribute that takes a string data value.
- */
-/*global Kevlar */
-Kevlar.attribute.StringAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
-	
-	/**
-	 * @cfg {Mixed/Function} defaultValue
-	 * @inheritdoc
-	 * 
-	 * The StringAttribute defaults to `""` (empty string), unless the {@link #useNull} config is 
-	 * set to `true`, in which case it defaults to `null` (to denote the Attribute being "unset").
-	 */
-	defaultValue: function( attribute ) {
-		return attribute.useNull ? null : "";
-	},
-	
-	
-	/**
-	 * @cfg {Boolean} useNull
-	 * True to allow `null` to be set to the Attribute (which is usually used to denote that the 
-	 * Attribute is "unset", and it shouldn't take an actual default value).
-	 * 
-	 * This is also used when parsing the provided value for the Attribute. If this config is true, and the value 
-	 * cannot be "easily" parsed into a String (i.e. if it's undefined, or null), `null` will be used 
-	 * instead of converting to an empty string.
-	 */
-	
-	
-	/**
-	 * Converts the provided data value into a Boolean. If {@link #useNull} is true, "unparsable" values
-	 * will return null. 
-	 * 
-	 * @method beforeSet
-	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
-	 *   but is provided in case any model processing is needed.
-	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
-	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
-	 * @return {Boolean} The converted value.
-	 */
-	beforeSet : function( model, newValue, oldValue ) {
-		var defaultValue = ( this.useNull ) ? null : "";
-		return ( newValue === undefined || newValue === null ) ? defaultValue : String( newValue );
-	}
-	
-} );
-
-
-// Register the Attribute type
-Kevlar.attribute.Attribute.registerType( 'string', Kevlar.attribute.StringAttribute );
-
-/**
- * @class Kevlar.Collection
- * @extends Kevlar.DataComponent
- * 
- * Manages an ordered set of {@link Kevlar.Model Models}. This class itself is not meant to be used directly, 
- * but rather extended and configured for the different collections in your application.
- * 
- * Ex:
- *     
- *     myApp.Todos = Kevlar.Collection.extend( {
- *         model: myApp.Todo
- *     } );
- * 
- * 
- * Note: Configuration options should be placed on the prototype of a Collection subclass.
- * 
- * 
- * ### Model Events
- * 
- * Collections automatically relay all of their {@link Kevlar.Model Models'} events as if the Collection
- * fired it. The collection instance provides itself in the handler though. For example, Models' 
- * {@link Kevlar.Model#event-change change} events:
- *     
- *     var Model = Kevlar.Model.extend( {
- *         attributes: [ 'name' ]
- *     } );
- *     var Collection = Kevlar.Collection.extend( {
- *         model : Model
- *     } );
- * 
- *     var model1 = new Model( { name: "Greg" } ),
- *         model2 = new Model( { name: "Josh" } );
- *     var collection = new Collection( [ model1, model2 ] );
- *     collection.on( 'change', function( collection, model, attributeName, newValue, oldValue ) {
- *         console.log( "A model changed its '" + attributeName + "' attribute from '" + oldValue + "' to '" + newValue + "'" );
- *     } );
- * 
- *     model1.set( 'name', "Gregory" );
- *       // "A model changed its 'name' attribute from 'Greg' to 'Gregory'"
- */
-/*global window, Kevlar */
-Kevlar.Collection = Kevlar.DataComponent.extend( {
-	
-	/**
-	 * @cfg {Function} model
-	 * 
-	 * The Kevlar.Model (sub)class which will be used to convert any anonymous data objects into
-	 * its appropriate Model instance for the Collection. 
-	 * 
-	 * Note that if a factory method is required for the creation of models, where custom processing may be needed,
-	 * override the {@link #createModel} method in a subclass.
-	 * 
-	 * It is recommended that you subclass Kevlar.Collection, and add this configuration as part of the definition of the 
-	 * subclass. Ex:
-	 * 
-	 *     myApp.MyCollection = Kevlar.Collection.extend( {
-	 *         model : myApp.MyModel
-	 *     } );
-	 */
-	
-	/**
-	 * @cfg {Function} sortBy
-	 * A function that is used to keep the Collection in a sorted ordering. Without one, the Collection will
-	 * simply keep models in insertion order.
-	 * 
-	 * This function takes two arguments: each a {@link Kevlar.Model Model}, and should return `-1` if the 
-	 * first model should be placed before the second, `0` if the models are equal, and `1` if the 
-	 * first model should come after the second.
-	 * 
-	 * Ex:
-	 *     
-	 *     sortBy : function( model1, model2 ) { 
-	 *         var name1 = model1.get( 'name' ),
-	 *             name2 = model2.get( 'name' );
-	 *         
-	 *         return ( name1 < name2 ) ? -1 : ( name1 > name2 ) ? 1 : 0;
-	 *     }
-	 * 
-	 * It is recommended that you subclass Kevlar.Collection, and add the sortBy function in the definition of the subclass. Ex:
-	 * 
-	 *     myApp.MyCollection = Kevlar.Collection.extend( {
-	 *         sortBy : function( model1, model2 ) {
-	 *             // ...
-	 *         }
-	 *     } );
-	 *     
-	 *     
-	 *     // And instantiating:
-	 *     var myCollection = new myApp.MyCollection();
-	 */
-	
-	/**
-	 * @cfg {Object/Kevlar.Model/Object[]/Kevlar.Model[]} models
-	 * If providing a configuration object to the Kevlar.Collection constructor instead of an array of initial models, the initial 
-	 * model(s) may be specified using this configuration option. Can be a single model or an array of models (or object / array of
-	 * objects that will be converted to models).
-	 * 
-	 * Ex:
-	 * 
-	 *     // Assuming you have created a myApp.MyModel subclass of {@link Kevlar.Model},
-	 *     // and a myApp.MyCollection subclass of Kevlar.Collection
-	 *     var model1 = new myApp.MyModel(),
-	 *         model2 = new myApp.MyModel();
-	 *     
-	 *     var collection = new myApp.MyCollection( {
-	 *         models: [ model1, model2 ]
-	 *     } );
-	 */
-	
-	
-	
-	/**
-	 * @protected
-	 * @property {Kevlar.Model[]} models
-	 * 
-	 * The array that holds the Models, in order.
-	 */
-	
-	/**
-	 * @protected
-	 * @property {Object} modelsByClientId
-	 * 
-	 * An object (hashmap) of the models that the Collection is currently holding, keyed by the models' {@link Kevlar.Model#clientId clientId}.
-	 */
-	
-	/**
-	 * @protected
-	 * @property {Object} modelsById
-	 * 
-	 * An object (hashmap) of the models that the Collection is currently holding, keyed by the models' {@link Kevlar.Model#id id}, if the model has one.
-	 */
-	
-	/**
-	 * @private
-	 * @property {Boolean} modified
-	 * 
-	 * Flag that is set to true whenever there is an addition, insertion, or removal of a model in the Collection.
-	 */
-	modified : false,
-	
-	
-	
-	/**
-	 * Creates a new Collection instance.
-	 * 
-	 * @constructor
-	 * @param {Object/Object[]/Kevlar.Model[]} config This can either be a configuration object (in which the options listed
-	 *   under "configuration options" can be provided), or an initial set of Models to provide to the Collection. If providing
-	 *   an initial set of models, they must be wrapped in an array. Note that an initial set of models can be provided when using
-	 *   a configuration object with the {@link #cfg-models} config.
-	 */
-	constructor : function( config ) {
-		this._super( arguments );
-		
-		this.addEvents(
-			/**
-			 * Fires when one or more models have been added to the Collection. This event is fired once for each
-			 * model that is added. To respond to a set of model adds all at once, use the {@link #event-addset} 
-			 * event instead. 
-			 * 
-			 * @event add
-			 * @param {Kevlar.Collection} collection This Collection instance.
-			 * @param {Kevlar.Model} model The model instance that was added. 
-			 */
-			'add',
-			
-			/**
-			 * Responds to a set of model additions by firing after one or more models have been added to the Collection. 
-			 * This event fires with an array of the added model(s), so that the additions may be processed all at 
-			 * once. To respond to each addition individually, use the {@link #event-add} event instead. 
-			 * 
-			 * @event addset
-			 * @param {Kevlar.Collection} collection This Collection instance.
-			 * @param {Kevlar.Model[]} models The array of model instances that were added. This will be an
-			 *   array of the added models, even in the case that a single model is added.
-			 */
-			'addset',
-			
-			/**
-			 * Fires when a model is reordered within the Collection. A reorder can be performed
-			 * by calling the {@link #insert} method with a given index of where to re-insert one or
-			 * more models. If the model did not yet exist in the Collection, it will *not* fire a 
-			 * reorder event, but will be provided with an {@link #event-add add} event instead. 
-			 * 
-			 * This event is fired once for each model that is reordered.
-			 * 
-			 * @event reorder
-			 * @param {Kevlar.Collection} collection This Collection instance.
-			 * @param {Kevlar.Model} model The model that was reordered.
-			 * @param {Number} newIndex The new index for the model.
-			 * @param {Number} oldIndex The old index for the model.
-			 */
-			'reorder',
-			
-			/**
-			 * Fires when one or more models have been removed from the Collection. This event is fired once for each
-			 * model that is removed. To respond to a set of model removals all at once, use the {@link #event-removeset} 
-			 * event instead.
-			 * 
-			 * @event remove
-			 * @param {Kevlar.Collection} collection This Collection instance.
-			 * @param {Kevlar.Model} model The model instances that was removed.
-			 * @param {Number} index The index that the model was removed from.
-			 */
-			'remove',
-			
-			/**
-			 * Responds to a set of model removals by firing after one or more models have been removed from the Collection. 
-			 * This event fires with an array of the removed model(s), so that the removals may be processed all at once. 
-			 * To respond to each removal individually, use the {@link #event-remove} event instead.
-			 * 
-			 * @event removeset
-			 * @param {Kevlar.Collection} collection This Collection instance.
-			 * @param {Kevlar.Model[]} models The array of model instances that were removed. This will be an
-			 *   array of the removed models, even in the case that a single model is removed.
-			 */
-			'removeset'
-		);
-		
-		
-		var initialModels;
-		
-		// If the "config" is an array, it must be an array of initial models
-		if( Kevlar.isArray( config ) ) {
-			initialModels = config;
-			
-		} else if( typeof config === 'object' ) {
-			Kevlar.apply( this, config );
-			
-			initialModels = this.models;  // grab any initial models in the config
-		}
-		
-		
-		// If a 'sortBy' exists, and it is a function, create a bound function to bind it to this Collection instance
-		// for when it is passed into Array.prototype.sort()
-		if( typeof this.sortBy === 'function' ) {
-			this.sortBy = Kevlar.bind( this.sortBy, this );
-		}
-		
-		
-		this.models = [];
-		this.modelsByClientId = {};
-		this.modelsById = {};
-		
-		
-		if( initialModels ) {
-			this.add( initialModels );
-			this.modified = false;  // initial models should not make the collection "modified". Note: NOT calling commit() here, because we may not want to commit changed model data. Need to figure that out.
-		}
-		
-		// Call hook method for subclasses
-		this.initialize();
-	},
-	
-	
-	/**
-	 * Hook method for subclasses to initialize themselves. This method should be overridden in subclasses to 
-	 * provide any model-specific initialization.
-	 * 
-	 * Note that it is good practice to always call the superclass `initialize` method from within yours (even if
-	 * your class simply extends Kevlar.Collection, which has no `initialize` implementation itself). This is to future proof it
-	 * from being moved under another superclass, or if there is ever an implementation made in this class.
-	 * 
-	 * Ex:
-	 * 
-	 *     MyCollection = Kevlar.Collection.extend( {
-	 *         initialize : function() {
-	 *             MyCollection.superclass.initialize.apply( this, arguments );   // or could be MyCollection.__super__.initialize.apply( this, arguments );
-	 *             
-	 *             // my initialization logic goes here
-	 *         }
-	 *     }
-	 * 
-	 * @protected
-	 * @method initialize
-	 */
-	initialize : Kevlar.emptyFn,
-	
-	
-	
-	// -----------------------------
-	
-	
-	/**
-	 * If a model is provided as an anonymous data object, this method will be called to transform the data into 
-	 * the appropriate {@link Kevlar.Model model} class, using the {@link #model} config.
-	 * 
-	 * This may be overridden in subclasses to allow for custom processing, or to create a factory method for Model creation.
-	 * 
-	 * @protected
-	 * @method createModel
-	 * @param {Object} modelData
-	 * @return {Kevlar.Model} The instantiated model.
-	 */
-	createModel : function( modelData ) {
-		if( !this.model ) {
-			throw new Error( "Cannot instantiate model from anonymous data, 'model' config not provided to Collection." );
-		}
-		
-		return new this.model( modelData );
-	},
-	
-	
-	
-	/**
-	 * Adds one or more models to the Collection.
-	 * 
-	 * @method add
-	 * @param {Kevlar.Model/Kevlar.Model[]/Object/Object[]} models One or more models to add to the Collection. This may also
-	 *   be one or more anonymous objects, which will be converted into models based on the {@link #model} config.
-	 */
-	add : function( models ) {
-		this.insert( models );
-	},
-	
-	
-	/**
-	 * Inserts (or moves) one or more models into the Collection, at the specified `index`.
-	 * Fires the {@link #event-add add} event for models that are newly inserted into the Collection,
-	 * and the {@link #event-reorder} event for models that are simply moved within the Collection.
-	 * 
-	 * @method insert
-	 * @param {Kevlar.Model/Kevlar.Model[]} models The model(s) to insert.
-	 * @param {Number} index The index to insert the models at.
-	 */
-	insert : function( models, index ) {
-		var indexSpecified = ( typeof index !== 'undefined' ),
-		    i, len, model, modelId,
-		    addedModels = [];
-		
-		// First, normalize the `index` if it is out of the bounds of the models array
-		if( typeof index !== 'number' ) {
-			index = this.models.length;  // append by default
-		} else if( index < 0 ) {
-			index = 0;
-		} else if( index > this.models.length ) {
-			index = this.models.length;
-		}
-		
-		// Normalize the argument to an array
-		if( !Kevlar.isArray( models ) ) {
-			models = [ models ];
-		}
-		
-		// No models to insert, return
-		if( models.length === 0 ) {
-			return;
-		}
-		
-		for( i = 0, len = models.length; i < len; i++ ) {
-			model = models[ i ];
-			if( !( model instanceof Kevlar.Model ) ) {
-				model = this.createModel( model );
-			}
-						
-			// Only add if the model does not already exist in the collection
-			if( !this.has( model ) ) {
-				this.modified = true;  // model is being added, then the Collection has been modified
-				
-				addedModels.push( model );
-				this.modelsByClientId[ model.getClientId() ] = model;
-				
-				// Insert the model into the models array at the correct position
-				this.models.splice( index, 0, model );  // 0 elements to remove
-				index++;  // increment the index for the next model to insert / reorder
-				
-				if( model.hasIdAttribute() ) {  // make sure the model actually has a valid idAttribute first, before trying to call getId()
-					modelId = model.getId();
-					if( modelId !== undefined && modelId !== null ) {
-						this.modelsById[ modelId ] = model;
-					}
-					
-					// Respond to any changes on the idAttribute
-					model.on( 'change:' + model.getIdAttribute().getName(), this.onModelIdChange, this );
-				}
-				
-				// Subscribe to the special 'all' event on the model, so that the Collection can relay all of the model's events
-				model.on( 'all', this.onModelEvent, this );
-				
-				this.fireEvent( 'add', this, model );
-				
-			} else {
-				// Handle a reorder, but only actually move the model if a new index was specified.
-				// In the case that add() is called, no index will be specified, and we don't want to
-				// "re-add" models
-				if( indexSpecified ) {
-					this.modified = true;  // model is being reordered, then the Collection has been modified
-					
-					var oldIndex = this.indexOf( model );
-					
-					// Move the model to the new index
-					this.models.splice( oldIndex, 1 );
-					this.models.splice( index, 0, model );
-					
-					this.fireEvent( 'reorder', this, model, index, oldIndex );
-					index++; // increment the index for the next model to insert / reorder
-				}
-			}
-		}
-		
-		// If there is a 'sortBy' config, use that now
-		if( this.sortBy ) {
-			this.models.sort( this.sortBy );  // note: the sortBy function has already been bound to the correct scope
-		}
-		
-		// Fire the 'add' event for models that were actually inserted into the Collection (meaning that they didn't already
-		// exist in the collection). Don't fire the event though if none were actually inserted (there could have been models
-		// that were simply reordered).
-		if( addedModels.length > 0 ) {
-			this.fireEvent( 'addset', this, addedModels );
-		}
-	},
-	
-	
-	
-	/**
-	 * Removes one or more models from the Collection. Fires the {@link #event-remove} event with the
-	 * models that were actually removed.
-	 * 
-	 * @method remove
-	 * @param {Kevlar.Model/Kevlar.Model[]} models One or more models to remove from the Collection.
-	 */
-	remove : function( models ) {
-		var collectionModels = this.models,
-		    removedModels = [],
-		    i, len, model, modelIndex;
-		
-		// Normalize the argument to an array
-		if( !Kevlar.isArray( models ) ) {
-			models = [ models ];
-		}
-		
-		for( i = 0, len = models.length; i < len; i++ ) {
-			model = models[ i ];
-			modelIndex = this.indexOf( model );
-			
-			// Don't bother doing anything to remove the model if we know it doesn't exist in the Collection
-			if( modelIndex > -1 ) {
-				this.modified = true;  // model is being removed, then the Collection has been modified
-				
-				delete this.modelsByClientId[ model.getClientId() ];
-				
-				if( model.hasIdAttribute() ) {   // make sure the model actually has a valid idAttribute first, before trying to call getId()
-					delete this.modelsById[ model.getId() ];
-					
-					// Remove the listener for changes on the idAttribute
-					model.un( 'change:' + model.getIdAttribute().getName(), this.onModelIdChange, this );
-				}
-				
-				// Unsubscribe the special 'all' event listener from the model
-				model.un( 'all', this.onModelEvent, this );
-				
-				// Remove the model from the models array
-				collectionModels.splice( modelIndex, 1 );
-				this.fireEvent( 'remove', this, model, modelIndex );
-				
-				removedModels.push( model );
-			}
-		}
-		
-		if( removedModels.length > 0 ) {
-			this.fireEvent( 'removeset', this, removedModels );
-		}
-	},
-	
-	
-	/**
-	 * Removes all models from the Collection. Fires the {@link #event-remove} event with the models
-	 * that were removed.
-	 * 
-	 * @method removeAll
-	 */
-	removeAll : function() {
-		this.remove( Kevlar.util.Object.clone( this.models, /* deep = */ false ) );  // make a shallow copy of the array to send to this.remove()
-	},
-	
-	
-	/**
-	 * Handles a change to a model's {@link Kevlar.Model#idAttribute}, so that the Collection's 
-	 * {@link #modelsById} hashmap can be updated.
-	 * 
-	 * Note that {@link #onModelEvent} is still called even when this method executes.
-	 * 
-	 * @protected
-	 * @method onModelIdChange
-	 * @param {Kevlar.Model} model The model that fired the change event.
-	 * @param {Mixed} newValue The new value.
-	 * @param {Mixed} oldValue The old value. 
-	 */
-	onModelIdChange : function( model, newValue, oldValue ) {
-		delete this.modelsById[ oldValue ];
-		
-		if( newValue !== undefined && newValue !== null ) {
-			this.modelsById[ newValue ] = model;
-		}
-	},
-	
-	
-	/**
-	 * Handles an event fired by a Model in the Collection by relaying it from the Collection
-	 * (as if the Collection had fired it).
-	 * 
-	 * @protected
-	 * @method onModelEvent
-	 * @param {String} eventName
-	 * @param {Mixed...} args The original arguments passed to the event.
-	 */
-	onModelEvent : function( eventName ) {
-		// If the model was destroyed, we need to remove it from the collection
-		if( eventName === 'destroy' ) {
-			this.remove( arguments[ 1 ] );  // arguments[ 1 ] is the model for the 'destroy' event
-		}
-		
-		// Relay the event from the collection, passing the collection itself, and the original arguments
-		this.fireEvent.apply( this, [ eventName, this ].concat( Array.prototype.slice.call( arguments, 1 ) ) );
-	},
-	
-	
-	// ----------------------------
-	
-	
-	/**
-	 * Retrieves the Model at a given index.
-	 * 
-	 * @method getAt
-	 * @param {Number} index The index to to retrieve the model at.
-	 * @return {Kevlar.Model} The Model at the given index, or null if the index was out of range.
-	 */
-	getAt : function( index ) {
-		return this.models[ index ] || null;
-	},
-	
-	
-	/**
-	 * Convenience method for retrieving the first {@link Kevlar.Model model} in the Collection.
-	 * If the Collection does not have any models, returns null.
-	 * 
-	 * @method getFirst
-	 * @return {Kevlar.Model} The first model in the Collection, or null if the Collection does not have
-	 *   any models.
-	 */
-	getFirst : function() {
-		return this.models[ 0 ] || null;
-	},
-	
-	
-	/**
-	 * Convenience method for retrieving the last {@link Kevlar.Model model} in the Collection.
-	 * If the Collection does not have any models, returns null.
-	 * 
-	 * @method getLast
-	 * @return {Kevlar.Model} The last model in the Collection, or null if the Collection does not have
-	 *   any models.
-	 */
-	getLast : function() {
-		return this.models[ this.models.length - 1 ] || null;
-	},
-	
-	
-	/**
-	 * Retrieves a range of {@link Kevlar.Model Models}, specified by the `startIndex` and `endIndex`. These values are inclusive.
-	 * For example, if the Collection has 4 Models, and `getRange( 1, 3 )` is called, the 2nd, 3rd, and 4th models will be returned.
-	 * 
-	 * @method getRange
-	 * @param {Number} [startIndex=0] The starting index.
-	 * @param {Number} [endIndex] The ending index. Defaults to the last Model in the Collection.
-	 * @return {Kevlar.Model[]} The array of models from the `startIndex` to the `endIndex`, inclusively.
-	 */
-	getRange : function( startIndex, endIndex ) {
-		var models = this.models,
-		    numModels = models.length,
-		    range = [],
-		    i;
-		
-		if( numModels === 0 ) {
-			return range;
-		}
-		
-		startIndex = Math.max( startIndex || 0, 0 ); // don't allow negative indexes
-		endIndex = Math.min( typeof endIndex === 'undefined' ? numModels - 1 : endIndex, numModels - 1 );
-		
-		for( i = startIndex; i <= endIndex; i++ ) {
-			range.push( models[ i ] );
-		}
-		return range; 
-	},
-	
-	
-	/**
-	 * Retrieves all of the models that the Collection has, in order.
-	 * 
-	 * @method getModels
-	 * @return {Kevlar.Model[]} An array of the models that this Collection holds.
-	 */
-	getModels : function() {
-		return this.getRange();  // gets all models
-	},
-	
-	
-	/**
-	 * Retrieves the Array representation of the Collection, where all models are converted into native JavaScript Objects.  The attribute values
-	 * for each of the models are retrieved via the {@link Kevlar.Model#get} method, to pre-process the data before they are returned in the final 
-	 * array of objects, unless the `raw` option is set to true, in which case the Model attributes are retrieved via {@link Kevlar.Model#raw}. 
-	 * 
-	 * @override
-	 * @method getData
-	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This object is sent to
-	 *   the {@link Kevlar.data.NativeObjectConverter#convert NativeObjectConverter's convert method}, and accepts all of the options
-	 *   that the {@link Kevlar.data.NativeObjectConverter#convert} method does. See that method for details.
-	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.attribute.Attribute Attribute} values.
-	 */
-	getData : function( options ) {
-		return Kevlar.data.NativeObjectConverter.convert( this, options );
-	},
-	
-	
-	
-	/**
-	 * Retrieves the number of models that the Collection currently holds.
-	 * 
-	 * @method getCount
-	 * @return {Number} The number of models that the Collection currently holds.
-	 */
-	getCount : function() {
-		return this.models.length;
-	},
-	
-	
-	/**
-	 * Retrieves a Model by its {@link Kevlar.Model#clientId clientId}.
-	 * 
-	 * @method getByClientId
-	 * @param {Number} clientId
-	 * @return {Kevlar.Model} The Model with the given {@link Kevlar.Model#clientId clientId}, or null if there is 
-	 *   no Model in the Collection with that {@link Kevlar.Model#clientId clientId}.
-	 */
-	getByClientId : function( clientId ) {
-		return this.modelsByClientId[ clientId ] || null;
-	},
-	
-	
-	/**
-	 * Retrieves a Model by its {@link Kevlar.Model#id id}. Note: if the Model does not yet have an id, it will not
-	 * be able to be retrieved by this method.
-	 * 
-	 * @method getById
-	 * @param {Mixed} id The id value for the {@link Kevlar.Model Model}.
-	 * @return {Kevlar.Model} The Model with the given {@link Kevlar.Model#id id}, or `null` if no Model was found 
-	 *   with that {@link Kevlar.Model#id id}.
-	 */
-	getById : function( id ) {
-		return this.modelsById[ id ] || null;
-	},
-	
-	
-	/**
-	 * Determines if the Collection has a given {@link Kevlar.Model model}.
-	 * 
-	 * @method has
-	 * @param {Kevlar.Model} model
-	 * @return {Boolean} True if the Collection has the given `model`, false otherwise.
-	 */
-	has : function( model ) {
-		return !!this.getByClientId( model.getClientId() );
-	},
-	
-	
-	/**
-	 * Retrieves the index of the given {@link Kevlar.Model model} within the Collection. 
-	 * Returns -1 if the `model` is not found.
-	 * 
-	 * @method indexOf
-	 * @param {Kevlar.Model} model
-	 * @return {Number} The index of the provided `model`, or of -1 if the `model` was not found.
-	 */
-	indexOf : function( model ) {
-		var models = this.models,
-		    i, len;
-		
-		if( !this.has( model ) ) {
-			// If the model isn't in the Collection, return -1 immediately
-			return -1;
-			
-		} else {
-			for( i = 0, len = models.length; i < len; i++ ) {
-				if( models[ i ] === model ) {
-					return i;
-				}
-			}
-		}
-	},
-	
-	
-	/**
-	 * Retrieves the index of a given {@link Kevlar.Model model} within the Collection by its
-	 * {@link Kevlar.Model#idAttribute id}. Returns -1 if the `model` is not found.
-	 * 
-	 * @method indexOfId
-	 * @param {Mixed} id The id value for the model.
-	 * @return {Number} The index of the model with the provided `id`, or of -1 if the model was not found.
-	 */
-	indexOfId : function( id ) {
-		var model = this.getById( id );
-		if( model ) {
-			return this.indexOf( model );
-		}
-		return -1;
-	},
-	
-	
-	// ----------------------------
-	
-	
-	/**
-	 * Commits any changes in the Collection, so that it is no longer considered "modified".
-	 * 
-	 * @override
-	 * @method commit
-	 */
-	commit : function() {
-		this.modified = false;  // reset flag
-		
-		// TODO: Determine if child models should also be committed. Possibly a flag argument for this?
-		// But for now, maintain consistency with isModified()
-		var models = this.models;
-		for( var i = 0, len = models.length; i < len; i++ ) {
-			models[ i ].commit();
-		}
-	},
-	
-	
-	
-	/**
-	 * Rolls any changes to the Collection back to its state when it was last {@link #commit committed}
-	 * or rolled back.
-	 * 
-	 * @override
-	 * @method rollback 
-	 */
-	rollback : function() {
-		this.modified = false;  // reset flag
-		
-		// TODO: Implement rolling back the collection's state to the array of models that it had before any
-		// changes were made
-		
-		
-		// TODO: Determine if child models should also be rolled back. Possibly a flag argument for this?
-		// But for now, maintain consistency with isModified()
-		var models = this.models;
-		for( var i = 0, len = models.length; i < len; i++ ) {
-			models[ i ].rollback();
-		}
-	},
-	
-	
-	/**
-	 * Determines if the Collection has been added to, removed from, reordered, or 
-	 * has any {@link Kevlar.Model models} which are modified.
-	 * 
-	 * @method isModified
-	 * 
-	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This may be provided as the first argument to the
-	 *   method if no `attributeName` is to be provided. Options may include:
-	 * @param {Boolean} [options.persistedOnly=false] True to have the method only return true only if a Model exists within it that has a 
-	 *   {@link Kevlar.attribute.Attribute#persist persisted} attribute which is modified. However, if the Collection itself has been modified
-	 *   (by adding/reordering/removing a Model), this method will still return true.
-	 * 
-	 * @return {Boolean} True if the Collection has any modified models, false otherwise.
-	 */
-	isModified : function( options ) {
-		options = options || {};
-		
-		// First, if the collection itself has been added to / removed from / reordered, then it is modified
-		if( this.modified ) {
-			return true;
-			
-		} else {
-			var models = this.models,
-			    i, len;
-			
-			for( i = 0, len = models.length; i < len; i++ ) {
-				if( models[ i ].isModified( options ) ) {
-					return true;
-				}
-			}
-			return false;
-		}
-	},
-	
-	
-	// ----------------------------
-	
-	// Searching methods
-	
-	/**
-	 * Finds the first {@link Kevlar.Model Model} in the Collection by {@link Kevlar.attribute.Attribute Attribute} name, and a given value.
-	 * Uses `===` to compare the value. If a more custom find is required, use {@link #findBy} instead.
-	 * 
-	 * Note that this method is more efficient than using {@link #findBy}, so if it can be used, it should.
-	 * 
-	 * @method find
-	 * @param {String} attributeName The name of the attribute to test the value against.
-	 * @param {Mixed} value The value to look for.
-	 * @param {Object} [options] Optional arguments for this method, provided in an object (hashmap). Accepts the following:
-	 * @param {Number} [options.startIndex] The index in the Collection to start searching from.
-	 * @return {Kevlar.Model} The model where the attribute name === the value, or `null` if no matching model was not found.
-	 */
-	find : function( attributeName, value, options ) {
-		options = options || {};
-		
-		var models = this.models,
-		    startIndex = options.startIndex || 0;
-		for( var i = startIndex, len = models.length; i < len; i++ ) {
-			if( models[ i ].get( attributeName ) === value ) {
-				return models[ i ];
-			}
-		}
-		return null;
-	},
-	
-	
-	/**
-	 * Finds the first {@link Kevlar.Model Model} in the Collection, using a custom function. When the function returns true,
-	 * the model is returned. If the function does not return true for any models, `null` is returned.
-	 * 
-	 * @method findBy
-	 * 
-	 * @param {Function} fn The function used to find the Model. Should return an explicit boolean `true` when there is a match. 
-	 *   This function is passed the following arguments:
-	 * @param {Kevlar.Model} fn.model The current Model that is being processed in the Collection.
-	 * @param {Number} fn.index The index of the Model in the Collection.
-	 * 
-	 * @param {Object} [options]
-	 * @param {Object} [options.scope] The scope to run the function in.
-	 * @param {Number} [options.startIndex] The index in the Collection to start searching from.
-	 * 
-	 * @return {Kevlar.Model} The model that the function returned `true` for, or `null` if no match was found.
-	 */
-	findBy : function( fn, options ) {
-		options = options || {};
-		
-		var models = this.models,
-		    scope = options.scope || window,
-		    startIndex = options.startIndex || 0;
-		    
-		for( var i = startIndex, len = models.length; i < len; i++ ) {
-			if( fn.call( scope, models[ i ], i ) === true ) {
-				return models[ i ];
-			}
-		}
-		return null;
-	}
-
-} );
-
-/**
- * @private
- * @class Kevlar.data.NativeObjectConverter
- * @singleton
- * 
- * NativeObjectConverter allows for the conversion of {@link Kevlar.Collection Collection} / {@link Kevlar.Model Models}
- * to their native Array / Object representations, while dealing with circular dependencies.
- */
-/*global Kevlar */
-Kevlar.data.NativeObjectConverter = {
-	
-	/**
-	 * Converts a {@link Kevlar.Collection Collection} or {@link Kevlar.Model} to its native Array/Object representation,
-	 * while dealing with circular dependencies.
-	 * 
-	 * @method convert
-	 * 
-	 * @param {Kevlar.Collection/Kevlar.Model} A Collection or Model to convert to its native Array/Object representation.
-	 * @param {Object} [options] An object (hashmap) of options to change the behavior of this method. This may include:
-	 * @param {String[]} [options.attributeNames] In the case that a {@link Kevlar.Model Model} is provided to this method, this
-	 *   may be an array of the attribute names that should be returned in the output object.  Other attributes will not be processed.
-	 *   (Note: only affects the Model passed to this method, and not nested models.)
-	 * @param {Boolean} [options.persistedOnly] True to have the method only return data for the persisted attributes on
-	 *   Models (i.e. attributes with the {@link Kevlar.attribute.Attribute#persist persist} config set to true, which is the default).
-	 * @param {Boolean} [options.raw] True to have the method only return the raw data for the attributes, by way of the {@link Kevlar.Model#raw} method. 
-	 *   This is used for persistence, where the raw data values go to the server rather than higher-level objects, or where some kind of serialization
-	 *   to a string must take place before persistence (such as for Date objects). 
-	 * 
-	 * @return {Object[]/Object} An array of objects (for the case of a Collection}, or an Object (for the case of a Model)
-	 *   with the internal attributes converted to their native equivalent.
-	 */
-	convert : function( dataComponent, options ) {
-		options = options || {};
-		var cache = {},  // keyed by models' clientId, and used for handling circular dependencies
-		    persistedOnly = !!options.persistedOnly,
-		    raw = !!options.raw,
-		    data = ( dataComponent instanceof Kevlar.Collection ) ? [] : {};  // Collection is an Array, Model is an Object
-		
-		// Prime the cache with the Model/Collection provided to this method, so that if a circular reference points back to this
-		// model, the data object is not duplicated as an internal object (i.e. it should refer right back to the converted
-		// Model's/Collection's data object)
-		cache[ dataComponent.getClientId() ] = data;
-		
-		// Recursively goes through the data structure, and convert models to objects, and collections to arrays
-		Kevlar.apply( data, (function convert( dataComponent ) {
-			var clientId, 
-			    cachedDataComponent,
-			    data,
-			    i, len;
-			
-			if( dataComponent instanceof Kevlar.Model ) {
-				var attributes = dataComponent.getAttributes(),
-				    attributeNames = options.attributeNames || Kevlar.util.Object.keysToArray( attributes ),
-				    attributeName, currentValue;
-				
-				data = {};  // data is an object for a Model
-				
-				// Slight hack, but delete options.attributeNames now, so that it is not used again for inner Models (should only affect the first 
-				// Model that gets converted, i.e. the Model provided to this method)
-				delete options.attributeNames;
-				
-				for( i = 0, len = attributeNames.length; i < len; i++ ) {
-					attributeName = attributeNames[ i ];
-					if( !persistedOnly || attributes[ attributeName ].isPersisted() === true ) {
-						currentValue = data[ attributeName ] = ( raw ) ? dataComponent.raw( attributeName ) : dataComponent.get( attributeName );
-						
-						// Process Nested DataComponents
-						if( currentValue instanceof Kevlar.DataComponent ) {
-							clientId = currentValue.getClientId();
-							
-							if( ( cachedDataComponent = cache[ clientId ] ) ) {
-								data[ attributeName ] = cachedDataComponent;
-							} else {
-								// first, set up an array/object for the cache (so it exists when checking for it in the next call to convert()), 
-								// and set that array/object to the return data as well
-								cache[ clientId ] = data[ attributeName ] = ( currentValue instanceof Kevlar.Collection ) ? [] : {};  // Collection is an Array, Model is an Object
-								
-								// now, populate that object with the properties of the inner object
-								Kevlar.apply( cache[ clientId ], convert( currentValue ) );  
-							}
-						}
-					}
-				}
-				
-			} else if( dataComponent instanceof Kevlar.Collection ) {
-				var models = dataComponent.getModels(),
-				    model;
-				
-				data = [];  // data is an array for a Container
-				
-				for( i = 0, len = models.length; i < len; i++ ) {
-					model = models[ i ];
-					clientId = model.getClientId();
-					
-					data[ i ] = cache[ clientId ] || convert( model );
-				}
-			}
-			
-			return data;
-		})( dataComponent ) );
-		
-		return data;
-	}
-	
-};
 
 /**
  * @class Kevlar.Model
@@ -5682,6 +3448,2260 @@ Kevlar.Model.prototype.toJSON = Kevlar.Model.prototype.getData;
  */
 Kevlar.Model.prototype.previous = function( attributeName ) {
 	return undefined;
+};
+
+/**
+ * @class Kevlar.Collection
+ * @extends Kevlar.DataComponent
+ * 
+ * Manages an ordered set of {@link Kevlar.Model Models}. This class itself is not meant to be used directly, 
+ * but rather extended and configured for the different collections in your application.
+ * 
+ * Ex:
+ *     
+ *     myApp.Todos = Kevlar.Collection.extend( {
+ *         model: myApp.Todo
+ *     } );
+ * 
+ * 
+ * Note: Configuration options should be placed on the prototype of a Collection subclass.
+ * 
+ * 
+ * ### Model Events
+ * 
+ * Collections automatically relay all of their {@link Kevlar.Model Models'} events as if the Collection
+ * fired it. The collection instance provides itself in the handler though. For example, Models' 
+ * {@link Kevlar.Model#event-change change} events:
+ *     
+ *     var Model = Kevlar.Model.extend( {
+ *         attributes: [ 'name' ]
+ *     } );
+ *     var Collection = Kevlar.Collection.extend( {
+ *         model : Model
+ *     } );
+ * 
+ *     var model1 = new Model( { name: "Greg" } ),
+ *         model2 = new Model( { name: "Josh" } );
+ *     var collection = new Collection( [ model1, model2 ] );
+ *     collection.on( 'change', function( collection, model, attributeName, newValue, oldValue ) {
+ *         console.log( "A model changed its '" + attributeName + "' attribute from '" + oldValue + "' to '" + newValue + "'" );
+ *     } );
+ * 
+ *     model1.set( 'name', "Gregory" );
+ *       // "A model changed its 'name' attribute from 'Greg' to 'Gregory'"
+ */
+/*global window, Kevlar */
+Kevlar.Collection = Kevlar.DataComponent.extend( {
+	
+	/**
+	 * @cfg {Function} model
+	 * 
+	 * The Kevlar.Model (sub)class which will be used to convert any anonymous data objects into
+	 * its appropriate Model instance for the Collection. 
+	 * 
+	 * Note that if a factory method is required for the creation of models, where custom processing may be needed,
+	 * override the {@link #createModel} method in a subclass.
+	 * 
+	 * It is recommended that you subclass Kevlar.Collection, and add this configuration as part of the definition of the 
+	 * subclass. Ex:
+	 * 
+	 *     myApp.MyCollection = Kevlar.Collection.extend( {
+	 *         model : myApp.MyModel
+	 *     } );
+	 */
+	
+	/**
+	 * @cfg {Function} sortBy
+	 * A function that is used to keep the Collection in a sorted ordering. Without one, the Collection will
+	 * simply keep models in insertion order.
+	 * 
+	 * This function takes two arguments: each a {@link Kevlar.Model Model}, and should return `-1` if the 
+	 * first model should be placed before the second, `0` if the models are equal, and `1` if the 
+	 * first model should come after the second.
+	 * 
+	 * Ex:
+	 *     
+	 *     sortBy : function( model1, model2 ) { 
+	 *         var name1 = model1.get( 'name' ),
+	 *             name2 = model2.get( 'name' );
+	 *         
+	 *         return ( name1 < name2 ) ? -1 : ( name1 > name2 ) ? 1 : 0;
+	 *     }
+	 * 
+	 * It is recommended that you subclass Kevlar.Collection, and add the sortBy function in the definition of the subclass. Ex:
+	 * 
+	 *     myApp.MyCollection = Kevlar.Collection.extend( {
+	 *         sortBy : function( model1, model2 ) {
+	 *             // ...
+	 *         }
+	 *     } );
+	 *     
+	 *     
+	 *     // And instantiating:
+	 *     var myCollection = new myApp.MyCollection();
+	 */
+	
+	/**
+	 * @cfg {Object/Kevlar.Model/Object[]/Kevlar.Model[]} models
+	 * If providing a configuration object to the Kevlar.Collection constructor instead of an array of initial models, the initial 
+	 * model(s) may be specified using this configuration option. Can be a single model or an array of models (or object / array of
+	 * objects that will be converted to models).
+	 * 
+	 * Ex:
+	 * 
+	 *     // Assuming you have created a myApp.MyModel subclass of {@link Kevlar.Model},
+	 *     // and a myApp.MyCollection subclass of Kevlar.Collection
+	 *     var model1 = new myApp.MyModel(),
+	 *         model2 = new myApp.MyModel();
+	 *     
+	 *     var collection = new myApp.MyCollection( {
+	 *         models: [ model1, model2 ]
+	 *     } );
+	 */
+	
+	
+	
+	/**
+	 * @protected
+	 * @property {Kevlar.Model[]} models
+	 * 
+	 * The array that holds the Models, in order.
+	 */
+	
+	/**
+	 * @protected
+	 * @property {Object} modelsByClientId
+	 * 
+	 * An object (hashmap) of the models that the Collection is currently holding, keyed by the models' {@link Kevlar.Model#clientId clientId}.
+	 */
+	
+	/**
+	 * @protected
+	 * @property {Object} modelsById
+	 * 
+	 * An object (hashmap) of the models that the Collection is currently holding, keyed by the models' {@link Kevlar.Model#id id}, if the model has one.
+	 */
+	
+	/**
+	 * @private
+	 * @property {Boolean} modified
+	 * 
+	 * Flag that is set to true whenever there is an addition, insertion, or removal of a model in the Collection.
+	 */
+	modified : false,
+	
+	
+	
+	/**
+	 * Creates a new Collection instance.
+	 * 
+	 * @constructor
+	 * @param {Object/Object[]/Kevlar.Model[]} config This can either be a configuration object (in which the options listed
+	 *   under "configuration options" can be provided), or an initial set of Models to provide to the Collection. If providing
+	 *   an initial set of models, they must be wrapped in an array. Note that an initial set of models can be provided when using
+	 *   a configuration object with the {@link #cfg-models} config.
+	 */
+	constructor : function( config ) {
+		this._super( arguments );
+		
+		this.addEvents(
+			/**
+			 * Fires when one or more models have been added to the Collection. This event is fired once for each
+			 * model that is added. To respond to a set of model adds all at once, use the {@link #event-addset} 
+			 * event instead. 
+			 * 
+			 * @event add
+			 * @param {Kevlar.Collection} collection This Collection instance.
+			 * @param {Kevlar.Model} model The model instance that was added. 
+			 */
+			'add',
+			
+			/**
+			 * Responds to a set of model additions by firing after one or more models have been added to the Collection. 
+			 * This event fires with an array of the added model(s), so that the additions may be processed all at 
+			 * once. To respond to each addition individually, use the {@link #event-add} event instead. 
+			 * 
+			 * @event addset
+			 * @param {Kevlar.Collection} collection This Collection instance.
+			 * @param {Kevlar.Model[]} models The array of model instances that were added. This will be an
+			 *   array of the added models, even in the case that a single model is added.
+			 */
+			'addset',
+			
+			/**
+			 * Fires when a model is reordered within the Collection. A reorder can be performed
+			 * by calling the {@link #insert} method with a given index of where to re-insert one or
+			 * more models. If the model did not yet exist in the Collection, it will *not* fire a 
+			 * reorder event, but will be provided with an {@link #event-add add} event instead. 
+			 * 
+			 * This event is fired once for each model that is reordered.
+			 * 
+			 * @event reorder
+			 * @param {Kevlar.Collection} collection This Collection instance.
+			 * @param {Kevlar.Model} model The model that was reordered.
+			 * @param {Number} newIndex The new index for the model.
+			 * @param {Number} oldIndex The old index for the model.
+			 */
+			'reorder',
+			
+			/**
+			 * Fires when one or more models have been removed from the Collection. This event is fired once for each
+			 * model that is removed. To respond to a set of model removals all at once, use the {@link #event-removeset} 
+			 * event instead.
+			 * 
+			 * @event remove
+			 * @param {Kevlar.Collection} collection This Collection instance.
+			 * @param {Kevlar.Model} model The model instances that was removed.
+			 * @param {Number} index The index that the model was removed from.
+			 */
+			'remove',
+			
+			/**
+			 * Responds to a set of model removals by firing after one or more models have been removed from the Collection. 
+			 * This event fires with an array of the removed model(s), so that the removals may be processed all at once. 
+			 * To respond to each removal individually, use the {@link #event-remove} event instead.
+			 * 
+			 * @event removeset
+			 * @param {Kevlar.Collection} collection This Collection instance.
+			 * @param {Kevlar.Model[]} models The array of model instances that were removed. This will be an
+			 *   array of the removed models, even in the case that a single model is removed.
+			 */
+			'removeset'
+		);
+		
+		
+		var initialModels;
+		
+		// If the "config" is an array, it must be an array of initial models
+		if( Kevlar.isArray( config ) ) {
+			initialModels = config;
+			
+		} else if( typeof config === 'object' ) {
+			Kevlar.apply( this, config );
+			
+			initialModels = this.models;  // grab any initial models in the config
+		}
+		
+		
+		// If a 'sortBy' exists, and it is a function, create a bound function to bind it to this Collection instance
+		// for when it is passed into Array.prototype.sort()
+		if( typeof this.sortBy === 'function' ) {
+			this.sortBy = Kevlar.bind( this.sortBy, this );
+		}
+		
+		
+		this.models = [];
+		this.modelsByClientId = {};
+		this.modelsById = {};
+		
+		
+		if( initialModels ) {
+			this.add( initialModels );
+			this.modified = false;  // initial models should not make the collection "modified". Note: NOT calling commit() here, because we may not want to commit changed model data. Need to figure that out.
+		}
+		
+		// Call hook method for subclasses
+		this.initialize();
+	},
+	
+	
+	/**
+	 * Hook method for subclasses to initialize themselves. This method should be overridden in subclasses to 
+	 * provide any model-specific initialization.
+	 * 
+	 * Note that it is good practice to always call the superclass `initialize` method from within yours (even if
+	 * your class simply extends Kevlar.Collection, which has no `initialize` implementation itself). This is to future proof it
+	 * from being moved under another superclass, or if there is ever an implementation made in this class.
+	 * 
+	 * Ex:
+	 * 
+	 *     MyCollection = Kevlar.Collection.extend( {
+	 *         initialize : function() {
+	 *             MyCollection.superclass.initialize.apply( this, arguments );   // or could be MyCollection.__super__.initialize.apply( this, arguments );
+	 *             
+	 *             // my initialization logic goes here
+	 *         }
+	 *     }
+	 * 
+	 * @protected
+	 * @method initialize
+	 */
+	initialize : Kevlar.emptyFn,
+	
+	
+	
+	// -----------------------------
+	
+	
+	/**
+	 * If a model is provided as an anonymous data object, this method will be called to transform the data into 
+	 * the appropriate {@link Kevlar.Model model} class, using the {@link #model} config.
+	 * 
+	 * This may be overridden in subclasses to allow for custom processing, or to create a factory method for Model creation.
+	 * 
+	 * @protected
+	 * @method createModel
+	 * @param {Object} modelData
+	 * @return {Kevlar.Model} The instantiated model.
+	 */
+	createModel : function( modelData ) {
+		if( !this.model ) {
+			throw new Error( "Cannot instantiate model from anonymous data, 'model' config not provided to Collection." );
+		}
+		
+		return new this.model( modelData );
+	},
+	
+	
+	
+	/**
+	 * Adds one or more models to the Collection.
+	 * 
+	 * @method add
+	 * @param {Kevlar.Model/Kevlar.Model[]/Object/Object[]} models One or more models to add to the Collection. This may also
+	 *   be one or more anonymous objects, which will be converted into models based on the {@link #model} config.
+	 */
+	add : function( models ) {
+		this.insert( models );
+	},
+	
+	
+	/**
+	 * Inserts (or moves) one or more models into the Collection, at the specified `index`.
+	 * Fires the {@link #event-add add} event for models that are newly inserted into the Collection,
+	 * and the {@link #event-reorder} event for models that are simply moved within the Collection.
+	 * 
+	 * @method insert
+	 * @param {Kevlar.Model/Kevlar.Model[]} models The model(s) to insert.
+	 * @param {Number} index The index to insert the models at.
+	 */
+	insert : function( models, index ) {
+		var indexSpecified = ( typeof index !== 'undefined' ),
+		    i, len, model, modelId,
+		    addedModels = [];
+		
+		// First, normalize the `index` if it is out of the bounds of the models array
+		if( typeof index !== 'number' ) {
+			index = this.models.length;  // append by default
+		} else if( index < 0 ) {
+			index = 0;
+		} else if( index > this.models.length ) {
+			index = this.models.length;
+		}
+		
+		// Normalize the argument to an array
+		if( !Kevlar.isArray( models ) ) {
+			models = [ models ];
+		}
+		
+		// No models to insert, return
+		if( models.length === 0 ) {
+			return;
+		}
+		
+		for( i = 0, len = models.length; i < len; i++ ) {
+			model = models[ i ];
+			if( !( model instanceof Kevlar.Model ) ) {
+				model = this.createModel( model );
+			}
+						
+			// Only add if the model does not already exist in the collection
+			if( !this.has( model ) ) {
+				this.modified = true;  // model is being added, then the Collection has been modified
+				
+				addedModels.push( model );
+				this.modelsByClientId[ model.getClientId() ] = model;
+				
+				// Insert the model into the models array at the correct position
+				this.models.splice( index, 0, model );  // 0 elements to remove
+				index++;  // increment the index for the next model to insert / reorder
+				
+				if( model.hasIdAttribute() ) {  // make sure the model actually has a valid idAttribute first, before trying to call getId()
+					modelId = model.getId();
+					if( modelId !== undefined && modelId !== null ) {
+						this.modelsById[ modelId ] = model;
+					}
+					
+					// Respond to any changes on the idAttribute
+					model.on( 'change:' + model.getIdAttribute().getName(), this.onModelIdChange, this );
+				}
+				
+				// Subscribe to the special 'all' event on the model, so that the Collection can relay all of the model's events
+				model.on( 'all', this.onModelEvent, this );
+				
+				this.fireEvent( 'add', this, model );
+				
+			} else {
+				// Handle a reorder, but only actually move the model if a new index was specified.
+				// In the case that add() is called, no index will be specified, and we don't want to
+				// "re-add" models
+				if( indexSpecified ) {
+					this.modified = true;  // model is being reordered, then the Collection has been modified
+					
+					var oldIndex = this.indexOf( model );
+					
+					// Move the model to the new index
+					this.models.splice( oldIndex, 1 );
+					this.models.splice( index, 0, model );
+					
+					this.fireEvent( 'reorder', this, model, index, oldIndex );
+					index++; // increment the index for the next model to insert / reorder
+				}
+			}
+		}
+		
+		// If there is a 'sortBy' config, use that now
+		if( this.sortBy ) {
+			this.models.sort( this.sortBy );  // note: the sortBy function has already been bound to the correct scope
+		}
+		
+		// Fire the 'add' event for models that were actually inserted into the Collection (meaning that they didn't already
+		// exist in the collection). Don't fire the event though if none were actually inserted (there could have been models
+		// that were simply reordered).
+		if( addedModels.length > 0 ) {
+			this.fireEvent( 'addset', this, addedModels );
+		}
+	},
+	
+	
+	
+	/**
+	 * Removes one or more models from the Collection. Fires the {@link #event-remove} event with the
+	 * models that were actually removed.
+	 * 
+	 * @method remove
+	 * @param {Kevlar.Model/Kevlar.Model[]} models One or more models to remove from the Collection.
+	 */
+	remove : function( models ) {
+		var collectionModels = this.models,
+		    removedModels = [],
+		    i, len, model, modelIndex;
+		
+		// Normalize the argument to an array
+		if( !Kevlar.isArray( models ) ) {
+			models = [ models ];
+		}
+		
+		for( i = 0, len = models.length; i < len; i++ ) {
+			model = models[ i ];
+			modelIndex = this.indexOf( model );
+			
+			// Don't bother doing anything to remove the model if we know it doesn't exist in the Collection
+			if( modelIndex > -1 ) {
+				this.modified = true;  // model is being removed, then the Collection has been modified
+				
+				delete this.modelsByClientId[ model.getClientId() ];
+				
+				if( model.hasIdAttribute() ) {   // make sure the model actually has a valid idAttribute first, before trying to call getId()
+					delete this.modelsById[ model.getId() ];
+					
+					// Remove the listener for changes on the idAttribute
+					model.un( 'change:' + model.getIdAttribute().getName(), this.onModelIdChange, this );
+				}
+				
+				// Unsubscribe the special 'all' event listener from the model
+				model.un( 'all', this.onModelEvent, this );
+				
+				// Remove the model from the models array
+				collectionModels.splice( modelIndex, 1 );
+				this.fireEvent( 'remove', this, model, modelIndex );
+				
+				removedModels.push( model );
+			}
+		}
+		
+		if( removedModels.length > 0 ) {
+			this.fireEvent( 'removeset', this, removedModels );
+		}
+	},
+	
+	
+	/**
+	 * Removes all models from the Collection. Fires the {@link #event-remove} event with the models
+	 * that were removed.
+	 * 
+	 * @method removeAll
+	 */
+	removeAll : function() {
+		this.remove( Kevlar.util.Object.clone( this.models, /* deep = */ false ) );  // make a shallow copy of the array to send to this.remove()
+	},
+	
+	
+	/**
+	 * Handles a change to a model's {@link Kevlar.Model#idAttribute}, so that the Collection's 
+	 * {@link #modelsById} hashmap can be updated.
+	 * 
+	 * Note that {@link #onModelEvent} is still called even when this method executes.
+	 * 
+	 * @protected
+	 * @method onModelIdChange
+	 * @param {Kevlar.Model} model The model that fired the change event.
+	 * @param {Mixed} newValue The new value.
+	 * @param {Mixed} oldValue The old value. 
+	 */
+	onModelIdChange : function( model, newValue, oldValue ) {
+		delete this.modelsById[ oldValue ];
+		
+		if( newValue !== undefined && newValue !== null ) {
+			this.modelsById[ newValue ] = model;
+		}
+	},
+	
+	
+	/**
+	 * Handles an event fired by a Model in the Collection by relaying it from the Collection
+	 * (as if the Collection had fired it).
+	 * 
+	 * @protected
+	 * @method onModelEvent
+	 * @param {String} eventName
+	 * @param {Mixed...} args The original arguments passed to the event.
+	 */
+	onModelEvent : function( eventName ) {
+		// If the model was destroyed, we need to remove it from the collection
+		if( eventName === 'destroy' ) {
+			this.remove( arguments[ 1 ] );  // arguments[ 1 ] is the model for the 'destroy' event
+		}
+		
+		// Relay the event from the collection, passing the collection itself, and the original arguments
+		this.fireEvent.apply( this, [ eventName, this ].concat( Array.prototype.slice.call( arguments, 1 ) ) );
+	},
+	
+	
+	// ----------------------------
+	
+	
+	/**
+	 * Retrieves the Model at a given index.
+	 * 
+	 * @method getAt
+	 * @param {Number} index The index to to retrieve the model at.
+	 * @return {Kevlar.Model} The Model at the given index, or null if the index was out of range.
+	 */
+	getAt : function( index ) {
+		return this.models[ index ] || null;
+	},
+	
+	
+	/**
+	 * Convenience method for retrieving the first {@link Kevlar.Model model} in the Collection.
+	 * If the Collection does not have any models, returns null.
+	 * 
+	 * @method getFirst
+	 * @return {Kevlar.Model} The first model in the Collection, or null if the Collection does not have
+	 *   any models.
+	 */
+	getFirst : function() {
+		return this.models[ 0 ] || null;
+	},
+	
+	
+	/**
+	 * Convenience method for retrieving the last {@link Kevlar.Model model} in the Collection.
+	 * If the Collection does not have any models, returns null.
+	 * 
+	 * @method getLast
+	 * @return {Kevlar.Model} The last model in the Collection, or null if the Collection does not have
+	 *   any models.
+	 */
+	getLast : function() {
+		return this.models[ this.models.length - 1 ] || null;
+	},
+	
+	
+	/**
+	 * Retrieves a range of {@link Kevlar.Model Models}, specified by the `startIndex` and `endIndex`. These values are inclusive.
+	 * For example, if the Collection has 4 Models, and `getRange( 1, 3 )` is called, the 2nd, 3rd, and 4th models will be returned.
+	 * 
+	 * @method getRange
+	 * @param {Number} [startIndex=0] The starting index.
+	 * @param {Number} [endIndex] The ending index. Defaults to the last Model in the Collection.
+	 * @return {Kevlar.Model[]} The array of models from the `startIndex` to the `endIndex`, inclusively.
+	 */
+	getRange : function( startIndex, endIndex ) {
+		var models = this.models,
+		    numModels = models.length,
+		    range = [],
+		    i;
+		
+		if( numModels === 0 ) {
+			return range;
+		}
+		
+		startIndex = Math.max( startIndex || 0, 0 ); // don't allow negative indexes
+		endIndex = Math.min( typeof endIndex === 'undefined' ? numModels - 1 : endIndex, numModels - 1 );
+		
+		for( i = startIndex; i <= endIndex; i++ ) {
+			range.push( models[ i ] );
+		}
+		return range; 
+	},
+	
+	
+	/**
+	 * Retrieves all of the models that the Collection has, in order.
+	 * 
+	 * @method getModels
+	 * @return {Kevlar.Model[]} An array of the models that this Collection holds.
+	 */
+	getModels : function() {
+		return this.getRange();  // gets all models
+	},
+	
+	
+	/**
+	 * Retrieves the Array representation of the Collection, where all models are converted into native JavaScript Objects.  The attribute values
+	 * for each of the models are retrieved via the {@link Kevlar.Model#get} method, to pre-process the data before they are returned in the final 
+	 * array of objects, unless the `raw` option is set to true, in which case the Model attributes are retrieved via {@link Kevlar.Model#raw}. 
+	 * 
+	 * @override
+	 * @method getData
+	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This object is sent to
+	 *   the {@link Kevlar.data.NativeObjectConverter#convert NativeObjectConverter's convert method}, and accepts all of the options
+	 *   that the {@link Kevlar.data.NativeObjectConverter#convert} method does. See that method for details.
+	 * @return {Object} A hash of the data, where the property names are the keys, and the values are the {@link Kevlar.attribute.Attribute Attribute} values.
+	 */
+	getData : function( options ) {
+		return Kevlar.data.NativeObjectConverter.convert( this, options );
+	},
+	
+	
+	
+	/**
+	 * Retrieves the number of models that the Collection currently holds.
+	 * 
+	 * @method getCount
+	 * @return {Number} The number of models that the Collection currently holds.
+	 */
+	getCount : function() {
+		return this.models.length;
+	},
+	
+	
+	/**
+	 * Retrieves a Model by its {@link Kevlar.Model#clientId clientId}.
+	 * 
+	 * @method getByClientId
+	 * @param {Number} clientId
+	 * @return {Kevlar.Model} The Model with the given {@link Kevlar.Model#clientId clientId}, or null if there is 
+	 *   no Model in the Collection with that {@link Kevlar.Model#clientId clientId}.
+	 */
+	getByClientId : function( clientId ) {
+		return this.modelsByClientId[ clientId ] || null;
+	},
+	
+	
+	/**
+	 * Retrieves a Model by its {@link Kevlar.Model#id id}. Note: if the Model does not yet have an id, it will not
+	 * be able to be retrieved by this method.
+	 * 
+	 * @method getById
+	 * @param {Mixed} id The id value for the {@link Kevlar.Model Model}.
+	 * @return {Kevlar.Model} The Model with the given {@link Kevlar.Model#id id}, or `null` if no Model was found 
+	 *   with that {@link Kevlar.Model#id id}.
+	 */
+	getById : function( id ) {
+		return this.modelsById[ id ] || null;
+	},
+	
+	
+	/**
+	 * Determines if the Collection has a given {@link Kevlar.Model model}.
+	 * 
+	 * @method has
+	 * @param {Kevlar.Model} model
+	 * @return {Boolean} True if the Collection has the given `model`, false otherwise.
+	 */
+	has : function( model ) {
+		return !!this.getByClientId( model.getClientId() );
+	},
+	
+	
+	/**
+	 * Retrieves the index of the given {@link Kevlar.Model model} within the Collection. 
+	 * Returns -1 if the `model` is not found.
+	 * 
+	 * @method indexOf
+	 * @param {Kevlar.Model} model
+	 * @return {Number} The index of the provided `model`, or of -1 if the `model` was not found.
+	 */
+	indexOf : function( model ) {
+		var models = this.models,
+		    i, len;
+		
+		if( !this.has( model ) ) {
+			// If the model isn't in the Collection, return -1 immediately
+			return -1;
+			
+		} else {
+			for( i = 0, len = models.length; i < len; i++ ) {
+				if( models[ i ] === model ) {
+					return i;
+				}
+			}
+		}
+	},
+	
+	
+	/**
+	 * Retrieves the index of a given {@link Kevlar.Model model} within the Collection by its
+	 * {@link Kevlar.Model#idAttribute id}. Returns -1 if the `model` is not found.
+	 * 
+	 * @method indexOfId
+	 * @param {Mixed} id The id value for the model.
+	 * @return {Number} The index of the model with the provided `id`, or of -1 if the model was not found.
+	 */
+	indexOfId : function( id ) {
+		var model = this.getById( id );
+		if( model ) {
+			return this.indexOf( model );
+		}
+		return -1;
+	},
+	
+	
+	// ----------------------------
+	
+	
+	/**
+	 * Commits any changes in the Collection, so that it is no longer considered "modified".
+	 * 
+	 * @override
+	 * @method commit
+	 */
+	commit : function() {
+		this.modified = false;  // reset flag
+		
+		// TODO: Determine if child models should also be committed. Possibly a flag argument for this?
+		// But for now, maintain consistency with isModified()
+		var models = this.models;
+		for( var i = 0, len = models.length; i < len; i++ ) {
+			models[ i ].commit();
+		}
+	},
+	
+	
+	
+	/**
+	 * Rolls any changes to the Collection back to its state when it was last {@link #commit committed}
+	 * or rolled back.
+	 * 
+	 * @override
+	 * @method rollback 
+	 */
+	rollback : function() {
+		this.modified = false;  // reset flag
+		
+		// TODO: Implement rolling back the collection's state to the array of models that it had before any
+		// changes were made
+		
+		
+		// TODO: Determine if child models should also be rolled back. Possibly a flag argument for this?
+		// But for now, maintain consistency with isModified()
+		var models = this.models;
+		for( var i = 0, len = models.length; i < len; i++ ) {
+			models[ i ].rollback();
+		}
+	},
+	
+	
+	/**
+	 * Determines if the Collection has been added to, removed from, reordered, or 
+	 * has any {@link Kevlar.Model models} which are modified.
+	 * 
+	 * @method isModified
+	 * 
+	 * @param {Object} [options] An object (hash) of options to change the behavior of this method. This may be provided as the first argument to the
+	 *   method if no `attributeName` is to be provided. Options may include:
+	 * @param {Boolean} [options.persistedOnly=false] True to have the method only return true only if a Model exists within it that has a 
+	 *   {@link Kevlar.attribute.Attribute#persist persisted} attribute which is modified. However, if the Collection itself has been modified
+	 *   (by adding/reordering/removing a Model), this method will still return true.
+	 * 
+	 * @return {Boolean} True if the Collection has any modified models, false otherwise.
+	 */
+	isModified : function( options ) {
+		options = options || {};
+		
+		// First, if the collection itself has been added to / removed from / reordered, then it is modified
+		if( this.modified ) {
+			return true;
+			
+		} else {
+			var models = this.models,
+			    i, len;
+			
+			for( i = 0, len = models.length; i < len; i++ ) {
+				if( models[ i ].isModified( options ) ) {
+					return true;
+				}
+			}
+			return false;
+		}
+	},
+	
+	
+	// ----------------------------
+	
+	// Searching methods
+	
+	/**
+	 * Finds the first {@link Kevlar.Model Model} in the Collection by {@link Kevlar.attribute.Attribute Attribute} name, and a given value.
+	 * Uses `===` to compare the value. If a more custom find is required, use {@link #findBy} instead.
+	 * 
+	 * Note that this method is more efficient than using {@link #findBy}, so if it can be used, it should.
+	 * 
+	 * @method find
+	 * @param {String} attributeName The name of the attribute to test the value against.
+	 * @param {Mixed} value The value to look for.
+	 * @param {Object} [options] Optional arguments for this method, provided in an object (hashmap). Accepts the following:
+	 * @param {Number} [options.startIndex] The index in the Collection to start searching from.
+	 * @return {Kevlar.Model} The model where the attribute name === the value, or `null` if no matching model was not found.
+	 */
+	find : function( attributeName, value, options ) {
+		options = options || {};
+		
+		var models = this.models,
+		    startIndex = options.startIndex || 0;
+		for( var i = startIndex, len = models.length; i < len; i++ ) {
+			if( models[ i ].get( attributeName ) === value ) {
+				return models[ i ];
+			}
+		}
+		return null;
+	},
+	
+	
+	/**
+	 * Finds the first {@link Kevlar.Model Model} in the Collection, using a custom function. When the function returns true,
+	 * the model is returned. If the function does not return true for any models, `null` is returned.
+	 * 
+	 * @method findBy
+	 * 
+	 * @param {Function} fn The function used to find the Model. Should return an explicit boolean `true` when there is a match. 
+	 *   This function is passed the following arguments:
+	 * @param {Kevlar.Model} fn.model The current Model that is being processed in the Collection.
+	 * @param {Number} fn.index The index of the Model in the Collection.
+	 * 
+	 * @param {Object} [options]
+	 * @param {Object} [options.scope] The scope to run the function in.
+	 * @param {Number} [options.startIndex] The index in the Collection to start searching from.
+	 * 
+	 * @return {Kevlar.Model} The model that the function returned `true` for, or `null` if no match was found.
+	 */
+	findBy : function( fn, options ) {
+		options = options || {};
+		
+		var models = this.models,
+		    scope = options.scope || window,
+		    startIndex = options.startIndex || 0;
+		    
+		for( var i = startIndex, len = models.length; i < len; i++ ) {
+			if( fn.call( scope, models[ i ], i ) === true ) {
+				return models[ i ];
+			}
+		}
+		return null;
+	}
+
+} );
+
+/**
+ * @abstract
+ * @class Kevlar.attribute.Attribute
+ * @extends Object
+ * 
+ * Base attribute definition class for {@link Kevlar.Model Models}. The Attribute itself does not store data, but instead simply
+ * defines the behavior of a {@link Kevlar.Model Model's} attributes. A {@link Kevlar.Model Model} is made up of Attributes. 
+ * 
+ * Note: You will most likely not instantiate Attribute objects directly. This is used by {@link Kevlar.Model} with its
+ * {@link Kevlar.Model#cfg-attributes attributes} prototype config. Anonymous config objects provided to {@link Kevlar.Model#cfg-attributes attributes}
+ * will be passed to the Attribute constructor.
+ */
+/*global Kevlar */
+Kevlar.attribute.Attribute = Kevlar.extend( Object, {
+	
+	abstractClass: true,
+	
+	
+	/**
+	 * @cfg {String} name (required)
+	 * The name for the attribute, which is used by the owner Model to reference it.
+	 */
+	name : "",
+	
+	/**
+	 * @cfg {String} type
+	 * Specifies the type of the Attribute, in which a conversion of the raw data will be performed.
+	 * This accepts the following general types, but custom types may be added using the {@link Kevlar.attribute.Attribute#registerType} method.
+	 * 
+	 * - {@link Kevlar.attribute.MixedAttribute mixed}: Performs no conversions, and no special processing of given values. This is the default Attribute type (not recommended).
+	 * - {@link Kevlar.attribute.StringAttribute string}
+	 * - {@link Kevlar.attribute.IntegerAttribute int} / {@link Kevlar.attribute.IntegerAttribute integer}
+	 * - {@link Kevlar.attribute.FloatAttribute float} (really a "double")
+	 * - {@link Kevlar.attribute.BooleanAttribute boolean} / {@link Kevlar.attribute.BooleanAttribute bool}
+	 * - {@link Kevlar.attribute.DateAttribute date}
+	 * - {@link Kevlar.attribute.ModelAttribute model}
+	 * - {@link Kevlar.attribute.CollectionAttribute collection}
+	 */
+	
+	/**
+	 * @cfg {Mixed/Function} defaultValue
+	 * The default value for the Attribute, if it has no value of its own. This can also be specified as the config 'default', 
+	 * but must be wrapped in quotes (as `default` is a reserved word in JavaScript).
+	 *
+	 * If the defaultValue is a function, the function will be executed each time a Model is created, and its return value used as 
+	 * the defaultValue. This is useful, for example, to assign a new unique number to an attribute of a model. Ex:
+	 * 
+	 *     MyModel = Kevlar.Model.extend( {
+	 *         attributes : [
+	 *             {
+	 *                 name: 'uniqueId', 
+	 *                 defaultValue: function( attribute ) {
+	 *                     return Kevlar.newId(); 
+	 *                 }
+	 *             }
+	 *         ]
+	 *     } );
+	 * 
+	 * Note that the function is passed the Attribute as its first argument, which may be used to query Attribute properties/configs.
+	 * 
+	 * If an Object is provided as the defaultValue, its properties will be recursed and searched for functions. The functions will
+	 * be executed to provide default values for nested properties of the object in the same way that providing a Function for this config
+	 * will do.
+	 */
+	
+	/**
+	 * @cfg {Function} set
+	 * A function that can be used to convert the raw value provided to the attribute, to a new value which will be stored
+	 * on the {@link Kevlar.Model Model}. This function is passed the following arguments:
+	 * 
+	 * @cfg {Mixed} set.newValue The provided new data value to the attribute. If the attribute has no initial data value, its {@link #defaultValue}
+	 *   will be provided to this argument upon instantiation of the {@link Kevlar.Model Model}.
+	 * @cfg {Mixed} set.oldValue The old value that the attribute held (if any).
+	 * 
+	 * The function should then do any processing that is necessary, and return the value that the Attribute should hold. For example,
+	 * this `set` function will convert a string value to a 
+	 * <a href="https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Date" target="_blank">Date</a>
+	 * object. Otherwise, it will return the value unchanged:
+	 *     
+	 *     {
+	 *         name : 'myDateAttr',
+	 *         
+	 *         set : function( newValue, oldValue ) {
+	 *             if( typeof value === 'string' ) {
+	 *                 value = new Date( value );
+	 *             }
+	 *             return value;
+	 *         }
+	 *     }
+	 * 
+	 * Just as with {@link #get}, the `set` function is called in the scope of the {@link Kevlar.Model Model} that owns the attribute. 
+	 * This can be used to set other attributes of a "computed" attribute. Ex:
+	 * 
+	 *     {
+	 *         // A "computed" attribute which combines the 'firstName' and 'lastName' attributes in this model (assuming they are there)
+	 *         name : 'fullName',
+	 *         
+	 *         set : function( newValue, oldValue ) {
+	 *             // A setter which takes the first and last name given (such as "Gregory Jacobs"), and splits them up into 
+	 *             // their appropriate parts, to set the appropriate attributes for the computed attribute
+	 *             var names = newValue.split( ' ' );  // split on the space between first and last name
+	 *             
+	 *             // Note: `this` refers to the model which is setting the value, so we can call the set() method
+	 *             this.set( 'firstName', names[ 0 ] );
+	 *             this.set( 'lastName', names[ 1 ] );
+	 *         },
+	 * 
+	 *         get : function( value ) {
+	 *             return this.get( 'firstName' ) + " " + this.get( 'lastName' );  // Combine firstName and lastName for the computed attribute. `this` refers to the model
+	 *         }
+	 *     }
+	 * 
+	 * The function is run in the context (the `this` reference) of the {@link Kevlar.Model Model} instance that owns the attribute, in the that case 
+	 * that other Attributes need to be queried, or need to be {@link Kevlar.Model#set set} by the `set` function. However, in the case of querying 
+	 * other Attributes for their value, be careful in that they may not be set to the expected value when the `set` function executes. For creating 
+	 * computed Attributes that rely on other Attributes' values, use a {@link #get} function instead.
+	 * 
+	 * Notes:
+	 * 
+	 * - Both a `set` and a {@link #get} function can be used in conjunction.
+	 * - The `set` function is called upon instantiation of the {@link Kevlar.Model Model} if the Model is passed an initial value
+	 *   for the Attribute, or if the Attribute has a {@link #defaultValue}.
+	 * 
+	 * 
+	 * When using {@link #type typed} Attributes, providing a `set` function overrides the Attribute's {@link #method-set set} method, which
+	 * does the automatic conversion that the Attribute subclass advertises. If you would like to still use the original {@link #method-set set}
+	 * method in conjunction with pre-processing and/or post-processing the value, you can call the original {@link #method-set set} method as
+	 * such:
+	 * 
+	 *     {
+	 *         // Some integer value attribute, which may need to convert string values (such as "123") to an actual integer 
+	 *         // (done behind the scenes via `parseInt()`)
+	 *         name : 'myValue',
+	 *         type : 'int',
+	 *         
+	 *         set : function( newValue, oldValue ) {
+	 *             // Pre-process the raw newValue here, if desired
+	 *             
+	 *             // Call the original `set` method, which does the conversion to an integer if need be
+	 *             newValue = this._super( arguments );
+	 *             
+	 *             // Post-process the converted newValue here, if desired
+	 *             
+	 *             // And finally, return the value that should be stored for the attribute
+	 *             return newValue;
+	 *         }
+	 *     }
+	 */
+	
+	/**
+	 * @cfg {Function} get
+	 * A function that can be used to change the value that is returned when the Model's {@link Kevlar.Model#get get} method is called
+	 * on the Attribute. This is useful to create "computed" attributes, which may be created based on other Attributes' values.  The function is 
+	 * passed the argument of the underlying stored value, and should return the computed value.
+	 * 
+	 * @cfg {Mixed} get.value The value that the Attribute currently has stored in the {@link Kevlar.Model Model}.
+	 * 
+	 * For example, if we had a {@link Kevlar.Model Model} with `firstName` and `lastName` Attributes, and we wanted to create a `fullName` 
+	 * Attribute, this could be done as in the example below. Note that just as with {@link #cfg-set}, the `get` function is called in the 
+	 * scope of the {@link Kevlar.Model Model} that owns the attribute. 
+	 * 
+	 *     {
+	 *         name : 'fullName',
+	 *         get : function( value ) {  // in this example, the Attribute has no value of its own, so we ignore the arg
+	 *             return this.get( 'firstName' ) + " " + this.get( 'lastName' );   // `this` refers to the model that owns the Attribute
+	 *         }
+	 *     }
+	 * 
+	 * Note: if the intention is to convert a provided value which needs to be stored on the {@link Kevlar.Model Model} in a different way,
+	 * use a {@link #cfg-set} function instead. 
+	 * 
+	 * However, also note that both a {@link #cfg-set} and a `get` function can be used in conjunction.
+	 */
+	
+	/**
+	 * @cfg {Function} raw
+	 * A function that can be used to convert an Attribute's value to a raw representation, usually for persisting data on a server.
+	 * This function is automatically called (if it exists) when a persistence {@link Kevlar.persistence.Proxy proxy} is collecting
+	 * the data to send to the server. The function is passed two arguments, and should return the raw value.
+	 * 
+	 * @cfg {Mixed} raw.value The underlying value that the Attribute currently has stored in the {@link Kevlar.Model Model}.
+	 * @cfg {Kevlar.Model} raw.model The Model instance that this Attribute belongs to.
+	 * 
+	 * For example, a Date object is normally converted to JSON with both its date and time components in a serialized string (such
+	 * as "2012-01-26T01:20:54.619Z"). To instead persist the Date in m/d/yyyy format, one could create an Attribute such as this:
+	 * 
+	 *     {
+	 *         name : 'eventDate',
+	 *         set : function( value, model ) { return new Date( value ); },  // so the value is stored as a Date object when used client-side
+	 *         raw : function( value, model ) {
+	 *             return (value.getMonth()+1) + '/' + value.getDate() + '/' + value.getFullYear();  // m/d/yyyy format 
+	 *         }
+	 *     }
+	 * 
+	 * The value that this function returns is the value that is used when the Model's {@link Kevlar.Model#raw raw} method is called
+	 * on the Attribute.
+	 */
+	
+	/**
+	 * @cfg {Boolean} persist
+	 * True if the attribute should be persisted by its {@link Kevlar.Model Model} using the Model's {@link Kevlar.Model#persistenceProxy persistenceProxy}.
+	 * Set to false to prevent the attribute from being persisted.
+	 */
+	persist : true,
+	
+	
+	
+	
+	statics : {
+		/**
+		 * An object (hashmap) which stores the registered Attribute types. It maps type names to Attribute subclasses.
+		 * 
+		 * @private
+		 * @static
+		 * @property {Object} attributeTypes
+		 */
+		attributeTypes : {},
+		
+		
+		/**
+		 * Static method to instantiate the appropriate Attribute subclass based on a configuration object, based on its `type` property.
+		 * 
+		 * @static
+		 * @method create
+		 * @param {Object} config The configuration object for the Attribute. Config objects should have the property `type`, 
+		 *   which determines which type of Attribute will be instantiated. If the object does not have a `type` property, it will default 
+		 *   to `mixed`, which accepts any data type, but does not provide any type checking / data consistency. Note that already-instantiated 
+		 *   Attributes will simply be returned unchanged. 
+		 * @return {Kevlar.attribute.Attribute} The instantiated Attribute.
+		 */
+		create : function( config ) {
+			var type = config.type ? config.type.toLowerCase() : undefined;
+		
+			if( config instanceof Kevlar.attribute.Attribute ) {
+				// Already an Attribute instance, return it
+				return config;
+				
+			} else if( this.hasType( type || "mixed" ) ) {
+				return new this.attributeTypes[ type || "mixed" ]( config );
+				
+			} else {
+				// No registered type with the given config's `type`, throw an error
+				throw new Error( "Kevlar.attribute.Attribute: Unknown Attribute type: '" + type + "'" );
+			}
+		},
+		
+		
+		/**
+		 * Static method used to register implementation Attribute subclass types. When creating an Attribute subclass, it 
+		 * should be registered with the Attribute superclass (this class), so that it can be instantiated by a string `type` 
+		 * name in an anonymous configuration object. Note that type names are case-insensitive.
+		 * 
+		 * This method will throw an error if a type name is already registered, to assist in making sure that we don't get
+		 * unexpected behavior from a type name being overwritten.
+		 * 
+		 * @static
+		 * @method registerType
+		 * @param {String} typeName The type name of the registered class. Note that this is case-insensitive.
+		 * @param {Function} jsClass The Attribute subclass (constructor function) to register.
+		 */
+		registerType : function( type, jsClass ) {
+			type = type.toLowerCase();
+			
+			if( !this.attributeTypes[ type ] ) { 
+				this.attributeTypes[ type ] = jsClass;
+			} else {
+				throw new Error( "Error: Attribute type '" + type + "' already exists" );
+			}
+		},
+		
+		
+		/**
+		 * Retrieves the Component class (constructor function) that has been registered by the supplied `type` name. 
+		 * 
+		 * @method getType
+		 * @param {String} type The type name of the registered class.
+		 * @return {Function} The class (constructor function) that has been registered under the given type name.
+		 */
+		getType : function( type ) {
+			return this.attributeTypes[ type.toLowerCase() ];
+		},
+		
+		
+		/**
+		 * Determines if there is a registered Attribute type with the given `typeName`.
+		 * 
+		 * @method hasType
+		 * @param {String} typeName
+		 * @return {Boolean}
+		 */
+		hasType : function( typeName ) {
+			if( !typeName ) {  // any falsy type value given, return false
+				return false;
+			} else {
+				return !!this.attributeTypes[ typeName.toLowerCase() ];
+			}
+		}
+	},
+	
+	
+	// End Statics
+	
+	// -------------------------------
+	
+	
+	
+	/**
+	 * Creates a new Attribute instance. Note: You will normally not be using this constructor function, as this class
+	 * is only used internally by {@link Kevlar.Model}.
+	 * 
+	 * @constructor 
+	 * @param {Object/String} config An object (hashmap) of the Attribute object's configuration options, which is its definition. 
+	 *   Can also be its Attribute {@link #name} provided directly as a string.
+	 */
+	constructor : function( config ) {
+		var me = this;
+		
+		// If the argument wasn't an object, it must be its attribute name
+		if( typeof config !== 'object' ) {
+			config = { name: config };
+		}
+		
+		// Copy members of the attribute definition (config) provided onto this object
+		Kevlar.apply( me, config );
+		
+		
+		// Each Attribute must have a name.
+		var name = me.name;
+		if( name === undefined || name === null || name === "" ) {
+			throw new Error( "no 'name' property provided to Kevlar.attribute.Attribute constructor" );
+			
+		} else if( typeof me.name === 'number' ) {  // convert to a string if it is a number
+			me.name = name.toString();
+		}
+		
+		
+		// Normalize defaultValue
+		if( me[ 'default' ] ) {  // accept the key as simply 'default'
+			me.defaultValue = me[ 'default' ];
+		}
+	},
+	
+	
+	/**
+	 * Retrieves the name for the Attribute.
+	 * 
+	 * @method getName
+	 * @return {String}
+	 */
+	getName : function() {
+		return this.name;
+	},
+	
+	
+	/**
+	 * Retrieves the default value for the Attribute. 
+	 * 
+	 * @method getDefaultValue
+	 * @return {Mixed}
+	 */
+	getDefaultValue : function() {
+		var defaultValue = this.defaultValue;
+		
+		if( typeof defaultValue === "function" ) {
+			defaultValue = defaultValue( this );
+		}
+		
+		// If defaultValue is an object, clone it, to not edit the original object structure
+		if( typeof defaultValue === 'object' ) {
+			defaultValue = Kevlar.util.Object.clone( defaultValue );
+		}
+		
+		return defaultValue;
+	},
+	
+	
+	
+	/**
+	 * Determines if the Attribute should be persisted.
+	 * 
+	 * @method isPersisted
+	 * @return {Boolean}
+	 */
+	isPersisted : function() {
+		return this.persist;
+	},
+	
+	
+	/**
+	 * Determines if the Attribute has a user-defined setter (i.e. the {@link #cfg-set set} config was provided).
+	 * 
+	 * @method hasUserDefinedSetter
+	 * @return {Boolean} True if the Attribute was provided a user-defined {@link #cfg-set set} function. 
+	 */
+	hasUserDefinedSetter : function() {
+		return this.hasOwnProperty( 'set' );
+	},
+	
+	
+	/**
+	 * Determines if the Attribute has a user-defined getter (i.e. the {@link #cfg-get get} config was provided).
+	 * 
+	 * @method hasUserDefinedGetter
+	 * @return {Boolean} True if the Attribute was provided a user-defined {@link #cfg-get get} function. 
+	 */
+	hasUserDefinedGetter : function() {
+		return this.hasOwnProperty( 'get' );
+	},
+	
+	
+	// ---------------------------
+	
+	
+	/**
+	 * Allows the Attribute to determine if two values of its data type are equal, and the model
+	 * should consider itself as "changed". This method is passed the "old" value and the "new" value
+	 * when a value is {@link Kevlar.Model#set set} to the Model, and if this method returns `false`, the
+	 * new value is taken as a "change".
+	 * 
+	 * This may be overridden by subclasses to provide custom comparisons, but the default implementation is
+	 * to directly compare primitives, and deep compare arrays and objects.
+	 * 
+	 * @method valuesAreEqual
+	 * @param {Mixed} oldValue
+	 * @param {Mixed} newValue
+	 * @return {Boolean} True if the values are equal, and the Model should *not* consider the new value as a 
+	 *   change of the old value, or false if the values are different, and the new value should be taken as a change.
+	 */
+	valuesAreEqual : function( oldValue, newValue ) {
+		return Kevlar.util.Object.isEqual( oldValue, newValue );
+	},
+	
+	
+	// ---------------------------
+	
+	
+	/**
+	 * Method that allows pre-processing for the value that is to be set to a {@link Kevlar.Model}.
+	 * After this method has processed the value, it is provided to the {@link #cfg-set} function (if
+	 * one exists) or the {@link #method-set set} method, and then finally, the return value from 
+	 * {@link #cfg-set set} will be provided to {@link #afterSet}, and then set as the data on the 
+	 * {@link Kevlar.Model Model}.
+	 * 
+	 * Note that the default implementation simply returns the raw value unchanged, but this may be overridden
+	 * in subclasses to provide a conversion.
+	 * 
+	 * @method beforeSet
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
+	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
+	 * @return {Mixed} The converted value.
+	 */
+	beforeSet : function( model, newValue, oldValue ) {
+		return newValue;
+	},
+	
+	
+	/**
+	 * Indirection method that is called by a {@link Kevlar.Model} when the {@link #method-set} method is to be called. This method provides
+	 * a wrapping function that allows for `this._super( arguments )` to be called when a {@link #cfg-set} config is provided, to call the 
+	 * original conversion method from a {@link #cfg-set} config function.
+	 * 
+	 * Basically, it allows:
+	 *     var MyModel = Kevlar.Model.extend( {
+	 *         attributes: [
+	 *             {
+	 *                 name: 'myAttr',
+	 *                 type: 'int',
+	 *                 set: function( newValue, oldValue ) {
+	 *                     // Preprocess the new value (if desired)
+	 *                     
+	 *                     newValue = this._super( [ newValue, oldValue ] );  // run original conversion provided by 'int' attribute
+	 *                     
+	 *                     // post process the new value (if desired)
+	 *                 }
+	 *             }
+	 *         ]
+	 *     } );
+	 * 
+	 * @method doSet
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method, after it has been processed
+	 *   by the {@link #beforeSet} method..
+	 * @param {Mixed} oldValue The old (previous) value that the model held.
+	 */
+	doSet : function( model, newValue, oldValue ) {
+		if( this.hasOwnProperty( 'set' ) ) {  // a 'set' config was provided
+			// Call the provided 'set' function in the scope of the model
+			return this.set.call( model, newValue, oldValue );
+			
+		} else {
+			// No 'set' config provided, just call the set() method on the prototype
+			return this.set( model, newValue, oldValue );
+		}
+	},
+	
+	
+	
+	/**
+	 * Method that allows processing of the value that is to be set to a {@link Kevlar.Model}. This method is executed after
+	 * the {@link #beforeSet} method, and before the {@link #afterSet} method, and can be overridden by the {@link #cfg-set set}
+	 * config. 
+	 * 
+	 * @method set
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method, after it has been processed
+	 *   by the {@link #beforeSet} method..
+	 * @param {Mixed} oldValue The old (previous) value that the model held.
+	 */
+	set : function( model, newValue, oldValue ) {
+		return newValue;
+	},
+	
+	
+	/**
+	 * Method that allows post-processing for the value that is to be set to a {@link Kevlar.Model}.
+	 * This method is executed after the {@link #beforeSet} method, and the {@link #cfg-set} function (if one is provided), and is given 
+	 * the value that the {@link #cfg-set} function returns. If no {@link #cfg-set} function exists, this will simply be executed 
+	 * immediately after {@link #beforeSet}, after which the return from this method will be set as the data on the {@link Kevlar.Model Model}.
+	 * 
+	 * Note that the default implementation simply returns the value unchanged, but this may be overridden
+	 * in subclasses to provide a conversion.
+	 * 
+	 * @method afterSet
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} value The value provided to the {@link Kevlar.Model#set} method, after it has been processed by the
+	 *   {@link #beforeSet} method, and any provided {@link #cfg-set} function.
+	 * @return {Mixed} The converted value.
+	 */
+	afterSet : function( model, value ) {
+		return value;
+	}
+	
+} );
+
+/**
+ * @abstract
+ * @class Kevlar.attribute.PrimitiveAttribute
+ * @extends Kevlar.attribute.Attribute
+ * 
+ * Base Attribute definition class for an Attribute that holds a JavaScript primitive value 
+ * (i.e. A Boolean, Number, or String).
+ */
+/*global Kevlar */
+Kevlar.attribute.PrimitiveAttribute = Kevlar.attribute.Attribute.extend( {
+	
+	abstractClass: true,
+	
+	/**
+	 * @cfg {Boolean} useNull
+	 * True to allow `null` to be set to the Attribute (which is usually used to denote that the 
+	 * Attribute is "unset", and it shouldn't take an actual default value).
+	 * 
+	 * This is also used when parsing the provided value for the Attribute. If this config is true, and the value 
+	 * cannot be "easily" parsed into a valid representation of its primitive type, `null` will be used 
+	 * instead of converting to the primitive type's default.
+	 */
+	useNull : false
+	
+} );
+
+/**
+ * @abstract
+ * @class Kevlar.attribute.IntegerAttribute
+ * @extends Kevlar.attribute.PrimitiveAttribute
+ * 
+ * Abstract base class for an Attribute that takes a number data value.
+ */
+/*global Kevlar */
+Kevlar.attribute.NumberAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
+	
+	abstractClass: true,
+	
+	/**
+	 * @cfg {Mixed/Function} defaultValue
+	 * @inheritdoc
+	 * 
+	 * The NumberAttribute defaults to 0, unless the {@link #useNull} config is 
+	 * set to `true`, in which case it defaults to `null` (to denote the Attribute being "unset").
+	 */
+	defaultValue: function( attribute ) {
+		return attribute.useNull ? null : 0;
+	},
+	
+	
+	/**
+	 * @cfg {Boolean} useNull
+	 * True to allow `null` to be set to the Attribute (which is usually used to denote that the 
+	 * Attribute is "unset", and it shouldn't take an actual default value).
+	 * 
+	 * This is also used when parsing the provided value for the Attribute. If this config is true, and the value 
+	 * cannot be "easily" parsed into an integer (i.e. if it's undefined, null, or empty string), `null` will be used 
+	 * instead of converting to 0.
+	 */
+	
+	
+	/**
+	 * @protected
+	 * @property {RegExp} stripCharsRegex 
+	 * 
+	 * A regular expression for stripping non-numeric characters from a numeric value. Defaults to `/[\$,%]/g`.
+	 * This should be overridden for localization. A way to do this globally is, for example:
+	 * 
+	 *     Kevlar.attribute.NumberAttribute.prototype.stripCharsRegex = /newRegexHere/g;
+	 */
+	stripCharsRegex : /[\$,%]/g
+	
+} );
+
+/**
+ * @class Kevlar.attribute.ObjectAttribute
+ * @extends Kevlar.attribute.Attribute
+ * 
+ * Attribute definition class for an Attribute that takes an object value.
+ */
+/*global Kevlar */
+Kevlar.attribute.ObjectAttribute = Kevlar.attribute.Attribute.extend( {
+	
+	/**
+	 * @cfg {Object} defaultValue
+	 * @inheritdoc
+	 */
+	defaultValue : null,
+	
+	
+	/**
+	 * Overridden `beforeSet` method used to normalize the value provided. All non-object values are converted to null,
+	 * while object values are returned unchanged.
+	 * 
+	 * @override
+	 * @method beforeSet
+	 * @inheritdoc
+	 */
+	beforeSet : function( model, newValue, oldValue ) {
+		if( typeof newValue !== 'object' ) {
+			newValue = null;  // convert all non-object values to null
+		}
+		
+		return newValue;
+	}
+	
+} );
+
+
+// Register the Attribute type
+Kevlar.attribute.Attribute.registerType( 'object', Kevlar.attribute.ObjectAttribute );
+
+/**
+ * @abstract
+ * @class Kevlar.attribute.DataComponentAttribute
+ * @extends Kevlar.attribute.ObjectAttribute
+ * 
+ * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.DataComponent} value.
+ */
+/*global window, Kevlar */
+Kevlar.attribute.DataComponentAttribute = Kevlar.attribute.ObjectAttribute.extend( {
+	
+	abstractClass: true,
+	
+	
+	/**
+	 * @cfg {Boolean} embedded
+	 * Setting this config to true has the parent {@link Kevlar.Model Model} treat the child {@link Kevlar.DataComponent DataComponent} as if it is a part of itself. 
+	 * Normally, a child DataComponent that is not embedded is treated as a "relation", where it is considered as independent from the parent Model.
+	 * 
+	 * What this means is that, when true:
+	 * 
+	 * - The parent Model is considered as "changed" when there is a change in the child DataComponent is changed. This Attribute 
+	 *   (the attribute that holds the child DataComponent) is the "change".
+	 * - The parent Model's {@link Kevlar.Model#change change} event is fired when an attribute on the child DataComponent (Model or Collection) has changed.
+	 * - The child DataComponent's data is persisted with the parent Model's data, unless the {@link #persistIdOnly} config is set to true,
+	 *   in which case just the child DataComponent's {@link Kevlar.Model#idAttribute id} is persisted with the parent Model. In the case of a {@link Kevlar.Collection},
+	 *   the ID's of the models are only persisted if {@link #persistIdOnly} is true.
+	 */
+	embedded : false,
+	
+	/**
+	 * @cfg {Boolean} persistIdOnly
+	 * In the case that the {@link #embedded} config is true, set this to true to only have the {@link Kevlar.Model#idAttribute id} of the embedded 
+	 * model(s) be persisted, rather than all of the Model/Collection data. Normally, when {@link #embedded} is false (the default), the child 
+	 * {@link Kevlar.DataComponent DataComponent} is treated as a relation, and only its {@link Kevlar.Model#idAttribute ids} is/are persisted.
+	 */
+	persistIdOnly : false,
+	
+	
+	// -------------------------------
+	
+	
+	/**
+	 * Determines if the Attribute is an {@link #embedded} Attribute.
+	 * 
+	 * @method isEmbedded
+	 * @return {Boolean}
+	 */
+	isEmbedded : function() {
+		return this.embedded;
+	},
+	
+	
+	
+	/**
+	 * Utility method to resolve a string path to an object from the global scope to the
+	 * actual object.
+	 * 
+	 * @protected
+	 * @method resolveGlobalPath
+	 * @param {String} path A string in the form "a.b.c" which will be resolved to the actual `a.b.c` object
+	 *   from the global scope (`window`).
+	 * @return {Mixed} The value at the given path under the global scope. Returns undefined if the value at the
+	 *   path was not found (or this method errors if an intermediate path is not found).
+	 */
+	resolveGlobalPath : function( path ) {
+		var paths = path.split( '.' );
+		
+		// Loop through the namespaces down to the end of the path, and return the value.
+		var value;
+		for( var i = 0, len = paths.length; i < len; i++ ) {
+			value = ( value || window )[ paths[ i ] ];
+		}
+		return value;
+	}
+	
+} );
+
+/**
+ * @class Kevlar.attribute.BooleanAttribute
+ * @extends Kevlar.attribute.PrimitiveAttribute
+ * 
+ * Attribute definition class for an Attribute that takes a boolean (i.e. true/false) data value.
+ */
+/*global Kevlar */
+Kevlar.attribute.BooleanAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
+	
+	/**
+	 * @cfg {Mixed/Function} defaultValue
+	 * @inheritdoc
+	 * 
+	 * The BooleanAttribute defaults to `false`, unless the {@link #useNull} config is set to `true`, 
+	 * in which case it defaults to `null` (to denote the Attribute being "unset").
+	 */
+	defaultValue: function( attribute ) {
+		return attribute.useNull ? null : false;
+	},
+	
+	
+	/**
+	 * @cfg {Boolean} useNull
+	 * True to allow `null` to be set to the Attribute (which is usually used to denote that the 
+	 * Attribute is "unset", and it shouldn't take an actual default value).
+	 * 
+	 * This is also used when parsing the provided value for the Attribute. If this config is true, and the value 
+	 * cannot be "easily" parsed into a Boolean (i.e. if it's undefined, null, or an empty string), 
+	 * `null` will be used instead of converting to `false`.
+	 */
+	
+	
+	/**
+	 * Converts the provided data value into a Boolean. If {@link #useNull} is true, "unparsable" values
+	 * will return null. 
+	 * 
+	 * @method beforeSet
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
+	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
+	 * @return {Boolean} The converted value.
+	 */
+	beforeSet : function( model, newValue, oldValue ) {
+		if( this.useNull && ( newValue === undefined || newValue === null || newValue === '' ) ) {
+			return null;
+		}
+		return newValue === true || newValue === 'true' || newValue == 1;
+	}
+	
+} );
+
+
+// Register the Attribute type
+Kevlar.attribute.Attribute.registerType( 'boolean', Kevlar.attribute.BooleanAttribute );
+Kevlar.attribute.Attribute.registerType( 'bool', Kevlar.attribute.BooleanAttribute );
+
+/**
+ * @class Kevlar.attribute.CollectionAttribute
+ * @extends Kevlar.attribute.DataComponentAttribute
+ * 
+ * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.Collection} value.
+ * 
+ * This class enforces that the Attribute hold a {@link Kevlar.Collection Collection} value, or null. However, it will
+ * automatically convert an array of {@link Kevlar.Model models} or anonymous data objects into the appropriate 
+ * {@link Kevlar.Collection Collection} subclass, using the Collection provided to the {@link #collectionClass} config.
+ * Anonymous data objects in this array will be converted to the model type provided to the collection's 
+ * {@link Kevlar.Collection#model}. 
+ * 
+ * Otherwise, you must either provide a {@link Kevlar.Collection} subclass as the value, or use a custom {@link #cfg-set} 
+ * function to convert any anonymous array to a Collection in the appropriate way. 
+ */
+/*global window, Class, Kevlar */
+Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.extend( {
+		
+	/**
+	 * @cfg {Array/Kevlar.Collection} defaultValue
+	 * @inheritdoc
+	 * 
+	 * Defaults to an empty array, to create an empty Collection of the given {@link #collectionClass} type.
+	 */
+	//defaultValue : [],  -- Not yet fully implemented on a general level. Can use this in code though.
+	
+	/**
+	 * @cfg {Kevlar.Collection/String/Function} collectionClass (required)
+	 * The specific {@link Kevlar.Collection} subclass that will be used in the CollectionAttribute. This config is needed
+	 * to perform automatic conversion of an array of models / anonymous data objects into the approperiate Collection subclass.
+	 * 
+	 * This config may be provided as:
+	 * 
+	 * - A direct reference to a Collection (ex: `myApp.collections.MyCollection`),
+	 * - A String which specifies the object path to the Collection (which must be able to be referenced from the global scope, 
+	 * 	 ex: 'myApp.collections.MyCollection'), 
+	 * - Or a function, which will return a reference to the Collection that should be used. 
+	 * 
+	 * The reason that this config may be specified as a String or a Function is to allow for late binding to the Collection class 
+	 * that is used, where the Collection class that is to be used does not have to exist in the source code until a value is 
+	 * actually set to the Attribute. This allows for the handling of circular dependencies as well.
+	 */
+	
+	/**
+	 * @cfg {Boolean} embedded
+	 * Setting this config to true has the parent {@link Kevlar.Model Model} treat the child {@link Kevlar.Collection Collection} as if it is 
+	 * a part of itself. Normally, a child Collection that is not embedded is treated as a "relation", where it is considered as independent 
+	 * from the parent Model.
+	 * 
+	 * What this means is that, when true:
+	 * 
+	 * - The parent Model is considered as "changed" when a model in the child Collection is changed, or one has been added/removed. This Attribute 
+	 *   (the attribute that holds the child collection) is the "change".
+	 * - The parent Model's {@link Kevlar.Model#change change} event is fired when a model on the child Collection has changed, or one has 
+	 *   been added/removed.
+	 * - The child Collection's model data is persisted with the parent Collection's data, unless the {@link #persistIdOnly} config is set to true,
+	 *   in which case just the child Collection's models' {@link Kevlar.Model#idAttribute ids} are persisted with the parent Model.
+	 */
+	embedded : false,
+	
+	/**
+	 * @cfg {Boolean} persistIdOnly
+	 * In the case that the {@link #embedded} config is true, set this to true to only have the {@link Kevlar.Model#idAttribute id} of the embedded 
+	 * collection's models be persisted, rather than all of the collection's model data. Normally, when {@link #embedded} is false (the default), 
+	 * the child {@link Kevlar.Collection Collection} is treated as a relation, and only its model's {@link Kevlar.Model#idAttribute ids} are persisted.
+	 */
+	persistIdOnly : false,
+	
+	
+	// -------------------------------
+	
+	
+	constructor : function() {
+		this._super( arguments );
+		
+		// Check if the user did not provide a collectionClass, or the value is undefined (which means that they specified
+		// a class that either doesn't exist, or doesn't exist yet, and we should give them an error to alert them).
+		// <debug>
+		if( 'collectionClass' in this && this.collectionClass === undefined ) {
+			throw new Error( "The 'collectionClass' config provided to an Attribute with the name '" + this.getName() + "' either doesn't exist, or doesn't " +
+			                 "exist just yet. Consider using the String or Function form of the collectionClass config for late binding, if needed" );
+		}
+		// </debug>
+	},
+	
+	
+	/**
+	 * Overridden method used to determine if two collections are equal.
+	 * @inheritdoc
+	 * 
+	 * @override
+	 * @method valuesAreEqual
+	 * @param {Mixed} oldValue
+	 * @param {Mixed} newValue
+	 * @return {Boolean} True if the values are equal, and the Model should *not* consider the new value as a 
+	 *   change of the old value, or false if the values are different, and the new value should be taken as a change.
+	 */
+	valuesAreEqual : function( oldValue, newValue ) {
+		// If the references are the same, they are equal. Many collections can be made to hold the same models.
+		return oldValue === newValue;
+	},
+	
+	
+	/**
+	 * Overridden `beforeSet` method used to convert any arrays into the specified {@link #collectionClass}. The array
+	 * will be provided to the {@link #collectionClass collectionClass's} constructor.
+	 * 
+	 * @override
+	 * @method beforeSet
+	 * @inheritdoc
+	 */
+	beforeSet : function( model, newValue, oldValue ) {
+		// First, if the oldValue was a Model, and this attribute is an "embedded" collection, we need to unsubscribe it from its parent model
+		if( this.embedded && oldValue instanceof Kevlar.Collection ) {
+			model.unsubscribeEmbeddedCollection( this.getName(), oldValue );
+		}
+		
+		// Now, normalize the newValue to an object, or null
+		newValue = this._super( arguments );
+		
+		if( newValue !== null ) {
+			var collectionClass = this.collectionClass;
+			
+			// Normalize the collectionClass
+			if( typeof collectionClass === 'string' ) {
+				collectionClass = this.resolveGlobalPath( collectionClass );  // changes the string "a.b.c" into the value at `window.a.b.c`
+				
+				if( !collectionClass ) {
+					throw new Error( "The string value 'collectionClass' config did not resolve to a Collection class for attribute '" + this.getName() + "'" );
+				}
+			} else if( typeof collectionClass === 'function' && !Class.isSubclassOf( collectionClass, Kevlar.Collection ) ) {  // it's not a Kevlar.Collection subclass, so it must be an anonymous function. Run it, so it returns the Collection reference we need
+				this.collectionClass = collectionClass = collectionClass();
+				if( !collectionClass ) {
+					throw new Error( "The function value 'collectionClass' config did not resolve to a Collection class for attribute '" + this.getName() + "'" );
+				}
+			}
+			
+			if( newValue && typeof collectionClass === 'function' && !( newValue instanceof collectionClass ) ) {
+				newValue = new collectionClass( newValue );
+			}
+		}
+		
+		return newValue;
+	},
+	
+	
+	/**
+	 * Overridden `afterSet` method used to subscribe to add/remove/change events on a set child {@link Kevlar.Collection Collection}, 
+	 * if {@link #embedded} is true.
+	 * 
+	 * @override
+	 * @method afterSet
+	 * @inheritdoc
+	 */
+	afterSet : function( model, value ) {
+		// Enforce that the value is either null, or a Kevlar.Collection
+		if( value !== null && !( value instanceof Kevlar.Collection ) ) {
+			throw new Error( "A value set to the attribute '" + this.getName() + "' was not a Kevlar.Collection subclass" );
+		}
+		
+		if( this.embedded && value instanceof Kevlar.Collection ) {
+			model.subscribeEmbeddedCollection( this.getName(), value );
+		}
+		
+		return value;
+	}
+	
+} );
+
+
+// Register the Attribute type
+Kevlar.attribute.Attribute.registerType( 'collection', Kevlar.attribute.CollectionAttribute );
+
+/**
+ * @class Kevlar.attribute.DateAttribute
+ * @extends Kevlar.attribute.ObjectAttribute
+ * 
+ * Attribute definition class for an Attribute that takes a JavaScript Date object.
+ */
+/*global Kevlar */
+Kevlar.attribute.DateAttribute = Kevlar.attribute.ObjectAttribute.extend( {
+		
+	/**
+	 * Converts the provided data value into a Date object. If the value provided is not a Date, or cannot be parsed
+	 * into a Date, will return null.
+	 * 
+	 * @method beforeSet
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
+	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
+	 * @return {Boolean} The converted value.
+	 */
+	beforeSet : function( model, newValue, oldValue ) {
+		if( !newValue ) {
+			return null;
+		}
+		if( Kevlar.isDate( newValue ) ) {
+			return newValue;
+		}
+		
+		var parsed = Date.parse( newValue );
+		return ( parsed ) ? new Date( parsed ) : null;
+	}
+} );
+
+
+// Register the Attribute type
+Kevlar.attribute.Attribute.registerType( 'date', Kevlar.attribute.DateAttribute );
+
+/**
+ * @class Kevlar.attribute.FloatAttribute
+ * @extends Kevlar.attribute.NumberAttribute
+ * 
+ * Attribute definition class for an Attribute that takes a float (i.e. decimal, or "real") number data value.
+ */
+/*global Kevlar */
+Kevlar.attribute.FloatAttribute = Kevlar.attribute.NumberAttribute.extend( {
+	
+	/**
+	 * Converts the provided data value into a float. If {@link #useNull} is true, undefined/null/empty string 
+	 * values will return null, or else will otherwise be converted to 0. If the number is simply not parsable, will 
+	 * return NaN.
+	 * 
+	 * @method beforeSet
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
+	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
+	 * @return {Boolean} The converted value.
+	 */
+	beforeSet : function( model, newValue, oldValue ) {
+		var defaultValue = ( this.useNull ) ? null : 0;
+		return ( newValue !== undefined && newValue !== null && newValue !== '' ) ? parseFloat( String( newValue ).replace( this.stripCharsRegex, '' ), 10 ) : defaultValue;
+	}
+	
+} );
+
+
+// Register the Attribute type
+Kevlar.attribute.Attribute.registerType( 'float', Kevlar.attribute.FloatAttribute );
+Kevlar.attribute.Attribute.registerType( 'number', Kevlar.attribute.FloatAttribute );
+
+/**
+ * @class Kevlar.attribute.IntegerAttribute
+ * @extends Kevlar.attribute.NumberAttribute
+ * 
+ * Attribute definition class for an Attribute that takes an integer data value. If a decimal
+ * number is provided (i.e. a "float"), the decimal will be ignored, and only the integer value used.
+ */
+/*global Kevlar */
+Kevlar.attribute.IntegerAttribute = Kevlar.attribute.NumberAttribute.extend( {
+	
+	/**
+	 * Converts the provided data value into an integer. If {@link #useNull} is true, undefined/null/empty string 
+	 * values will return null, or else will otherwise be converted to 0. If the number is simply not parsable, will 
+	 * return NaN. 
+	 * 
+	 * This method will strip off any decimal value from a provided number.
+	 * 
+	 * @method beforeSet
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
+	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
+	 * @return {Boolean} The converted value.
+	 */
+	beforeSet : function( model, newValue, oldValue ) {
+		var defaultValue = ( this.useNull ) ? null : 0;
+		return ( newValue !== undefined && newValue !== null && newValue !== '' ) ? parseInt( String( newValue ).replace( this.stripCharsRegex, '' ), 10 ) : defaultValue;
+	}
+	
+} );
+
+
+// Register the Attribute type
+Kevlar.attribute.Attribute.registerType( 'int', Kevlar.attribute.IntegerAttribute );
+Kevlar.attribute.Attribute.registerType( 'integer', Kevlar.attribute.IntegerAttribute );
+
+/**
+ * @class Kevlar.attribute.MixedAttribute
+ * @extends Kevlar.attribute.Attribute
+ * 
+ * Attribute definition class for an Attribute that takes any data value.
+ */
+/*global Kevlar */
+Kevlar.attribute.MixedAttribute = Kevlar.attribute.Attribute.extend( {
+		
+	// No specific implementation at this time. All handled by the base class Attribute.
+	
+} );
+
+
+// Register the Attribute type
+Kevlar.attribute.Attribute.registerType( 'mixed', Kevlar.attribute.MixedAttribute );
+
+/**
+ * @class Kevlar.attribute.ModelAttribute
+ * @extends Kevlar.attribute.DataComponentAttribute
+ * 
+ * Attribute definition class for an Attribute that allows for a nested {@link Kevlar.Model} value.
+ * 
+ * This class enforces that the Attribute hold a {@link Kevlar.Model Model} value, or null. However, it will
+ * automatically convert an anonymous data object into the appropriate {@link Kevlar.Model Model} subclass, using
+ * the Model provided to the {@link #modelClass} config. 
+ * 
+ * Otherwise, you must either provide a {@link Kevlar.Model} subclass as the value, or use a custom {@link #cfg-set} 
+ * function to convert any anonymous object to a Model in the appropriate way. 
+ */
+/*global window, Class, Kevlar */
+Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend( {
+	
+	/**
+	 * @cfg {Kevlar.Model/String/Function} modelClass
+	 * The specific {@link Kevlar.Model} subclass that will be used in the ModelAttribute. This config can be provided
+	 * to perform automatic conversion of anonymous data objects into the approperiate Model subclass.
+	 * 
+	 * This config may be provided as:
+	 * 
+	 * - A direct reference to a Model (ex: `myApp.models.MyModel`),
+	 * - A String which specifies the object path to the Model (which must be able to be referenced from the global scope, 
+	 * 	 ex: 'myApp.models.MyModel'), 
+	 * - Or a function, which will return a reference to the Model that should be used. 
+	 * 
+	 * The reason that this config may be specified as a String or a Function is to allow for late binding to the Model class 
+	 * that is used, where the Model class that is to be used does not have to exist in the source code until a value is 
+	 * actually set to the Attribute. This allows for the handling of circular dependencies as well.
+	 */
+	
+	/**
+	 * @cfg {Boolean} embedded
+	 * Setting this config to true has the parent {@link Kevlar.Model Model} treat the child {@link Kevlar.Model Model} as if it is a part of itself. 
+	 * Normally, a child Model that is not embedded is treated as a "relation", where it is considered as independent from the parent Model.
+	 * 
+	 * What this means is that, when true:
+	 * 
+	 * - The parent Model is considered as "changed" when an attribute in the child Model is changed. This Attribute (the attribute that holds the child
+	 *   model) is the "change".
+	 * - The parent Model's {@link Kevlar.Model#change change} event is fired when an attribute on the child Model has changed.
+	 * - The child Model's data is persisted with the parent Model's data, unless the {@link #persistIdOnly} config is set to true,
+	 *   in which case just the child Model's {@link Kevlar.Model#idAttribute id} is persisted with the parent Model.
+	 */
+	embedded : false,
+	
+	/**
+	 * @cfg {Boolean} persistIdOnly
+	 * In the case that the {@link #embedded} config is true, set this to true to only have the {@link Kevlar.Model#idAttribute id} of the embedded 
+	 * model be persisted, rather than all of the Model data. Normally, when {@link #embedded} is false (the default), the child {@link Kevlar.Model Model}
+	 * is treated as a relation, and only its {@link Kevlar.Model#idAttribute id} is persisted.
+	 */
+	persistIdOnly : false,
+	
+	
+	// -------------------------------
+	
+	
+	constructor : function() {
+		this._super( arguments );
+		
+		// Check if the user provided a modelClass, but the value is undefined. This means that they specified
+		// a class that either doesn't exist, or doesn't exist yet, and we should give them a warning.
+		if( 'modelClass' in this && this.modelClass === undefined ) {
+			throw new Error( "The 'modelClass' config provided to an Attribute with the name '" + this.getName() + "' either doesn't exist, or doesn't " +
+			                 "exist just yet. Consider using the String or Function form of the modelClass config for late binding, if needed" );
+		}
+	},
+	
+	
+	/**
+	 * Overridden method used to determine if two models are equal.
+	 * @inheritdoc
+	 * 
+	 * @override
+	 * @method valuesAreEqual
+	 * @param {Mixed} oldValue
+	 * @param {Mixed} newValue
+	 * @return {Boolean} True if the values are equal, and the Model should *not* consider the new value as a 
+	 *   change of the old value, or false if the values are different, and the new value should be taken as a change.
+	 */
+	valuesAreEqual : function( oldValue, newValue ) {
+		// We can't instantiate two different Models with the same id that have different references, so if the references are the same, they are equal
+		return oldValue === newValue;
+	},
+	
+	
+	/**
+	 * Overridden `beforeSet` method used to convert any anonymous objects into the specified {@link #modelClass}. The anonymous object
+	 * will be provided to the {@link #modelClass modelClass's} constructor.
+	 * 
+	 * @override
+	 * @method beforeSet
+	 * @inheritdoc
+	 */
+	beforeSet : function( model, newValue, oldValue ) {
+		// First, if the oldValue was a Model, and this attribute is an "embedded" model, we need to unsubscribe it from its parent model
+		if( this.embedded && oldValue instanceof Kevlar.Model ) {
+			model.unsubscribeEmbeddedModel( this.getName(), oldValue );
+		}
+		
+		// Now, normalize the newValue to an object, or null
+		newValue = this._super( arguments );
+		
+		if( newValue !== null ) {
+			var modelClass = this.modelClass;
+			
+			// Normalize the modelClass
+			if( typeof modelClass === 'string' ) {
+				modelClass = this.resolveGlobalPath( modelClass );  // changes the string "a.b.c" into the value at `window.a.b.c`
+				
+				if( !modelClass ) {
+					throw new Error( "The string value 'modelClass' config did not resolve to a Model class for attribute '" + this.getName() + "'" );
+				}
+			} else if( typeof modelClass === 'function' && !Class.isSubclassOf( modelClass, Kevlar.Model ) ) {  // it's not a Kevlar.Model subclass, so it must be an anonymous function. Run it, so it returns the Model reference we need
+				this.modelClass = modelClass = modelClass();
+				if( !modelClass ) {
+					throw new Error( "The function value 'modelClass' config did not resolve to a Model class for attribute '" + this.getName() + "'" );
+				}
+			}
+			
+			if( newValue && typeof modelClass === 'function' && !( newValue instanceof modelClass ) ) {
+				newValue = new modelClass( newValue );
+			}
+		}
+		
+		return newValue;
+	},
+	
+	
+	/**
+	 * Overridden `afterSet` method used to subscribe to change events on a set child {@link Kevlar.Model Model}, if {@link #embedded} is true.
+	 * 
+	 * @override
+	 * @method afterSet
+	 * @inheritdoc
+	 */
+	afterSet : function( model, value ) {
+		// Enforce that the value is either null, or a Kevlar.Model
+		if( value !== null && !( value instanceof Kevlar.Model ) ) {
+			throw new Error( "A value set to the attribute '" + this.getName() + "' was not a Kevlar.Model subclass" );
+		}
+		
+		if( this.embedded && value instanceof Kevlar.Model ) {
+			model.subscribeEmbeddedModel( this.getName(), value );
+		}
+		
+		return value;
+	}
+	
+} );
+
+
+// Register the Attribute type
+Kevlar.attribute.Attribute.registerType( 'model', Kevlar.attribute.ModelAttribute );
+
+/**
+ * @class Kevlar.attribute.StringAttribute
+ * @extends Kevlar.attribute.PrimitiveAttribute
+ * 
+ * Attribute definition class for an Attribute that takes a string data value.
+ */
+/*global Kevlar */
+Kevlar.attribute.StringAttribute = Kevlar.attribute.PrimitiveAttribute.extend( {
+	
+	/**
+	 * @cfg {Mixed/Function} defaultValue
+	 * @inheritdoc
+	 * 
+	 * The StringAttribute defaults to `""` (empty string), unless the {@link #useNull} config is 
+	 * set to `true`, in which case it defaults to `null` (to denote the Attribute being "unset").
+	 */
+	defaultValue: function( attribute ) {
+		return attribute.useNull ? null : "";
+	},
+	
+	
+	/**
+	 * @cfg {Boolean} useNull
+	 * True to allow `null` to be set to the Attribute (which is usually used to denote that the 
+	 * Attribute is "unset", and it shouldn't take an actual default value).
+	 * 
+	 * This is also used when parsing the provided value for the Attribute. If this config is true, and the value 
+	 * cannot be "easily" parsed into a String (i.e. if it's undefined, or null), `null` will be used 
+	 * instead of converting to an empty string.
+	 */
+	
+	
+	/**
+	 * Converts the provided data value into a Boolean. If {@link #useNull} is true, "unparsable" values
+	 * will return null. 
+	 * 
+	 * @method beforeSet
+	 * @param {Kevlar.Model} model The Model instance that is providing the value. This is normally not used,
+	 *   but is provided in case any model processing is needed.
+	 * @param {Mixed} newValue The new value provided to the {@link Kevlar.Model#set} method.
+	 * @param {Mixed} oldValue The old (previous) value that the model held (if any).
+	 * @return {Boolean} The converted value.
+	 */
+	beforeSet : function( model, newValue, oldValue ) {
+		var defaultValue = ( this.useNull ) ? null : "";
+		return ( newValue === undefined || newValue === null ) ? defaultValue : String( newValue );
+	}
+	
+} );
+
+
+// Register the Attribute type
+Kevlar.attribute.Attribute.registerType( 'string', Kevlar.attribute.StringAttribute );
+
+/**
+ * @private
+ * @class Kevlar.data.NativeObjectConverter
+ * @singleton
+ * 
+ * NativeObjectConverter allows for the conversion of {@link Kevlar.Collection Collection} / {@link Kevlar.Model Models}
+ * to their native Array / Object representations, while dealing with circular dependencies.
+ */
+/*global Kevlar */
+Kevlar.data.NativeObjectConverter = {
+	
+	/**
+	 * Converts a {@link Kevlar.Collection Collection} or {@link Kevlar.Model} to its native Array/Object representation,
+	 * while dealing with circular dependencies.
+	 * 
+	 * @method convert
+	 * 
+	 * @param {Kevlar.Collection/Kevlar.Model} A Collection or Model to convert to its native Array/Object representation.
+	 * @param {Object} [options] An object (hashmap) of options to change the behavior of this method. This may include:
+	 * @param {String[]} [options.attributeNames] In the case that a {@link Kevlar.Model Model} is provided to this method, this
+	 *   may be an array of the attribute names that should be returned in the output object.  Other attributes will not be processed.
+	 *   (Note: only affects the Model passed to this method, and not nested models.)
+	 * @param {Boolean} [options.persistedOnly] True to have the method only return data for the persisted attributes on
+	 *   Models (i.e. attributes with the {@link Kevlar.attribute.Attribute#persist persist} config set to true, which is the default).
+	 * @param {Boolean} [options.raw] True to have the method only return the raw data for the attributes, by way of the {@link Kevlar.Model#raw} method. 
+	 *   This is used for persistence, where the raw data values go to the server rather than higher-level objects, or where some kind of serialization
+	 *   to a string must take place before persistence (such as for Date objects). 
+	 * 
+	 * @return {Object[]/Object} An array of objects (for the case of a Collection}, or an Object (for the case of a Model)
+	 *   with the internal attributes converted to their native equivalent.
+	 */
+	convert : function( dataComponent, options ) {
+		options = options || {};
+		var cache = {},  // keyed by models' clientId, and used for handling circular dependencies
+		    persistedOnly = !!options.persistedOnly,
+		    raw = !!options.raw,
+		    data = ( dataComponent instanceof Kevlar.Collection ) ? [] : {};  // Collection is an Array, Model is an Object
+		
+		// Prime the cache with the Model/Collection provided to this method, so that if a circular reference points back to this
+		// model, the data object is not duplicated as an internal object (i.e. it should refer right back to the converted
+		// Model's/Collection's data object)
+		cache[ dataComponent.getClientId() ] = data;
+		
+		// Recursively goes through the data structure, and convert models to objects, and collections to arrays
+		Kevlar.apply( data, (function convert( dataComponent ) {
+			var clientId, 
+			    cachedDataComponent,
+			    data,
+			    i, len;
+			
+			if( dataComponent instanceof Kevlar.Model ) {
+				var attributes = dataComponent.getAttributes(),
+				    attributeNames = options.attributeNames || Kevlar.util.Object.keysToArray( attributes ),
+				    attributeName, currentValue;
+				
+				data = {};  // data is an object for a Model
+				
+				// Slight hack, but delete options.attributeNames now, so that it is not used again for inner Models (should only affect the first 
+				// Model that gets converted, i.e. the Model provided to this method)
+				delete options.attributeNames;
+				
+				for( i = 0, len = attributeNames.length; i < len; i++ ) {
+					attributeName = attributeNames[ i ];
+					if( !persistedOnly || attributes[ attributeName ].isPersisted() === true ) {
+						currentValue = data[ attributeName ] = ( raw ) ? dataComponent.raw( attributeName ) : dataComponent.get( attributeName );
+						
+						// Process Nested DataComponents
+						if( currentValue instanceof Kevlar.DataComponent ) {
+							clientId = currentValue.getClientId();
+							
+							if( ( cachedDataComponent = cache[ clientId ] ) ) {
+								data[ attributeName ] = cachedDataComponent;
+							} else {
+								// first, set up an array/object for the cache (so it exists when checking for it in the next call to convert()), 
+								// and set that array/object to the return data as well
+								cache[ clientId ] = data[ attributeName ] = ( currentValue instanceof Kevlar.Collection ) ? [] : {};  // Collection is an Array, Model is an Object
+								
+								// now, populate that object with the properties of the inner object
+								Kevlar.apply( cache[ clientId ], convert( currentValue ) );  
+							}
+						}
+					}
+				}
+				
+			} else if( dataComponent instanceof Kevlar.Collection ) {
+				var models = dataComponent.getModels(),
+				    model;
+				
+				data = [];  // data is an array for a Container
+				
+				for( i = 0, len = models.length; i < len; i++ ) {
+					model = models[ i ];
+					clientId = model.getClientId();
+					
+					data[ i ] = cache[ clientId ] || convert( model );
+				}
+			}
+			
+			return data;
+		})( dataComponent ) );
+		
+		return data;
+	}
+	
 };
 
 /**
