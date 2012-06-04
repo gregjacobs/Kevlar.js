@@ -9,6 +9,10 @@ This is currently a work in progress, and is alpha.
 
 ## Changelog:
 
+### 0.8.3
+
+* Fix for when a model is added/removed/reordered in an embedded collection of a parent model, that an attribute-specific change event (i.e. "change:attr") is fired for the nested collection.
+
 ### 0.8.2
 
 * Removed recursive search for functions from `defaultValue` functionality in attributes.

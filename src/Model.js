@@ -944,6 +944,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 *   {@link Kevlar.Collection#event-remove}, or {@link Kevlar.Collection#event-reorder} event. 
 	 */
 	onEmbeddedCollectionAddRemoveReorder : function( attributeName, collection ) {
+		this.fireEvent( 'change:' + attributeName, this, collection, collection );
 		this.fireEvent( 'change', this, attributeName, collection, collection );
 	},
 	
