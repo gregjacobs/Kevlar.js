@@ -516,6 +516,11 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			
 			for( var fldName in values ) {  // a new variable, 'fldName' instead of 'attributeName', so that JSLint stops whining about "Bad for in variable 'attributeName'" (for whatever reason it does that...)
 				if( values.hasOwnProperty( fldName ) ) {
+					// <debug>
+					if( !attributes[ fldName ] ) {
+						throw new Error( "Kevlar.Model.set(): An attribute with the attributeName '" + fldName + "' was not found." );
+					}
+					// </debug>
 					if( attributes[ fldName ].hasUserDefinedSetter() ) {   // defer setting the values on attributes with user-defined setters until all attributes without user-defined setters have been set
 						attrsWithSetters.push( fldName );
 					} else {

@@ -577,7 +577,37 @@ tests.unit.add( new Ext.test.TestSuite( {
 					]
 				} );
 			},
+			
+			
+			
+			_should : {
+				error : {
+					"set() should throw an error when trying to set an attribute that isn't defined (using the attr and value args)" :
+						"Kevlar.Model.set(): An attribute with the attributeName 'nonExistentAttr' was not found.",
+					"set() should throw an error when trying to set an attribute that isn't defined (using the attr as an object literal arg)" :
+						"Kevlar.Model.set(): An attribute with the attributeName 'nonExistentAttr' was not found."
+				}
+			},
+			
+			
+			"set() should throw an error when trying to set an attribute that isn't defined (using the attr and value args)" : function() {
+				var model = new this.TestModel();
+				model.set( 'nonExistentAttr', 1 );
 				
+				Y.Assert.fail( "Test should have thrown an error" );
+			},
+			
+			
+			"set() should throw an error when trying to set an attribute that isn't defined (using the attr as an object literal arg)" : function() {
+				var model = new this.TestModel();
+				model.set( { 'nonExistentAttr': 1 } );
+				
+				Y.Assert.fail( "Test should have thrown an error" );
+			},
+			
+			
+			// -----------------------------
+			
 			
 			/*
 			 * Utility method to set the given attribute to all data types, including falsy values, and asserts that the operation was successful
