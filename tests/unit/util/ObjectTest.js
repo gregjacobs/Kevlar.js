@@ -251,6 +251,22 @@ tests.unit.util.add( new Ext.test.TestSuite( {
 			},
 				
 			
+			"isEqual() should work with shallow array comparisions" : function() {
+				// Quick reference
+				var isEqual = Kevlar.util.Object.isEqual;
+				
+				var a = { innerA: 1 }, b = { innerB: 2 }, c = { innerC: 3 };
+				
+				Y.Assert.isTrue( isEqual( [], [], false ), "[] should equal []" );
+				Y.Assert.isTrue( isEqual( [a,b,c], [a,b,c], false ), "[a,b,c] should equal [a,b,c]" );
+				
+				Y.Assert.isFalse( isEqual( [a,b,c], [a,c,b], false ), "[a,b,c] should not equal [a,c,b]" );
+				Y.Assert.isFalse( isEqual( [a,b,c], [a,b], false ), "[a,b,c] should not equal [a,b]" );
+				Y.Assert.isFalse( isEqual( [a,b], [a,b,c], false ), "[a,b] should not equal [a,b,c]" );
+			},
+			
+			
+			
 			"isEqual() should work with deep array comparisons" : function() {
 				// Quick reference
 				var isEqual = Kevlar.util.Object.isEqual;
@@ -306,6 +322,7 @@ tests.unit.util.add( new Ext.test.TestSuite( {
 				
 			
 			// --------------------------------
+			
 				
 			
 			"isEqual() should be able to shallow compare, with the 'deep' flag set to false, in case objects refer to each other" : function() {
