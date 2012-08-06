@@ -1,6 +1,6 @@
 /*!
  * Kevlar JS Library
- * Version 0.8.4
+ * Version 0.9
  * 
  * Copyright(c) 2012 Gregory Jacobs.
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php
@@ -2164,6 +2164,14 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * not be accessed or used, as it will most likely be removed in the future.
 	 */
 	
+	/**
+	 * @protected
+	 * @property {Boolean} destroyed
+	 * 
+	 * Flag that is set to true once the Model is successfully destroyed.
+	 */
+	destroyed : false,
+	
 	
 	inheritedStatics : {
 		/**
@@ -2971,7 +2979,8 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	
 	
 	/**
-	 * Determines if the Model currently has un-committed (i.e. changed) data.
+	 * Determines if this Model itself (excluding child Models and {@link Kevlar.Collection Collections}) currently has un-committed (i.e. changed) data.
+	 * Prefer to use {@link #isModified} instead.
 	 * 
 	 * @method isDirty
 	 * @return {Boolean}
@@ -3244,9 +3253,17 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * @method save
 	 * @param {Object} [options] An object which may contain the following properties:
 	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
-	 * @param {Function} [options.success] Function to call if the save is successful - called with `model` and `data`.
+	 * 
+	 * @param {Function} [options.success] Function to call if the save is successful.
+	 * @param {Kevlar.Model} options.success.model This Model instance.
+	 * @param {Object} options.success.data The data returned from the server, or if there was none, the data of the Model.
+	 * 
 	 * @param {Function} [options.error] Function to call if the save fails.
-	 * @param {Function} [options.complete] Function to call when the operation is complete, regardless of a success or fail state.
+	 * @param {Kevlar.Model} options.error.model This Model instance.
+	 * 
+	 * @param {Function} [options.complete] Function to call when the operation is complete, regardless of success or failure.
+	 * @param {Kevlar.Model} options.complete.model This Model instance.
+	 * 
 	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in. This may also
 	 *   be provided as `context` if you prefer.
 	 */
@@ -3290,20 +3307,20 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			}
 			
 			
-			if( typeof options.success === 'function' ) {
+			if( options.success ) {
 				options.success.call( scope, this, data );
 			}
 		};
 		
 		var errorCallback = function() {
-			if( typeof options.error === 'function' ) {
-				options.error.call( scope );
+			if( options.error ) {
+				options.error.call( scope, this );
 			}
 		};
 		
 		var completeCallback = function() {
-			if( typeof options.complete === 'function' ) {
-				options.complete.call( scope );
+			if( options.complete ) {
+				options.complete.call( scope, this );
 			}
 		};
 		
@@ -3326,9 +3343,17 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * @method destroy
 	 * @param {Object} [options] An object which may contain the following properties:
 	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
-	 * @param {Function} [options.success] Function to call if the destroy is successful.
-	 * @param {Function} [options.error] Function to call if the destroy fails.
-	 * @param {Function} [options.complete] Function to call when the operation is complete, regardless of a success or fail state.
+	 * 
+	 * @param {Function} [options.success] Function to call if the destroy (deletion) is successful.
+	 * @param {Kevlar.Model} options.success.model This Model instance.
+	 * @param {Object} options.success.data The data returned from the server, or if there was none, the data of the Model.
+	 * 
+	 * @param {Function} [options.error] Function to call if the destroy (deletion) fails.
+	 * @param {Kevlar.Model} options.error.model This Model instance.
+	 * 
+	 * @param {Function} [options.complete] Function to call when the operation is complete, regardless of success or failure.
+	 * @param {Kevlar.Model} options.complete.model This Model instance.
+	 * 
 	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in. This may also
 	 *   be provided as `context` if you prefer.
 	 */
@@ -3336,15 +3361,29 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		options = options || {};
 		var scope = options.scope || options.context || window;
 		
+		var successCallback = function() {
+			this.destroyed = true;
+			this.fireEvent( 'destroy', this );
+			
+			if( options.success ) {
+				options.success.call( scope, this );
+			}
+		};
+		var errorCallback = function() {
+			if( options.error ) {
+				options.error.call( scope, this );
+			}
+		};
+		var completeCallback = function() {
+			if( options.complete ) {
+				options.complete.call( scope, this );
+			}
+		};
+		
 		if( this.isNew() ) {
 			// If it is a new model, there is nothing on the server to destroy. Simply fire the event and call the callback
-			this.fireEvent( 'destroy', this );
-			if( typeof options.success === 'function' ) {
-				options.success.call( scope );
-			}
-			if( typeof options.complete === 'function' ) {
-				options.complete.call( scope );
-			}
+			successCallback.call( this );
+			completeCallback.call( this );
 			
 		} else {
 			// No persistenceProxy, cannot destroy. Throw an error
@@ -3353,24 +3392,6 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 				throw new Error( "Kevlar.Model::destroy() error: Cannot destroy model on server. No persistenceProxy." );
 			}
 			// </debug>
-			
-			var successCallback = function() {
-				this.fireEvent( 'destroy', this );
-				
-				if( typeof options.success === 'function' ) {
-					options.success.call( scope );
-				}
-			};
-			var errorCallback = function() {
-				if( typeof options.error === 'function' ) {
-					options.error.call( scope );
-				}
-			};
-			var completeCallback = function() {
-				if( typeof options.complete === 'function' ) {
-					options.complete.call( scope );
-				}
-			};
 			
 			var proxyOptions = {
 				async    : ( typeof options.async === 'undefined' ) ? true : options.async,   // defaults to true
@@ -3589,6 +3610,14 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 	 */
 	
 	/**
+	 * @protected
+	 * @property {Kevlar.Model[]} removedModels
+	 * 
+	 * An array that holds Models removed from the Collection, which haven't yet been {@link #sync synchronized} to the server yet (by 
+	 * {@link Kevlar.Model#destroy destroying} them).
+	 */
+	
+	/**
 	 * @private
 	 * @property {Boolean} modified
 	 * 
@@ -3699,6 +3728,7 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 		this.models = [];
 		this.modelsByClientId = {};
 		this.modelsById = {};
+		this.removedModels = [];
 		
 		
 		if( initialModels ) {
@@ -3913,6 +3943,7 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 				this.fireEvent( 'remove', this, model, modelIndex );
 				
 				removedModels.push( model );
+				this.removedModels.push( model );  // Add reference to the model just removed, for when synchronizing the collection (using sync()). This is an array of all non-destroyed models that have been removed from the Collection, and is reset when those models are destroyed.
 			}
 		}
 		
@@ -3966,7 +3997,19 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 	onModelEvent : function( eventName ) {
 		// If the model was destroyed, we need to remove it from the collection
 		if( eventName === 'destroy' ) {
-			this.remove( arguments[ 1 ] );  // arguments[ 1 ] is the model for the 'destroy' event
+			var model = arguments[ 1 ];  // arguments[ 1 ] is the model for the 'destroy' event
+			this.remove( model );   // if the model is destroyed on its own, remove it from the collection. If it has been destroyed from the collection's sync() method, then this will just have no effect.
+			
+			// If the model was destroyed, remove the model from the removedModels array, so we don't try to destroy it again
+			// when sync() is executed. This also takes the model out of the array when sync() is actually the one destroying
+			// the model as well.
+			var removedModels = this.removedModels;
+			for( var i = 0, len = removedModels.length; i < len; i++ ) {
+				if( removedModels[ i ] === model ) {
+					removedModels.splice( i, 1 );
+					break;
+				}
+			}
 		}
 		
 		// Relay the event from the collection, passing the collection itself, and the original arguments
@@ -4307,6 +4350,113 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 			}
 		}
 		return null;
+	},
+	
+	
+	// ----------------------------
+	
+	// Persistence methods
+	
+	
+	/**
+	 * Synchronizes the Collection by persisting each of the {@link Kevlar.Model Models} that have changes. New Models are created,
+	 * existing Models are modified, and removed Models are deleted.
+	 * 
+	 * @method sync
+	 * @param {Object} [options] An object which may contain the following properties:
+	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
+	 * @param {Function} [options.success] Function to call if the synchronization is successful.
+	 * @param {Function} [options.error] Function to call if the synchronization fails. The sychronization will be considered
+	 *   failed if one or more Models does not persist successfully.
+	 * @param {Function} [options.complete] Function to call when the operation is complete, regardless of success or failure.
+	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in. This may also
+	 *   be provided as `context` if you prefer.
+	 */
+	sync : function( options ) {
+		options = options || {};
+		var scope = options.scope || window;
+		
+		// Callbacks for the options to this function
+		var completeCallback = function() {
+			if( options.complete ) { options.complete.call( scope ); }
+		};
+		var successCallback = function() {
+			if( options.success ) { options.success.call( scope ); }
+			completeCallback();
+		};
+		var errorCallback = function() {
+			if( options.error ) { options.error.call( scope ); }
+			completeCallback();
+		};
+		
+		
+		
+		var models = this.getModels(),
+		    newModels = [],
+		    modifiedModels = [],
+		    removedModels = this.removedModels,
+		    i, len;
+		
+		// Put together an array of all of the new models, and the modified models
+		for( i = 0, len = models.length; i < len; i++ ) {
+			var model = models[ i ];
+			
+			if( model.isNew() ) {
+				newModels.push( model );
+			} else if( model.isModified( { persistedOnly: true } ) ) {  // only check "persisted" attributes
+				modifiedModels.push( model );
+			}
+		}
+		
+		
+		// Callbacks for handling all of the requests, and responding to when all of them are complete
+		var hasErrored = false,
+		    numModelsToSync = newModels.length + modifiedModels.length + removedModels.length;
+		
+		// Function that counts down by one when each request to persist the models has completed. Upon the last
+		// model being persisted, we either call the successCallback() or the errorCallback()
+		var counter = Kevlar.util.Function.bind( function() {
+			numModelsToSync--;
+			
+			// When the last model in the set has been persisted, run the success or error callback
+			if( numModelsToSync === 0 ) {
+				if( !hasErrored ) {
+					successCallback();
+				} else {
+					errorCallback();
+				}
+			}
+		}, this );
+		var successCounter = function() { counter(); };
+		var errorCounter   = function() { hasErrored = true; counter(); };
+		var destroySuccess = function( model ) {
+			// Upon successful destruction, remove the model from the removedModels array, so that we don't try to destroy it again
+			for( var i = 0, len = removedModels.length; i < len; i++ ) {
+				if( removedModels[ i ] === model ) {
+					removedModels.splice( i, 1 );
+					break;
+				}
+			}
+			
+			successCounter();
+		};
+		
+		// Now synchronize the models
+		var modelsToSave = newModels.concat( modifiedModels );
+		for( i = 0, len = modelsToSave.length; i < len; i++ ) {
+			modelsToSave[ i ].save( {
+				async   : options.async,
+				success : successCounter,
+				error   : errorCounter
+			} );
+		}
+		for( i = removedModels.length - 1; i >= 0; i-- ) {  // Loop this one backwards, as destroyed models will be removed from the array as they go if they happen synchronously
+			removedModels[ i ].destroy( {
+				async   : options.async,
+				success : destroySuccess,
+				error   : errorCounter
+			} );
+		}
 	}
 
 } );
@@ -6170,6 +6320,30 @@ Kevlar.util.DelayedTask = function(fn, scope, args){
 	};
 	
 };
+
+/**
+ * @class Kevlar.util.Function
+ * @singleton
+ * 
+ * Utility class for methods relating to `Function` functionality.
+ */
+/*global Kevlar */
+Kevlar.util.Function = {
+	
+	/**
+	 * Creates a new function from the provided `fn`, changing the context object (`this` reference) to the provided `scope`.
+	 *
+	 * @param {Function} fn The function to bind.
+	 * @param {Object} scope The scope (`this` reference) in which the function is to be executed.
+	 * @return {Function} The new function.
+	 */
+	bind: function( fn, scope ) {
+		return function() {
+			return fn.apply( scope, arguments );
+		};
+	}
+	
+}
 
 /**
  * @class Kevlar.util.Object

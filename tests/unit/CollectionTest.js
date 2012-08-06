@@ -1766,6 +1766,396 @@ tests.unit.add( new Ext.test.TestSuite( {
 				}, { startIndex: 1 } );
 				Y.Assert.areSame( model3, foundModel );
 			}
+		},
+		
+		
+		// ---------------------------------------------
+		
+		
+		/*
+		 * Test sync()
+		 */
+		{
+			name : "Test sync()",
+			
+			
+			/**
+			 * Creates one or more models for the sync() tests with default functionality that can be overridden in the tests.
+			 * 
+			 * @protected
+			 * @method createModels
+			 * @param {Number} howMany How many mock models to create.
+			 * @return {Kevlar.Model[]} The array of mock models.
+			 */
+			createModels : function( howMany ) {
+				var models = [],
+				    ConcreteAttribute = Kevlar.attribute.Attribute.extend( { constructor: function(){} } );
+				
+				for( var i = 0; i < howMany; i++ ) {
+					var model = JsMockito.mock( Kevlar.Model ),
+					    idAttribute = JsMockito.mock( ConcreteAttribute );
+					
+					JsMockito.when( idAttribute ).getName().thenReturn( 'attribute_' + i );
+					JsMockito.when( model ).getIdAttribute().thenReturn( idAttribute );
+					JsMockito.when( model ).hasIdAttribute().thenReturn( true );
+					JsMockito.when( model ).getId().thenReturn( i );
+					JsMockito.when( model ).getClientId().thenReturn( 'c_' + i );
+					JsMockito.when( model ).isNew().thenReturn( false );
+					JsMockito.when( model ).isModified().thenReturn( false );
+					
+					models.push( model );
+				}
+				
+				return models;
+			},
+			
+			
+			"sync() should create (save) models that are new" : function() {
+				var models = this.createModels( 2 );
+				JsMockito.when( models[ 0 ] ).isNew().thenReturn( true );
+				JsMockito.when( models[ 0 ] ).save().then( function( options ) { options.success( models[ 0 ] ); } );
+				
+				var collection = new Kevlar.Collection( models );
+				collection.sync();
+				
+				try {
+					JsMockito.verify( models[ 0 ] ).save();
+					JsMockito.verify( models[ 0 ], JsMockito.Verifiers.never() ).destroy();
+					
+					JsMockito.verify( models[ 1 ], JsMockito.Verifiers.never() ).save();
+					JsMockito.verify( models[ 1 ], JsMockito.Verifiers.never() ).destroy();
+				} catch( e ) {
+					Y.Assert.fail( typeof e === 'string' ? e : e.message );
+				}
+			},
+			
+			
+			"sync() should save models that have been modified" : function() {
+				var models = this.createModels( 2 );
+				JsMockito.when( models[ 0 ] ).isModified().thenReturn( true );
+				JsMockito.when( models[ 0 ] ).save().then( function( options ) { options.success( models[ 0 ] ); } );
+				
+				var collection = new Kevlar.Collection( models );
+				collection.sync();
+				
+				try {
+					JsMockito.verify( models[ 0 ] ).save();
+					JsMockito.verify( models[ 0 ], JsMockito.Verifiers.never() ).destroy();
+					
+					JsMockito.verify( models[ 1 ], JsMockito.Verifiers.never() ).save();
+					JsMockito.verify( models[ 1 ], JsMockito.Verifiers.never() ).destroy();
+				} catch( e ) {
+					Y.Assert.fail( typeof e === 'string' ? e : e.message );
+				}
+			},
+			
+			
+			"sync() should destroy models that have been removed from the collection" : function() {
+				var models = this.createModels( 2 );
+				JsMockito.when( models[ 0 ] ).destroy().then( function( options ) { options.success( models[ 0 ] ); } );
+				
+				var collection = new Kevlar.Collection( models );
+				collection.remove( models[ 0 ] );
+				collection.sync();
+				
+				try {
+					JsMockito.verify( models[ 0 ], JsMockito.Verifiers.never() ).save();
+					JsMockito.verify( models[ 0 ] ).destroy();
+					
+					JsMockito.verify( models[ 1 ], JsMockito.Verifiers.never() ).save();
+					JsMockito.verify( models[ 1 ], JsMockito.Verifiers.never() ).destroy();
+				} catch( e ) {
+					Y.Assert.fail( typeof e === 'string' ? e : e.message );
+				}
+			},
+			
+			
+			"sync() should destroy models that have been removed from the collection in more than one call to remove() (to make sure the 'removedModels' is cumulative)" : function() {
+				var models = this.createModels( 2 );
+				JsMockito.when( models[ 0 ] ).destroy().then( function( options ) { options.success( models[ 0 ] ); } );
+				JsMockito.when( models[ 1 ] ).destroy().then( function( options ) { options.success( models[ 1 ] ); } );
+				
+				var collection = new Kevlar.Collection( models );
+				collection.remove( models[ 0 ] );
+				collection.remove( models[ 1 ] );
+				collection.sync();
+				
+				try {
+					JsMockito.verify( models[ 0 ], JsMockito.Verifiers.never() ).save();
+					JsMockito.verify( models[ 0 ] ).destroy();
+					
+					JsMockito.verify( models[ 1 ], JsMockito.Verifiers.never() ).save();
+					JsMockito.verify( models[ 1 ] ).destroy();
+				} catch( e ) {
+					Y.Assert.fail( typeof e === 'string' ? e : e.message );
+				}
+			},
+			
+			
+			"sync() should destroy models that have been removed from the collection, but if one fails, only that one should be attempted to be destroyed again upon the next sync()" : function() {
+				var models = this.createModels( 2 );
+				JsMockito.when( models[ 0 ] ).destroy().then( function( options ) { options.success( models[ 0 ] ); } );
+				JsMockito.when( models[ 1 ] ).destroy().then( 
+					function( options ) { options.error( models[ 1 ] ); },   // destroy() errors out the first time, 
+					function( options ) { options.success( models[ 1 ] ); }  // and then is successful the second time
+				);
+				
+				var collection = new Kevlar.Collection( models );
+				collection.remove( models[ 0 ] );
+				collection.remove( models[ 1 ] );
+				collection.sync();  // for this call, models[ 0 ] was the only one that was destroyed
+				collection.sync();  // this call should attempt to destroy models[ 1 ] again, since it was not successfully destroyed from the first one
+				
+				try {
+					JsMockito.verify( models[ 0 ], JsMockito.Verifiers.never() ).save();
+					JsMockito.verify( models[ 0 ], JsMockito.Verifiers.once() ).destroy();      // This model should have only been destroyed once, since it was successfully destroyed during the first call to sync()
+					
+					JsMockito.verify( models[ 1 ], JsMockito.Verifiers.never() ).save();
+					JsMockito.verify( models[ 1 ], JsMockito.Verifiers.times( 2 ) ).destroy();  // This model should have been attempted to be destroyed a total of 2 times, since it failed to be destroyed the first time
+				} catch( e ) {
+					Y.Assert.fail( typeof e === 'string' ? e : e.message );
+				}
+			},
+			
+			
+			"sync() should destroy models that have been removed from the collection only on the first call to sync(). They should not be destroyed again afterwards." : function() {
+				var models = this.createModels( 2 );
+				JsMockito.when( models[ 0 ] ).destroy().then( function( options ) { options.success( models[ 0 ] ); } );
+				JsMockito.when( models[ 1 ] ).destroy().then( function( options ) { options.success( models[ 1 ] ); } );
+				
+				var collection = new Kevlar.Collection( models );
+				collection.remove( models[ 0 ] );
+				collection.remove( models[ 1 ] );
+				collection.sync();
+				collection.sync();  // call it again, to make sure the models are only destroyed once
+				
+				try {
+					JsMockito.verify( models[ 0 ], JsMockito.Verifiers.never() ).save();
+					JsMockito.verify( models[ 0 ], JsMockito.Verifiers.once() ).destroy();   // using explicit once() verifier (even though that's the default) just to be clear
+					
+					JsMockito.verify( models[ 1 ], JsMockito.Verifiers.never() ).save();
+					JsMockito.verify( models[ 1 ], JsMockito.Verifiers.once() ).destroy();   // using explicit once() verifier (even though that's the default) just to be clear
+				} catch( e ) {
+					Y.Assert.fail( typeof e === 'string' ? e : e.message );
+				}
+			},
+			
+			
+			"sync() should save models that are new and modified, and destroy models that have been removed." : function() {
+				var models = this.createModels( 4 );
+				
+				JsMockito.when( models[ 0 ] ).isNew().thenReturn( true );
+				JsMockito.when( models[ 0 ] ).save().then( function( options ) { options.success( models[ 0 ] ); } );
+				
+				JsMockito.when( models[ 1 ] ).isModified().thenReturn( true );
+				JsMockito.when( models[ 0 ] ).save().then( function( options ) { options.success( models[ 1 ] ); } );
+				
+				// Note: models[ 2 ] is not new/modified
+				
+				// Note: models[ 3 ] will be removed
+				JsMockito.when( models[ 1 ] ).destroy().then( function( options ) { options.success( models[ 3 ] ); } );
+				
+				var collection = new Kevlar.Collection( models );
+				collection.remove( models[ 3 ] );
+				collection.sync();
+				
+				try {
+					JsMockito.verify( models[ 0 ] ).save();
+					JsMockito.verify( models[ 0 ], JsMockito.Verifiers.never() ).destroy();
+					
+					JsMockito.verify( models[ 1 ] ).save();
+					JsMockito.verify( models[ 1 ], JsMockito.Verifiers.never() ).destroy();
+					
+					JsMockito.verify( models[ 2 ], JsMockito.Verifiers.never() ).save();
+					JsMockito.verify( models[ 2 ], JsMockito.Verifiers.never() ).destroy();
+					
+					JsMockito.verify( models[ 3 ], JsMockito.Verifiers.never() ).save();
+					JsMockito.verify( models[ 3 ] ).destroy();
+				} catch( e ) {
+					Y.Assert.fail( typeof e === 'string' ? e : e.message );
+				}
+			},
+			
+			
+			// --------------------------------------------
+			
+			// Test options / callbacks to sync() method
+			
+			
+			"sync() should call the 'success' and 'complete' callbacks if all persistence operations succeed" : function() {
+				var models = this.createModels( 4 );
+				
+				JsMockito.when( models[ 0 ] ).isNew().thenReturn( true );
+				JsMockito.when( models[ 0 ] ).save().then( function( options ) { options.success( models[ 0 ] ); } );
+				
+				JsMockito.when( models[ 1 ] ).isModified().thenReturn( true );
+				JsMockito.when( models[ 1 ] ).save().then( function( options ) { options.success( models[ 1 ] ); } );
+				
+				// Note: models[ 2 ] is not new/modified
+				
+				// Note: models[ 3 ] will be removed
+				JsMockito.when( models[ 3 ] ).destroy().then( function( options ) { options.success( models[ 3 ] ); } );
+				
+				
+				var collection = new Kevlar.Collection( models );
+				collection.remove( models[ 3 ] );
+				
+				
+				var successCount = 0,
+				    errorCount = 0,
+				    completeCount = 0;
+				
+				collection.sync( {
+					success  : function() { successCount++; },
+					error    : function() { errorCount++; },
+					complete : function() { completeCount++; }
+				} );
+				
+				Y.Assert.areSame( 1, successCount, "The success callback should have been called exactly once" );
+				Y.Assert.areSame( 0, errorCount, "The error callback should not have been called" );
+				Y.Assert.areSame( 1, completeCount, "The complete callback should have been called exactly once" );
+			},
+			
+			
+			"sync() should call the 'error' and 'complete' callbacks if all persistence operations fail" : function() {
+				var models = this.createModels( 4 );
+				
+				JsMockito.when( models[ 0 ] ).isNew().thenReturn( true );
+				JsMockito.when( models[ 0 ] ).save().then( function( options ) { options.error( models[ 0 ] ); } );
+				
+				JsMockito.when( models[ 1 ] ).isModified().thenReturn( true );
+				JsMockito.when( models[ 1 ] ).save().then( function( options ) { options.error( models[ 1 ] ); } );
+				
+				// Note: models[ 2 ] is not new/modified
+				
+				// Note: models[ 3 ] will be removed
+				JsMockito.when( models[ 3 ] ).destroy().then( function( options ) { options.error( models[ 3 ] ); } );
+				
+				
+				var collection = new Kevlar.Collection( models );
+				collection.remove( models[ 3 ] );
+				
+				
+				var successCount = 0,
+				    errorCount = 0,
+				    completeCount = 0;
+				
+				collection.sync( {
+					success  : function() { successCount++; },
+					error    : function() { errorCount++; },
+					complete : function() { completeCount++; }
+				} );
+				
+				Y.Assert.areSame( 0, successCount, "The success callback should not have been called" );
+				Y.Assert.areSame( 1, errorCount, "The error callback should have been called exactly once" );
+				Y.Assert.areSame( 1, completeCount, "The complete callback should have been called exactly once" );
+			},
+			
+			
+			"sync() should call the 'error' and 'complete' callbacks if just one of the persistence operations fail (in this case, the first persistence operation)" : function() {
+				var models = this.createModels( 4 );
+				
+				JsMockito.when( models[ 0 ] ).isNew().thenReturn( true );
+				JsMockito.when( models[ 0 ] ).save().then( function( options ) { options.error( models[ 0 ] ); } );
+				
+				JsMockito.when( models[ 1 ] ).isModified().thenReturn( true );
+				JsMockito.when( models[ 1 ] ).save().then( function( options ) { options.success( models[ 1 ] ); } );
+				
+				// Note: models[ 2 ] is not new/modified
+				
+				// Note: models[ 3 ] will be removed
+				JsMockito.when( models[ 3 ] ).destroy().then( function( options ) { options.success( models[ 3 ] ); } );
+				
+				
+				var collection = new Kevlar.Collection( models );
+				collection.remove( models[ 3 ] );
+				
+				
+				var successCount = 0,
+				    errorCount = 0,
+				    completeCount = 0;
+				
+				collection.sync( {
+					success  : function() { successCount++; },
+					error    : function() { errorCount++; },
+					complete : function() { completeCount++; }
+				} );
+				
+				Y.Assert.areSame( 0, successCount, "The success callback should not have been called" );
+				Y.Assert.areSame( 1, errorCount, "The error callback should have been called exactly once" );
+				Y.Assert.areSame( 1, completeCount, "The complete callback should have been called exactly once" );
+			},
+			
+			
+			"sync() should call the 'error' and 'complete' callbacks if just one of the persistence operations fail (in this case, a middle persistence operation)" : function() {
+				var models = this.createModels( 4 );
+				
+				JsMockito.when( models[ 0 ] ).isNew().thenReturn( true );
+				JsMockito.when( models[ 0 ] ).save().then( function( options ) { options.success( models[ 0 ] ); } );
+				
+				JsMockito.when( models[ 1 ] ).isModified().thenReturn( true );
+				JsMockito.when( models[ 1 ] ).save().then( function( options ) { options.error( models[ 1 ] ); } );
+				
+				// Note: models[ 2 ] is not new/modified
+				
+				// Note: models[ 3 ] will be removed
+				JsMockito.when( models[ 3 ] ).destroy().then( function( options ) { options.success( models[ 3 ] ); } );
+				
+				
+				var collection = new Kevlar.Collection( models );
+				collection.remove( models[ 3 ] );
+				
+				
+				var successCount = 0,
+				    errorCount = 0,
+				    completeCount = 0;
+				
+				collection.sync( {
+					success  : function() { successCount++; },
+					error    : function() { errorCount++; },
+					complete : function() { completeCount++; }
+				} );
+				
+				Y.Assert.areSame( 0, successCount, "The success callback should not have been called" );
+				Y.Assert.areSame( 1, errorCount, "The error callback should have been called exactly once" );
+				Y.Assert.areSame( 1, completeCount, "The complete callback should have been called exactly once" );
+			},
+			
+			
+			"sync() should call the 'error' and 'complete' callbacks if just one of the persistence operations fail (in this case, the last persistence operation)" : function() {
+				var models = this.createModels( 4 );
+				
+				JsMockito.when( models[ 0 ] ).isNew().thenReturn( true );
+				JsMockito.when( models[ 0 ] ).save().then( function( options ) { options.success( models[ 0 ] ); } );
+				
+				JsMockito.when( models[ 1 ] ).isModified().thenReturn( true );
+				JsMockito.when( models[ 1 ] ).save().then( function( options ) { options.success( models[ 1 ] ); } );
+				
+				// Note: models[ 2 ] is not new/modified
+				
+				// Note: models[ 3 ] will be removed
+				JsMockito.when( models[ 3 ] ).destroy().then( function( options ) { options.error( models[ 3 ] ); } );
+				
+				
+				var collection = new Kevlar.Collection( models );
+				collection.remove( models[ 3 ] );
+				
+				
+				var successCount = 0,
+				    errorCount = 0,
+				    completeCount = 0;
+				
+				collection.sync( {
+					success  : function() { successCount++; },
+					error    : function() { errorCount++; },
+					complete : function() { completeCount++; }
+				} );
+				
+				Y.Assert.areSame( 0, successCount, "The success callback should not have been called" );
+				Y.Assert.areSame( 1, errorCount, "The error callback should have been called exactly once" );
+				Y.Assert.areSame( 1, completeCount, "The complete callback should have been called exactly once" );
+			}
+			
 		}
 	]
 	

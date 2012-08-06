@@ -169,6 +169,14 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * not be accessed or used, as it will most likely be removed in the future.
 	 */
 	
+	/**
+	 * @protected
+	 * @property {Boolean} destroyed
+	 * 
+	 * Flag that is set to true once the Model is successfully destroyed.
+	 */
+	destroyed : false,
+	
 	
 	inheritedStatics : {
 		/**
@@ -976,7 +984,8 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	
 	
 	/**
-	 * Determines if the Model currently has un-committed (i.e. changed) data.
+	 * Determines if this Model itself (excluding child Models and {@link Kevlar.Collection Collections}) currently has un-committed (i.e. changed) data.
+	 * Prefer to use {@link #isModified} instead.
 	 * 
 	 * @method isDirty
 	 * @return {Boolean}
@@ -1249,9 +1258,17 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * @method save
 	 * @param {Object} [options] An object which may contain the following properties:
 	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
-	 * @param {Function} [options.success] Function to call if the save is successful - called with `model` and `data`.
+	 * 
+	 * @param {Function} [options.success] Function to call if the save is successful.
+	 * @param {Kevlar.Model} options.success.model This Model instance.
+	 * @param {Object} options.success.data The data returned from the server, or if there was none, the data of the Model.
+	 * 
 	 * @param {Function} [options.error] Function to call if the save fails.
-	 * @param {Function} [options.complete] Function to call when the operation is complete, regardless of a success or fail state.
+	 * @param {Kevlar.Model} options.error.model This Model instance.
+	 * 
+	 * @param {Function} [options.complete] Function to call when the operation is complete, regardless of success or failure.
+	 * @param {Kevlar.Model} options.complete.model This Model instance.
+	 * 
 	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in. This may also
 	 *   be provided as `context` if you prefer.
 	 */
@@ -1295,20 +1312,20 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			}
 			
 			
-			if( typeof options.success === 'function' ) {
+			if( options.success ) {
 				options.success.call( scope, this, data );
 			}
 		};
 		
 		var errorCallback = function() {
-			if( typeof options.error === 'function' ) {
-				options.error.call( scope );
+			if( options.error ) {
+				options.error.call( scope, this );
 			}
 		};
 		
 		var completeCallback = function() {
-			if( typeof options.complete === 'function' ) {
-				options.complete.call( scope );
+			if( options.complete ) {
+				options.complete.call( scope, this );
 			}
 		};
 		
@@ -1331,9 +1348,17 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * @method destroy
 	 * @param {Object} [options] An object which may contain the following properties:
 	 * @param {Boolean} [options.async=true] True to make the request asynchronous, false to make it synchronous.
-	 * @param {Function} [options.success] Function to call if the destroy is successful.
-	 * @param {Function} [options.error] Function to call if the destroy fails.
-	 * @param {Function} [options.complete] Function to call when the operation is complete, regardless of a success or fail state.
+	 * 
+	 * @param {Function} [options.success] Function to call if the destroy (deletion) is successful.
+	 * @param {Kevlar.Model} options.success.model This Model instance.
+	 * @param {Object} options.success.data The data returned from the server, or if there was none, the data of the Model.
+	 * 
+	 * @param {Function} [options.error] Function to call if the destroy (deletion) fails.
+	 * @param {Kevlar.Model} options.error.model This Model instance.
+	 * 
+	 * @param {Function} [options.complete] Function to call when the operation is complete, regardless of success or failure.
+	 * @param {Kevlar.Model} options.complete.model This Model instance.
+	 * 
 	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in. This may also
 	 *   be provided as `context` if you prefer.
 	 */
@@ -1341,15 +1366,29 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		options = options || {};
 		var scope = options.scope || options.context || window;
 		
+		var successCallback = function() {
+			this.destroyed = true;
+			this.fireEvent( 'destroy', this );
+			
+			if( options.success ) {
+				options.success.call( scope, this );
+			}
+		};
+		var errorCallback = function() {
+			if( options.error ) {
+				options.error.call( scope, this );
+			}
+		};
+		var completeCallback = function() {
+			if( options.complete ) {
+				options.complete.call( scope, this );
+			}
+		};
+		
 		if( this.isNew() ) {
 			// If it is a new model, there is nothing on the server to destroy. Simply fire the event and call the callback
-			this.fireEvent( 'destroy', this );
-			if( typeof options.success === 'function' ) {
-				options.success.call( scope );
-			}
-			if( typeof options.complete === 'function' ) {
-				options.complete.call( scope );
-			}
+			successCallback.call( this );
+			completeCallback.call( this );
 			
 		} else {
 			// No persistenceProxy, cannot destroy. Throw an error
@@ -1358,24 +1397,6 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 				throw new Error( "Kevlar.Model::destroy() error: Cannot destroy model on server. No persistenceProxy." );
 			}
 			// </debug>
-			
-			var successCallback = function() {
-				this.fireEvent( 'destroy', this );
-				
-				if( typeof options.success === 'function' ) {
-					options.success.call( scope );
-				}
-			};
-			var errorCallback = function() {
-				if( typeof options.error === 'function' ) {
-					options.error.call( scope );
-				}
-			};
-			var completeCallback = function() {
-				if( typeof options.complete === 'function' ) {
-					options.complete.call( scope );
-				}
-			};
 			
 			var proxyOptions = {
 				async    : ( typeof options.async === 'undefined' ) ? true : options.async,   // defaults to true

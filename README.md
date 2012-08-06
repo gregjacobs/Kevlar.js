@@ -11,6 +11,11 @@ This is currently a work in progress, and is alpha.
 
 ## Changelog:
 
+### 0.9
+
+* Implemented Kevlar.Collection::sync(), which synchronizes the Collection's model with the server. This method creates, updates, and deletes models on the server that have been
+  added (if it's a new model), modified, or removed from the Collection.
+
 ### 0.8.4
 
 * Fix for Kevlar.util.Object.isEqual() method to properly shallow compare arrays (i.e. when the `deep` flag === `false`)
