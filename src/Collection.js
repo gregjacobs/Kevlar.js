@@ -894,7 +894,7 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 	 */
 	sync : function( options ) {
 		options = options || {};
-		var scope = options.scope || window;
+		var scope = options.scope || options.context || window;
 		
 		// Callbacks for the options to this function
 		var completeCallback = function() {
