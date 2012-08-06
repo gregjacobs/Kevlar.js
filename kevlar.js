@@ -3269,7 +3269,6 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 */
 	save : function( options ) {
 		options = options || {};
-		var scope = options.scope || options.context || window;
 		
 		// No persistenceProxy, cannot save. Throw an error
 		if( !this.persistenceProxy ) {
@@ -3281,6 +3280,21 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			throw new Error( "Kevlar.Model::save() error: Cannot save. Model does not have an idAttribute that relates to a valid attribute." );
 		}
 		
+		this.doSave( options );
+	},
+	
+	
+	/**
+	 * Private method that performs the actual save (persistence) of this Model. This method is called from {@link #save} at the appropriate
+	 * time. It is delayed from being called if the Model first has to persist non-{@link Kevlar.attribute.DataComponentAttribute#embedded embedded}) 
+	 * child collections.
+	 * 
+	 * @private
+	 * @method doSave
+	 * @param {Object} options The original `options` object provided to {@link #save}.
+	 */
+	doSave : function( options ) {
+		var scope = options.scope || options.context || window;
 		
 		// Store a "snapshot" of the data that is being persisted. This is used to compare against the Model's current data at the time of when the persistence operation 
 		// completes. Anything that does not match this persisted snapshot data must have been updated while the persistence operation was in progress, and the Model must 
@@ -3335,6 +3349,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		// Make a request to create or update the data on the server
 		this.persistenceProxy[ this.isNew() ? 'create' : 'update' ]( this, proxyOptions );
 	},
+	
 	
 	
 	/**
@@ -3409,30 +3424,77 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	
 	// --------------------------
 	
-	// Private utility methods
+	// Protected utility methods
+	
 	
 	/**
-	 * Retrieves an array of the attributes that are {@link Kevlar.attribute.DataComponentAttribute DataComponentAttributes} which
-	 * are also {@link Kevlar.attribute.DataComponentAttribute#embedded}. This is a convenience method that supports the methods which
-	 * use the embedded DataComponentAttributes. 
+	 * Retrieves an array of the Attributes configured for this model that are {@link Kevlar.attribute.DataComponentAttribute DataComponentAttributes}.
 	 * 
-	 * @private
-	 * @method getEmbeddedDataComponentAttributes
+	 * @protected
+	 * @method getDataComponentAttributes
 	 * @return {Kevlar.attribute.DataComponentAttribute[]}
 	 */
-	getEmbeddedDataComponentAttributes : function() {
+	getDataComponentAttributes : function() {
 		var attributes = this.attributes,
 		    attribute,
-		    DataComponentAttribute = Kevlar.attribute.DataComponentAttribute,
+		    DataComponentAttribute = Kevlar.attribute.DataComponentAttribute,  // quick reference to constructor
 		    dataComponentAttributes = [];
 		
 		for( var attrName in attributes ) {
-			if( attributes.hasOwnProperty( attrName ) && ( attribute = attributes[ attrName ] ) instanceof DataComponentAttribute && attribute.isEmbedded() ) {
+			if( attributes.hasOwnProperty( attrName ) && ( attribute = attributes[ attrName ] ) instanceof DataComponentAttribute ) {
 				dataComponentAttributes.push( attribute );
 			}
 		}
-		
 		return dataComponentAttributes;
+	},
+	
+	
+	/**
+	 * Retrieves an array of the Attributes configured for this model that are {@link Kevlar.attribute.DataComponentAttribute DataComponentAttributes} 
+	 * which are also {@link Kevlar.attribute.DataComponentAttribute#embedded}. This is a convenience method that supports the methods which
+	 * use the embedded DataComponentAttributes. 
+	 * 
+	 * @protected
+	 * @method getEmbeddedDataComponentAttributes
+	 * @return {Kevlar.attribute.DataComponentAttribute[]} The array of embedded DataComponentAttributes
+	 */
+	getEmbeddedDataComponentAttributes : function() {
+		var dataComponentAttributes = this.getDataComponentAttributes(),
+		    dataComponentAttribute,
+		    embeddedAttributes = [];
+		
+		for( var i = 0, len = dataComponentAttributes.length; i < len; i++ ) {
+			dataComponentAttribute = dataComponentAttributes[ i ];
+			
+			if( dataComponentAttribute.isEmbedded() ) {
+				embeddedAttributes.push( dataComponentAttribute );
+			}
+		}
+		return embeddedAttributes;
+	},
+	
+	
+	/**
+	 * Retrieves an array of the Attributes configured for this model that are {@link Kevlar.attribute.CollectionAttribute CollectionAttributes}.
+	 * 
+	 * @protected
+	 * @method getCollectionAttributes
+	 * @return {Kevlar.attribute.CollectionAttribute[]}
+	 */
+	getCollectionAttributes : function() {
+		var dataComponentAttributes = this.getDataComponentAttributes(),
+		    dataComponentAttribute,
+		    CollectionAttribute = Kevlar.attribute.CollectionAttribute,  // quick reference to constructor
+		    collectionAttributes = [];
+		
+		for( var i = 0, len = dataComponentAttributes.length; i < len; i++ ) {
+			dataComponentAttribute = dataComponentAttributes[ i ];
+			
+			if( dataComponentAttribute instanceof CollectionAttribute ) {
+				collectionAttributes.push( dataComponentAttribute );
+			}
+		}
+		return collectionAttributes;
 	}
 	
 } );
@@ -4000,9 +4062,8 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 			var model = arguments[ 1 ];  // arguments[ 1 ] is the model for the 'destroy' event
 			this.remove( model );   // if the model is destroyed on its own, remove it from the collection. If it has been destroyed from the collection's sync() method, then this will just have no effect.
 			
-			// If the model was destroyed, remove the model from the removedModels array, so we don't try to destroy it again
-			// when sync() is executed. This also takes the model out of the array when sync() is actually the one destroying
-			// the model as well.
+			// If the model was destroyed manually on its own, remove the model from the removedModels array, so we don't try to destroy it (again)
+			// when sync() is executed.
 			var removedModels = this.removedModels;
 			for( var i = 0, len = removedModels.length; i < len; i++ ) {
 				if( removedModels[ i ] === model ) {
@@ -4374,7 +4435,7 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 	 */
 	sync : function( options ) {
 		options = options || {};
-		var scope = options.scope || window;
+		var scope = options.scope || options.context || window;
 		
 		// Callbacks for the options to this function
 		var completeCallback = function() {
