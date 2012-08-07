@@ -3272,6 +3272,8 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 */
 	save : function( options ) {
 		options = options || {};
+		var scope = options.scope || options.context || window;
+		    
 		
 		// No persistenceProxy, cannot save. Throw an error
 		if( !this.persistenceProxy ) {
@@ -3284,12 +3286,50 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		}
 		
 		
-		var deferred = new jQuery.Deferred();
+		// Callbacks for the options
+		var completeCallback = function() {
+			if( options.complete ) {
+				options.complete.call( scope, this );
+			}
+		};
+		var successCallback = function( data ) {
+			if( options.success ) {
+				options.success.call( scope, this, data );
+			}
+			completeCallback();
+		};
+		var errorCallback = function() {
+			if( options.error ) {
+				options.error.call( scope, this );
+			}
+			completeCallback();
+		};
 		
-		// Do the actual save
-		this.doSave( deferred, options );
 		
-		return deferred;
+		// First, synchronize any nested related (i.e. non-embedded) Collections of the model.
+		var collectionSyncPromises = [],
+		    relatedCollectionAttributes = this.getRelatedCollectionAttributes();
+		for( var i = 0, len = relatedCollectionAttributes.length; i < len; i++ ) {
+			var collection = this.get( relatedCollectionAttributes[ i ].getName() );
+			if( collection ) {  // make sure there is actually a Collection (i.e. it's not null)
+				collectionSyncPromises.push( collection.sync() );
+			}
+		}
+		
+		var collectionsSyncPromise = jQuery.when.apply( null, collectionSyncPromises );  // create a single Promise object out of all the Collection synchronization promises
+		
+		// Use the pipe() method to do the actual save of this Model, after all related collections have been 
+		// synchronized to the server
+		var me = this;
+		var modelSavePromise = collectionsSyncPromise.pipe( 
+			function() { return me.doSave( options ); }   // New `done` handler, which waits for the save of this Model to complete before considering itself resolved
+		);
+		
+		modelSavePromise
+			.done( jQuery.proxy( successCallback, this ) )
+			.fail( jQuery.proxy( errorCallback, this ) );
+		
+		return modelSavePromise;
 	},
 	
 	
@@ -3300,18 +3340,13 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * 
 	 * @private
 	 * @method doSave
-	 * @param {jQuery.Deferred} The Deferred object created by {@link #save}.
 	 * @param {Object} options The original `options` object provided to {@link #save}.
+	 * @return {jQuery.Promise} The observable Promise object which can be used to determine if the save call has completed
+	 *   successfully (`done` callback) or errored (`fail` callback), and to perform any actions that need to be taken in either
+	 *   case with the `always` callback.
 	 */
-	doSave : function( deferred, options ) {
-		var scope = options.scope || options.context || window;
-		
-		
-		var completeCallback = function() {
-			if( options.complete ) {
-				options.complete.call( scope, this );
-			}
-		};
+	doSave : function( options ) {
+		var deferred = new jQuery.Deferred();
 		
 		// Store a "snapshot" of the data that is being persisted. This is used to compare against the Model's current data at the time of when the persistence operation 
 		// completes. Anything that does not match this persisted snapshot data must have been updated while the persistence operation was in progress, and the Model must 
@@ -3337,22 +3372,11 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 				}
 			}
 			
-			
-			if( options.success ) {
-				options.success.call( scope, this, data );
-			}
-			completeCallback();
-			
-			deferred.resolve( this );  // calls `done` handlers on the Deferred with this Model as the first argument
+			deferred.resolve( data );  // calls `done` handlers on the Deferred with the data as the first argument
 		};
 		
 		var errorCallback = function() {
-			if( options.error ) {
-				options.error.call( scope, this );
-			}
-			completeCallback();
-			
-			deferred.reject( this );  // calls `fail` handlers on the Deferred with this Model as the first argument
+			deferred.reject();  // calls `fail` handlers on the Deferred
 		};
 		
 		var proxyOptions = {
@@ -3364,6 +3388,8 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		
 		// Make a request to create or update the data on the server
 		this.persistenceProxy[ this.isNew() ? 'create' : 'update' ]( this, proxyOptions );
+		
+		return deferred.promise();  // return only the observable Promise object of the Deferred
 	},
 	
 	
@@ -3523,6 +3549,27 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			}
 		}
 		return collectionAttributes;
+	},
+	
+	
+	/**
+	 * Retrieves an array of the Attributes configured for this model that are {@link Kevlar.attribute.CollectionAttribute CollectionAttributes},
+	 * but are *not* {@link Kevlar.attribute.CollectionAttribute#embedded embedded} attributes (i.e. they are "related" attributes).
+	 * 
+	 * @protected
+	 * @method getRelatedCollectionAttributes
+	 * @return {Kevlar.attribute.CollectionAttribute[]} 
+	 */
+	getRelatedCollectionAttributes : function() {
+		var collectionAttributes = this.getCollectionAttributes(),
+		    relatedCollectionAttributes = [];
+		
+		for( var i = 0, len = collectionAttributes.length; i < len; i++ ) {
+			if( !collectionAttributes[ i ].isEmbedded() ) {
+				relatedCollectionAttributes.push( collectionAttributes[ i ] );
+			}
+		}
+		return relatedCollectionAttributes;
 	}
 	
 } );

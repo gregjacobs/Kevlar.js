@@ -2600,6 +2600,289 @@ tests.unit.add( new Ext.test.TestSuite( {
 						test.wait( 100 );
 					}
 					
+				},
+				
+				
+				
+				{
+					name : "Test save() with related Collections that need to be sync'd first",
+					
+					setUp : function() {
+						this.proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
+							create  : Kevlar.emptyFn,
+							read    : Kevlar.emptyFn,
+							update  : Kevlar.emptyFn,
+							destroy : Kevlar.emptyFn
+						} ) );
+						
+						this.Model = Kevlar.Model.extend( {
+							attributes : [
+								{ name: 'attr', type: 'string' },
+								{ name: 'c1', type: 'collection' },
+								{ name: 'c2', type: 'collection' }
+							],
+							
+							persistenceProxy : this.proxy
+						} );
+						
+						this.collection1 = JsMockito.mock( Kevlar.Collection );
+						JsMockito.when( this.collection1 ).getModels().thenReturn( [] );
+						
+						this.collection2 = JsMockito.mock( Kevlar.Collection );
+						JsMockito.when( this.collection2 ).getModels().thenReturn( [] );
+					},
+					
+					
+					"save() should synchronize any nested 'related' (as opposed to 'embedded') collections before synchronizing itself" : function() {
+						var collection1SyncCallCount = 0,
+						    collection2SyncCallCount = 0,
+						    collection1SyncDoneCount = 0,
+						    collection2SyncDoneCount = 0;
+						
+						JsMockito.when( this.collection1 ).sync().then( function() {
+							collection1SyncCallCount++;
+							
+							var deferred = new jQuery.Deferred();
+							deferred.done( function() { collection1SyncDoneCount++; } );
+							setTimeout( function() { deferred.resolve(); }, 50 );
+							
+							return deferred;
+						} );
+						JsMockito.when( this.collection2 ).sync().then( function() {
+							collection2SyncCallCount++;
+							
+							var deferred = new jQuery.Deferred();
+							deferred.done( function() { collection2SyncDoneCount++; } );
+							setTimeout( function() { deferred.resolve(); }, 50 );
+							
+							return deferred;
+						} );
+						
+						JsMockito.when( this.proxy ).create().then( function( model, options ) {
+							setTimeout( function() { options.success.call( options.scope ); }, 25 );
+						} );
+						
+						
+						var model = new this.Model( {
+							attr : "attrValue",
+							c1   : this.collection1,
+							c2   : this.collection2
+						} );
+						
+						var successCount = 0,   // 3 vars for callbacks
+						    errorCount = 0,
+						    completeCount = 0,
+						    doneCount = 0,      // 3 vars for returned Promise object
+						    failCount = 0,
+						    alwaysCount = 0;
+						    
+						var savePromise = model.save( {
+							success : function() { successCount++; },
+							error : function() { errorCount++; },
+							complete : function() { completeCount++; }
+						} );
+						savePromise
+							.done( function() { doneCount++; } )
+							.fail( function() { failCount++; } )
+							.always( function() { alwaysCount++; } );
+						
+						Y.Assert.areSame( 1, collection1SyncCallCount, "sync() should have been called on collection1" );
+						Y.Assert.areSame( 1, collection2SyncCallCount, "sync() should have been called on collection2" );
+						Y.Assert.areSame( 0, collection1SyncDoneCount, "collection1's sync should not yet be done" );
+						Y.Assert.areSame( 0, collection2SyncDoneCount, "collection2's sync should not yet be done" );
+						Y.Assert.areSame( 0, successCount, "Shouldn't have any success calls yet" );
+						Y.Assert.areSame( 0, errorCount, "Shouldn't have any error calls yet" );
+						Y.Assert.areSame( 0, completeCount, "Shouldn't have any complete calls yet" );
+						Y.Assert.areSame( 0, doneCount, "Shouldn't have any done calls yet" );
+						Y.Assert.areSame( 0, failCount, "Shouldn't have any fail calls yet" );
+						Y.Assert.areSame( 0, alwaysCount, "Shouldn't have any always calls yet" );
+						
+						this.wait( function() {
+							Y.Assert.areSame( 1, collection1SyncDoneCount, "collection1's sync should now be done" );
+							Y.Assert.areSame( 1, collection2SyncDoneCount, "collection2's sync should now be done" );
+							Y.Assert.areSame( 0, successCount, "Shouldn't have any success calls yet (2)" );
+							Y.Assert.areSame( 0, errorCount, "Shouldn't have any error calls yet (2)" );
+							Y.Assert.areSame( 0, completeCount, "Shouldn't have any complete calls yet (2)" );
+							Y.Assert.areSame( 0, doneCount, "Shouldn't have any done calls yet (2)" );
+							Y.Assert.areSame( 0, failCount, "Shouldn't have any fail calls yet (2)" );
+							Y.Assert.areSame( 0, alwaysCount, "Shouldn't have any always calls yet (2)" );
+							
+							this.wait( function() {
+								Y.Assert.areSame( 1, successCount, "`complete` callback should have been called" );
+								Y.Assert.areSame( 0, errorCount, "`error` callback should NOT have been called" );
+								Y.Assert.areSame( 1, completeCount, "`complete` callback should have been called" );
+								Y.Assert.areSame( 1, doneCount, "`done` callback should have been called" );
+								Y.Assert.areSame( 0, failCount, "`fail` callback should NOT have been called" );
+								Y.Assert.areSame( 1, alwaysCount, "`always` callback should have been called" );
+							}, 50 );  // wait for the model's save() to complete
+							
+						}, 75 );  // wait for collection sync()'s to complete
+					},
+					
+					
+					"save() should call the 'error' and 'fail' callbacks if a collection fails to synchronize" : function() {
+						var collection1SyncCallCount = 0,
+						    collection2SyncCallCount = 0,
+						    collection1SyncDoneCount = 0,
+						    collection2SyncFailCount = 0;
+						
+						JsMockito.when( this.collection1 ).sync().then( function() {
+							collection1SyncCallCount++;
+							
+							var deferred = new jQuery.Deferred();
+							deferred.done( function() { collection1SyncDoneCount++; } );
+							setTimeout( function() { deferred.resolve(); }, 50 );
+							
+							return deferred;
+						} );
+						JsMockito.when( this.collection2 ).sync().then( function() {
+							collection2SyncCallCount++;
+							
+							var deferred = new jQuery.Deferred();
+							deferred.fail( function() { collection2SyncFailCount++; } );
+							setTimeout( function() { deferred.reject(); }, 50 );
+							
+							return deferred;
+						} );
+						
+						JsMockito.when( this.proxy ).create().then( function( model, options ) {
+							setTimeout( function() { options.success.call( options.scope ); }, 25 );
+						} );
+						
+						
+						var model = new this.Model( {
+							attr : "attrValue",
+							c1   : this.collection1,
+							c2   : this.collection2
+						} );
+						
+						var successCount = 0,   // 3 vars for callbacks
+						    errorCount = 0,
+						    completeCount = 0,
+						    doneCount = 0,      // 3 vars for returned Promise object
+						    failCount = 0,
+						    alwaysCount = 0;
+						    
+						var savePromise = model.save( {
+							success : function() { successCount++; },
+							error : function() { errorCount++; },
+							complete : function() { completeCount++; }
+						} );
+						savePromise
+							.done( function() { doneCount++; } )
+							.fail( function() { failCount++; } )
+							.always( function() { alwaysCount++; } );
+						
+						Y.Assert.areSame( 1, collection1SyncCallCount, "sync() should have been called on collection1" );
+						Y.Assert.areSame( 1, collection2SyncCallCount, "sync() should have been called on collection2" );
+						Y.Assert.areSame( 0, collection1SyncDoneCount, "collection1's sync should not yet be done" );
+						Y.Assert.areSame( 0, collection2SyncFailCount, "collection2's sync should not yet be failed" );
+						Y.Assert.areSame( 0, successCount, "Shouldn't have any success calls yet" );
+						Y.Assert.areSame( 0, errorCount, "Shouldn't have any error calls yet" );
+						Y.Assert.areSame( 0, completeCount, "Shouldn't have any complete calls yet" );
+						Y.Assert.areSame( 0, doneCount, "Shouldn't have any done calls yet" );
+						Y.Assert.areSame( 0, failCount, "Shouldn't have any fail calls yet" );
+						Y.Assert.areSame( 0, alwaysCount, "Shouldn't have any always calls yet" );
+						
+						this.wait( function() {
+							Y.Assert.areSame( 1, collection1SyncDoneCount, "collection1's sync should now be done" );
+							Y.Assert.areSame( 1, collection2SyncFailCount, "collection2's sync should now be failed" );
+							
+							Y.Assert.areSame( 0, successCount, "`complete` callback NOT should have been called" );
+							Y.Assert.areSame( 1, errorCount, "`error` callback should have been called" );
+							Y.Assert.areSame( 1, completeCount, "`complete` callback should have been called" );
+							Y.Assert.areSame( 0, doneCount, "`done` callback should NOT have been called" );
+							Y.Assert.areSame( 1, failCount, "`fail` callback should have been called" );
+							Y.Assert.areSame( 1, alwaysCount, "`always` callback should have been called" );
+						}, 75 );  // wait for collection sync()'s to complete
+					},
+					
+					
+					"save() should call the 'error' and 'fail' callbacks if collections synchronize, but the model itself fails to save" : function() {
+						var collection1SyncCallCount = 0,
+						    collection2SyncCallCount = 0,
+						    collection1SyncDoneCount = 0,
+						    collection2SyncDoneCount = 0;
+						
+						JsMockito.when( this.collection1 ).sync().then( function() {
+							collection1SyncCallCount++;
+							
+							var deferred = new jQuery.Deferred();
+							deferred.done( function() { collection1SyncDoneCount++; } );
+							setTimeout( function() { deferred.resolve(); }, 50 );
+							
+							return deferred;
+						} );
+						JsMockito.when( this.collection2 ).sync().then( function() {
+							collection2SyncCallCount++;
+							
+							var deferred = new jQuery.Deferred();
+							deferred.done( function() { collection2SyncDoneCount++; } );
+							setTimeout( function() { deferred.resolve(); }, 50 );
+							
+							return deferred;
+						} );
+						
+						JsMockito.when( this.proxy ).create().then( function( model, options ) {
+							setTimeout( function() { options.error.call( options.scope ); }, 25 );
+						} );
+						
+						
+						var model = new this.Model( {
+							attr : "attrValue",
+							c1   : this.collection1,
+							c2   : this.collection2
+						} );
+						
+						var successCount = 0,   // 3 vars for callbacks
+						    errorCount = 0,
+						    completeCount = 0,
+						    doneCount = 0,      // 3 vars for returned Promise object
+						    failCount = 0,
+						    alwaysCount = 0;
+						
+						var savePromise = model.save( {
+							success : function() { successCount++; },
+							error : function() { errorCount++; },
+							complete : function() { completeCount++; }
+						} );
+						savePromise
+							.done( function() { doneCount++; } )
+							.fail( function() { failCount++; } )
+							.always( function() { alwaysCount++; } );
+						
+						Y.Assert.areSame( 1, collection1SyncCallCount, "sync() should have been called on collection1" );
+						Y.Assert.areSame( 1, collection2SyncCallCount, "sync() should have been called on collection2" );
+						Y.Assert.areSame( 0, collection1SyncDoneCount, "collection1's sync should not yet be done" );
+						Y.Assert.areSame( 0, collection2SyncDoneCount, "collection2's sync should not yet be done" );
+						Y.Assert.areSame( 0, successCount, "Shouldn't have any success calls yet" );
+						Y.Assert.areSame( 0, errorCount, "Shouldn't have any error calls yet" );
+						Y.Assert.areSame( 0, completeCount, "Shouldn't have any complete calls yet" );
+						Y.Assert.areSame( 0, doneCount, "Shouldn't have any done calls yet" );
+						Y.Assert.areSame( 0, failCount, "Shouldn't have any fail calls yet" );
+						Y.Assert.areSame( 0, alwaysCount, "Shouldn't have any always calls yet" );
+						
+						this.wait( function() {
+							Y.Assert.areSame( 1, collection1SyncDoneCount, "collection1's sync should now be done" );
+							Y.Assert.areSame( 1, collection2SyncDoneCount, "collection2's sync should now be done" );
+							Y.Assert.areSame( 0, successCount, "Shouldn't have any success calls yet (2)" );
+							Y.Assert.areSame( 0, errorCount, "Shouldn't have any error calls yet (2)" );
+							Y.Assert.areSame( 0, completeCount, "Shouldn't have any complete calls yet (2)" );
+							Y.Assert.areSame( 0, doneCount, "Shouldn't have any done calls yet (2)" );
+							Y.Assert.areSame( 0, failCount, "Shouldn't have any fail calls yet (2)" );
+							Y.Assert.areSame( 0, alwaysCount, "Shouldn't have any always calls yet (2)" );
+							
+							this.wait( function() {
+								Y.Assert.areSame( 0, successCount, "`complete` callback NOT should have been called" );
+								Y.Assert.areSame( 1, errorCount, "`error` callback should have been called" );
+								Y.Assert.areSame( 1, completeCount, "`complete` callback should have been called" );
+								Y.Assert.areSame( 0, doneCount, "`done` callback should NOT have been called" );
+								Y.Assert.areSame( 1, failCount, "`fail` callback should have been called" );
+								Y.Assert.areSame( 1, alwaysCount, "`always` callback should have been called" );								
+							}, 50 );  // wait for the model's save() to complete
+							
+						}, 75 );  // wait for collection sync()'s to complete
+					}
 				}
 			]
 		},
