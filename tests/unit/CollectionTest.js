@@ -1982,6 +1982,26 @@ tests.unit.add( new Ext.test.TestSuite( {
 			// Test options / callbacks to sync() method
 			
 			
+			"sync() should call the 'success' and 'complete' callbacks when no persistence operations need to be done on any of the Collection's models" : function() {
+				var models = this.createModels( 4 );
+				var collection = new Kevlar.Collection( models );
+				
+				var successCount = 0,
+				    errorCount = 0,
+				    completeCount = 0;
+				
+				collection.sync( {
+					success  : function() { successCount++; },
+					error    : function() { errorCount++; },
+					complete : function() { completeCount++; }
+				} );
+				
+				Y.Assert.areSame( 1, successCount, "The success callback should have been called exactly once" );
+				Y.Assert.areSame( 0, errorCount, "The error callback should not have been called" );
+				Y.Assert.areSame( 1, completeCount, "The complete callback should have been called exactly once" );
+			},
+			
+			
 			"sync() should call the 'success' and 'complete' callbacks if all persistence operations succeed" : function() {
 				var models = this.createModels( 4 );
 				
@@ -2161,7 +2181,26 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			// Test returned Promise
 			
-			"sync() should return a jQuery.Promise object which has its `done` and `always` callbacks executed when the sync succeeds" : function() {
+			"sync() should return a jQuery.Promise object which has its `done` and `always` callbacks executed when no models in the Collection need to be persisted" : function() {
+				var models = this.createModels( 4 );				
+				var collection = new Kevlar.Collection( models );
+				
+				var doneCount = 0,
+				    failCount = 0,
+				    alwaysCount = 0;
+				
+				var promise = collection.sync()
+					.done( function() { doneCount++; } )
+					.fail( function() { failCount++; } )
+					.always( function() { alwaysCount++; } );
+				
+				Y.Assert.areSame( 1, doneCount, "The `done` callback should have been called exactly once" );
+				Y.Assert.areSame( 0, failCount, "The `fail` callback should not have been called" );
+				Y.Assert.areSame( 1, alwaysCount, "The `always` callback should have been called exactly once" );
+			},
+			
+			
+			"sync() should return a jQuery.Promise object which has its `done` and `always` callbacks executed when the sync of Models in the Collection succeeds" : function() {
 				var models = this.createModels( 4 );
 				
 				JsMockito.when( models[ 0 ] ).isNew().thenReturn( true );
