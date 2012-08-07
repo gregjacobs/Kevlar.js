@@ -2188,7 +2188,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		
 		// Subclass-specific setup
 		/**
-		 * @ignore 
+		 * @ignore
 		 */
 		onClassExtended : function( newModelClass ) {
 			// Assign a unique id to this class, which is used in hashmaps that hold the class
@@ -2319,6 +2319,9 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			 * providing the first argument to {@link #method-set} as an object, and/or may also result from having {@link Kevlar.attribute.Attribute#cfg-set Attribute set} 
 			 * functions which modify other Attributes. Or, one final way that changes may be counted in a "set" is if handlers of the {@link #change} event end up
 			 * setting Attributes on the Model as well.
+			 * 
+			 * Note: This event isn't quite production-ready, as it doesn't take into account changes from nested {@Link Kevlar.DataComponent DataComponents}
+			 * ({@link Kevlar.Model Models} and {@link Kevlar.Collection Collections}), but can be used for a set of flat changes in the Model.
 			 * 
 			 * @event changeset
 			 * @param {Kevlar.Model} model This Model instance.
