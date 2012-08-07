@@ -38,7 +38,7 @@
  *     model1.set( 'name', "Gregory" );
  *       // "A model changed its 'name' attribute from 'Greg' to 'Gregory'"
  */
-/*global window, Kevlar */
+/*global window, jQuery, Kevlar */
 Kevlar.Collection = Kevlar.DataComponent.extend( {
 	
 	/**
@@ -891,26 +891,13 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 	 * @param {Function} [options.complete] Function to call when the operation is complete, regardless of success or failure.
 	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in. This may also
 	 *   be provided as `context` if you prefer.
+	 * @return {jQuery.Promise} A Promise object which may have handlers attached. 
 	 */
 	sync : function( options ) {
 		options = options || {};
 		var scope = options.scope || options.context || window;
 		
-		// Callbacks for the options to this function
-		var completeCallback = function() {
-			if( options.complete ) { options.complete.call( scope ); }
-		};
-		var successCallback = function() {
-			if( options.success ) { options.success.call( scope ); }
-			completeCallback();
-		};
-		var errorCallback = function() {
-			if( options.error ) { options.error.call( scope ); }
-			completeCallback();
-		};
-		
-		
-		
+				
 		var models = this.getModels(),
 		    newModels = [],
 		    modifiedModels = [],
@@ -929,54 +916,52 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 		}
 		
 		
-		// Callbacks for handling all of the requests, and responding to when all of them are complete
-		var hasErrored = false,
-		    numModelsToSync = newModels.length + modifiedModels.length + removedModels.length;
+		// Callbacks for the options to this function
+		var successCallback = function() {
+			if( options.success ) { options.success.call( scope ); }
+		};
+		var errorCallback = function() {
+			if( options.error ) { options.error.call( scope ); }
+		};
+		var completeCallback = function() {
+			if( options.complete ) { options.complete.call( scope ); }
+		};
 		
-		// Function that counts down by one when each request to persist the models has completed. Upon the last
-		// model being persisted, we either call the successCallback() or the errorCallback()
-		var counter = Kevlar.util.Function.bind( function() {
-			numModelsToSync--;
-			
-			// When the last model in the set has been persisted, run the success or error callback
-			if( numModelsToSync === 0 ) {
-				if( !hasErrored ) {
-					successCallback();
-				} else {
-					errorCallback();
-				}
-			}
-		}, this );
-		var successCounter = function() { counter(); };
-		var errorCounter   = function() { hasErrored = true; counter(); };
+		// A callback where upon successful destruction of a model, remove the model from the removedModels array, so that we don't try to destroy it again from another call to sync()
 		var destroySuccess = function( model ) {
-			// Upon successful destruction, remove the model from the removedModels array, so that we don't try to destroy it again
 			for( var i = 0, len = removedModels.length; i < len; i++ ) {
 				if( removedModels[ i ] === model ) {
 					removedModels.splice( i, 1 );
 					break;
 				}
 			}
-			
-			successCounter();
 		};
 		
+		
 		// Now synchronize the models
-		var modelsToSave = newModels.concat( modifiedModels );
+		var promises = [],
+		    modelsToSave = newModels.concat( modifiedModels );
+		
 		for( i = 0, len = modelsToSave.length; i < len; i++ ) {
-			modelsToSave[ i ].save( {
-				async   : options.async,
-				success : successCounter,
-				error   : errorCounter
+			var savePromise = modelsToSave[ i ].save( {
+				async   : options.async
 			} );
+			promises.push( savePromise );
 		}
 		for( i = removedModels.length - 1; i >= 0; i-- ) {  // Loop this one backwards, as destroyed models will be removed from the array as they go if they happen synchronously
-			removedModels[ i ].destroy( {
-				async   : options.async,
-				success : destroySuccess,
-				error   : errorCounter
+			var destroyPromise = removedModels[ i ].destroy( {
+				async   : options.async
 			} );
+			destroyPromise.done( destroySuccess );  // Upon successful destruction, we want to remove the model from the removedModels array, so that we don't try to destroy it again
+			promises.push( destroyPromise );
 		}
+		
+		// The "overall" promise that will either succeed if all persistence requests are made successfully, or fail if just one does not.
+		var overallPromise = jQuery.when.apply( null, promises );  // apply all of the promises as arguments
+		overallPromise.done( successCallback, completeCallback );
+		overallPromise.fail( errorCallback, completeCallback );
+		
+		return overallPromise;  // Return a jQuery.Promise object for all the promises
 	}
 
 } );

@@ -2098,7 +2098,7 @@ tests.unit.attribute.add( new Ext.test.TestSuite( {
 
 } ) );
 
-/*global window, Ext, Y, JsMockito, tests, Kevlar */
+/*global window, Ext, Y, JsMockito, tests, jQuery, Kevlar */
 tests.unit.add( new Ext.test.TestSuite( {
 	name: 'Kevlar.Collection',
 	
@@ -2846,13 +2846,13 @@ tests.unit.add( new Ext.test.TestSuite( {
 			"remove() should fire the 'remove' event for a single model that is removed" : function() {
 				var model1 = new this.Model( { boolAttr: false, numberAttr: 0, stringAttr: "" } ),
 				    model2 = new this.Model( { boolAttr: true, numberAttr: 1, stringAttr: "value" } );
-				    
+				
 				var collection = new this.Collection( [ model1, model2 ] );
 				
 				var removeEventCount = 0,
 				    removedModel,
 				    removedIndex;
-				    
+				
 				collection.on( 'remove', function( collection, model, index ) {
 					removeEventCount++;
 					removedModel = model;
@@ -3913,7 +3913,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			"sync() should create (save) models that are new" : function() {
 				var models = this.createModels( 2 );
 				JsMockito.when( models[ 0 ] ).isNew().thenReturn( true );
-				JsMockito.when( models[ 0 ] ).save().then( function( options ) { options.success( models[ 0 ] ); } );
+				JsMockito.when( models[ 0 ] ).save().then( function() { return (new jQuery.Deferred()).resolve( models[ 0 ] ); } );
 				
 				var collection = new Kevlar.Collection( models );
 				collection.sync();
@@ -3933,7 +3933,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			"sync() should save models that have been modified" : function() {
 				var models = this.createModels( 2 );
 				JsMockito.when( models[ 0 ] ).isModified().thenReturn( true );
-				JsMockito.when( models[ 0 ] ).save().then( function( options ) { options.success( models[ 0 ] ); } );
+				JsMockito.when( models[ 0 ] ).save().then( function() { return (new jQuery.Deferred()).resolve( models[ 0 ] ); } );
 				
 				var collection = new Kevlar.Collection( models );
 				collection.sync();
@@ -3952,7 +3952,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			"sync() should destroy models that have been removed from the collection" : function() {
 				var models = this.createModels( 2 );
-				JsMockito.when( models[ 0 ] ).destroy().then( function( options ) { options.success( models[ 0 ] ); } );
+				JsMockito.when( models[ 0 ] ).destroy().then( function() { return (new jQuery.Deferred()).resolve( models[ 0 ] ); } );
 				
 				var collection = new Kevlar.Collection( models );
 				collection.remove( models[ 0 ] );
@@ -3972,8 +3972,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			"sync() should destroy models that have been removed from the collection in more than one call to remove() (to make sure the 'removedModels' is cumulative)" : function() {
 				var models = this.createModels( 2 );
-				JsMockito.when( models[ 0 ] ).destroy().then( function( options ) { options.success( models[ 0 ] ); } );
-				JsMockito.when( models[ 1 ] ).destroy().then( function( options ) { options.success( models[ 1 ] ); } );
+				JsMockito.when( models[ 0 ] ).destroy().then( function() { return (new jQuery.Deferred()).resolve( models[ 0 ] ); } );
+				JsMockito.when( models[ 1 ] ).destroy().then( function() { return (new jQuery.Deferred()).resolve( models[ 1 ] ); } );
 				
 				var collection = new Kevlar.Collection( models );
 				collection.remove( models[ 0 ] );
@@ -3994,10 +3994,10 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			"sync() should destroy models that have been removed from the collection, but if one fails, only that one should be attempted to be destroyed again upon the next sync()" : function() {
 				var models = this.createModels( 2 );
-				JsMockito.when( models[ 0 ] ).destroy().then( function( options ) { options.success( models[ 0 ] ); } );
+				JsMockito.when( models[ 0 ] ).destroy().then( function() { return (new jQuery.Deferred()).resolve( models[ 0 ] ); } );
 				JsMockito.when( models[ 1 ] ).destroy().then( 
-					function( options ) { options.error( models[ 1 ] ); },   // destroy() errors out the first time, 
-					function( options ) { options.success( models[ 1 ] ); }  // and then is successful the second time
+					function() { return (new jQuery.Deferred()).reject( models[ 1 ] ); },   // destroy() errors out the first time, 
+					function() { return (new jQuery.Deferred()).resolve( models[ 1 ] ); }   // and then is successful the second time
 				);
 				
 				var collection = new Kevlar.Collection( models );
@@ -4020,8 +4020,8 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			"sync() should destroy models that have been removed from the collection only on the first call to sync(). They should not be destroyed again afterwards." : function() {
 				var models = this.createModels( 2 );
-				JsMockito.when( models[ 0 ] ).destroy().then( function( options ) { options.success( models[ 0 ] ); } );
-				JsMockito.when( models[ 1 ] ).destroy().then( function( options ) { options.success( models[ 1 ] ); } );
+				JsMockito.when( models[ 0 ] ).destroy().then( function() { return (new jQuery.Deferred()).resolve( models[ 0 ] ); } );
+				JsMockito.when( models[ 1 ] ).destroy().then( function() { return (new jQuery.Deferred()).resolve( models[ 1 ] ); } );
 				
 				var collection = new Kevlar.Collection( models );
 				collection.remove( models[ 0 ] );
@@ -4045,15 +4045,15 @@ tests.unit.add( new Ext.test.TestSuite( {
 				var models = this.createModels( 4 );
 				
 				JsMockito.when( models[ 0 ] ).isNew().thenReturn( true );
-				JsMockito.when( models[ 0 ] ).save().then( function( options ) { options.success( models[ 0 ] ); } );
+				JsMockito.when( models[ 0 ] ).save().then( function() { return (new jQuery.Deferred()).resolve( models[ 0 ] ); } );
 				
 				JsMockito.when( models[ 1 ] ).isModified().thenReturn( true );
-				JsMockito.when( models[ 0 ] ).save().then( function( options ) { options.success( models[ 1 ] ); } );
+				JsMockito.when( models[ 1 ] ).save().then( function() { return (new jQuery.Deferred()).resolve( models[ 1 ] ); } );
 				
 				// Note: models[ 2 ] is not new/modified
 				
 				// Note: models[ 3 ] will be removed
-				JsMockito.when( models[ 1 ] ).destroy().then( function( options ) { options.success( models[ 3 ] ); } );
+				JsMockito.when( models[ 3 ] ).destroy().then( function() { return (new jQuery.Deferred()).resolve( models[ 3 ] ); } );
 				
 				var collection = new Kevlar.Collection( models );
 				collection.remove( models[ 3 ] );
@@ -4086,15 +4086,15 @@ tests.unit.add( new Ext.test.TestSuite( {
 				var models = this.createModels( 4 );
 				
 				JsMockito.when( models[ 0 ] ).isNew().thenReturn( true );
-				JsMockito.when( models[ 0 ] ).save().then( function( options ) { options.success( models[ 0 ] ); } );
+				JsMockito.when( models[ 0 ] ).save().then( function() { return (new jQuery.Deferred()).resolve( models[ 0 ] ); } );
 				
 				JsMockito.when( models[ 1 ] ).isModified().thenReturn( true );
-				JsMockito.when( models[ 1 ] ).save().then( function( options ) { options.success( models[ 1 ] ); } );
+				JsMockito.when( models[ 1 ] ).save().then( function() { return (new jQuery.Deferred()).resolve( models[ 1 ] ); } );
 				
 				// Note: models[ 2 ] is not new/modified
 				
 				// Note: models[ 3 ] will be removed
-				JsMockito.when( models[ 3 ] ).destroy().then( function( options ) { options.success( models[ 3 ] ); } );
+				JsMockito.when( models[ 3 ] ).destroy().then( function() { return (new jQuery.Deferred()).resolve( models[ 3 ] ); } );
 				
 				
 				var collection = new Kevlar.Collection( models );
@@ -4121,15 +4121,15 @@ tests.unit.add( new Ext.test.TestSuite( {
 				var models = this.createModels( 4 );
 				
 				JsMockito.when( models[ 0 ] ).isNew().thenReturn( true );
-				JsMockito.when( models[ 0 ] ).save().then( function( options ) { options.error( models[ 0 ] ); } );
+				JsMockito.when( models[ 0 ] ).save().then( function() { return (new jQuery.Deferred()).reject( models[ 0 ] ); } );
 				
 				JsMockito.when( models[ 1 ] ).isModified().thenReturn( true );
-				JsMockito.when( models[ 1 ] ).save().then( function( options ) { options.error( models[ 1 ] ); } );
+				JsMockito.when( models[ 1 ] ).save().then( function() { return (new jQuery.Deferred()).reject( models[ 1 ] ); } );
 				
 				// Note: models[ 2 ] is not new/modified
 				
 				// Note: models[ 3 ] will be removed
-				JsMockito.when( models[ 3 ] ).destroy().then( function( options ) { options.error( models[ 3 ] ); } );
+				JsMockito.when( models[ 3 ] ).destroy().then( function() { return (new jQuery.Deferred()).reject( models[ 3 ] ); } );
 				
 				
 				var collection = new Kevlar.Collection( models );
@@ -4156,15 +4156,15 @@ tests.unit.add( new Ext.test.TestSuite( {
 				var models = this.createModels( 4 );
 				
 				JsMockito.when( models[ 0 ] ).isNew().thenReturn( true );
-				JsMockito.when( models[ 0 ] ).save().then( function( options ) { options.error( models[ 0 ] ); } );
+				JsMockito.when( models[ 0 ] ).save().then( function() { return (new jQuery.Deferred()).reject( models[ 0 ] ); } );
 				
 				JsMockito.when( models[ 1 ] ).isModified().thenReturn( true );
-				JsMockito.when( models[ 1 ] ).save().then( function( options ) { options.success( models[ 1 ] ); } );
+				JsMockito.when( models[ 1 ] ).save().then( function() { return (new jQuery.Deferred()).resolve( models[ 3 ] ); } );
 				
 				// Note: models[ 2 ] is not new/modified
 				
 				// Note: models[ 3 ] will be removed
-				JsMockito.when( models[ 3 ] ).destroy().then( function( options ) { options.success( models[ 3 ] ); } );
+				JsMockito.when( models[ 3 ] ).destroy().then( function() { return (new jQuery.Deferred()).resolve( models[ 3 ] ); } );
 				
 				
 				var collection = new Kevlar.Collection( models );
@@ -4191,15 +4191,15 @@ tests.unit.add( new Ext.test.TestSuite( {
 				var models = this.createModels( 4 );
 				
 				JsMockito.when( models[ 0 ] ).isNew().thenReturn( true );
-				JsMockito.when( models[ 0 ] ).save().then( function( options ) { options.success( models[ 0 ] ); } );
+				JsMockito.when( models[ 0 ] ).save().then( function() { return (new jQuery.Deferred()).resolve( models[ 0 ] ); });
 				
 				JsMockito.when( models[ 1 ] ).isModified().thenReturn( true );
-				JsMockito.when( models[ 1 ] ).save().then( function( options ) { options.error( models[ 1 ] ); } );
+				JsMockito.when( models[ 1 ] ).save().then( function() { return (new jQuery.Deferred()).reject( models[ 1 ] ); } );
 				
 				// Note: models[ 2 ] is not new/modified
 				
 				// Note: models[ 3 ] will be removed
-				JsMockito.when( models[ 3 ] ).destroy().then( function( options ) { options.success( models[ 3 ] ); } );
+				JsMockito.when( models[ 3 ] ).destroy().then( function() { return (new jQuery.Deferred()).resolve( models[ 3 ] ); } );
 				
 				
 				var collection = new Kevlar.Collection( models );
@@ -4226,15 +4226,15 @@ tests.unit.add( new Ext.test.TestSuite( {
 				var models = this.createModels( 4 );
 				
 				JsMockito.when( models[ 0 ] ).isNew().thenReturn( true );
-				JsMockito.when( models[ 0 ] ).save().then( function( options ) { options.success( models[ 0 ] ); } );
+				JsMockito.when( models[ 0 ] ).save().then( function() { return (new jQuery.Deferred()).resolve( models[ 0 ] ); } );
 				
 				JsMockito.when( models[ 1 ] ).isModified().thenReturn( true );
-				JsMockito.when( models[ 1 ] ).save().then( function( options ) { options.success( models[ 1 ] ); } );
+				JsMockito.when( models[ 1 ] ).save().then( function() { return (new jQuery.Deferred()).resolve( models[ 1 ] ); } );
 				
 				// Note: models[ 2 ] is not new/modified
 				
 				// Note: models[ 3 ] will be removed
-				JsMockito.when( models[ 3 ] ).destroy().then( function( options ) { options.error( models[ 3 ] ); } );
+				JsMockito.when( models[ 3 ] ).destroy().then( function() { return (new jQuery.Deferred()).reject( models[ 3 ] ); } );
 				
 				
 				var collection = new Kevlar.Collection( models );
@@ -4254,6 +4254,78 @@ tests.unit.add( new Ext.test.TestSuite( {
 				Y.Assert.areSame( 0, successCount, "The success callback should not have been called" );
 				Y.Assert.areSame( 1, errorCount, "The error callback should have been called exactly once" );
 				Y.Assert.areSame( 1, completeCount, "The complete callback should have been called exactly once" );
+			},
+			
+			
+			// -----------------------------------
+			
+			// Test returned Promise
+			
+			"sync() should return a jQuery.Promise object which has its `done` and `always` callbacks executed when the sync succeeds" : function() {
+				var models = this.createModels( 4 );
+				
+				JsMockito.when( models[ 0 ] ).isNew().thenReturn( true );
+				JsMockito.when( models[ 0 ] ).save().then( function() { return (new jQuery.Deferred()).resolve( models[ 0 ] ); } );
+				
+				JsMockito.when( models[ 1 ] ).isModified().thenReturn( true );
+				JsMockito.when( models[ 1 ] ).save().then( function() { return (new jQuery.Deferred()).resolve( models[ 1 ] ); } );
+				
+				// Note: models[ 2 ] is not new/modified
+				
+				// Note: models[ 3 ] will be removed
+				JsMockito.when( models[ 3 ] ).destroy().then( function() { return (new jQuery.Deferred()).resolve( models[ 3 ] ); } );
+				
+				
+				var collection = new Kevlar.Collection( models );
+				collection.remove( models[ 3 ] );
+				
+				
+				var doneCount = 0,
+				    failCount = 0,
+				    alwaysCount = 0;
+				
+				var promise = collection.sync()
+					.done( function() { doneCount++; } )
+					.fail( function() { failCount++; } )
+					.always( function() { alwaysCount++; } );
+				
+				Y.Assert.areSame( 1, doneCount, "The `done` callback should have been called exactly once" );
+				Y.Assert.areSame( 0, failCount, "The `fail` callback should not have been called" );
+				Y.Assert.areSame( 1, alwaysCount, "The `always` callback should have been called exactly once" );
+			},
+			
+			
+			"sync() should return a jQuery.Promise object which has its `fail` and `always` callbacks executed when at least one of the operations of the sync fails" : function() {
+				var models = this.createModels( 4 );
+				
+				JsMockito.when( models[ 0 ] ).isNew().thenReturn( true );
+				JsMockito.when( models[ 0 ] ).save().then( function() { return (new jQuery.Deferred()).resolve( models[ 0 ] ); } );
+				
+				JsMockito.when( models[ 1 ] ).isModified().thenReturn( true );
+				JsMockito.when( models[ 1 ] ).save().then( function() { return (new jQuery.Deferred()).reject( models[ 1 ] ); } );
+				
+				// Note: models[ 2 ] is not new/modified
+				
+				// Note: models[ 3 ] will be removed
+				JsMockito.when( models[ 3 ] ).destroy().then( function() { return (new jQuery.Deferred()).resolve( models[ 3 ] ); } );
+				
+				
+				var collection = new Kevlar.Collection( models );
+				collection.remove( models[ 3 ] );
+				
+				
+				var doneCount = 0,
+				    failCount = 0,
+				    alwaysCount = 0;
+				
+				var promise = collection.sync()
+					.done( function() { doneCount++; } )
+					.fail( function() { failCount++; } )
+					.always( function() { alwaysCount++; } );
+				
+				Y.Assert.areSame( 0, doneCount, "The `done` callback should not have been called" );
+				Y.Assert.areSame( 1, failCount, "The `fail` callback should have been called exactly once" );
+				Y.Assert.areSame( 1, alwaysCount, "The `always` callback should have been called exactly once" );
 			}
 			
 		}
@@ -6849,7 +6921,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 				
 				{
-					name : "save() callbacks tests",
+					name : "save() callbacks and promise tests",
 					
 					setUp : function() {
 						this.proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
@@ -6860,13 +6932,6 @@ tests.unit.add( new Ext.test.TestSuite( {
 							destroy: Kevlar.emptyFn
 						} ) );
 						
-						// Note: setting both create() and update() methods here
-						this.proxy.create = this.proxy.update = function( model, options ) {
-							if( options.success ) { options.success.call( options.scope || window ); }
-							if( options.error ) { options.error.call( options.scope || window ); }
-							if( options.complete ) { options.complete( options.scope || window ); }
-						};
-						
 						this.Model = Kevlar.Model.extend( {
 							addAttributes : [ 'id', 'attribute1' ],
 							persistenceProxy  : this.proxy
@@ -6874,7 +6939,15 @@ tests.unit.add( new Ext.test.TestSuite( {
 					},
 					
 					
+					// Callbacks Tests
+					
 					"save should call its 'success' and 'complete' callbacks if the persistenceProxy successfully creates" : function() {
+						// Override the Proxy's create method to call the correct callbacks
+						this.proxy.create = function( model, options ) {
+							if( options.success ) { options.success.call( options.scope || window ); }
+							if( options.complete ) { options.complete( options.scope || window ); }
+						};
+						
 						var successCallCount = 0,
 						    completeCallCount = 0;
 						    
@@ -6891,6 +6964,12 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 					
 					"save should call its 'error' and 'complete' callbacks if the persistenceProxy encounters an error while creating" : function() {
+						// Override the Proxy's create method to call the correct callbacks
+						this.proxy.create = function( model, options ) {
+							if( options.error ) { options.error.call( options.scope || window ); }
+							if( options.complete ) { options.complete( options.scope || window ); }
+						};
+						
 						var errorCallCount = 0,
 						    completeCallCount = 0;
 						
@@ -6907,6 +6986,12 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 					
 					"save should call its 'success' and 'complete' callbacks if the persistenceProxy successfully updates" : function() {
+						// Override the Proxy's create method to call the correct callbacks
+						this.proxy.update = function( model, options ) {
+							if( options.success ) { options.success.call( options.scope || window ); }
+							if( options.complete ) { options.complete( options.scope || window ); }
+						};
+						
 						var successCallCount = 0,
 						    completeCallCount = 0;
 						    
@@ -6923,6 +7008,12 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 					
 					"save should call its 'error' and 'complete' callbacks if the persistenceProxy encounters an error while updating" : function() {
+						// Override the Proxy's create method to call the correct callbacks
+						this.proxy.update = function( model, options ) {
+							if( options.error ) { options.error.call( options.scope || window ); }
+							if( options.complete ) { options.complete( options.scope || window ); }
+						};
+						
 						var errorCallCount = 0,
 						    completeCallCount = 0;
 						
@@ -6935,7 +7026,104 @@ tests.unit.add( new Ext.test.TestSuite( {
 						
 						Y.Assert.areSame( 1, errorCallCount, "The 'error' function should have been called exactly once" );
 						Y.Assert.areSame( 1, completeCallCount, "The 'complete' function should have been called exactly once" );
+					},
+					
+					
+					// -------------------------------
+					
+					// Promise tests
+					
+					"save should return a jQuery.Promise object which has its `done` and `always` callbacks executed when the persistenceProxy successfully creates" : function() {
+						// Override the Proxy's create method to call the correct callbacks
+						this.proxy.create = function( model, options ) {
+							if( options.success ) { options.success.call( options.scope || window ); }
+							if( options.complete ) { options.complete( options.scope || window ); }
+						};
+						
+						var doneCallCount = 0,
+						    failCallCount = 0,
+						    alwaysCallCount = 0;
+						    
+						var model = new this.Model();
+						var promise = model.save()
+							.done( function()   { doneCallCount++; } )
+							.fail( function()   { failCallCount++; } )
+							.always( function() { alwaysCallCount++; } );
+						
+						Y.Assert.areSame( 1, doneCallCount, "The 'done' function should have been called exactly once" );
+						Y.Assert.areSame( 0, failCallCount, "The 'fail' function should not have been called" );
+						Y.Assert.areSame( 1, alwaysCallCount, "The 'always' function should have been called exactly once" );
+					},
+					
+					
+					"save should return a jQuery.Promise object which has its `fail` and `always` callbacks executed when the persistenceProxy fails to create" : function() {
+						// Override the Proxy's create method to call the correct callbacks
+						this.proxy.create = function( model, options ) {
+							if( options.error ) { options.error.call( options.scope || window ); }
+							if( options.complete ) { options.complete( options.scope || window ); }
+						};
+						
+						var doneCallCount = 0,
+						    failCallCount = 0,
+						    alwaysCallCount = 0;
+						    
+						var model = new this.Model();
+						var promise = model.save()
+							.done( function()   { doneCallCount++; } )
+							.fail( function()   { failCallCount++; } )
+							.always( function() { alwaysCallCount++; } );
+						
+						Y.Assert.areSame( 0, doneCallCount, "The 'done' function should not have been called" );
+						Y.Assert.areSame( 1, failCallCount, "The 'fail' function should have been called exactly once" );
+						Y.Assert.areSame( 1, alwaysCallCount, "The 'always' function should have been called exactly once" );
+					},
+					
+					
+					"save should return a jQuery.Promise object which has its `done` and `always` callbacks executed when the persistenceProxy successfully updates" : function() {
+						// Override the Proxy's create method to call the correct callbacks
+						this.proxy.update = function( model, options ) {
+							if( options.success ) { options.success.call( options.scope || window ); }
+							if( options.complete ) { options.complete( options.scope || window ); }
+						};
+						
+						var doneCallCount = 0,
+						    failCallCount = 0,
+						    alwaysCallCount = 0;
+						    
+						var model = new this.Model( { id: 1 } );
+						var promise = model.save()
+							.done( function()   { doneCallCount++; } )
+							.fail( function()   { failCallCount++; } )
+							.always( function() { alwaysCallCount++; } );
+						
+						Y.Assert.areSame( 1, doneCallCount, "The 'done' function should have been called exactly once" );
+						Y.Assert.areSame( 0, failCallCount, "The 'fail' function should not have been called" );
+						Y.Assert.areSame( 1, alwaysCallCount, "The 'always' function should have been called exactly once" );
+					},
+					
+					
+					"save should return a jQuery.Promise object which has its `fail` and `always` callbacks executed when the persistenceProxy fails to update" : function() {
+						// Override the Proxy's create method to call the correct callbacks
+						this.proxy.update = function( model, options ) {
+							if( options.error ) { options.error.call( options.scope || window ); }
+							if( options.complete ) { options.complete( options.scope || window ); }
+						};
+						
+						var doneCallCount = 0,
+						    failCallCount = 0,
+						    alwaysCallCount = 0;
+						    
+						var model = new this.Model( { id: 1 } );
+						var promise = model.save()
+							.done( function()   { doneCallCount++; } )
+							.fail( function()   { failCallCount++; } )
+							.always( function() { alwaysCallCount++; } );
+						
+						Y.Assert.areSame( 0, doneCallCount, "The 'done' function should not have been called" );
+						Y.Assert.areSame( 1, failCallCount, "The 'fail' function should have been called exactly once" );
+						Y.Assert.areSame( 1, alwaysCallCount, "The 'always' function should have been called exactly once" );
 					}
+					
 				},
 				
 				
@@ -7187,7 +7375,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			
 				{
-					name : "destroy() callbacks tests",
+					name : "destroy() callbacks and returned promise tests",
 					
 					setUp : function() {
 						this.proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
@@ -7199,14 +7387,15 @@ tests.unit.add( new Ext.test.TestSuite( {
 						} ) );
 					},
 					
-			
+					
+					// Callbacks tests
+					
 					"destroy() should call its 'success' and 'complete' callbacks if the persistenceProxy is successful" : function() {
 						var successCallCount = 0,
 						    completeCallCount = 0;
 						
 						JsMockito.when( this.proxy ).destroy().then( function( model, options ) {
 							if( options.success )  { options.success.call( options.scope ); }
-							if( options.complete ) { options.complete( options.scope ); }
 						} );
 						
 						var Model = Kevlar.Model.extend( {
@@ -7232,7 +7421,6 @@ tests.unit.add( new Ext.test.TestSuite( {
 						
 						JsMockito.when( this.proxy ).destroy().then( function( model, options ) {
 							options.error.call( options.scope );
-							options.complete( options.scope );
 						} );
 						
 						var Model = Kevlar.Model.extend( {
@@ -7249,6 +7437,62 @@ tests.unit.add( new Ext.test.TestSuite( {
 						
 						Y.Assert.areSame( 1, errorCallCount, "The 'error' function should have been called exactly once" );
 						Y.Assert.areSame( 1, completeCallCount, "The 'complete' function should have been called exactly once" );
+					},
+					
+					
+					// -------------------------------------
+					
+					// Returned Promise object tests
+					
+					"destroy() should return a jQuery.Promise object, which has its `done` and `always` callbacks executed upon successful completion" : function() {
+						var doneCallCount = 0,
+						    failCallCount = 0,
+						    alwaysCallCount = 0;
+						
+						JsMockito.when( this.proxy ).destroy().then( function( model, options ) {
+							options.success.call( options.scope );
+						} );
+						
+						var Model = Kevlar.Model.extend( {
+							attributes : [ 'id' ],
+							persistenceProxy  : this.proxy
+						} );
+						var model = new Model( { id: 1 } );  // the model needs an id to be considered as persisted on the server
+						
+						var promise = model.destroy()
+							.done( function()   { doneCallCount++; } )
+							.fail( function()   { failCallCount++; } )
+							.always( function() { alwaysCallCount++; } );
+						
+						Y.Assert.areSame( 1, doneCallCount, "The 'done' function should have been called exactly once" );
+						Y.Assert.areSame( 0, failCallCount, "The 'fail' function should have not been called" );
+						Y.Assert.areSame( 1, alwaysCallCount, "The 'always' function should have been called exactly once" );
+					},
+					
+					
+					"destroy() should return a jQuery.Promise object, which has its `fail` and `always` callbacks executed upon an error while persisting" : function() {
+						var doneCallCount = 0,
+						    failCallCount = 0,
+						    alwaysCallCount = 0;
+						
+						JsMockito.when( this.proxy ).destroy().then( function( model, options ) {
+							options.error.call( options.scope );
+						} );
+						
+						var Model = Kevlar.Model.extend( {
+							attributes : [ 'id' ],
+							persistenceProxy  : this.proxy
+						} );
+						var model = new Model( { id: 1 } );  // the model needs an id to be considered as persisted on the server
+						
+						var promise = model.destroy()
+							.done( function()   { doneCallCount++; } )
+							.fail( function()   { failCallCount++; } )
+							.always( function() { alwaysCallCount++; } );
+						
+						Y.Assert.areSame( 0, doneCallCount, "The 'done' function should not have been called" );
+						Y.Assert.areSame( 1, failCallCount, "The 'fail' function should have been called exactly once" );
+						Y.Assert.areSame( 1, alwaysCallCount, "The 'always' function should have been called exactly once" );
 					}
 				}
 			]

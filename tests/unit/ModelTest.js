@@ -2240,7 +2240,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 				
 				{
-					name : "save() callbacks tests",
+					name : "save() callbacks and promise tests",
 					
 					setUp : function() {
 						this.proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
@@ -2251,13 +2251,6 @@ tests.unit.add( new Ext.test.TestSuite( {
 							destroy: Kevlar.emptyFn
 						} ) );
 						
-						// Note: setting both create() and update() methods here
-						this.proxy.create = this.proxy.update = function( model, options ) {
-							if( options.success ) { options.success.call( options.scope || window ); }
-							if( options.error ) { options.error.call( options.scope || window ); }
-							if( options.complete ) { options.complete( options.scope || window ); }
-						};
-						
 						this.Model = Kevlar.Model.extend( {
 							addAttributes : [ 'id', 'attribute1' ],
 							persistenceProxy  : this.proxy
@@ -2265,7 +2258,15 @@ tests.unit.add( new Ext.test.TestSuite( {
 					},
 					
 					
+					// Callbacks Tests
+					
 					"save should call its 'success' and 'complete' callbacks if the persistenceProxy successfully creates" : function() {
+						// Override the Proxy's create method to call the correct callbacks
+						this.proxy.create = function( model, options ) {
+							if( options.success ) { options.success.call( options.scope || window ); }
+							if( options.complete ) { options.complete( options.scope || window ); }
+						};
+						
 						var successCallCount = 0,
 						    completeCallCount = 0;
 						    
@@ -2282,6 +2283,12 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 					
 					"save should call its 'error' and 'complete' callbacks if the persistenceProxy encounters an error while creating" : function() {
+						// Override the Proxy's create method to call the correct callbacks
+						this.proxy.create = function( model, options ) {
+							if( options.error ) { options.error.call( options.scope || window ); }
+							if( options.complete ) { options.complete( options.scope || window ); }
+						};
+						
 						var errorCallCount = 0,
 						    completeCallCount = 0;
 						
@@ -2298,6 +2305,12 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 					
 					"save should call its 'success' and 'complete' callbacks if the persistenceProxy successfully updates" : function() {
+						// Override the Proxy's create method to call the correct callbacks
+						this.proxy.update = function( model, options ) {
+							if( options.success ) { options.success.call( options.scope || window ); }
+							if( options.complete ) { options.complete( options.scope || window ); }
+						};
+						
 						var successCallCount = 0,
 						    completeCallCount = 0;
 						    
@@ -2314,6 +2327,12 @@ tests.unit.add( new Ext.test.TestSuite( {
 					
 					
 					"save should call its 'error' and 'complete' callbacks if the persistenceProxy encounters an error while updating" : function() {
+						// Override the Proxy's create method to call the correct callbacks
+						this.proxy.update = function( model, options ) {
+							if( options.error ) { options.error.call( options.scope || window ); }
+							if( options.complete ) { options.complete( options.scope || window ); }
+						};
+						
 						var errorCallCount = 0,
 						    completeCallCount = 0;
 						
@@ -2326,7 +2345,104 @@ tests.unit.add( new Ext.test.TestSuite( {
 						
 						Y.Assert.areSame( 1, errorCallCount, "The 'error' function should have been called exactly once" );
 						Y.Assert.areSame( 1, completeCallCount, "The 'complete' function should have been called exactly once" );
+					},
+					
+					
+					// -------------------------------
+					
+					// Promise tests
+					
+					"save should return a jQuery.Promise object which has its `done` and `always` callbacks executed when the persistenceProxy successfully creates" : function() {
+						// Override the Proxy's create method to call the correct callbacks
+						this.proxy.create = function( model, options ) {
+							if( options.success ) { options.success.call( options.scope || window ); }
+							if( options.complete ) { options.complete( options.scope || window ); }
+						};
+						
+						var doneCallCount = 0,
+						    failCallCount = 0,
+						    alwaysCallCount = 0;
+						    
+						var model = new this.Model();
+						var promise = model.save()
+							.done( function()   { doneCallCount++; } )
+							.fail( function()   { failCallCount++; } )
+							.always( function() { alwaysCallCount++; } );
+						
+						Y.Assert.areSame( 1, doneCallCount, "The 'done' function should have been called exactly once" );
+						Y.Assert.areSame( 0, failCallCount, "The 'fail' function should not have been called" );
+						Y.Assert.areSame( 1, alwaysCallCount, "The 'always' function should have been called exactly once" );
+					},
+					
+					
+					"save should return a jQuery.Promise object which has its `fail` and `always` callbacks executed when the persistenceProxy fails to create" : function() {
+						// Override the Proxy's create method to call the correct callbacks
+						this.proxy.create = function( model, options ) {
+							if( options.error ) { options.error.call( options.scope || window ); }
+							if( options.complete ) { options.complete( options.scope || window ); }
+						};
+						
+						var doneCallCount = 0,
+						    failCallCount = 0,
+						    alwaysCallCount = 0;
+						    
+						var model = new this.Model();
+						var promise = model.save()
+							.done( function()   { doneCallCount++; } )
+							.fail( function()   { failCallCount++; } )
+							.always( function() { alwaysCallCount++; } );
+						
+						Y.Assert.areSame( 0, doneCallCount, "The 'done' function should not have been called" );
+						Y.Assert.areSame( 1, failCallCount, "The 'fail' function should have been called exactly once" );
+						Y.Assert.areSame( 1, alwaysCallCount, "The 'always' function should have been called exactly once" );
+					},
+					
+					
+					"save should return a jQuery.Promise object which has its `done` and `always` callbacks executed when the persistenceProxy successfully updates" : function() {
+						// Override the Proxy's create method to call the correct callbacks
+						this.proxy.update = function( model, options ) {
+							if( options.success ) { options.success.call( options.scope || window ); }
+							if( options.complete ) { options.complete( options.scope || window ); }
+						};
+						
+						var doneCallCount = 0,
+						    failCallCount = 0,
+						    alwaysCallCount = 0;
+						    
+						var model = new this.Model( { id: 1 } );
+						var promise = model.save()
+							.done( function()   { doneCallCount++; } )
+							.fail( function()   { failCallCount++; } )
+							.always( function() { alwaysCallCount++; } );
+						
+						Y.Assert.areSame( 1, doneCallCount, "The 'done' function should have been called exactly once" );
+						Y.Assert.areSame( 0, failCallCount, "The 'fail' function should not have been called" );
+						Y.Assert.areSame( 1, alwaysCallCount, "The 'always' function should have been called exactly once" );
+					},
+					
+					
+					"save should return a jQuery.Promise object which has its `fail` and `always` callbacks executed when the persistenceProxy fails to update" : function() {
+						// Override the Proxy's create method to call the correct callbacks
+						this.proxy.update = function( model, options ) {
+							if( options.error ) { options.error.call( options.scope || window ); }
+							if( options.complete ) { options.complete( options.scope || window ); }
+						};
+						
+						var doneCallCount = 0,
+						    failCallCount = 0,
+						    alwaysCallCount = 0;
+						    
+						var model = new this.Model( { id: 1 } );
+						var promise = model.save()
+							.done( function()   { doneCallCount++; } )
+							.fail( function()   { failCallCount++; } )
+							.always( function() { alwaysCallCount++; } );
+						
+						Y.Assert.areSame( 0, doneCallCount, "The 'done' function should not have been called" );
+						Y.Assert.areSame( 1, failCallCount, "The 'fail' function should have been called exactly once" );
+						Y.Assert.areSame( 1, alwaysCallCount, "The 'always' function should have been called exactly once" );
 					}
+					
 				},
 				
 				
@@ -2578,7 +2694,7 @@ tests.unit.add( new Ext.test.TestSuite( {
 			
 			
 				{
-					name : "destroy() callbacks tests",
+					name : "destroy() callbacks and returned promise tests",
 					
 					setUp : function() {
 						this.proxy = JsMockito.mock( Kevlar.persistence.Proxy.extend( {
@@ -2590,14 +2706,15 @@ tests.unit.add( new Ext.test.TestSuite( {
 						} ) );
 					},
 					
-			
+					
+					// Callbacks tests
+					
 					"destroy() should call its 'success' and 'complete' callbacks if the persistenceProxy is successful" : function() {
 						var successCallCount = 0,
 						    completeCallCount = 0;
 						
 						JsMockito.when( this.proxy ).destroy().then( function( model, options ) {
 							if( options.success )  { options.success.call( options.scope ); }
-							if( options.complete ) { options.complete( options.scope ); }
 						} );
 						
 						var Model = Kevlar.Model.extend( {
@@ -2623,7 +2740,6 @@ tests.unit.add( new Ext.test.TestSuite( {
 						
 						JsMockito.when( this.proxy ).destroy().then( function( model, options ) {
 							options.error.call( options.scope );
-							options.complete( options.scope );
 						} );
 						
 						var Model = Kevlar.Model.extend( {
@@ -2640,6 +2756,62 @@ tests.unit.add( new Ext.test.TestSuite( {
 						
 						Y.Assert.areSame( 1, errorCallCount, "The 'error' function should have been called exactly once" );
 						Y.Assert.areSame( 1, completeCallCount, "The 'complete' function should have been called exactly once" );
+					},
+					
+					
+					// -------------------------------------
+					
+					// Returned Promise object tests
+					
+					"destroy() should return a jQuery.Promise object, which has its `done` and `always` callbacks executed upon successful completion" : function() {
+						var doneCallCount = 0,
+						    failCallCount = 0,
+						    alwaysCallCount = 0;
+						
+						JsMockito.when( this.proxy ).destroy().then( function( model, options ) {
+							options.success.call( options.scope );
+						} );
+						
+						var Model = Kevlar.Model.extend( {
+							attributes : [ 'id' ],
+							persistenceProxy  : this.proxy
+						} );
+						var model = new Model( { id: 1 } );  // the model needs an id to be considered as persisted on the server
+						
+						var promise = model.destroy()
+							.done( function()   { doneCallCount++; } )
+							.fail( function()   { failCallCount++; } )
+							.always( function() { alwaysCallCount++; } );
+						
+						Y.Assert.areSame( 1, doneCallCount, "The 'done' function should have been called exactly once" );
+						Y.Assert.areSame( 0, failCallCount, "The 'fail' function should have not been called" );
+						Y.Assert.areSame( 1, alwaysCallCount, "The 'always' function should have been called exactly once" );
+					},
+					
+					
+					"destroy() should return a jQuery.Promise object, which has its `fail` and `always` callbacks executed upon an error while persisting" : function() {
+						var doneCallCount = 0,
+						    failCallCount = 0,
+						    alwaysCallCount = 0;
+						
+						JsMockito.when( this.proxy ).destroy().then( function( model, options ) {
+							options.error.call( options.scope );
+						} );
+						
+						var Model = Kevlar.Model.extend( {
+							attributes : [ 'id' ],
+							persistenceProxy  : this.proxy
+						} );
+						var model = new Model( { id: 1 } );  // the model needs an id to be considered as persisted on the server
+						
+						var promise = model.destroy()
+							.done( function()   { doneCallCount++; } )
+							.fail( function()   { failCallCount++; } )
+							.always( function() { alwaysCallCount++; } );
+						
+						Y.Assert.areSame( 0, doneCallCount, "The 'done' function should not have been called" );
+						Y.Assert.areSame( 1, failCallCount, "The 'fail' function should have been called exactly once" );
+						Y.Assert.areSame( 1, alwaysCallCount, "The 'always' function should have been called exactly once" );
 					}
 				}
 			]

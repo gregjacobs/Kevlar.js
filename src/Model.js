@@ -8,7 +8,7 @@
  * have the {@link Kevlar.attribute.Attribute Attributes} (data values) that each Model is made up of. Ex: A User model may have: `userId`, `firstName`, and 
  * `lastName` Attributes.
  */
-/*global window, Kevlar */
+/*global window, jQuery, Kevlar */
 /*jslint forin:true */
 Kevlar.Model = Kevlar.DataComponent.extend( {
 	
@@ -1271,6 +1271,9 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * 
 	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in. This may also
 	 *   be provided as `context` if you prefer.
+	 * 
+	 * @return {jQuery.Promise} A Promise object which may have handlers attached. This Model is provided as the first argument to
+	 *   `done`, `fail`, and `always` handlers.
 	 */
 	save : function( options ) {
 		options = options || {};
@@ -1285,7 +1288,13 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			throw new Error( "Kevlar.Model::save() error: Cannot save. Model does not have an idAttribute that relates to a valid attribute." );
 		}
 		
-		this.doSave( options );
+		
+		var deferred = new jQuery.Deferred();
+		
+		// Do the actual save
+		this.doSave( deferred, options );
+		
+		return deferred;
 	},
 	
 	
@@ -1296,10 +1305,18 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * 
 	 * @private
 	 * @method doSave
+	 * @param {jQuery.Deferred} The Deferred object created by {@link #save}.
 	 * @param {Object} options The original `options` object provided to {@link #save}.
 	 */
-	doSave : function( options ) {
+	doSave : function( deferred, options ) {
 		var scope = options.scope || options.context || window;
+		
+		
+		var completeCallback = function() {
+			if( options.complete ) {
+				options.complete.call( scope, this );
+			}
+		};
 		
 		// Store a "snapshot" of the data that is being persisted. This is used to compare against the Model's current data at the time of when the persistence operation 
 		// completes. Anything that does not match this persisted snapshot data must have been updated while the persistence operation was in progress, and the Model must 
@@ -1329,25 +1346,24 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			if( options.success ) {
 				options.success.call( scope, this, data );
 			}
+			completeCallback();
+			
+			deferred.resolve( this );  // calls `done` handlers on the Deferred with this Model as the first argument
 		};
 		
 		var errorCallback = function() {
 			if( options.error ) {
 				options.error.call( scope, this );
 			}
-		};
-		
-		var completeCallback = function() {
-			if( options.complete ) {
-				options.complete.call( scope, this );
-			}
+			completeCallback();
+			
+			deferred.reject( this );  // calls `fail` handlers on the Deferred with this Model as the first argument
 		};
 		
 		var proxyOptions = {
 			async    : ( typeof options.async === 'undefined' ) ? true : options.async,   // defaults to true
 			success  : successCallback,
 			error    : errorCallback,
-			complete : completeCallback,
 			scope    : this
 		};
 		
@@ -1376,11 +1392,20 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * 
 	 * @param {Object} [options.scope=window] The object to call the `success`, `error`, and `complete` callbacks in. This may also
 	 *   be provided as `context` if you prefer.
+	 * 
+	 * @return {jQuery.Promise} A Promise object which may have handlers attached. This Model is provided as the first argument to
+	 *   `done`, `fail`, and `always` handlers.
 	 */
 	destroy : function( options ) {
 		options = options || {};
-		var scope = options.scope || options.context || window;
+		var scope = options.scope || options.context || window,
+		    deferred = new jQuery.Deferred();  // for the return
 		
+		var completeCallback = function() {
+			if( options.complete ) {
+				options.complete.call( scope, this );
+			}
+		};
 		var successCallback = function() {
 			this.destroyed = true;
 			this.fireEvent( 'destroy', this );
@@ -1388,17 +1413,19 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 			if( options.success ) {
 				options.success.call( scope, this );
 			}
+			completeCallback();
+			
+			deferred.resolve( this );  // calls `done` handlers on the Deferred with this Model as the first argument
 		};
 		var errorCallback = function() {
 			if( options.error ) {
 				options.error.call( scope, this );
 			}
+			completeCallback();
+			
+			deferred.reject( this );  // calls `fail` handlers on the Deferred with this Model as the first argument
 		};
-		var completeCallback = function() {
-			if( options.complete ) {
-				options.complete.call( scope, this );
-			}
-		};
+		
 		
 		if( this.isNew() ) {
 			// If it is a new model, there is nothing on the server to destroy. Simply fire the event and call the callback
@@ -1417,13 +1444,14 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 				async    : ( typeof options.async === 'undefined' ) ? true : options.async,   // defaults to true
 				success  : successCallback,
 				error    : errorCallback,
-				complete : completeCallback,
 				scope    : this
 			};
 			
 			// Make a request to destroy the data on the server
 			this.persistenceProxy.destroy( this, proxyOptions );
 		}
+		
+		return deferred.promise();  // return just the observable Promise object of the Deferred
 	},
 	
 	
