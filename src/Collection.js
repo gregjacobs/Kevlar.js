@@ -796,6 +796,7 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 			return true;
 			
 		} else {
+			// Otherwise, check to see if any of its child models are modified.
 			var models = this.models,
 			    i, len;
 			
