@@ -737,15 +737,20 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 	 * 
 	 * @override
 	 * @method commit
+	 * @param {Object} [options] An object which may contain the following properties:
+	 * @param {Boolean} [options.shallow=false] True to only commit only the additions/removals/reorders
+	 *   of the Collection itself, but not its child Models.
 	 */
-	commit : function() {
+	commit : function( options ) {
+		options = options || {};
+		
 		this.modified = false;  // reset flag
 		
-		// TODO: Determine if child models should also be committed. Possibly a flag argument for this?
-		// But for now, maintain consistency with isModified()
-		var models = this.models;
-		for( var i = 0, len = models.length; i < len; i++ ) {
-			models[ i ].commit();
+		if( !options.shallow ) {
+			var models = this.models;
+			for( var i = 0, len = models.length; i < len; i++ ) {
+				models[ i ].commit();
+			}
 		}
 	},
 	
@@ -785,6 +790,8 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 	 * @param {Boolean} [options.persistedOnly=false] True to have the method only return true only if a Model exists within it that has a 
 	 *   {@link Kevlar.attribute.Attribute#persist persisted} attribute which is modified. However, if the Collection itself has been modified
 	 *   (by adding/reordering/removing a Model), this method will still return true.
+	 * @param {Boolean} [options.shallow=false] True to only check if the Collection itself has been added to, remove from, or has had its Models
+	 *   reordered. The method will not check child models if they are modified.
 	 * 
 	 * @return {Boolean} True if the Collection has any modified models, false otherwise.
 	 */
@@ -795,7 +802,7 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 		if( this.modified ) {
 			return true;
 			
-		} else {
+		} else if( !options.shallow ) {
 			// Otherwise, check to see if any of its child models are modified.
 			var models = this.models,
 			    i, len;

@@ -1,6 +1,6 @@
 /*!
  * Kevlar JS Library
- * Version 0.9.2
+ * Version 0.9.3
  * 
  * Copyright(c) 2012 Gregory Jacobs.
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php
@@ -3104,12 +3104,25 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		// Add any modified embedded model/collection to the options.attributeNames array
 		var embeddedDataComponentAttrs = this.getEmbeddedDataComponentAttributes(),
 		    data = this.data,
-		    dataComponent;
+		    dataComponent,
+		    collection,
+		    attrName,
+		    i, len;
 	
-		for( var i = 0, len = embeddedDataComponentAttrs.length; i < len; i++ ) {
-			var attrName = embeddedDataComponentAttrs[ i ].getName();
+		for( i = 0, len = embeddedDataComponentAttrs.length; i < len; i++ ) {
+			attrName = embeddedDataComponentAttrs[ i ].getName();
 			
 			if( ( dataComponent = data[ attrName ] ) && dataComponent.isModified( options ) ) {
+				options.attributeNames.push( attrName );
+			}
+		}
+		
+		// Add any shallow-modified 'related' (i.e. non-embedded) collections to the options.attributeNames array
+		var relatedCollectionAttrs = this.getRelatedCollectionAttributes();
+		for( i = 0, len = relatedCollectionAttrs.length; i < len; i++ ) {
+			attrName = relatedCollectionAttrs[ i ].getName();
+			
+			if( ( collection = data[ attrName ] ) && collection.isModified( { shallow: true } ) ) {
 				options.attributeNames.push( attrName );
 			}
 		}
@@ -3133,13 +3146,25 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		// Go through all embedded models/collections, and "commit" those as well
 		var embeddedDataComponentAttrs = this.getEmbeddedDataComponentAttributes(),
 		    data = this.data,
-		    dataComponent;
+		    attrName,
+		    dataComponent,
+		    collection;
 		
 		for( var i = 0, len = embeddedDataComponentAttrs.length; i < len; i++ ) {
-			var attrName = embeddedDataComponentAttrs[ i ].getName();
+			attrName = embeddedDataComponentAttrs[ i ].getName();
 			
 			if( ( dataComponent = data[ attrName ] ) ) {
 				dataComponent.commit();
+			}
+		}
+		
+		// Shallowly commit any 'related' (i.e. non-embedded) collections
+		var relatedCollectionAttrs = this.getRelatedCollectionAttributes();
+		for( i = 0, len = relatedCollectionAttrs.length; i < len; i++ ) {
+			attrName = relatedCollectionAttrs[ i ].getName();
+			
+			if( ( collection = data[ attrName ] ) && collection.isModified( { shallow: true } ) ) {
+				collection.commit( { shallow: true } );
 			}
 		}
 		
@@ -4355,15 +4380,20 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 	 * 
 	 * @override
 	 * @method commit
+	 * @param {Object} [options] An object which may contain the following properties:
+	 * @param {Boolean} [options.shallow=false] True to only commit only the additions/removals/reorders
+	 *   of the Collection itself, but not its child Models.
 	 */
-	commit : function() {
+	commit : function( options ) {
+		options = options || {};
+		
 		this.modified = false;  // reset flag
 		
-		// TODO: Determine if child models should also be committed. Possibly a flag argument for this?
-		// But for now, maintain consistency with isModified()
-		var models = this.models;
-		for( var i = 0, len = models.length; i < len; i++ ) {
-			models[ i ].commit();
+		if( !options.shallow ) {
+			var models = this.models;
+			for( var i = 0, len = models.length; i < len; i++ ) {
+				models[ i ].commit();
+			}
 		}
 	},
 	
@@ -4403,6 +4433,8 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 	 * @param {Boolean} [options.persistedOnly=false] True to have the method only return true only if a Model exists within it that has a 
 	 *   {@link Kevlar.attribute.Attribute#persist persisted} attribute which is modified. However, if the Collection itself has been modified
 	 *   (by adding/reordering/removing a Model), this method will still return true.
+	 * @param {Boolean} [options.shallow=false] True to only check if the Collection itself has been added to, remove from, or has had its Models
+	 *   reordered. The method will not check child models if they are modified.
 	 * 
 	 * @return {Boolean} True if the Collection has any modified models, false otherwise.
 	 */
@@ -4413,7 +4445,7 @@ Kevlar.Collection = Kevlar.DataComponent.extend( {
 		if( this.modified ) {
 			return true;
 			
-		} else {
+		} else if( !options.shallow ) {
 			// Otherwise, check to see if any of its child models are modified.
 			var models = this.models,
 			    i, len;

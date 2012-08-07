@@ -1109,12 +1109,25 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		// Add any modified embedded model/collection to the options.attributeNames array
 		var embeddedDataComponentAttrs = this.getEmbeddedDataComponentAttributes(),
 		    data = this.data,
-		    dataComponent;
+		    dataComponent,
+		    collection,
+		    attrName,
+		    i, len;
 	
-		for( var i = 0, len = embeddedDataComponentAttrs.length; i < len; i++ ) {
-			var attrName = embeddedDataComponentAttrs[ i ].getName();
+		for( i = 0, len = embeddedDataComponentAttrs.length; i < len; i++ ) {
+			attrName = embeddedDataComponentAttrs[ i ].getName();
 			
 			if( ( dataComponent = data[ attrName ] ) && dataComponent.isModified( options ) ) {
+				options.attributeNames.push( attrName );
+			}
+		}
+		
+		// Add any shallow-modified 'related' (i.e. non-embedded) collections to the options.attributeNames array
+		var relatedCollectionAttrs = this.getRelatedCollectionAttributes();
+		for( i = 0, len = relatedCollectionAttrs.length; i < len; i++ ) {
+			attrName = relatedCollectionAttrs[ i ].getName();
+			
+			if( ( collection = data[ attrName ] ) && collection.isModified( { shallow: true } ) ) {
 				options.attributeNames.push( attrName );
 			}
 		}
@@ -1138,13 +1151,25 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 		// Go through all embedded models/collections, and "commit" those as well
 		var embeddedDataComponentAttrs = this.getEmbeddedDataComponentAttributes(),
 		    data = this.data,
-		    dataComponent;
+		    attrName,
+		    dataComponent,
+		    collection;
 		
 		for( var i = 0, len = embeddedDataComponentAttrs.length; i < len; i++ ) {
-			var attrName = embeddedDataComponentAttrs[ i ].getName();
+			attrName = embeddedDataComponentAttrs[ i ].getName();
 			
 			if( ( dataComponent = data[ attrName ] ) ) {
 				dataComponent.commit();
+			}
+		}
+		
+		// Shallowly commit any 'related' (i.e. non-embedded) collections
+		var relatedCollectionAttrs = this.getRelatedCollectionAttributes();
+		for( i = 0, len = relatedCollectionAttrs.length; i < len; i++ ) {
+			attrName = relatedCollectionAttrs[ i ].getName();
+			
+			if( ( collection = data[ attrName ] ) && collection.isModified( { shallow: true } ) ) {
+				collection.commit( { shallow: true } );
 			}
 		}
 		
