@@ -96,9 +96,9 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend
 	 * @inheritdoc
 	 */
 	beforeSet : function( model, newValue, oldValue ) {
-		// First, if the oldValue was a Model, and this attribute is an "embedded" model, we need to unsubscribe it from its parent model
-		if( this.embedded && oldValue instanceof Kevlar.Model ) {
-			model.unsubscribeEmbeddedModel( this.getName(), oldValue );
+		// First, if the oldValue was a Model, we need to unsubscribe it from its parent model
+		if( oldValue instanceof Kevlar.Model ) {
+			model.unsubscribeNestedModel( this.getName(), oldValue );
 		}
 		
 		// Now, normalize the newValue to an object, or null
@@ -131,7 +131,7 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend
 	
 	
 	/**
-	 * Overridden `afterSet` method used to subscribe to change events on a set child {@link Kevlar.Model Model}, if {@link #embedded} is true.
+	 * Overridden `afterSet` method used to subscribe to change events on a set child {@link Kevlar.Model Model}.
 	 * 
 	 * @override
 	 * @method afterSet
@@ -143,8 +143,8 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend
 			throw new Error( "A value set to the attribute '" + this.getName() + "' was not a Kevlar.Model subclass" );
 		}
 		
-		if( this.embedded && value instanceof Kevlar.Model ) {
-			model.subscribeEmbeddedModel( this.getName(), value );
+		if( value instanceof Kevlar.Model ) {
+			model.subscribeNestedModel( this.getName(), value );
 		}
 		
 		return value;

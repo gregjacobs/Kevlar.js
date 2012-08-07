@@ -70,16 +70,16 @@ tests.integration.add( new Ext.test.TestSuite( {
 		
 		{
 			/*
-			 * Test the 'change' event for embedded models
+			 * Test the 'change' event for nested models
 			 */
-			name : "Test the 'change' event for embedded models",
+			name : "Test the 'change' event for nested models",
 			
 			
 			
-			"When an attribute has changed in an embedded model, its parent model should fire the appropriate 'change' events" : function() {
+			"When an attribute has changed in a nested model, its parent model should fire the appropriate 'change' events" : function() {
 				var ParentModel = Kevlar.Model.extend( {
 					attributes : [
-						{ name: 'child', type: 'model', embedded: true }
+						{ name: 'child', type: 'model' }
 					]
 				} );
 				
@@ -176,36 +176,6 @@ tests.integration.add( new Ext.test.TestSuite( {
 			},
 			
 			
-			"When an attribute has changed in a non-embedded model, its parent model should *not* fire a 'change' event" : function() {
-				var ParentModel = Kevlar.Model.extend( {
-					attributes : [
-						{ name: 'child', type: 'model', embedded: false }
-					]
-				} );
-				
-				var ChildModel = Kevlar.Model.extend( {
-					attributes : [
-						{ name : 'attr' }
-					]
-				} );
-				
-				var childModel = new ChildModel();
-				var parentModel = new ParentModel( {
-					child: childModel
-				} );
-				
-				var changeEventFired = false;    
-				parentModel.on( 'change', function() {
-					changeEventFired = true;
-				} );
-				
-				// Now set the value of the attribute in the child model
-				childModel.set( 'attr', 'asdf' );
-				
-				Y.Assert.isFalse( changeEventFired );
-			},
-			
-			
 			"The parent model should no longer fire events from the child model after the child model has been un-set from the parent" : function() {
 				var ParentModel = Kevlar.Model.extend( {
 					attributes : [
@@ -246,13 +216,13 @@ tests.integration.add( new Ext.test.TestSuite( {
 			
 			// ------------------------------
 			
-			// Test multiple levels of embedded models
+			// Test multiple levels of nested models
 			
 			
-			"When an attribute has changed in a deeply nested embedded model, its parent model should fire a 'change' event" : function() {
+			"When an attribute has changed in a deeply nested model, its parent model should fire a 'change' event" : function() {
 				var ParentModel = Kevlar.Model.extend( {
 					attributes : [
-						{ name: 'intermediate', type: 'model', embedded: true }
+						{ name: 'intermediate', type: 'model' }
 					],
 					
 					toString : function() { return "(ParentModel)"; }  // for debugging
@@ -260,7 +230,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				
 				var IntermediateModel = Kevlar.Model.extend( {
 					attributes : [
-						{ name: 'child', type: 'model', embedded: true }
+						{ name: 'child', type: 'model' }
 					],
 					
 					toString : function() { return "(IntermediateModel)"; }  // for debugging

@@ -33,7 +33,7 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.e
 	 * 
 	 * - A direct reference to a Collection (ex: `myApp.collections.MyCollection`),
 	 * - A String which specifies the object path to the Collection (which must be able to be referenced from the global scope, 
-	 * 	 ex: 'myApp.collections.MyCollection'), 
+	 *   ex: 'myApp.collections.MyCollection'),
 	 * - Or a function, which will return a reference to the Collection that should be used. 
 	 * 
 	 * The reason that this config may be specified as a String or a Function is to allow for late binding to the Collection class 
@@ -110,9 +110,9 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.e
 	 * @inheritdoc
 	 */
 	beforeSet : function( model, newValue, oldValue ) {
-		// First, if the oldValue was a Model, and this attribute is an "embedded" collection, we need to unsubscribe it from its parent model
-		if( this.embedded && oldValue instanceof Kevlar.Collection ) {
-			model.unsubscribeEmbeddedCollection( this.getName(), oldValue );
+		// First, if the oldValue was a Model, we need to unsubscribe it from its parent model
+		if( oldValue instanceof Kevlar.Collection ) {
+			model.unsubscribeNestedCollection( this.getName(), oldValue );
 		}
 		
 		// Now, normalize the newValue to an object, or null
@@ -145,8 +145,7 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.e
 	
 	
 	/**
-	 * Overridden `afterSet` method used to subscribe to add/remove/change events on a set child {@link Kevlar.Collection Collection}, 
-	 * if {@link #embedded} is true.
+	 * Overridden `afterSet` method used to subscribe to add/remove/change events on a set child {@link Kevlar.Collection Collection}.
 	 * 
 	 * @override
 	 * @method afterSet
@@ -158,8 +157,8 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.e
 			throw new Error( "A value set to the attribute '" + this.getName() + "' was not a Kevlar.Collection subclass" );
 		}
 		
-		if( this.embedded && value instanceof Kevlar.Collection ) {
-			model.subscribeEmbeddedCollection( this.getName(), value );
+		if( value instanceof Kevlar.Collection ) {
+			model.subscribeNestedCollection( this.getName(), value );
 		}
 		
 		return value;

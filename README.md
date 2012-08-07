@@ -11,9 +11,14 @@ This is currently a work in progress, and is alpha.
 
 ## Changelog:
 
+### 0.9.2
+
+* Made parent Models of all nested Models and Collections (not just 'embedded' Models and Collections) always fire 'change' events for the nested Model/Collection's changes.
+
 ### 0.9.1
 
 * Implemented nested 'related' (as opposed to 'embedded') Collections of a Model. The child Collection now synchronizes its Models with the server before the parent Model persists itself.
+  Note: This feature is not yet production ready however, as the parent model needs to be considered as changed for modifications to the parent model.
 
 ### 0.9
 

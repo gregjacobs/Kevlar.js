@@ -1,6 +1,6 @@
 /*!
  * Kevlar JS Library
- * Version 0.9.1
+ * Version 0.9.2
  * 
  * Copyright(c) 2012 Gregory Jacobs.
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php
@@ -2725,16 +2725,15 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	
 	/**
 	 * Used internally by the framework, this method subscribes to the change event of the given child {@link Kevlar.Model}, in order to relay
-	 * its events through this (i.e. its parent) model. This supports a form of "event bubbling" for {@link Kevlar.attribute.ModelAttribute#embedded embedded} 
-	 * child models, and is called from {@link Kevlar.attribute.ModelAttribute ModelAttribute}. For non-embedded Models (i.e. simply "related" Models), this 
-	 * method is not called.
+	 * its events through this (i.e. its parent) model. This supports a form of "event bubbling" for {@link Kevlar.attribute.ModelAttribute ModelAttributes'} 
+	 * child models, and is called from {@link Kevlar.attribute.ModelAttribute ModelAttribute}.
 	 * 
 	 * @ignore
-	 * @method subscribeEmbeddedModel
+	 * @method subscribeNestedModel
 	 * @param {String} attributeName The name of the Attribute that is subscribing a Model.
 	 * @param {Kevlar.Model} embeddedModel
 	 */
-	subscribeEmbeddedModel : function( attributeName, embeddedModel ) {
+	subscribeNestedModel : function( attributeName, embeddedModel ) {
 		var changeHandler = function( model, attrName, newValue, oldValue, childChangeData ) {  // note: 'childChangeData' arg is needed for the bubbling of deep model/collection events
 			this.onEmbeddedDataComponentChange( attributeName, /* collection */ null, model, attrName, newValue, oldValue, childChangeData );
 		};
@@ -2751,11 +2750,11 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	 * Collections), this method is not called.
 	 * 
 	 * @ignore
-	 * @method subscribeEmbeddedCollection
+	 * @method subscribeNestedCollection
 	 * @param {String} attributeName The name of the Attribute that is subscribing a Collection.
 	 * @param {Kevlar.Collection} embeddedCollection
 	 */
-	subscribeEmbeddedCollection : function( attributeName, embeddedCollection ) {
+	subscribeNestedCollection : function( attributeName, embeddedCollection ) {
 		var changeHandler = function( collection, model, attrName, newValue, oldValue, childChangeData ) {  // note: 'childChangeData' arg is needed for the bubbling of deep model/collection events
 			this.onEmbeddedDataComponentChange( attributeName, collection, model, attrName, newValue, oldValue, childChangeData );
 		};
@@ -2779,29 +2778,29 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	
 	/**
 	 * Used internally by the framework, this method unsubscribes the change event from the given child {@link Kevlar.Model}/{@link Kevlar.Container}. 
-	 * Used in conjunction with {@link #subscribeEmbeddedDataComponent}, when a child model/collection is un-set from its parent model (i.e. this model).
+	 * Used in conjunction with {@link #subscribeNestedDataComponent}, when a child model/collection is un-set from its parent model (i.e. this model).
 	 * 
 	 * @ignore
-	 * @method unsubscribeEmbeddedModel
+	 * @method unsubscribeNestedModel
 	 * @param {String} attributeName The name of the Attribute that is unsubscribing a Model/Collection.
 	 * @param {Kevlar.Model} embeddedModel
 	 */
-	unsubscribeEmbeddedModel : function( attributeName, embeddedModel ) {
-		this.unsubscribeEmbeddedDataComponent( attributeName, embeddedModel );
+	unsubscribeNestedModel : function( attributeName, embeddedModel ) {
+		this.unsubscribeNestedDataComponent( attributeName, embeddedModel );
 	},
 	
 	
 	/**
 	 * Used internally by the framework, this method unsubscribes the change event from the given child {@link Kevlar.Model}/{@link Kevlar.Container}. 
-	 * Used in conjunction with {@link #subscribeEmbeddedCollection}, when a child model/collection is un-set from its parent model (i.e. this model).
+	 * Used in conjunction with {@link #subscribeNestedCollection}, when a child model/collection is un-set from its parent model (i.e. this model).
 	 * 
 	 * @ignore
-	 * @method unsubscribeEmbeddedCollection
+	 * @method unsubscribeNestedCollection
 	 * @param {String} attributeName The name of the Attribute that is unsubscribing a Model/Collection.
 	 * @param {Kevlar.Model} embeddedModel
 	 */
-	unsubscribeEmbeddedCollection : function( attributeName, embeddedCollection ) {
-		this.unsubscribeEmbeddedDataComponent( attributeName, embeddedCollection );
+	unsubscribeNestedCollection : function( attributeName, embeddedCollection ) {
+		this.unsubscribeNestedDataComponent( attributeName, embeddedCollection );
 		
 		var addRemoveReorderHandler = this.embeddedCollectionAddRemoveReorderHandlers[ attributeName ];
 		embeddedCollection.un( {
@@ -2815,15 +2814,15 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	
 	/**
 	 * Used internally by the framework, this method unsubscribes the change event from the given child {@link Kevlar.Model}/{@link Kevlar.Container}. 
-	 * Used in conjunction with {@link #subscribeEmbeddedModel}/{@link #subscribeEmbeddedCollection}, when a child model/collection is un-set from 
+	 * Used in conjunction with {@link #subscribeNestedModel}/{@link #subscribeNestedCollection}, when a child model/collection is un-set from 
 	 * its parent model (i.e. this model).
 	 * 
 	 * @ignore
-	 * @method unsubscribeEmbeddedDataComponent
+	 * @method unsubscribeNestedDataComponent
 	 * @param {String} attributeName The name of the Attribute that is unsubscribing a Model/Collection.
 	 * @param {Kevlar.DataComponent} dataComponent
 	 */
-	unsubscribeEmbeddedDataComponent : function( attributeName, dataComponent ) {
+	unsubscribeNestedDataComponent : function( attributeName, dataComponent ) {
 		var changeHandler = this.embeddedDataComponentChangeHandlers[ attributeName ];
 		dataComponent.un( 'change', changeHandler, this );
 	},
@@ -5405,7 +5404,7 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.e
 	 * 
 	 * - A direct reference to a Collection (ex: `myApp.collections.MyCollection`),
 	 * - A String which specifies the object path to the Collection (which must be able to be referenced from the global scope, 
-	 * 	 ex: 'myApp.collections.MyCollection'), 
+	 *   ex: 'myApp.collections.MyCollection'),
 	 * - Or a function, which will return a reference to the Collection that should be used. 
 	 * 
 	 * The reason that this config may be specified as a String or a Function is to allow for late binding to the Collection class 
@@ -5482,9 +5481,9 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.e
 	 * @inheritdoc
 	 */
 	beforeSet : function( model, newValue, oldValue ) {
-		// First, if the oldValue was a Model, and this attribute is an "embedded" collection, we need to unsubscribe it from its parent model
-		if( this.embedded && oldValue instanceof Kevlar.Collection ) {
-			model.unsubscribeEmbeddedCollection( this.getName(), oldValue );
+		// First, if the oldValue was a Model, we need to unsubscribe it from its parent model
+		if( oldValue instanceof Kevlar.Collection ) {
+			model.unsubscribeNestedCollection( this.getName(), oldValue );
 		}
 		
 		// Now, normalize the newValue to an object, or null
@@ -5517,8 +5516,7 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.e
 	
 	
 	/**
-	 * Overridden `afterSet` method used to subscribe to add/remove/change events on a set child {@link Kevlar.Collection Collection}, 
-	 * if {@link #embedded} is true.
+	 * Overridden `afterSet` method used to subscribe to add/remove/change events on a set child {@link Kevlar.Collection Collection}.
 	 * 
 	 * @override
 	 * @method afterSet
@@ -5530,8 +5528,8 @@ Kevlar.attribute.CollectionAttribute = Kevlar.attribute.DataComponentAttribute.e
 			throw new Error( "A value set to the attribute '" + this.getName() + "' was not a Kevlar.Collection subclass" );
 		}
 		
-		if( this.embedded && value instanceof Kevlar.Collection ) {
-			model.subscribeEmbeddedCollection( this.getName(), value );
+		if( value instanceof Kevlar.Collection ) {
+			model.subscribeNestedCollection( this.getName(), value );
 		}
 		
 		return value;
@@ -5764,9 +5762,9 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend
 	 * @inheritdoc
 	 */
 	beforeSet : function( model, newValue, oldValue ) {
-		// First, if the oldValue was a Model, and this attribute is an "embedded" model, we need to unsubscribe it from its parent model
-		if( this.embedded && oldValue instanceof Kevlar.Model ) {
-			model.unsubscribeEmbeddedModel( this.getName(), oldValue );
+		// First, if the oldValue was a Model, we need to unsubscribe it from its parent model
+		if( oldValue instanceof Kevlar.Model ) {
+			model.unsubscribeNestedModel( this.getName(), oldValue );
 		}
 		
 		// Now, normalize the newValue to an object, or null
@@ -5799,7 +5797,7 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend
 	
 	
 	/**
-	 * Overridden `afterSet` method used to subscribe to change events on a set child {@link Kevlar.Model Model}, if {@link #embedded} is true.
+	 * Overridden `afterSet` method used to subscribe to change events on a set child {@link Kevlar.Model Model}.
 	 * 
 	 * @override
 	 * @method afterSet
@@ -5811,8 +5809,8 @@ Kevlar.attribute.ModelAttribute = Kevlar.attribute.DataComponentAttribute.extend
 			throw new Error( "A value set to the attribute '" + this.getName() + "' was not a Kevlar.Model subclass" );
 		}
 		
-		if( this.embedded && value instanceof Kevlar.Model ) {
-			model.subscribeEmbeddedModel( this.getName(), value );
+		if( value instanceof Kevlar.Model ) {
+			model.subscribeNestedModel( this.getName(), value );
 		}
 		
 		return value;

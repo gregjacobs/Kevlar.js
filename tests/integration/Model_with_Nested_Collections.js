@@ -94,13 +94,13 @@ tests.integration.add( new Ext.test.TestSuite( {
 		
 		{
 			/*
-			 * Test the 'change' event for embedded collections
+			 * Test the 'change' event for nested collections
 			 */
-			name : "Test the 'change' event for embedded collections",
+			name : "Test the 'change' event for nested collections",
 			
 			
 			
-			"When an attribute has changed in a model of an embedded collection, its parent collection should fire the appropriate 'change' events" : function() {
+			"When an attribute has changed in a model of a nested collection, its parent collection should fire the appropriate 'change' events" : function() {
 				var ChildModel = Kevlar.Model.extend( {
 					attributes: [ 'attr' ],
 					toString : function() { return "(ChildModel)"; }
@@ -112,7 +112,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				} );
 				
 				var ParentModel = Kevlar.Model.extend( {
-					attributes : [ { name: 'myCollection', type: 'Collection', embedded: true } ],
+					attributes : [ { name: 'myCollection', type: 'Collection' } ],
 					toString : function() { return "(ParentModel)"; }
 				} );
 				
@@ -195,37 +195,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				Y.Assert.areSame( 'origValue1', attrSpecificChangeAttrEvent.oldValue, "The attribute-specific event for childModel1 should have been fired with the oldValue" );
 			},
 			
-			
-			
-			"When an attribute has changed in a non-embedded collection, its parent model should *not* fire a 'change' event" : function() {
-				var ChildModel = Kevlar.Model.extend( {
-					attributes: [ 'attr' ]
-				} );
-				
-				var Collection = Kevlar.Collection.extend( {
-					model : ChildModel
-				} );
-				
-				var ParentModel = Kevlar.Model.extend( {
-					attributes : [ { name: 'myCollection', type: 'collection', embedded: false } ]
-				} );
-				
-				
-				var childModel1 = new ChildModel( { attr: 'origValue1' } ),
-				    childModel2 = new ChildModel( { attr: 'origValue2' } ),
-				    collection = new Collection( [ childModel1, childModel2 ] ),
-				    parentModel = new ParentModel( { myCollection: collection } );
-				
-				var changeEventCallCount = 0;
-				parentModel.on( 'change', function( model, attributeName, newValue, oldValue ) {
-					changeEventCallCount++;
-				} );
-				
-				childModel1.set( 'attr', 'newValue1' );
-				Y.Assert.areSame( 0, changeEventCallCount, "The call count should be 0 - it is not an embedded collection" );
-			},
-			
-			
+						
 			"The parent model should no longer fire events from the child collection after the child collection has been un-set from the parent" : function() {
 				var ChildModel = Kevlar.Model.extend( {
 					attributes: [ 'attr' ]
@@ -236,7 +206,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 				} );
 				
 				var ParentModel = Kevlar.Model.extend( {
-					attributes : [ { name: 'myCollection', type: 'collection', embedded: true } ]
+					attributes : [ { name: 'myCollection', type: 'collection' } ]
 				} );
 				
 				var childModel1 = new ChildModel( { attr: 'origValue1' } ),
@@ -278,11 +248,11 @@ tests.integration.add( new Ext.test.TestSuite( {
 				//         ChildModel
 								
 				var ParentModel = Kevlar.Model.extend( {
-					attributes : [ { name: 'parentCollection', type: 'Collection', embedded: true } ],
+					attributes : [ { name: 'parentCollection', type: 'Collection' } ],
 					toString : function() { return "(ParentModel)"; }
 				} );
 				var IntermediateModel = Kevlar.Model.extend( {
-					attributes : [ { name: 'childCollection', type: 'Collection', embedded: true } ],
+					attributes : [ { name: 'childCollection', type: 'Collection' } ],
 					toString : function() { return "(IntermediateModel)"; }
 				} );
 				var ChildModel = Kevlar.Model.extend( {
@@ -438,7 +408,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 			
 			"When a child collection is added to / removed from / reordered, the parent model should fire a 'change' event" : function() {
 				var ParentModel = Kevlar.Model.extend( {
-					attributes : [ { name: 'childCollection', type: 'collection', embedded: true } ],
+					attributes : [ { name: 'childCollection', type: 'collection' } ],
 					
 					toString : function() { return "(ParentModel)"; }  // for debugging
 				} );
@@ -564,7 +534,7 @@ tests.integration.add( new Ext.test.TestSuite( {
 			"The parent model should *not* have changes when a child collection has changes, but is not 'embedded'" : function() {
 				var ParentModel = Kevlar.Model.extend( {
 					attributes : [
-						{ name: 'myCollection', type: 'collection', embedded: true }
+						{ name: 'myCollection', type: 'collection', embedded: false }
 					]
 				} );
 				
@@ -578,13 +548,14 @@ tests.integration.add( new Ext.test.TestSuite( {
 					model : ChildModel
 				} );
 				
+				
 				var collection = new Collection( [ { attr: 1 }, { attr: 2 } ] );
 				var parentModel = new ParentModel( {
 					myCollection: collection
 				} );
 				
 				collection.getAt( 0 ).set( 'attr', 'newValue' );
-				Y.Assert.isTrue( parentModel.isModified(), "The parent model should not be considered 'modified' even though its child collection is 'modified', because the child is not 'embedded'" );
+				Y.Assert.isFalse( parentModel.isModified(), "The parent model should not be considered 'modified' even though its child collection is 'modified', because the child is not 'embedded'" );
 			}
 		}
 	]
