@@ -97,7 +97,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		
 		// Set the data to persist
 		var dataToPersist = model.getData( { persistedOnly: true, raw: true } );
-				
+		
 		// Handle needing a different "root" wrapper object for the data
 		if( this.rootProperty ) {
 			var dataWrap = {};

@@ -1,6 +1,6 @@
 /*!
  * Kevlar JS Library
- * Version 0.9
+ * Version 0.9.1
  * 
  * Copyright(c) 2012 Gregory Jacobs.
  * MIT Licensed. http://www.opensource.org/licenses/mit-license.php
@@ -3273,7 +3273,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	save : function( options ) {
 		options = options || {};
 		var scope = options.scope || options.context || window;
-		    
+		
 		
 		// No persistenceProxy, cannot save. Throw an error
 		if( !this.persistenceProxy ) {
@@ -5902,6 +5902,17 @@ Kevlar.data.NativeObjectConverter = {
 	 * @param {Boolean} [options.raw] True to have the method only return the raw data for the attributes, by way of the {@link Kevlar.Model#raw} method. 
 	 *   This is used for persistence, where the raw data values go to the server rather than higher-level objects, or where some kind of serialization
 	 *   to a string must take place before persistence (such as for Date objects). 
+	 *   
+	 *   As a hack (unfortunately, due to limited time), if passing the 'raw' option as true, and a nested {@link Kevlar.Collection Collection} is in a 
+	 *   {@link Kevlar.attribute.CollectionAttribute} that is *not* {@link Kevlar.attribute.CollectionAttribute#embedded}, then only an array of the 
+	 *   {@link Kevlar.Model#idAttribute ID attribute} values is returned for that collection. The final data for a related (i.e. non-embedded) nested
+	 *   Collection may look something like this:
+	 *     
+	 *     myRelatedCollection : [
+	 *         { id: 1 },
+	 *         { id: 2 }
+	 *     ]
+	 * 
 	 * 
 	 * @return {Object[]/Object} An array of objects (for the case of a Collection}, or an Object (for the case of a Model)
 	 *   with the internal attributes converted to their native equivalent.
@@ -5919,13 +5930,14 @@ Kevlar.data.NativeObjectConverter = {
 		cache[ dataComponent.getClientId() ] = data;
 		
 		// Recursively goes through the data structure, and convert models to objects, and collections to arrays
-		Kevlar.apply( data, (function convert( dataComponent ) {
+		Kevlar.apply( data, (function convert( dataComponent, attribute ) {  // attribute is only used when processing models, and a nested collection is come across, where the Kevlar.attribute.Attribute is passed along for processing when 'raw' is provided as true. See doc for 'raw' option about this hack..
 			var clientId, 
 			    cachedDataComponent,
 			    data,
 			    i, len;
 			
 			if( dataComponent instanceof Kevlar.Model ) {
+				// Handle Models
 				var attributes = dataComponent.getAttributes(),
 				    attributeNames = options.attributeNames || Kevlar.util.Object.keysToArray( attributes ),
 				    attributeName, currentValue;
@@ -5953,23 +5965,39 @@ Kevlar.data.NativeObjectConverter = {
 								cache[ clientId ] = data[ attributeName ] = ( currentValue instanceof Kevlar.Collection ) ? [] : {};  // Collection is an Array, Model is an Object
 								
 								// now, populate that object with the properties of the inner object
-								Kevlar.apply( cache[ clientId ], convert( currentValue ) );  
+								Kevlar.apply( cache[ clientId ], convert( currentValue, attributes[ attributeName ] ) );  
 							}
 						}
 					}
 				}
 				
 			} else if( dataComponent instanceof Kevlar.Collection ) {
+				// Handle Collections
 				var models = dataComponent.getModels(),
-				    model;
+				    model, idAttributeName;
 				
 				data = [];  // data is an array for a Container
 				
-				for( i = 0, len = models.length; i < len; i++ ) {
-					model = models[ i ];
-					clientId = model.getClientId();
+				// If the 'attribute' argument to the inner function was provided (coming from a Model that is being converted), and the 'raw' option is true,
+				// AND the collection is *not* an embedded collection (i.e. it is a "related" collection), then we only want the ID's of the models for the conversion.
+				// See note about this hack in the doc comment for the method for the 'raw' option.
+				if( options.raw && attribute && !attribute.isEmbedded() ) {
+					for( i = 0, len = models.length; i < len; i++ ) {
+						model = models[ i ];
+						idAttributeName = model.getIdAttributeName();
+						
+						data[ i ] = {};
+						data[ i ][ idAttributeName ] = model.get( idAttributeName );
+					}
 					
-					data[ i ] = cache[ clientId ] || convert( model );
+				} else { 
+					// Otherwise, provide the models themselves
+					for( i = 0, len = models.length; i < len; i++ ) {
+						model = models[ i ];
+						clientId = model.getClientId();
+						
+						data[ i ] = cache[ clientId ] || convert( model );
+					}
 				}
 			}
 			
@@ -6137,7 +6165,7 @@ Kevlar.persistence.RestProxy = Kevlar.extend( Kevlar.persistence.Proxy, {
 		
 		// Set the data to persist
 		var dataToPersist = model.getData( { persistedOnly: true, raw: true } );
-				
+		
 		// Handle needing a different "root" wrapper object for the data
 		if( this.rootProperty ) {
 			var dataWrap = {};

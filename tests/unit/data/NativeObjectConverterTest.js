@@ -260,6 +260,51 @@ tests.unit.data.add( new Ext.test.TestSuite( {
 				
 				// Make sure we can reference through the nested collections
 				Y.Assert.areSame( data, data[ 0 ].nestedCollection[ 0 ].nestedCollection[ 0 ].nestedCollection, "Nesty nesty nesty should work" );
+			},
+			
+			
+			// -------------------------------
+			
+			// Test with a nested related (i.e. non-embedded) Collection and passing the 'raw' option as true
+			// This is for the "related" collection hack, when we need to persist it to the server... See note in doc comment about 'raw' option for Kevlar.data.NativeObjectConverter.convert()
+			
+			"convert() should simply return an array of objects with only an id property for each of the models in a Collection if 'raw' is true and the collection is not 'embedded'" : function() {
+				var Model = Kevlar.Model.extend( {
+					attributes : [ 
+						{ name: 'nestedCollection', type: 'collection', embedded: false } 
+					]
+				} );
+				var ChildModel = Kevlar.Model.extend( {
+					attributes : [
+						{ name: 'id' },
+						{ name: 'attr' }
+					]
+				} );
+				var Collection = Kevlar.Collection.extend( {
+					model : ChildModel
+				} );
+				
+				
+				var collection = new Collection( [
+					{ id: 1, attr: 'attr1' },
+					{ id: 2, attr: 'attr2' }
+				] );
+				var parentModel = new Model( {
+					nestedCollection: collection
+				} );
+				
+				var data = Kevlar.data.NativeObjectConverter.convert( parentModel, { raw: true } );
+				
+				Y.Assert.isObject( data, "the data should be an object" );
+				Y.Assert.isArray( data.nestedCollection, "The data returned should have nestedCollection as an array" );
+				
+				Y.Assert.isObject( data.nestedCollection[ 0 ], "The first item in the array should be an object" );
+				Y.Assert.areSame( 1, data.nestedCollection[ 0 ].id, "The first item in the array should have the correct id" );
+				Y.Assert.isFalse( data.nestedCollection[ 0 ].hasOwnProperty( 'attr' ), "The 'attr' property should *not* exist in the object in the first item of the array" );
+				
+				Y.Assert.isObject( data.nestedCollection[ 1 ], "The second item in the array should be an object" );
+				Y.Assert.areSame( 2, data.nestedCollection[ 1 ].id, "The second item in the array should have the correct id" );
+				Y.Assert.isFalse( data.nestedCollection[ 1 ].hasOwnProperty( 'attr' ), "The 'attr' property should *not* exist in the object in the second item of the array" );
 			}
 		}
 	]

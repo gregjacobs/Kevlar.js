@@ -11,6 +11,10 @@ This is currently a work in progress, and is alpha.
 
 ## Changelog:
 
+### 0.9.1
+
+* Implemented nested 'related' (as opposed to 'embedded') Collections of a Model. The child Collection now synchronizes its Models with the server before the parent Model persists itself.
+
 ### 0.9
 
 * Implemented Kevlar.Collection::sync(), which synchronizes the Collection's model with the server. This method creates, updates, and deletes models on the server that have been

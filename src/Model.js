@@ -1278,7 +1278,7 @@ Kevlar.Model = Kevlar.DataComponent.extend( {
 	save : function( options ) {
 		options = options || {};
 		var scope = options.scope || options.context || window;
-		    
+		
 		
 		// No persistenceProxy, cannot save. Throw an error
 		if( !this.persistenceProxy ) {
